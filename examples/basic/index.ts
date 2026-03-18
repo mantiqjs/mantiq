@@ -1,4 +1,6 @@
 import { Application, CoreServiceProvider, HttpKernel, RouterImpl, CorsMiddleware } from '@mantiq/core'
+import { DatabaseManager } from '@mantiq/database'
+import { DatabaseServiceProvider } from './app/Providers/DatabaseServiceProvider.ts'
 import { LogRequestsMiddleware } from './app/Http/Middleware/LogRequests.ts'
 import { RequireJsonMiddleware } from './app/Http/Middleware/RequireJson.ts'
 
@@ -22,8 +24,13 @@ if (await envFile.exists()) {
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 const app = await Application.create(import.meta.dir, 'config')
 
-await app.registerProviders([CoreServiceProvider])
+await app.registerProviders([CoreServiceProvider, DatabaseServiceProvider])
 await app.bootProviders()
+
+// ── Seed default data ─────────────────────────────────────────────────────────
+const UserSeeder = (await import('./database/seeders/UserSeeder.ts')).default
+const manager = app.make(DatabaseManager)
+await new UserSeeder().run(manager.connection())
 
 // ── Kernel setup ──────────────────────────────────────────────────────────────
 const kernel = app.make(HttpKernel)

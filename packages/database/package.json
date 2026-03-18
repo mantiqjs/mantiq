@@ -1,7 +1,7 @@
 {
   "name": "@mantiq/database",
   "version": "0.0.1",
-  "description": "Query builder, ORM, migrations, seeders",
+  "description": "Query builder, ORM, migrations, seeders, factories — with SQLite, Postgres, MySQL and MongoDB support",
   "type": "module",
   "main": "./src/index.ts",
   "exports": {
@@ -13,11 +13,33 @@
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
-  "dependencies": {
-    "@mantiq/core": "workspace:*"
+  "dependencies": {},
+  "peerDependencies": {
+    "pg": "",
+    "mysql2": "",
+    "mssql": ">=10",
+    "mongodb": ">=6"
+  },
+  "peerDependenciesMeta": {
+    "pg": {
+      "optional": true
+    },
+    "mysql2": {
+      "optional": true
+    },
+    "mssql": {
+      "optional": true
+    },
+    "mongodb": {
+      "optional": true
+    }
   },
   "devDependencies": {
+    "@types/pg": "^8.18.0",
     "bun-types": "latest",
+    "mssql": "^11.0.0",
+    "mysql2": "^3.14.1",
+    "pg": "^8.13.3",
     "typescript": "^5.7.0"
   }
 }

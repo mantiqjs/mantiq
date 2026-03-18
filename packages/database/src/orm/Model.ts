@@ -1,0 +1,576 @@
+import { ModelQueryBuilder } from './ModelQueryBuilder.ts'
+import { ModelNotFoundError } from '../errors/ModelNotFoundError.ts'
+import type { EagerLoadSpec } from './eagerLoad.ts'
+import type { DatabaseConnection } from '../contracts/Connection.ts'
+import type { PaginationResult } from '../contracts/Paginator.ts'
+
+type CastType = 'int' | 'float' | 'boolean' | 'string' | 'json' | 'date' | 'datetime' | 'array'
+
+export interface ModelStatic<T extends Model> {
+  new (): T
+  connection: DatabaseConnection | null
+  table: string
+  primaryKey: string
+  fillable: string[]
+  guarded: string[]
+  hidden: string[]
+  casts: Record<string, CastType>
+  timestamps: boolean
+  softDelete: boolean
+  softDeleteColumn: string
+  // Methods
+  query(): ModelQueryBuilder<T>
+  all(): Promise<T[]>
+  find(id: number | string): Promise<T | null>
+  findOrFail(id: number | string): Promise<T>
+  where(column: string, operatorOrValue?: any, value?: any): ModelQueryBuilder<T>
+  whereIn(column: string, values: any[]): ModelQueryBuilder<T>
+  with(...relations: EagerLoadSpec[]): ModelQueryBuilder<T>
+  first(): Promise<T | null>
+  firstOrFail(): Promise<T>
+  create(data: Record<string, any>): Promise<T>
+  updateOrCreate(conditions: Record<string, any>, data: Record<string, any>): Promise<T>
+  paginate(page?: number, perPage?: number): Promise<PaginationResult<T>>
+  count(): Promise<number>
+  setConnection(connection: DatabaseConnection): void
+  __callStatic(method: string, ...args: any[]): ModelQueryBuilder<T> | undefined
+  // Allow scope methods to exist
+  [key: string]: any
+}
+
+export abstract class Model {
+  // ── Static configuration (override in subclasses) ─────────────────────────
+
+  static connection: DatabaseConnection | null = null
+  static table: string = ''
+  static primaryKey: string = 'id'
+  static fillable: string[] = []
+  static guarded: string[] = ['id']
+  static hidden: string[] = []
+  static casts: Record<string, CastType> = {}
+  static timestamps = true
+  static softDelete = false
+  static softDeleteColumn = 'deleted_at'
+
+  // ── Instance state ────────────────────────────────────────────────────────
+
+  protected _attributes: Record<string, any> = {}
+  protected _original: Record<string, any> = {}
+  protected _exists = false
+  protected _relations: Record<string, any> = {}
+
+  // ── Query API (static methods) ────────────────────────────────────────────
+
+  static query<T extends Model>(this: ModelStatic<T>): ModelQueryBuilder<T> {
+    const conn = this.connection
+    if (!conn) throw new Error(`No connection set on model ${this.table}. Call Model.setConnection() first.`)
+
+    const tableName = this.table || snakeCase(this.name)
+    return new ModelQueryBuilder<T>(
+      conn,
+      tableName,
+      (row) => {
+        const instance = new this()
+        instance.setRawAttributes(row)
+        instance._exists = true
+        return instance
+      },
+      this.softDelete ? this.softDeleteColumn : null,
+    )
+  }
+
+  static async all<T extends Model>(this: ModelStatic<T>): Promise<T[]> {
+    return this.query().get()
+  }
+
+  static async find<T extends Model>(this: ModelStatic<T>, id: number | string): Promise<T | null> {
+    return this.query().find(id)
+  }
+
+  static async findOrFail<T extends Model>(this: ModelStatic<T>, id: number | string): Promise<T> {
+    const model = await this.find(id)
+    if (!model) throw new ModelNotFoundError(this.table)
+    return model
+  }
+
+  static where<T extends Model>(
+    this: ModelStatic<T>,
+    column: string,
+    operatorOrValue?: any,
+    value?: any,
+  ): ModelQueryBuilder<T> {
+    return this.query().where(column, operatorOrValue, value) as ModelQueryBuilder<T>
+  }
+
+  static whereIn<T extends Model>(
+    this: ModelStatic<T>,
+    column: string,
+    values: any[],
+  ): ModelQueryBuilder<T> {
+    return this.query().whereIn(column, values) as ModelQueryBuilder<T>
+  }
+
+  static async first<T extends Model>(this: ModelStatic<T>): Promise<T | null> {
+    return this.query().first()
+  }
+
+  static async firstOrFail<T extends Model>(this: ModelStatic<T>): Promise<T> {
+    return this.query().firstOrFail()
+  }
+
+  static async create<T extends Model>(this: ModelStatic<T>, data: Record<string, any>): Promise<T> {
+    const instance = new this() as T
+    instance.fill(data)
+    await instance.save()
+    return instance
+  }
+
+  static async updateOrCreate<T extends Model>(
+    this: ModelStatic<T>,
+    conditions: Record<string, any>,
+    data: Record<string, any>,
+  ): Promise<T> {
+    let q = this.query()
+    for (const [k, v] of Object.entries(conditions)) q = q.where(k, v) as ModelQueryBuilder<T>
+    const existing = await q.first()
+    if (existing) {
+      existing.fill(data)
+      await existing.save()
+      return existing
+    }
+    return this.create({ ...conditions, ...data })
+  }
+
+  static async paginate<T extends Model>(
+    this: ModelStatic<T>,
+    page = 1,
+    perPage = 15,
+  ): Promise<PaginationResult<T>> {
+    const result = await this.query().paginate(page, perPage)
+    return result as unknown as PaginationResult<T>
+  }
+
+  static async count<T extends Model>(this: ModelStatic<T>): Promise<number> {
+    return this.query().count()
+  }
+
+  static with<T extends Model>(
+    this: ModelStatic<T>,
+    ...relations: EagerLoadSpec[]
+  ): ModelQueryBuilder<T> {
+    return this.query().with(...relations)
+  }
+
+  /** Set the database connection for this model class */
+  static setConnection(connection: DatabaseConnection): void {
+    this.connection = connection
+  }
+
+  /**
+   * Scope support: calling a static method named `scope<Name>` on the class
+   * allows `Model.<name>()` as a shorthand.
+   * e.g., `static scopeActive(query) { ... }` → `User.active()`
+   *
+   * This is implemented via a static method that proxies unknown calls.
+   */
+  static __callStatic<T extends Model>(
+    this: ModelStatic<T>,
+    method: string,
+    ...args: any[]
+  ): ModelQueryBuilder<T> | undefined {
+    const scopeName = `scope${method.charAt(0).toUpperCase() + method.slice(1)}`
+    const scopeFn = (this as any)[scopeName]
+    if (typeof scopeFn === 'function') {
+      const query = this.query()
+      scopeFn.call(this, query, ...args)
+      return query
+    }
+    return undefined
+  }
+
+  // ── Instance methods ──────────────────────────────────────────────────────
+
+  fill(data: Record<string, any>): this {
+    const ctor = this.constructor as typeof Model
+    const fillable = ctor.fillable
+    const guarded = ctor.guarded
+
+    for (const [key, value] of Object.entries(data)) {
+      if (guarded.includes(key)) continue
+      if (fillable.length > 0 && !fillable.includes(key)) continue
+      this._attributes[key] = value
+    }
+
+    return this
+  }
+
+  forceFill(data: Record<string, any>): this {
+    for (const [key, value] of Object.entries(data)) {
+      this._attributes[key] = value
+    }
+    return this
+  }
+
+  setRawAttributes(attributes: Record<string, any>): this {
+    this._attributes = { ...attributes }
+    this._original = { ...attributes }
+    return this
+  }
+
+  getAttribute(key: string): any {
+    const ctor = this.constructor as typeof Model
+    const rawValue = this._attributes[key]
+
+    // Check for relation
+    if (key in this._relations) return this._relations[key]
+
+    // Check for custom getter (get<Key>Attribute pattern)
+    const getterName = `get${key.charAt(0).toUpperCase() + key.slice(1)}Attribute` as keyof this
+    if (typeof this[getterName] === 'function') {
+      return (this[getterName] as any)(rawValue)
+    }
+
+    // Apply cast
+    const castType = ctor.casts[key]
+    if (castType) return this.castAttribute(rawValue, castType)
+
+    return rawValue
+  }
+
+  setAttribute(key: string, value: any): this {
+    const ctor = this.constructor as typeof Model
+
+    // Check for custom setter
+    const setterName = `set${key.charAt(0).toUpperCase() + key.slice(1)}Attribute` as keyof this
+    if (typeof this[setterName] === 'function') {
+      ;(this[setterName] as any)(value)
+      return this
+    }
+
+    this._attributes[key] = value
+    return this
+  }
+
+  get(key: string): any {
+    return this.getAttribute(key)
+  }
+
+  set(key: string, value: any): this {
+    return this.setAttribute(key, value)
+  }
+
+  getKey(): any {
+    const ctor = this.constructor as typeof Model
+    return this._attributes[ctor.primaryKey]
+  }
+
+  isDirty(key?: string): boolean {
+    if (key) return this._attributes[key] !== this._original[key]
+    return Object.keys(this._attributes).some((k) => this._attributes[k] !== this._original[k])
+  }
+
+  getDirty(): Record<string, any> {
+    const dirty: Record<string, any> = {}
+    for (const [k, v] of Object.entries(this._attributes)) {
+      if (v !== this._original[k]) dirty[k] = v
+    }
+    return dirty
+  }
+
+  isClean(key?: string): boolean {
+    return !this.isDirty(key)
+  }
+
+  wasChanged(key?: string): boolean {
+    return this.isDirty(key)
+  }
+
+  toObject(): Record<string, any> {
+    const ctor = this.constructor as typeof Model
+    const obj: Record<string, any> = {}
+
+    for (const key of Object.keys(this._attributes)) {
+      if (ctor.hidden.includes(key)) continue
+      obj[key] = this.getAttribute(key)
+    }
+
+    // Include loaded relations
+    for (const [k, v] of Object.entries(this._relations)) {
+      obj[k] = v
+    }
+
+    return obj
+  }
+
+  toJSON(): Record<string, any> {
+    return this.toObject()
+  }
+
+  // ── Persistence ────────────────────────────────────────────────────────────
+
+  async save(): Promise<this> {
+    const ctor = this.constructor as typeof Model
+    if (!ctor.connection) throw new Error(`No connection set on model ${ctor.table}`)
+
+    const table = ctor.table || snakeCase(ctor.name)
+    const now = new Date()
+
+    if (this._exists) {
+      const dirty = this.getDirty()
+      if (Object.keys(dirty).length === 0) return this
+
+      if (ctor.timestamps && 'updated_at' in this._attributes) {
+        dirty['updated_at'] = now
+      }
+
+      await ctor.connection.table(table)
+        .where(ctor.primaryKey, this.getKey())
+        .update(dirty)
+
+      this._original = { ...this._attributes }
+    } else {
+      if (ctor.timestamps) {
+        if (!this._attributes['created_at']) this._attributes['created_at'] = now
+        if (!this._attributes['updated_at']) this._attributes['updated_at'] = now
+      }
+
+      const id = await ctor.connection.table(table).insertGetId(this._attributes)
+      this._attributes[ctor.primaryKey] = Number(id)
+      this._original = { ...this._attributes }
+      this._exists = true
+    }
+
+    return this
+  }
+
+  async delete(): Promise<boolean> {
+    const ctor = this.constructor as typeof Model
+    if (!ctor.connection || !this._exists) return false
+
+    const table = ctor.table || snakeCase(ctor.name)
+
+    if (ctor.softDelete) {
+      await ctor.connection.table(table)
+        .where(ctor.primaryKey, this.getKey())
+        .update({ [ctor.softDeleteColumn]: new Date() })
+      this._attributes[ctor.softDeleteColumn] = new Date()
+    } else {
+      await ctor.connection.table(table).where(ctor.primaryKey, this.getKey()).delete()
+      this._exists = false
+    }
+
+    return true
+  }
+
+  async forceDelete(): Promise<boolean> {
+    const ctor = this.constructor as typeof Model
+    if (!ctor.connection || !this._exists) return false
+
+    const table = ctor.table || snakeCase(ctor.name)
+    await ctor.connection.table(table).where(ctor.primaryKey, this.getKey()).delete()
+    this._exists = false
+    return true
+  }
+
+  async restore(): Promise<boolean> {
+    const ctor = this.constructor as typeof Model
+    if (!ctor.softDelete || !ctor.connection) return false
+
+    const table = ctor.table || snakeCase(ctor.name)
+    await ctor.connection.table(table)
+      .where(ctor.primaryKey, this.getKey())
+      .update({ [ctor.softDeleteColumn]: null })
+
+    this._attributes[ctor.softDeleteColumn] = null
+    return true
+  }
+
+  isTrashed(): boolean {
+    const ctor = this.constructor as typeof Model
+    return ctor.softDelete && this._attributes[ctor.softDeleteColumn] != null
+  }
+
+  // ── Relations ─────────────────────────────────────────────────────────────
+
+  protected hasOne<R extends Model>(
+    related: ModelStatic<R>,
+    foreignKey?: string,
+    localKey?: string,
+  ) {
+    const ctor = this.constructor as typeof Model
+    const fk = foreignKey ?? `${snakeCase(ctor.name)}_id`
+    const lk = localKey ?? ctor.primaryKey
+    return new HasOneRelation<R>(related, this._attributes[lk], fk)
+  }
+
+  protected hasMany<R extends Model>(
+    related: ModelStatic<R>,
+    foreignKey?: string,
+    localKey?: string,
+  ) {
+    const ctor = this.constructor as typeof Model
+    const fk = foreignKey ?? `${snakeCase(ctor.name)}_id`
+    const lk = localKey ?? ctor.primaryKey
+    return new HasManyRelation<R>(related, this._attributes[lk], fk)
+  }
+
+  protected belongsTo<R extends Model>(
+    related: ModelStatic<R>,
+    foreignKey?: string,
+    ownerKey?: string,
+  ) {
+    const relatedCtor = related as typeof Model
+    const fk = foreignKey ?? `${snakeCase(relatedCtor.name)}_id`
+    const ok = ownerKey ?? relatedCtor.primaryKey
+    return new BelongsToRelation<R>(related, this._attributes[fk], ok)
+  }
+
+  protected belongsToMany<R extends Model>(
+    related: ModelStatic<R>,
+    pivotTable?: string,
+    foreignKey?: string,
+    relatedKey?: string,
+  ) {
+    const ctor = this.constructor as typeof Model
+    const relatedCtor = related as typeof Model
+    const pivot = pivotTable ?? [snakeCase(ctor.name), snakeCase(relatedCtor.name)].sort().join('_')
+    const fk = foreignKey ?? `${snakeCase(ctor.name)}_id`
+    const rk = relatedKey ?? `${snakeCase(relatedCtor.name)}_id`
+    return new BelongsToManyRelation<R>(related, this._attributes[ctor.primaryKey], pivot, fk, rk)
+  }
+
+  // ── Private helpers ────────────────────────────────────────────────────────
+
+  private castAttribute(value: any, type: CastType): any {
+    if (value === null || value === undefined) return value
+    switch (type) {
+      case 'int': return parseInt(value, 10)
+      case 'float': return parseFloat(value)
+      case 'boolean': return Boolean(value) && value !== '0' && value !== 0
+      case 'string': return String(value)
+      case 'json':
+      case 'array':
+        if (typeof value === 'string') {
+          try { return JSON.parse(value) } catch { return value }
+        }
+        return value
+      case 'date': return new Date(value)
+      case 'datetime': return new Date(value)
+      default: return value
+    }
+  }
+}
+
+// ── Relation classes ──────────────────────────────────────────────────────────
+
+export class HasOneRelation<T extends Model> {
+  constructor(
+    private readonly related: ModelStatic<T>,
+    private readonly parentId: any,
+    private readonly foreignKey: string,
+  ) {}
+
+  async get(): Promise<T | null> {
+    return this.related.where(this.foreignKey, this.parentId).first()
+  }
+
+  async getOrFail(): Promise<T> {
+    const result = await this.get()
+    if (!result) throw new ModelNotFoundError((this.related as typeof Model).table)
+    return result
+  }
+}
+
+export class HasManyRelation<T extends Model> {
+  constructor(
+    private readonly related: ModelStatic<T>,
+    private readonly parentId: any,
+    private readonly foreignKey: string,
+  ) {}
+
+  query(): ModelQueryBuilder<T> {
+    return this.related.where(this.foreignKey, this.parentId)
+  }
+
+  async get(): Promise<T[]> {
+    return this.query().get()
+  }
+
+  async create(data: Record<string, any>): Promise<T> {
+    return this.related.create({ ...data, [this.foreignKey]: this.parentId })
+  }
+}
+
+export class BelongsToRelation<T extends Model> {
+  constructor(
+    private readonly related: ModelStatic<T>,
+    private readonly foreignId: any,
+    private readonly ownerKey: string,
+  ) {}
+
+  async get(): Promise<T | null> {
+    if (this.foreignId == null) return null
+    return this.related.where(this.ownerKey, this.foreignId).first()
+  }
+
+  async getOrFail(): Promise<T> {
+    const result = await this.get()
+    if (!result) throw new ModelNotFoundError((this.related as typeof Model).table)
+    return result
+  }
+}
+
+export class BelongsToManyRelation<T extends Model> {
+  constructor(
+    private readonly related: ModelStatic<T>,
+    private readonly parentId: any,
+    private readonly pivotTable: string,
+    private readonly foreignKey: string,
+    private readonly relatedKey: string,
+  ) {}
+
+  async get(): Promise<T[]> {
+    const ctor = this.related as typeof Model
+    if (!ctor.connection) return []
+
+    const pivotRows = await ctor.connection.table(this.pivotTable)
+      .where(this.foreignKey, this.parentId)
+      .pluck(this.relatedKey)
+
+    if (!pivotRows.length) return []
+    return this.related.whereIn(ctor.primaryKey, pivotRows).get()
+  }
+
+  async attach(ids: any[]): Promise<void> {
+    const ctor = this.related as typeof Model
+    if (!ctor.connection) return
+    for (const id of ids) {
+      await ctor.connection.table(this.pivotTable).insert({
+        [this.foreignKey]: this.parentId,
+        [this.relatedKey]: id,
+      })
+    }
+  }
+
+  async detach(ids?: any[]): Promise<void> {
+    const ctor = this.related as typeof Model
+    if (!ctor.connection) return
+    let q = ctor.connection.table(this.pivotTable).where(this.foreignKey, this.parentId)
+    if (ids) q = q.whereIn(this.relatedKey, ids)
+    await q.delete()
+  }
+
+  async sync(ids: any[]): Promise<void> {
+    await this.detach()
+    await this.attach(ids)
+  }
+}
+
+// ── Utility ────────────────────────────────────────────────────────────────────
+
+function snakeCase(name: string): string {
+  return name
+    .replace(/([a-z])([A-Z])/g, '$1_$2')
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2')
+    .toLowerCase()
+}

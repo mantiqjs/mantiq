@@ -1,0 +1,384 @@
+import { Expression } from './Expression.ts'
+import { ModelNotFoundError } from '../errors/ModelNotFoundError.ts'
+import type { PaginationResult } from '../contracts/Paginator.ts'
+import type { DatabaseConnection } from '../contracts/Connection.ts'
+
+export type Operator = '=' | '!=' | '<>' | '<' | '>' | '<=' | '>=' | 'like' | 'not like' | 'in' | 'not in'
+
+export interface WhereClause {
+  type: 'basic' | 'in' | 'notIn' | 'null' | 'notNull' | 'between' | 'raw' | 'nested'
+  boolean: 'and' | 'or'
+  column?: string
+  operator?: string
+  value?: any
+  values?: any[]
+  range?: [any, any]
+  sql?: string
+  bindings?: any[]
+  nested?: WhereClause[]
+}
+
+export interface JoinClause {
+  type: 'inner' | 'left' | 'right'
+  table: string
+  first: string
+  operator: string
+  second: string
+}
+
+export interface OrderClause {
+  column: string | Expression
+  direction: 'asc' | 'desc'
+}
+
+export interface QueryState {
+  table: string
+  columns: (string | Expression)[]
+  distinct: boolean
+  wheres: WhereClause[]
+  joins: JoinClause[]
+  orders: OrderClause[]
+  groups: string[]
+  havings: WhereClause[]
+  limitValue: number | null
+  offsetValue: number | null
+}
+
+export class QueryBuilder {
+  protected state: QueryState
+  protected _connection: DatabaseConnection
+
+  constructor(connection: DatabaseConnection, table: string) {
+    this._connection = connection
+    this.state = {
+      table,
+      columns: ['*'],
+      distinct: false,
+      wheres: [],
+      joins: [],
+      orders: [],
+      groups: [],
+      havings: [],
+      limitValue: null,
+      offsetValue: null,
+    }
+  }
+
+  // ── Selection ─────────────────────────────────────────────────────────────
+
+  select(...columns: (string | Expression)[]): this {
+    this.state.columns = columns.length ? columns : ['*']
+    return this
+  }
+
+  selectRaw(expression: string, bindings?: any[]): this {
+    this.state.columns = [new Expression(expression, bindings)]
+    return this
+  }
+
+  addSelect(...columns: (string | Expression)[]): this {
+    if (this.state.columns.length === 1 && this.state.columns[0] === '*') {
+      this.state.columns = [...columns]
+    } else {
+      this.state.columns.push(...columns)
+    }
+    return this
+  }
+
+  distinct(): this {
+    this.state.distinct = true
+    return this
+  }
+
+  // ── Where conditions ─────────────────────────────────────────────────────
+
+  where(column: string | ((q: QueryBuilder) => void), operatorOrValue?: any, value?: any): this {
+    if (typeof column === 'function') {
+      const nested: WhereClause[] = []
+      const sub = new QueryBuilder(this._connection, this.state.table)
+      column(sub)
+      this.state.wheres.push({ type: 'nested', boolean: 'and', nested: sub.state.wheres })
+      return this
+    }
+
+    let operator: string
+    let val: any
+    if (value === undefined) {
+      operator = '='
+      val = operatorOrValue
+    } else {
+      operator = operatorOrValue
+      val = value
+    }
+
+    this.state.wheres.push({ type: 'basic', boolean: 'and', column, operator, value: val })
+    return this
+  }
+
+  orWhere(column: string | ((q: QueryBuilder) => void), operatorOrValue?: any, value?: any): this {
+    if (typeof column === 'function') {
+      const sub = new QueryBuilder(this._connection, this.state.table)
+      column(sub)
+      this.state.wheres.push({ type: 'nested', boolean: 'or', nested: sub.state.wheres })
+      return this
+    }
+    let operator: string
+    let val: any
+    if (value === undefined) {
+      operator = '='
+      val = operatorOrValue
+    } else {
+      operator = operatorOrValue
+      val = value
+    }
+    this.state.wheres.push({ type: 'basic', boolean: 'or', column, operator, value: val })
+    return this
+  }
+
+  whereIn(column: string, values: any[]): this {
+    this.state.wheres.push({ type: 'in', boolean: 'and', column, values })
+    return this
+  }
+
+  whereNotIn(column: string, values: any[]): this {
+    this.state.wheres.push({ type: 'notIn', boolean: 'and', column, values })
+    return this
+  }
+
+  whereNull(column: string): this {
+    this.state.wheres.push({ type: 'null', boolean: 'and', column })
+    return this
+  }
+
+  whereNotNull(column: string): this {
+    this.state.wheres.push({ type: 'notNull', boolean: 'and', column })
+    return this
+  }
+
+  whereBetween(column: string, range: [any, any]): this {
+    this.state.wheres.push({ type: 'between', boolean: 'and', column, range })
+    return this
+  }
+
+  whereRaw(sql: string, bindings?: any[]): this {
+    this.state.wheres.push({ type: 'raw', boolean: 'and', sql, bindings: bindings ?? [] })
+    return this
+  }
+
+  // ── Joins ─────────────────────────────────────────────────────────────────
+
+  join(table: string, first: string, operator: string, second: string): this {
+    this.state.joins.push({ type: 'inner', table, first, operator, second })
+    return this
+  }
+
+  leftJoin(table: string, first: string, operator: string, second: string): this {
+    this.state.joins.push({ type: 'left', table, first, operator, second })
+    return this
+  }
+
+  rightJoin(table: string, first: string, operator: string, second: string): this {
+    this.state.joins.push({ type: 'right', table, first, operator, second })
+    return this
+  }
+
+  // ── Ordering / Grouping ───────────────────────────────────────────────────
+
+  orderBy(column: string | Expression, direction: 'asc' | 'desc' = 'asc'): this {
+    this.state.orders.push({ column, direction })
+    return this
+  }
+
+  orderByDesc(column: string): this {
+    return this.orderBy(column, 'desc')
+  }
+
+  groupBy(...columns: string[]): this {
+    this.state.groups.push(...columns)
+    return this
+  }
+
+  having(column: string, operator: string, value: any): this {
+    this.state.havings.push({ type: 'basic', boolean: 'and', column, operator, value })
+    return this
+  }
+
+  havingRaw(sql: string, bindings?: any[]): this {
+    this.state.havings.push({ type: 'raw', boolean: 'and', sql, bindings: bindings ?? [] })
+    return this
+  }
+
+  // ── Pagination ────────────────────────────────────────────────────────────
+
+  limit(value: number): this {
+    this.state.limitValue = value
+    return this
+  }
+
+  offset(value: number): this {
+    this.state.offsetValue = value
+    return this
+  }
+
+  take = this.limit
+  skip = this.offset
+
+  // ── Execution ─────────────────────────────────────────────────────────────
+
+  async get(): Promise<Record<string, any>[]> {
+    const { sql, bindings } = this.grammar().compileSelect(this.state)
+    return this._connection.select(sql, bindings)
+  }
+
+  async first(): Promise<Record<string, any> | null> {
+    const rows = await this.limit(1).get()
+    return rows[0] ?? null
+  }
+
+  async firstOrFail(): Promise<Record<string, any>> {
+    const row = await this.first()
+    if (!row) throw new ModelNotFoundError(this.state.table)
+    return row
+  }
+
+  async find(id: number | string): Promise<Record<string, any> | null> {
+    return this.where('id', id).first()
+  }
+
+  async value(column: string): Promise<any> {
+    const row = await this.select(column).first()
+    return row ? row[column] : null
+  }
+
+  async pluck(column: string): Promise<any[]> {
+    const rows = await this.select(column).get()
+    return rows.map((r) => r[column])
+  }
+
+  async exists(): Promise<boolean> {
+    const row = await this.selectRaw('1 as exists_check').limit(1).first()
+    return row !== null
+  }
+
+  async doesntExist(): Promise<boolean> {
+    return !(await this.exists())
+  }
+
+  // ── Aggregates ────────────────────────────────────────────────────────────
+
+  async count(column = '*'): Promise<number> {
+    const row = await this.selectRaw(`COUNT(${column}) as aggregate`).first()
+    return Number(row?.['aggregate'] ?? 0)
+  }
+
+  async sum(column: string): Promise<number> {
+    const row = await this.selectRaw(`SUM(${column}) as aggregate`).first()
+    return Number(row?.['aggregate'] ?? 0)
+  }
+
+  async avg(column: string): Promise<number> {
+    const row = await this.selectRaw(`AVG(${column}) as aggregate`).first()
+    return Number(row?.['aggregate'] ?? 0)
+  }
+
+  async min(column: string): Promise<any> {
+    const row = await this.selectRaw(`MIN(${column}) as aggregate`).first()
+    return row?.['aggregate']
+  }
+
+  async max(column: string): Promise<any> {
+    const row = await this.selectRaw(`MAX(${column}) as aggregate`).first()
+    return row?.['aggregate']
+  }
+
+  // ── Writes ────────────────────────────────────────────────────────────────
+
+  async insert(data: Record<string, any> | Record<string, any>[]): Promise<void> {
+    const rows = Array.isArray(data) ? data : [data]
+    for (const row of rows) {
+      const { sql, bindings } = this.grammar().compileInsert(this.state.table, row)
+      await this._connection.statement(sql, bindings)
+    }
+  }
+
+  async insertGetId(data: Record<string, any>): Promise<number> {
+    const { sql, bindings } = this.grammar().compileInsertGetId(this.state.table, data)
+    const id = await this._connection.insertGetId(sql, bindings)
+    return Number(id)
+  }
+
+  async update(data: Record<string, any>): Promise<number> {
+    const { sql, bindings } = this.grammar().compileUpdate(this.state.table, this.state, data)
+    return this._connection.statement(sql, bindings)
+  }
+
+  async updateOrInsert(
+    conditions: Record<string, any>,
+    data: Record<string, any>,
+  ): Promise<void> {
+    const clone = this.clone()
+    for (const [k, v] of Object.entries(conditions)) clone.where(k, v)
+    const exists = await clone.exists()
+    if (exists) {
+      await clone.update(data)
+    } else {
+      await this.insert({ ...conditions, ...data })
+    }
+  }
+
+  async delete(): Promise<number> {
+    const { sql, bindings } = this.grammar().compileDelete(this.state.table, this.state)
+    return this._connection.statement(sql, bindings)
+  }
+
+  async truncate(): Promise<void> {
+    const sql = this.grammar().compileTruncate(this.state.table)
+    await this._connection.statement(sql, [])
+  }
+
+  // ── Pagination ────────────────────────────────────────────────────────────
+
+  async paginate(page = 1, perPage = 15): Promise<PaginationResult> {
+    const total = await this.clone().count()
+    const lastPage = Math.max(1, Math.ceil(total / perPage))
+    const currentPage = Math.min(page, lastPage)
+    const data = await this.clone().limit(perPage).offset((currentPage - 1) * perPage).get()
+    const from = total === 0 ? 0 : (currentPage - 1) * perPage + 1
+    const to = Math.min(from + data.length - 1, total)
+    return { data, total, perPage, currentPage, lastPage, from, to, hasMore: currentPage < lastPage }
+  }
+
+  // ── Utilities ─────────────────────────────────────────────────────────────
+
+  toSql(): string {
+    return this.grammar().compileSelect(this.state).sql
+  }
+
+  getBindings(): any[] {
+    return this.grammar().compileSelect(this.state).bindings
+  }
+
+  clone(): QueryBuilder {
+    const copy = new QueryBuilder(this._connection, this.state.table)
+    copy.state = {
+      ...this.state,
+      columns: [...this.state.columns],
+      wheres: [...this.state.wheres],
+      joins: [...this.state.joins],
+      orders: [...this.state.orders],
+      groups: [...this.state.groups],
+      havings: [...this.state.havings],
+    }
+    return copy
+  }
+
+  getState(): QueryState {
+    return this.state
+  }
+
+  // ── Grammar (driver-specific SQL) ─────────────────────────────────────────
+
+  protected grammar() {
+    return (this._connection as any)._grammar as import('../contracts/Grammar.ts').Grammar
+  }
+}

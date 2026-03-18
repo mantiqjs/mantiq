@@ -8,6 +8,7 @@
     "start": "bun run index.ts"
   },
   "dependencies": {
-    "@mantiq/core": "workspace:*"
+    "@mantiq/core": "workspace:*",
+    "@mantiq/database": "workspace:*"
   }
 }
