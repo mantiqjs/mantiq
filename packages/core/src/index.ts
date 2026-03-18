@@ -1,1 +1,50 @@
-// @mantiq/core — public API exports
+// ── Application ───────────────────────────────────────────────────────────────
+export { Application } from './application/Application.ts'
+
+// ── Contracts (interfaces + base classes) ────────────────────────────────────
+export type { Container, Bindable, Resolvable, Constructor, ContextualBindingBuilder } from './contracts/Container.ts'
+export type { Config } from './contracts/Config.ts'
+export type { Middleware, NextFunction } from './contracts/Middleware.ts'
+export type { MantiqRequest } from './contracts/Request.ts'
+export type { MantiqResponseBuilder, CookieOptions } from './contracts/Response.ts'
+export type { Router, RouterRoute, RouteAction, RouteGroupOptions, RouteMatch, RouteDefinition, HttpMethod } from './contracts/Router.ts'
+export type { ExceptionHandler } from './contracts/ExceptionHandler.ts'
+export type { DriverManager } from './contracts/DriverManager.ts'
+export type { EventDispatcher, EventHandler } from './contracts/EventDispatcher.ts'
+export { ServiceProvider } from './contracts/ServiceProvider.ts'
+export { Event, Listener } from './contracts/EventDispatcher.ts'
+export type { WebSocketHandler, WebSocketContext } from './websocket/WebSocketContext.ts'
+
+// ── Errors ────────────────────────────────────────────────────────────────────
+export { MantiqError } from './errors/MantiqError.ts'
+export { HttpError } from './errors/HttpError.ts'
+export { NotFoundError } from './errors/NotFoundError.ts'
+export { UnauthorizedError } from './errors/UnauthorizedError.ts'
+export { ForbiddenError } from './errors/ForbiddenError.ts'
+export { ValidationError } from './errors/ValidationError.ts'
+export { TooManyRequestsError } from './errors/TooManyRequestsError.ts'
+export { ContainerResolutionError } from './errors/ContainerResolutionError.ts'
+export { ConfigKeyNotFoundError } from './errors/ConfigKeyNotFoundError.ts'
+
+// ── Implementations ───────────────────────────────────────────────────────────
+export { ContainerImpl } from './container/Container.ts'
+export { ConfigRepository } from './config/ConfigRepository.ts'
+export { MantiqRequest as MantiqRequestImpl } from './http/Request.ts'
+export { MantiqResponse, ResponseBuilder, response } from './http/Response.ts'
+export { UploadedFile } from './http/UploadedFile.ts'
+export { HttpKernel } from './http/Kernel.ts'
+export { RouterImpl } from './routing/Router.ts'
+export { Route } from './routing/Route.ts'
+export { Pipeline } from './middleware/Pipeline.ts'
+export { CorsMiddleware } from './middleware/Cors.ts'
+export { TrimStringsMiddleware } from './middleware/TrimStrings.ts'
+export { WebSocketKernel } from './websocket/WebSocketKernel.ts'
+export { DefaultExceptionHandler } from './exceptions/Handler.ts'
+export { CoreServiceProvider } from './providers/CoreServiceProvider.ts'
+
+// ── Global helpers ────────────────────────────────────────────────────────────
+export { config } from './helpers/config.ts'
+export { env } from './helpers/env.ts'
+export { app } from './helpers/app.ts'
+export { route, ROUTER } from './helpers/route.ts'
+export { abort } from './helpers/abort.ts'
