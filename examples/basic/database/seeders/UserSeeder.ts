@@ -1,9 +1,8 @@
 import { Seeder } from '@mantiq/database'
-import type { DatabaseConnection } from '@mantiq/database'
 import { User } from '../../app/Models/User.ts'
 
 export default class UserSeeder extends Seeder {
-  async run(_connection: DatabaseConnection) {
+  override async run() {
     // Seed default users if the table is empty
     if ((await User.count()) > 0) return
 

@@ -1,12 +1,16 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "rootDir": ".",
     "noEmit": true,
+    "composite": false,
+    "jsx": "react-jsx",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "paths": {
-      "@mantiq/core": ["../../packages/core/src/index.ts"]
+      "@mantiq/core": ["../../packages/core/src/index.ts"],
+      "@mantiq/database": ["../../packages/database/src/index.ts"],
+      "@mantiq/vite": ["../../packages/vite/src/index.ts"]
     }
   },
   "include": ["./**/*"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "public"]
 }

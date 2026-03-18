@@ -36,6 +36,21 @@ export class UserController {
     return MantiqResponse.json({ data: user.toObject() }, 201)
   }
 
+  /** PUT /api/users/:id */
+  async update(request: MantiqRequest): Promise<Response> {
+    const id = Number(request.param('user'))
+    const user = await User.find(id)
+    if (!user) abort(404, `User ${id} not found`)
+
+    const body = await request.input()
+    if (body.name) user!.set('name', body.name)
+    if (body.email) user!.set('email', body.email)
+    if (body.role) user!.set('role', body.role)
+    await user!.save()
+
+    return MantiqResponse.json({ data: user!.toObject() })
+  }
+
   /** DELETE /api/users/:id */
   async destroy(request: MantiqRequest): Promise<Response> {
     const id = Number(request.param('user'))

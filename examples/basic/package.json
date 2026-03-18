@@ -5,10 +5,25 @@
   "type": "module",
   "scripts": {
     "dev": "bun run --watch index.ts",
+    "dev:frontend": "vite",
+    "build:frontend": "vite build",
     "start": "bun run index.ts"
   },
   "dependencies": {
     "@mantiq/core": "workspace:*",
-    "@mantiq/database": "workspace:*"
+    "@mantiq/database": "workspace:*",
+    "@mantiq/vite": "workspace:*",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.5.0",
+    "@tailwindcss/vite": "^4.0.0",
+    "bun-types": "latest",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0"
   }
 }

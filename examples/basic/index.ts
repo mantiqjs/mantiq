@@ -1,5 +1,5 @@
 import { Application, CoreServiceProvider, HttpKernel, RouterImpl, CorsMiddleware } from '@mantiq/core'
-import { DatabaseManager } from '@mantiq/database'
+import { ViteServiceProvider, ServeStaticFiles } from '@mantiq/vite'
 import { DatabaseServiceProvider } from './app/Providers/DatabaseServiceProvider.ts'
 import { LogRequestsMiddleware } from './app/Http/Middleware/LogRequests.ts'
 import { RequireJsonMiddleware } from './app/Http/Middleware/RequireJson.ts'
@@ -24,13 +24,12 @@ if (await envFile.exists()) {
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 const app = await Application.create(import.meta.dir, 'config')
 
-await app.registerProviders([CoreServiceProvider, DatabaseServiceProvider])
+await app.registerProviders([CoreServiceProvider, DatabaseServiceProvider, ViteServiceProvider])
 await app.bootProviders()
 
 // ── Seed default data ─────────────────────────────────────────────────────────
 const UserSeeder = (await import('./database/seeders/UserSeeder.ts')).default
-const manager = app.make(DatabaseManager)
-await new UserSeeder().run(manager.connection())
+await new UserSeeder().run()
 
 // ── Kernel setup ──────────────────────────────────────────────────────────────
 const kernel = app.make(HttpKernel)
@@ -40,9 +39,10 @@ const router  = app.make(RouterImpl)
 kernel.registerMiddleware('log',       LogRequestsMiddleware)
 kernel.registerMiddleware('cors',      CorsMiddleware)
 kernel.registerMiddleware('api.json',  RequireJsonMiddleware)
+kernel.registerMiddleware('static',    ServeStaticFiles)
 
 // Global middleware — runs on every request
-kernel.setGlobalMiddleware(['log', 'cors'])
+kernel.setGlobalMiddleware(['static', 'log', 'cors'])
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 import webRoutes from './routes/web.ts'
