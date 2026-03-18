@@ -4,6 +4,8 @@ import { HttpKernel } from '../http/Kernel.ts'
 import { WebSocketKernel } from '../websocket/WebSocketKernel.ts'
 import { DefaultExceptionHandler } from '../exceptions/Handler.ts'
 import { ConfigRepository } from '../config/ConfigRepository.ts'
+import { CorsMiddleware } from '../middleware/Cors.ts'
+import { TrimStringsMiddleware } from '../middleware/TrimStrings.ts'
 import { ROUTER } from '../helpers/route.ts'
 
 // Symbols used as abstract keys for non-class bindings
@@ -35,6 +37,10 @@ export class CoreServiceProvider extends ServiceProvider {
     // Exception handler — singleton
     this.app.singleton(DefaultExceptionHandler, () => new DefaultExceptionHandler())
 
+    // Built-in middleware — explicit factory bindings so ConfigRepository is injected
+    this.app.singleton(CorsMiddleware, (c) => new CorsMiddleware(c.make(ConfigRepository)))
+    this.app.singleton(TrimStringsMiddleware, () => new TrimStringsMiddleware())
+
     // HTTP kernel — singleton, depends on Router + ExceptionHandler + WsKernel
     this.app.singleton(HttpKernel, (c) => {
       const router = c.make(RouterImpl)
@@ -44,35 +50,9 @@ export class CoreServiceProvider extends ServiceProvider {
     })
   }
 
-  async boot(): Promise<void> {
-    // Load route files if they exist
-    await this.loadRoutes()
-  }
-
-  private async loadRoutes(): Promise<void> {
-    const config = this.app.make(ConfigRepository)
-    const appPath = config.get('app.basePath', process.cwd())
-
-    const routeFiles = [
-      `${appPath}/routes/web.ts`,
-      `${appPath}/routes/api.ts`,
-    ]
-
-    const router = this.app.make(RouterImpl)
-
-    for (const file of routeFiles) {
-      try {
-        const f = Bun.file(file)
-        if (await f.exists()) {
-          const mod = await import(file)
-          // Route files export a default function that receives the router
-          if (typeof mod.default === 'function') {
-            mod.default(router)
-          }
-        }
-      } catch {
-        // Route file doesn't exist or failed to load — not an error during bootstrap
-      }
-    }
+  boot(): void {
+    // Route loading is intentionally left to the application's bootstrap file (index.ts).
+    // This gives developers full control over route registration order and grouping.
+    // Use: router.get(...) or import routes/web.ts and call it with the router.
   }
 }

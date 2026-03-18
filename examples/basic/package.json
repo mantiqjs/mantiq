@@ -1,0 +1,13 @@
+{
+  "name": "@mantiq/example-basic",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch index.ts",
+    "start": "bun run index.ts"
+  },
+  "dependencies": {
+    "@mantiq/core": "workspace:*"
+  }
+}

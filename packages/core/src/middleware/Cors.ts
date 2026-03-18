@@ -60,23 +60,32 @@ export class CorsMiddleware implements Middleware {
 
   private addCorsHeaders(response: Response, origin: string): Response {
     const headers = new Headers(response.headers)
-    this.applyOriginHeader(headers as any, origin)
+    this.setOriginHeader(headers, origin)
     if (this.config.credentials) headers.set('Access-Control-Allow-Credentials', 'true')
+    if (this.config.exposedHeaders.length > 0) {
+      headers.set('Access-Control-Expose-Headers', this.config.exposedHeaders.join(', '))
+    }
     return new Response(response.body, { status: response.status, headers })
   }
 
-  private applyOriginHeader(headers: Record<string, string>, requestOrigin: string): void {
+  private setOriginHeader(headers: Headers, requestOrigin: string): void {
     const { origin } = this.config
     if (origin === '*') {
-      headers['Access-Control-Allow-Origin'] = '*'
+      headers.set('Access-Control-Allow-Origin', '*')
     } else if (Array.isArray(origin)) {
       if (origin.includes(requestOrigin)) {
-        headers['Access-Control-Allow-Origin'] = requestOrigin
-        headers['Vary'] = 'Origin'
+        headers.set('Access-Control-Allow-Origin', requestOrigin)
+        headers.set('Vary', 'Origin')
       }
     } else if (origin === requestOrigin) {
-      headers['Access-Control-Allow-Origin'] = requestOrigin
-      headers['Vary'] = 'Origin'
+      headers.set('Access-Control-Allow-Origin', requestOrigin)
+      headers.set('Vary', 'Origin')
     }
+  }
+
+  private applyOriginHeader(headers: Record<string, string>, requestOrigin: string): void {
+    const tmp = new Headers()
+    this.setOriginHeader(tmp, requestOrigin)
+    tmp.forEach((v, k) => { headers[k] = v })
   }
 }
