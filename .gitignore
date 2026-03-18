@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+.env.local
+*.sqlite
+storage/framework/
+storage/logs/
+.cache/
+.turbo/
+bun.lockb
+*.lock

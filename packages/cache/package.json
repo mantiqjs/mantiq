@@ -1,0 +1,16 @@
+{
+  "name": "@mantiq/cache",
+  "version": "0.0.1",
+  "description": "Cache drivers (memory, file, Redis)",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": {
+    "build": "bun build ./src/index.ts --outdir ./dist --target bun",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": { "@mantiq/core": "workspace:*" },
+  "devDependencies": { "bun-types": "latest", "typescript": "^5.7.0" }
+}

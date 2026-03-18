@@ -1,0 +1,10 @@
+[install]
+# Use exact versions for reproducible installs
+exact = false
+
+[install.cache]
+disable = false
+
+[test]
+# Use bun's native test runner across all packages
+timeout = 5000

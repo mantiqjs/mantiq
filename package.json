@@ -1,0 +1,20 @@
+{
+  "name": "mantiqjs",
+  "version": "0.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "addons/*",
+    "starters/*"
+  ],
+  "scripts": {
+    "build": "bun run --filter '*' build",
+    "test": "bun run --filter '*' test",
+    "lint": "bun run --filter '*' lint",
+    "typecheck": "bun run --filter '*' typecheck",
+    "clean": "bun run --filter '*' clean"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}

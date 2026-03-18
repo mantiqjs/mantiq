@@ -1,0 +1,50 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ESNext"],
+    "types": ["bun-types"],
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "paths": {
+      "@mantiq/core": ["./packages/core/src/index.ts"],
+      "@mantiq/database": ["./packages/database/src/index.ts"],
+      "@mantiq/auth": ["./packages/auth/src/index.ts"],
+      "@mantiq/inertia": ["./packages/inertia/src/index.ts"],
+      "@mantiq/vite": ["./packages/vite/src/index.ts"],
+      "@mantiq/cli": ["./packages/cli/src/index.ts"],
+      "@mantiq/validation": ["./packages/validation/src/index.ts"],
+      "@mantiq/helpers": ["./packages/helpers/src/index.ts"],
+      "@mantiq/queue": ["./packages/queue/src/index.ts"],
+      "@mantiq/cache": ["./packages/cache/src/index.ts"],
+      "@mantiq/mail": ["./packages/mail/src/index.ts"],
+      "@mantiq/events": ["./packages/events/src/index.ts"],
+      "@mantiq/realtime": ["./packages/realtime/src/index.ts"],
+      "@mantiq/logging": ["./packages/logging/src/index.ts"]
+    }
+  },
+  "references": [
+    { "path": "./packages/core" },
+    { "path": "./packages/helpers" },
+    { "path": "./packages/database" },
+    { "path": "./packages/validation" },
+    { "path": "./packages/auth" },
+    { "path": "./packages/inertia" },
+    { "path": "./packages/vite" },
+    { "path": "./packages/cli" },
+    { "path": "./packages/queue" },
+    { "path": "./packages/cache" },
+    { "path": "./packages/mail" },
+    { "path": "./packages/events" },
+    { "path": "./packages/realtime" },
+    { "path": "./packages/logging" }
+  ]
+}

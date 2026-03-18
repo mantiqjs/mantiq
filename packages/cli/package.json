@@ -1,0 +1,26 @@
+{
+  "name": "@mantiq/cli",
+  "version": "0.0.1",
+  "description": "Command runner, code generators, dev server",
+  "type": "module",
+  "main": "./src/index.ts",
+  "bin": {
+    "mantiq": "./src/bin.ts"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "bun build ./src/index.ts --outdir ./dist --target bun",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@mantiq/core": "workspace:*"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "typescript": "^5.7.0"
+  }
+}

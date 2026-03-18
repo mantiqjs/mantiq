@@ -1,0 +1,25 @@
+{
+  "name": "@mantiq/auth",
+  "version": "0.0.1",
+  "description": "Session & token auth, guards, providers",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "bun build ./src/index.ts --outdir ./dist --target bun",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@mantiq/core": "workspace:*",
+    "@mantiq/database": "workspace:*",
+    "@mantiq/validation": "workspace:*"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "typescript": "^5.7.0"
+  }
+}

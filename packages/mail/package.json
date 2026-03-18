@@ -1,0 +1,17 @@
+{
+  "name": "@mantiq/mail",
+  "version": "0.0.1",
+  "description": "Mail transports, message builder",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": {
+    "build": "bun build ./src/index.ts --outdir ./dist --target bun",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": { "@mantiq/core": "workspace:*" },
+  "optionalDependencies": { "@mantiq/queue": "workspace:*" },
+  "devDependencies": { "bun-types": "latest", "typescript": "^5.7.0" }
+}

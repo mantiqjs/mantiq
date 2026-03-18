@@ -1,0 +1,23 @@
+{
+  "name": "@mantiq/core",
+  "version": "0.0.1",
+  "description": "Service container, router, middleware, HTTP kernel, config, and exception handler",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "bun build ./src/index.ts --outdir ./dist --target bun",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "bun": ">=1.1.0"
+  }
+}
