@@ -1,4 +1,5 @@
 import type { UploadedFile } from '../http/UploadedFile.ts'
+import type { SessionStore } from '../session/Store.ts'
 
 export interface MantiqRequest {
   // ── HTTP basics ──────────────────────────────────────────────────────────
@@ -36,6 +37,11 @@ export interface MantiqRequest {
   param(key: string, defaultValue?: any): any
   params(): Record<string, any>
   setRouteParams(params: Record<string, any>): void
+
+  // ── Session ──────────────────────────────────────────────────────────────
+  session(): SessionStore
+  setSession(session: SessionStore): void
+  hasSession(): boolean
 
   // ── Auth ─────────────────────────────────────────────────────────────────
   user<T = any>(): T | null

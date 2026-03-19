@@ -1,4 +1,5 @@
 import type { MantiqRequest as MantiqRequestContract } from '../contracts/Request.ts'
+import type { SessionStore } from '../session/Store.ts'
 import { UploadedFile } from './UploadedFile.ts'
 import { parseCookies } from './Cookie.ts'
 
@@ -9,6 +10,7 @@ export class MantiqRequest implements MantiqRequestContract {
   private routeParams: Record<string, any> = {}
   private authenticatedUser: any = null
   private cookies: Record<string, string> | null = null
+  private sessionStore: SessionStore | null = null
 
   constructor(
     private readonly bunRequest: Request,
@@ -166,6 +168,23 @@ export class MantiqRequest implements MantiqRequestContract {
 
   setRouteParams(params: Record<string, any>): void {
     this.routeParams = params
+  }
+
+  // ── Session ──────────────────────────────────────────────────────────────
+
+  session(): SessionStore {
+    if (!this.sessionStore) {
+      throw new Error('Session has not been started. Ensure the StartSession middleware is active.')
+    }
+    return this.sessionStore
+  }
+
+  setSession(session: SessionStore): void {
+    this.sessionStore = session
+  }
+
+  hasSession(): boolean {
+    return this.sessionStore !== null
   }
 
   // ── Auth ─────────────────────────────────────────────────────────────────

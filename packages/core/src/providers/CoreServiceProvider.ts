@@ -6,7 +6,15 @@ import { DefaultExceptionHandler } from '../exceptions/Handler.ts'
 import { ConfigRepository } from '../config/ConfigRepository.ts'
 import { CorsMiddleware } from '../middleware/Cors.ts'
 import { TrimStringsMiddleware } from '../middleware/TrimStrings.ts'
+import { StartSession } from '../middleware/StartSession.ts'
+import { EncryptCookies } from '../middleware/EncryptCookies.ts'
+import { VerifyCsrfToken } from '../middleware/VerifyCsrfToken.ts'
 import { ROUTER } from '../helpers/route.ts'
+import { ENCRYPTER } from '../helpers/encrypt.ts'
+import { AesEncrypter } from '../encryption/Encrypter.ts'
+import { HashManager } from '../hashing/HashManager.ts'
+import { CacheManager } from '../cache/CacheManager.ts'
+import { SessionManager } from '../session/SessionManager.ts'
 
 // Symbols used as abstract keys for non-class bindings
 export const HTTP_KERNEL = Symbol('HttpKernel')
@@ -21,7 +29,9 @@ export const WS_KERNEL = Symbol('WebSocketKernel')
  * - This provider registers Router, Kernels, ExceptionHandler
  */
 export class CoreServiceProvider extends ServiceProvider {
-  register(): void {
+  override register(): void {
+    const configRepo = this.app.make(ConfigRepository)
+
     // Router — singleton, receives config for URL generation
     this.app.singleton(RouterImpl, (c) => {
       const config = c.make(ConfigRepository)
@@ -37,9 +47,35 @@ export class CoreServiceProvider extends ServiceProvider {
     // Exception handler — singleton
     this.app.singleton(DefaultExceptionHandler, () => new DefaultExceptionHandler())
 
-    // Built-in middleware — explicit factory bindings so ConfigRepository is injected
+    // ── Encryption ────────────────────────────────────────────────────────
+    // AesEncrypter is async to create (key import), so we register a placeholder.
+    // Actual initialization happens in boot(). If no APP_KEY, encryption features
+    // will throw on use rather than on startup (graceful degradation for apps
+    // that don't need encryption).
+
+    // ── Hashing ───────────────────────────────────────────────────────────
+    this.app.singleton(HashManager, () => {
+      return new HashManager(configRepo.get('hashing', {}))
+    })
+
+    // ── Cache ─────────────────────────────────────────────────────────────
+    this.app.singleton(CacheManager, () => {
+      return new CacheManager(configRepo.get('cache', {}))
+    })
+
+    // ── Sessions ──────────────────────────────────────────────────────────
+    this.app.singleton(SessionManager, () => {
+      return new SessionManager(configRepo.get('session', {}))
+    })
+
+    // ── Built-in middleware ────────────────────────────────────────────────
     this.app.singleton(CorsMiddleware, (c) => new CorsMiddleware(c.make(ConfigRepository)))
     this.app.singleton(TrimStringsMiddleware, () => new TrimStringsMiddleware())
+    this.app.singleton(StartSession, (c) => new StartSession(c.make(SessionManager)))
+
+    // EncryptCookies and VerifyCsrfToken depend on AesEncrypter (set up in boot)
+    this.app.bind(EncryptCookies, (c) => new EncryptCookies(c.make<AesEncrypter>(ENCRYPTER)))
+    this.app.bind(VerifyCsrfToken, (c) => new VerifyCsrfToken(c.make<AesEncrypter>(ENCRYPTER)))
 
     // HTTP kernel — singleton, depends on Router + ExceptionHandler + WsKernel
     this.app.singleton(HttpKernel, (c) => {
@@ -50,9 +86,12 @@ export class CoreServiceProvider extends ServiceProvider {
     })
   }
 
-  boot(): void {
-    // Route loading is intentionally left to the application's bootstrap file (index.ts).
-    // This gives developers full control over route registration order and grouping.
-    // Use: router.get(...) or import routes/web.ts and call it with the router.
+  override async boot(): Promise<void> {
+    // ── Encryption (async key import) ─────────────────────────────────────
+    const appKey = this.app.make(ConfigRepository).get('app.key', undefined) as string | undefined
+    if (appKey) {
+      const encrypter = await AesEncrypter.fromAppKey(appKey)
+      this.app.instance(ENCRYPTER, encrypter)
+    }
   }
 }

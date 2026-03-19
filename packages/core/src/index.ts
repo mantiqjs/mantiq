@@ -10,6 +10,10 @@ export type { MantiqResponseBuilder, CookieOptions } from './contracts/Response.
 export type { Router, RouterRoute, RouteAction, RouteGroupOptions, RouteMatch, RouteDefinition, HttpMethod } from './contracts/Router.ts'
 export type { ExceptionHandler } from './contracts/ExceptionHandler.ts'
 export type { DriverManager } from './contracts/DriverManager.ts'
+export type { Encrypter } from './contracts/Encrypter.ts'
+export type { Hasher } from './contracts/Hasher.ts'
+export type { CacheStore } from './contracts/Cache.ts'
+export type { SessionHandler, SessionConfig } from './contracts/Session.ts'
 export type { EventDispatcher, EventHandler } from './contracts/EventDispatcher.ts'
 export { ServiceProvider } from './contracts/ServiceProvider.ts'
 export { Event, Listener } from './contracts/EventDispatcher.ts'
@@ -25,6 +29,8 @@ export { ValidationError } from './errors/ValidationError.ts'
 export { TooManyRequestsError } from './errors/TooManyRequestsError.ts'
 export { ContainerResolutionError } from './errors/ContainerResolutionError.ts'
 export { ConfigKeyNotFoundError } from './errors/ConfigKeyNotFoundError.ts'
+export { TokenMismatchError } from './errors/TokenMismatchError.ts'
+export { EncryptionError, DecryptionError, MissingAppKeyError } from './encryption/errors.ts'
 
 // ── Implementations ───────────────────────────────────────────────────────────
 export { ContainerImpl } from './container/Container.ts'
@@ -38,9 +44,33 @@ export { Route } from './routing/Route.ts'
 export { Pipeline } from './middleware/Pipeline.ts'
 export { CorsMiddleware } from './middleware/Cors.ts'
 export { TrimStringsMiddleware } from './middleware/TrimStrings.ts'
+export { StartSession } from './middleware/StartSession.ts'
+export { EncryptCookies } from './middleware/EncryptCookies.ts'
+export { VerifyCsrfToken } from './middleware/VerifyCsrfToken.ts'
 export { WebSocketKernel } from './websocket/WebSocketKernel.ts'
 export { DefaultExceptionHandler } from './exceptions/Handler.ts'
 export { CoreServiceProvider } from './providers/CoreServiceProvider.ts'
+
+// ── Encryption ────────────────────────────────────────────────────────────────
+export { AesEncrypter } from './encryption/Encrypter.ts'
+
+// ── Hashing ───────────────────────────────────────────────────────────────────
+export { HashManager } from './hashing/HashManager.ts'
+export { BcryptHasher } from './hashing/BcryptHasher.ts'
+export { Argon2Hasher } from './hashing/Argon2Hasher.ts'
+
+// ── Cache ─────────────────────────────────────────────────────────────────────
+export { CacheManager } from './cache/CacheManager.ts'
+export { MemoryCacheStore } from './cache/MemoryCacheStore.ts'
+export { FileCacheStore } from './cache/FileCacheStore.ts'
+export { NullCacheStore } from './cache/NullCacheStore.ts'
+
+// ── Session ───────────────────────────────────────────────────────────────────
+export { SessionManager } from './session/SessionManager.ts'
+export { SessionStore } from './session/Store.ts'
+export { MemorySessionHandler } from './session/handlers/MemorySessionHandler.ts'
+export { FileSessionHandler } from './session/handlers/FileSessionHandler.ts'
+export { CookieSessionHandler } from './session/handlers/CookieSessionHandler.ts'
 
 // ── Global helpers ────────────────────────────────────────────────────────────
 export { config } from './helpers/config.ts'
@@ -48,3 +78,7 @@ export { env } from './helpers/env.ts'
 export { app } from './helpers/app.ts'
 export { route, ROUTER } from './helpers/route.ts'
 export { abort } from './helpers/abort.ts'
+export { encrypt, decrypt, ENCRYPTER } from './helpers/encrypt.ts'
+export { hash, hashCheck } from './helpers/hash.ts'
+export { cache } from './helpers/cache.ts'
+export { session } from './helpers/session.ts'
