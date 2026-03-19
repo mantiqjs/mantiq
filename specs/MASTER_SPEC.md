@@ -733,7 +733,7 @@ Packages: `@mantiq/queue`, `@mantiq/cache`, `@mantiq/mail`, `@mantiq/events`, `@
 - [ ] Queue: dispatching, SQLite driver, Redis driver, worker, batching, chaining
 - [ ] Cache: memory, file, Redis drivers
 - [ ] Mail: SMTP, Resend, Mailgun transports
-- [ ] Events: sync dispatch, queueable listeners
+- [x] Events: sync dispatch, listeners, subscribers, model events, observers, broadcasting, test fakes
 - [ ] Realtime: WebSocket, SSE, channels, Echo client
 - [ ] Logging: channels, rotation
 
@@ -900,7 +900,7 @@ Each package has its own detailed specification. The master spec (this file) def
 | [packages/queue.md](packages/queue.md)         | 📝 To write |
 | [packages/cache.md](packages/cache.md)         | 📝 To write |
 | [packages/mail.md](packages/mail.md)           | 📝 To write |
-| [packages/events.md](packages/events.md)       | 📝 To write |
+| [packages/events.md](packages/events.md)       | ✅ Complete |
 | [packages/realtime.md](packages/realtime.md)   | 📝 To write |
 | [packages/logging.md](packages/logging.md)     | 📝 To write |
 | [addons/media.md](addons/media.md)             | 📝 To write |
