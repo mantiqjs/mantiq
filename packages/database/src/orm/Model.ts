@@ -1,5 +1,6 @@
 import { ModelQueryBuilder } from './ModelQueryBuilder.ts'
 import { ModelNotFoundError } from '../errors/ModelNotFoundError.ts'
+import { ClosureScope, type Scope } from './Scope.ts'
 import type { EagerLoadSpec } from './eagerLoad.ts'
 import type { DatabaseConnection } from '../contracts/Connection.ts'
 import type { PaginationResult } from '../contracts/Paginator.ts'
@@ -18,6 +19,17 @@ export interface ModelStatic<T extends Model> {
   timestamps: boolean
   softDelete: boolean
   softDeleteColumn: string
+  _fireEvent: ((model: Model, event: string) => Promise<boolean>) | null
+  _globalScopes: Map<string, Scope>
+  _booted: Set<typeof Model>
+  addGlobalScope(name: string, scope: Scope | ((builder: ModelQueryBuilder<T>, model: typeof Model) => void)): void
+  hasGlobalScope(name: string): boolean
+  removeGlobalScope(name: string): void
+  getGlobalScopes(): Map<string, Scope>
+  booted(): void
+  bootIfNotBooted(): void
+  ensureOwnGlobalScopes(): void
+  withoutEvents<R>(callback: () => Promise<R> | R): Promise<R>
   // Methods
   query(): ModelQueryBuilder<T>
   all(): Promise<T[]>
@@ -52,6 +64,18 @@ export abstract class Model {
   static softDelete = false
   static softDeleteColumn = 'deleted_at'
 
+  /**
+   * Model event hook. Set by @mantiq/events when the events package is registered.
+   * Returns false if a cancellable event was cancelled.
+   */
+  static _fireEvent: ((model: Model, event: string) => Promise<boolean>) | null = null
+
+  /** Per-class global scope registry. */
+  static _globalScopes = new Map<string, Scope>()
+
+  /** Whether `booted()` has been called for this class. */
+  static _booted = new Set<typeof Model>()
+
   // ── Instance state ────────────────────────────────────────────────────────
 
   protected _attributes: Record<string, any> = {}
@@ -62,11 +86,14 @@ export abstract class Model {
   // ── Query API (static methods) ────────────────────────────────────────────
 
   static query<T extends Model>(this: ModelStatic<T>): ModelQueryBuilder<T> {
+    // Ensure booted() is called once per class
+    ;(this as any).bootIfNotBooted()
+
     const conn = this.connection
     if (!conn) throw new Error(`No connection set on model ${this.table}. Call Model.setConnection() first.`)
 
     const tableName = this.table || snakeCase(this.name)
-    return new ModelQueryBuilder<T>(
+    const builder = new ModelQueryBuilder<T>(
       conn,
       tableName,
       (row) => {
@@ -77,6 +104,15 @@ export abstract class Model {
       },
       this.softDelete ? this.softDeleteColumn : null,
     )
+
+    // Register global scopes (applied lazily before execution)
+    builder.setModel(this)
+    const scopes = this.getGlobalScopes()
+    for (const [name, scope] of scopes) {
+      builder.registerGlobalScope(name, scope)
+    }
+
+    return builder
   }
 
   static async all<T extends Model>(this: ModelStatic<T>): Promise<T[]> {
@@ -164,6 +200,80 @@ export abstract class Model {
   /** Set the database connection for this model class */
   static setConnection(connection: DatabaseConnection): void {
     this.connection = connection
+  }
+
+  // ── Global Scopes ──────────────────────────────────────────────────────────
+
+  /**
+   * Register a global scope on this model.
+   * Accepts a Scope instance or a closure.
+   *
+   * @example
+   *   // Scope class
+   *   User.addGlobalScope('active', new ActiveScope())
+   *
+   *   // Closure
+   *   User.addGlobalScope('active', (builder) => builder.where('is_active', true))
+   */
+  static addGlobalScope(
+    name: string,
+    scope: Scope | ((builder: ModelQueryBuilder<any>, model: typeof Model) => void),
+  ): void {
+    this.ensureOwnGlobalScopes()
+    if (typeof scope === 'function') {
+      this._globalScopes.set(name, new ClosureScope(scope as (builder: ModelQueryBuilder<any>, model: typeof Model) => void))
+    } else {
+      this._globalScopes.set(name, scope)
+    }
+  }
+
+  /**
+   * Check if a global scope is registered.
+   */
+  static hasGlobalScope(name: string): boolean {
+    return this._globalScopes.has(name)
+  }
+
+  /**
+   * Remove a global scope from this model class.
+   */
+  static removeGlobalScope(name: string): void {
+    this.ensureOwnGlobalScopes()
+    this._globalScopes.delete(name)
+  }
+
+  /**
+   * Get all registered global scopes.
+   */
+  static getGlobalScopes(): Map<string, Scope> {
+    return this._globalScopes
+  }
+
+  /**
+   * Override in subclasses to register global scopes and other boot-time config.
+   * Called once per class, automatically before the first query.
+   */
+  static booted(): void {
+    // Override in subclasses
+  }
+
+  /**
+   * Ensure booted() has been called for this specific class.
+   */
+  static bootIfNotBooted(): void {
+    if (!Model._booted.has(this)) {
+      Model._booted.add(this)
+      this.booted()
+    }
+  }
+
+  /**
+   * Ensure this class has its own scope map (copy-on-write from parent).
+   */
+  static ensureOwnGlobalScopes(): void {
+    if (!Object.prototype.hasOwnProperty.call(this, '_globalScopes')) {
+      this._globalScopes = new Map(this._globalScopes)
+    }
   }
 
   /**
@@ -308,9 +418,22 @@ export abstract class Model {
 
   // ── Persistence ────────────────────────────────────────────────────────────
 
+  /**
+   * Fire a model event if the events system is installed.
+   * Returns false if a cancellable event was cancelled.
+   */
+  protected async fireModelEvent(event: string): Promise<boolean> {
+    const fire = (this.constructor as typeof Model)._fireEvent
+    if (!fire) return true
+    return fire(this, event)
+  }
+
   async save(): Promise<this> {
     const ctor = this.constructor as typeof Model
     if (!ctor.connection) throw new Error(`No connection set on model ${ctor.table}`)
+
+    // saving (cancellable)
+    if (await this.fireModelEvent('saving') === false) return this
 
     const table = ctor.table || snakeCase(ctor.name)
     const now = new Date()
@@ -318,6 +441,9 @@ export abstract class Model {
     if (this._exists) {
       const dirty = this.getDirty()
       if (Object.keys(dirty).length === 0) return this
+
+      // updating (cancellable)
+      if (await this.fireModelEvent('updating') === false) return this
 
       if (ctor.timestamps && 'updated_at' in this._attributes) {
         dirty['updated_at'] = now
@@ -328,7 +454,12 @@ export abstract class Model {
         .update(dirty)
 
       this._original = { ...this._attributes }
+
+      await this.fireModelEvent('updated')
     } else {
+      // creating (cancellable)
+      if (await this.fireModelEvent('creating') === false) return this
+
       if (ctor.timestamps) {
         if (!this._attributes['created_at']) this._attributes['created_at'] = now
         if (!this._attributes['updated_at']) this._attributes['updated_at'] = now
@@ -338,14 +469,20 @@ export abstract class Model {
       this._attributes[ctor.primaryKey] = Number(id)
       this._original = { ...this._attributes }
       this._exists = true
+
+      await this.fireModelEvent('created')
     }
 
+    await this.fireModelEvent('saved')
     return this
   }
 
   async delete(): Promise<boolean> {
     const ctor = this.constructor as typeof Model
     if (!ctor.connection || !this._exists) return false
+
+    // deleting (cancellable)
+    if (await this.fireModelEvent('deleting') === false) return false
 
     const table = ctor.table || snakeCase(ctor.name)
 
@@ -354,11 +491,14 @@ export abstract class Model {
         .where(ctor.primaryKey, this.getKey())
         .update({ [ctor.softDeleteColumn]: new Date() })
       this._attributes[ctor.softDeleteColumn] = new Date()
+
+      await this.fireModelEvent('trashed')
     } else {
       await ctor.connection.table(table).where(ctor.primaryKey, this.getKey()).delete()
       this._exists = false
     }
 
+    await this.fireModelEvent('deleted')
     return true
   }
 
@@ -366,9 +506,14 @@ export abstract class Model {
     const ctor = this.constructor as typeof Model
     if (!ctor.connection || !this._exists) return false
 
+    // forceDeleting (cancellable)
+    if (await this.fireModelEvent('forceDeleting') === false) return false
+
     const table = ctor.table || snakeCase(ctor.name)
     await ctor.connection.table(table).where(ctor.primaryKey, this.getKey()).delete()
     this._exists = false
+
+    await this.fireModelEvent('forceDeleted')
     return true
   }
 
@@ -376,18 +521,72 @@ export abstract class Model {
     const ctor = this.constructor as typeof Model
     if (!ctor.softDelete || !ctor.connection) return false
 
+    // restoring (cancellable)
+    if (await this.fireModelEvent('restoring') === false) return false
+
     const table = ctor.table || snakeCase(ctor.name)
     await ctor.connection.table(table)
       .where(ctor.primaryKey, this.getKey())
       .update({ [ctor.softDeleteColumn]: null })
 
     this._attributes[ctor.softDeleteColumn] = null
+
+    await this.fireModelEvent('restored')
     return true
   }
 
   isTrashed(): boolean {
     const ctor = this.constructor as typeof Model
     return ctor.softDelete && this._attributes[ctor.softDeleteColumn] != null
+  }
+
+  // ── Replication ──────────────────────────────────────────────────────────
+
+  /**
+   * Create an unsaved copy of this model, optionally excluding certain attributes.
+   * The clone has no primary key and _exists = false, so save() will INSERT.
+   *
+   * @example
+   *   const copy = user.replicate()               // all fillable attributes
+   *   const copy = user.replicate(['email'])       // exclude email
+   */
+  replicate(except?: string[]): this {
+    const ctor = this.constructor as typeof Model
+    const clone = new (this.constructor as any)() as this
+    const excludeKeys = new Set([
+      ctor.primaryKey,
+      ...(ctor.timestamps ? ['created_at', 'updated_at'] : []),
+      ...(ctor.softDelete ? [ctor.softDeleteColumn] : []),
+      ...(except ?? []),
+    ])
+
+    for (const [key, value] of Object.entries(this._attributes)) {
+      if (!excludeKeys.has(key)) {
+        clone._attributes[key] = value
+      }
+    }
+
+    return clone
+  }
+
+  // ── Event control ────────────────────────────────────────────────────────
+
+  /**
+   * Execute a callback with model events disabled for this model class.
+   *
+   * @example
+   *   await User.withoutEvents(async () => {
+   *     await User.create({ name: 'Seed User' })
+   *   })
+   */
+  static async withoutEvents<R>(callback: () => Promise<R> | R): Promise<R> {
+    const previous = this._fireEvent
+    this._fireEvent = null
+    try {
+      return await callback()
+    } finally {
+      this._fireEvent = previous
+    }
   }
 
   // ── Relations ─────────────────────────────────────────────────────────────

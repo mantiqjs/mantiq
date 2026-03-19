@@ -1,12 +1,13 @@
 import { Expression } from './Expression.ts'
 import { ModelNotFoundError } from '../errors/ModelNotFoundError.ts'
+import { applyMacros } from '@mantiq/core'
 import type { PaginationResult } from '../contracts/Paginator.ts'
 import type { DatabaseConnection } from '../contracts/Connection.ts'
 
 export type Operator = '=' | '!=' | '<>' | '<' | '>' | '<=' | '>=' | 'like' | 'not like' | 'in' | 'not in'
 
 export interface WhereClause {
-  type: 'basic' | 'in' | 'notIn' | 'null' | 'notNull' | 'between' | 'raw' | 'nested'
+  type: 'basic' | 'in' | 'notIn' | 'null' | 'notNull' | 'between' | 'raw' | 'nested' | 'column'
   boolean: 'and' | 'or'
   column?: string
   operator?: string
@@ -16,6 +17,7 @@ export interface WhereClause {
   sql?: string
   bindings?: any[]
   nested?: WhereClause[]
+  secondColumn?: string
 }
 
 export interface JoinClause {
@@ -165,6 +167,63 @@ export class QueryBuilder {
     return this
   }
 
+  /**
+   * Add a where clause comparing two columns.
+   *
+   * @example
+   *   query.whereColumn('updated_at', '>', 'created_at')
+   *   query.whereColumn('first_name', 'last_name') // defaults to '='
+   */
+  whereColumn(first: string, operatorOrSecond: string, second?: string): this {
+    let operator: string
+    let secondCol: string
+    if (second === undefined) {
+      operator = '='
+      secondCol = operatorOrSecond
+    } else {
+      operator = operatorOrSecond
+      secondCol = second
+    }
+    this.state.wheres.push({ type: 'column', boolean: 'and', column: first, operator, secondColumn: secondCol })
+    return this
+  }
+
+  /**
+   * Filter by date part of a datetime column.
+   * @example query.whereDate('created_at', '2024-01-15')
+   */
+  whereDate(column: string, operatorOrValue: string, value?: string): this {
+    const [op, val] = value === undefined ? ['=', operatorOrValue] : [operatorOrValue, value]
+    return this.whereRaw(`DATE(${column}) ${op} ?`, [val])
+  }
+
+  /**
+   * Filter by month of a datetime column.
+   * @example query.whereMonth('created_at', '03')
+   */
+  whereMonth(column: string, operatorOrValue: string | number, value?: string | number): this {
+    const [op, val] = value === undefined ? ['=', operatorOrValue] : [operatorOrValue, value]
+    return this.whereRaw(`strftime('%m', ${column}) ${op} ?`, [String(val).padStart(2, '0')])
+  }
+
+  /**
+   * Filter by year of a datetime column.
+   * @example query.whereYear('created_at', 2024)
+   */
+  whereYear(column: string, operatorOrValue: string | number, value?: string | number): this {
+    const [op, val] = value === undefined ? ['=', operatorOrValue] : [operatorOrValue, value]
+    return this.whereRaw(`strftime('%Y', ${column}) ${op} ?`, [String(val)])
+  }
+
+  /**
+   * Filter by time part of a datetime column.
+   * @example query.whereTime('created_at', '>=', '10:00')
+   */
+  whereTime(column: string, operatorOrValue: string, value?: string): this {
+    const [op, val] = value === undefined ? ['=', operatorOrValue] : [operatorOrValue, value]
+    return this.whereRaw(`strftime('%H:%M:%S', ${column}) ${op} ?`, [val])
+  }
+
   // ── Joins ─────────────────────────────────────────────────────────────────
 
   join(table: string, first: string, operator: string, second: string): this {
@@ -262,6 +321,16 @@ export class QueryBuilder {
 
   async doesntExist(): Promise<boolean> {
     return !(await this.exists())
+  }
+
+  /**
+   * Get the only record matching the query. Throws if zero or more than one.
+   */
+  async sole(): Promise<Record<string, any>> {
+    const results = await this.limit(2).get()
+    if (results.length === 0) throw new ModelNotFoundError(this.state.table)
+    if (results.length > 1) throw new Error(`Expected one result for table [${this.state.table}], found multiple.`)
+    return results[0]!
   }
 
   // ── Aggregates ────────────────────────────────────────────────────────────
@@ -382,3 +451,6 @@ export class QueryBuilder {
     return (this._connection as any)._grammar as import('../contracts/Grammar.ts').Grammar
   }
 }
+
+// Add macro support — QueryBuilder.macro('name', fn) / instance.__macro('name')
+applyMacros(QueryBuilder)

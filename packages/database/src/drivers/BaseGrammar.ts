@@ -201,6 +201,11 @@ export abstract class BaseGrammar implements Grammar {
         continue
       }
 
+      if (w.type === 'column') {
+        parts.push(`${bool}${this.quoteIdentifier(w.column!)} ${w.operator} ${this.quoteIdentifier(w.secondColumn!)}`)
+        continue
+      }
+
       // basic
       if (w.value instanceof Expression) {
         parts.push(`${bool}${this.quoteIdentifier(w.column!)} ${w.operator} ${w.value.value}`)
