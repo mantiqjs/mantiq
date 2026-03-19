@@ -10,6 +10,7 @@
     "start": "bun run index.ts"
   },
   "dependencies": {
+    "@mantiq/auth": "workspace:*",
     "@mantiq/core": "workspace:*",
     "@mantiq/database": "workspace:*",
     "@mantiq/vite": "workspace:*",

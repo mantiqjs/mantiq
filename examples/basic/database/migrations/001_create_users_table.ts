@@ -7,7 +7,9 @@ export default class CreateUsersTable extends Migration {
       t.id()
       t.string('name', 100)
       t.string('email', 150).unique()
+      t.string('password', 255)
       t.string('role', 20).default('user')
+      t.string('remember_token', 100).nullable()
       t.timestamps()
     })
   }

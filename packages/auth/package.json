@@ -15,8 +15,7 @@
   },
   "dependencies": {
     "@mantiq/core": "workspace:*",
-    "@mantiq/database": "workspace:*",
-    "@mantiq/validation": "workspace:*"
+    "@mantiq/database": "workspace:*"
   },
   "devDependencies": {
     "bun-types": "latest",

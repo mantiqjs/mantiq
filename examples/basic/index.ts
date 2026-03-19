@@ -1,5 +1,6 @@
-import { Application, CoreServiceProvider, HttpKernel, RouterImpl, CorsMiddleware } from '@mantiq/core'
+import { Application, CoreServiceProvider, HttpKernel, RouterImpl, CorsMiddleware, StartSession, EncryptCookies, VerifyCsrfToken } from '@mantiq/core'
 import { ViteServiceProvider, ServeStaticFiles } from '@mantiq/vite'
+import { AuthServiceProvider, Authenticate, RedirectIfAuthenticated } from '@mantiq/auth'
 import { DatabaseServiceProvider } from './app/Providers/DatabaseServiceProvider.ts'
 import { LogRequestsMiddleware } from './app/Http/Middleware/LogRequests.ts'
 import { RequireJsonMiddleware } from './app/Http/Middleware/RequireJson.ts'
@@ -24,7 +25,7 @@ if (await envFile.exists()) {
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 const app = await Application.create(import.meta.dir, 'config')
 
-await app.registerProviders([CoreServiceProvider, DatabaseServiceProvider, ViteServiceProvider])
+await app.registerProviders([CoreServiceProvider, DatabaseServiceProvider, AuthServiceProvider, ViteServiceProvider])
 await app.bootProviders()
 
 // ── Seed default data ─────────────────────────────────────────────────────────
@@ -40,9 +41,14 @@ kernel.registerMiddleware('log',       LogRequestsMiddleware)
 kernel.registerMiddleware('cors',      CorsMiddleware)
 kernel.registerMiddleware('api.json',  RequireJsonMiddleware)
 kernel.registerMiddleware('static',    ServeStaticFiles)
+kernel.registerMiddleware('encrypt.cookies', EncryptCookies)
+kernel.registerMiddleware('session',   StartSession)
+kernel.registerMiddleware('csrf',      VerifyCsrfToken)
+kernel.registerMiddleware('auth',      Authenticate)
+kernel.registerMiddleware('guest',     RedirectIfAuthenticated)
 
 // Global middleware — runs on every request
-kernel.setGlobalMiddleware(['static', 'log', 'cors'])
+kernel.setGlobalMiddleware(['static', 'log', 'cors', 'encrypt.cookies', 'session'])
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 import webRoutes from './routes/web.ts'

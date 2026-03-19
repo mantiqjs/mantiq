@@ -7,6 +7,9 @@ export default function (router: Router) {
     r.get('/ping', [ApiController, 'ping'])
     r.post('/echo', [ApiController, 'echo'])
 
-    r.apiResource('users', UserController)
+    // Protected routes — require authentication
+    r.group({ middleware: ['auth'] }, (auth) => {
+      auth.apiResource('users', UserController)
+    })
   })
 }

@@ -1,9 +1,20 @@
 import { Model } from '@mantiq/database'
+import type { Authenticatable } from '@mantiq/auth'
 
-export class User extends Model {
+export class User extends Model implements Authenticatable {
   static override table = 'users'
-  static override fillable = ['name', 'email', 'role']
+  static override fillable = ['name', 'email', 'role', 'password']
   static override guarded = ['id']
-  static override hidden = ['created_at', 'updated_at']
+  static override hidden = ['password', 'remember_token', 'created_at', 'updated_at']
   static override timestamps = true
+
+  // ── Authenticatable ──────────────────────────────────────────────────────
+
+  getAuthIdentifierName(): string { return 'id' }
+  getAuthIdentifier(): number { return this.getAttribute('id') as number }
+  getAuthPasswordName(): string { return 'password' }
+  getAuthPassword(): string { return this.getAttribute('password') as string }
+  getRememberToken(): string | null { return (this.getAttribute('remember_token') as string) ?? null }
+  setRememberToken(token: string | null): void { this.setAttribute('remember_token', token) }
+  getRememberTokenName(): string { return 'remember_token' }
 }
