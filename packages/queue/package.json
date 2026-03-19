@@ -11,6 +11,16 @@
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
-  "dependencies": { "@mantiq/core": "workspace:*" },
+  "dependencies": { "@mantiq/core": "workspace:*", "@mantiq/cli": "workspace:*" },
+  "peerDependencies": {
+    "ioredis": ">=5.0.0",
+    "@aws-sdk/client-sqs": ">=3.0.0",
+    "kafkajs": ">=2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "ioredis": { "optional": true },
+    "@aws-sdk/client-sqs": { "optional": true },
+    "kafkajs": { "optional": true }
+  },
   "devDependencies": { "bun-types": "latest", "typescript": "^5.7.0" }
 }
