@@ -6,6 +6,15 @@ import { auth } from '@mantiq/auth'
 export class HomeController {
   /** GET / — serves the SPA shell with auth state */
   async index(request: MantiqRequest): Promise<Response> {
+    return this.renderSpa(request)
+  }
+
+  /** GET /validation — serves the SPA shell on the validation playground page */
+  async validation(request: MantiqRequest): Promise<Response> {
+    return this.renderSpa(request, 'validation')
+  }
+
+  private async renderSpa(request: MantiqRequest, currentPage?: string): Promise<Response> {
     // Try to resolve current user from session (no middleware required)
     const manager = auth()
     manager.setRequest(request)
@@ -31,6 +40,7 @@ export class HomeController {
         data: {
           appName: config('app.name'),
           currentUser,
+          ...(currentPage ? { currentPage } : {}),
         },
       }),
     )

@@ -4,6 +4,7 @@ import { AuthController } from '../app/Http/Controllers/AuthController.ts'
 
 export default function (router: Router) {
   router.get('/', [HomeController, 'index'])
+  router.get('/validation', [HomeController, 'validation'])
 
   // Auth routes
   router.post('/register', [AuthController, 'register'])
