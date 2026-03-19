@@ -1,6 +1,8 @@
 import type { DatabaseConnection } from '../contracts/Connection.ts'
 import type { MigrationContract } from './Migration.ts'
+import type { EventDispatcher } from '@mantiq/core'
 import { MigrationRepository } from './MigrationRepository.ts'
+import { MigrationStarted, MigrationEnded, MigrationsStarted, MigrationsEnded } from '../events/DatabaseEvents.ts'
 import { join } from 'node:path'
 
 export interface MigrationFile {
@@ -15,6 +17,9 @@ export interface MigratorOptions {
 
 export class Migrator {
   private repo: MigrationRepository
+
+  /** Optional event dispatcher. Set by @mantiq/events when installed. */
+  static _dispatcher: EventDispatcher | null = null
 
   constructor(
     private readonly connection: DatabaseConnection,
@@ -35,12 +40,18 @@ export class Migrator {
     const batch = (await this.repo.getLastBatch()) + 1
     const ran_: string[] = []
 
+    await Migrator._dispatcher?.emit(new MigrationsStarted('up'))
+
     for (const file of pending) {
+      await Migrator._dispatcher?.emit(new MigrationStarted(file.name, 'up'))
       const schema = this.connection.schema()
       await file.migration.up(schema, this.connection)
       await this.repo.log(file.name, batch)
       ran_.push(file.name)
+      await Migrator._dispatcher?.emit(new MigrationEnded(file.name, 'up'))
     }
+
+    await Migrator._dispatcher?.emit(new MigrationsEnded('up'))
 
     return ran_
   }
@@ -56,14 +67,21 @@ export class Migrator {
     const lookup = new Map(files.map((f) => [f.name, f]))
 
     const rolled: string[] = []
+
+    await Migrator._dispatcher?.emit(new MigrationsStarted('down'))
+
     for (const name of lastBatch) {
       const file = lookup.get(name)
       if (!file) continue
+      await Migrator._dispatcher?.emit(new MigrationStarted(name, 'down'))
       const schema = this.connection.schema()
       await file.migration.down(schema, this.connection)
       await this.repo.delete(name)
       rolled.push(name)
+      await Migrator._dispatcher?.emit(new MigrationEnded(name, 'down'))
     }
+
+    await Migrator._dispatcher?.emit(new MigrationsEnded('down'))
 
     return rolled
   }
@@ -79,14 +97,20 @@ export class Migrator {
     const reversed = [...ran].reverse()
     const rolled: string[] = []
 
+    await Migrator._dispatcher?.emit(new MigrationsStarted('down'))
+
     for (const name of reversed) {
       const file = lookup.get(name)
       if (!file) continue
+      await Migrator._dispatcher?.emit(new MigrationStarted(name, 'down'))
       const schema = this.connection.schema()
       await file.migration.down(schema, this.connection)
       await this.repo.delete(name)
       rolled.push(name)
+      await Migrator._dispatcher?.emit(new MigrationEnded(name, 'down'))
     }
+
+    await Migrator._dispatcher?.emit(new MigrationsEnded('down'))
 
     return rolled
   }

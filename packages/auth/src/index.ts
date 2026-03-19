@@ -25,5 +25,8 @@ export { ConfirmPassword } from './middleware/ConfirmPassword.ts'
 // ── Errors ────────────────────────────────────────────────────────────────────
 export { AuthenticationError } from './errors/AuthenticationError.ts'
 
+// ── Events ────────────────────────────────────────────────────────────────────
+export { Attempting, Authenticated, Login, Failed, Logout, Registered, Lockout } from './events/AuthEvents.ts'
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 export { auth, AUTH_MANAGER } from './helpers/auth.ts'

@@ -1,10 +1,12 @@
 import type { DatabaseConnection } from '../contracts/Connection.ts'
 import type { SchemaBuilder } from '../schema/SchemaBuilder.ts'
+import type { EventDispatcher } from '@mantiq/core'
 import { QueryBuilder } from '../query/Builder.ts'
 import { SQLiteGrammar } from './SQLiteGrammar.ts'
 import { SchemaBuilderImpl } from '../schema/SchemaBuilder.ts'
 import { ConnectionError } from '../errors/ConnectionError.ts'
 import { QueryError } from '../errors/QueryError.ts'
+import { QueryExecuted, TransactionBeginning, TransactionCommitted, TransactionRolledBack } from '../events/DatabaseEvents.ts'
 
 export interface SQLiteConfig {
   database: string  // ':memory:' or file path
@@ -14,6 +16,9 @@ export class SQLiteConnection implements DatabaseConnection {
   readonly _grammar = new SQLiteGrammar()
   private db: import('bun:sqlite').Database | null = null
   private config: SQLiteConfig
+
+  /** Optional event dispatcher. Set by @mantiq/events when installed. */
+  static _dispatcher: EventDispatcher | null = null
 
   constructor(config: SQLiteConfig) {
     this.config = config
@@ -43,8 +48,11 @@ export class SQLiteConnection implements DatabaseConnection {
 
   async select(sql: string, bindings: any[] = []): Promise<Record<string, any>[]> {
     try {
+      const start = performance.now()
       const stmt = this.getDb().prepare(sql)
-      return stmt.all(...this.sanitizeBindings(bindings)) as Record<string, any>[]
+      const result = stmt.all(...this.sanitizeBindings(bindings)) as Record<string, any>[]
+      await this.fireQueryEvent(sql, bindings, performance.now() - start)
+      return result
     } catch (e: any) {
       throw new QueryError(sql, bindings, e)
     }
@@ -52,8 +60,10 @@ export class SQLiteConnection implements DatabaseConnection {
 
   async statement(sql: string, bindings: any[] = []): Promise<number> {
     try {
+      const start = performance.now()
       const stmt = this.getDb().prepare(sql)
       const result = stmt.run(...this.sanitizeBindings(bindings))
+      await this.fireQueryEvent(sql, bindings, performance.now() - start)
       return result.changes
     } catch (e: any) {
       throw new QueryError(sql, bindings, e)
@@ -62,8 +72,10 @@ export class SQLiteConnection implements DatabaseConnection {
 
   async insertGetId(sql: string, bindings: any[] = []): Promise<number | bigint> {
     try {
+      const start = performance.now()
       const stmt = this.getDb().prepare(sql)
       const result = stmt.run(...this.sanitizeBindings(bindings))
+      await this.fireQueryEvent(sql, bindings, performance.now() - start)
       return result.lastInsertRowid
     } catch (e: any) {
       throw new QueryError(sql, bindings, e)
@@ -73,14 +85,21 @@ export class SQLiteConnection implements DatabaseConnection {
   async transaction<T>(callback: (connection: DatabaseConnection) => Promise<T>): Promise<T> {
     const db = this.getDb()
     db.run('BEGIN')
+    await SQLiteConnection._dispatcher?.emit(new TransactionBeginning('sqlite'))
     try {
       const result = await callback(this)
       db.run('COMMIT')
+      await SQLiteConnection._dispatcher?.emit(new TransactionCommitted('sqlite'))
       return result
     } catch (e) {
       db.run('ROLLBACK')
+      await SQLiteConnection._dispatcher?.emit(new TransactionRolledBack('sqlite'))
       throw e
     }
+  }
+
+  private async fireQueryEvent(sql: string, bindings: any[], time: number): Promise<void> {
+    await SQLiteConnection._dispatcher?.emit(new QueryExecuted(sql, bindings, time, 'sqlite'))
   }
 
   table(name: string): QueryBuilder {

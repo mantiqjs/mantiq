@@ -9,6 +9,7 @@ import type {
 } from '../contracts/Router.ts'
 import type { Constructor } from '../contracts/Container.ts'
 import type { MantiqRequest } from '../contracts/Request.ts'
+import type { EventDispatcher } from '../contracts/EventDispatcher.ts'
 import { Route } from './Route.ts'
 import { RouteCollection } from './RouteCollection.ts'
 import { RouteMatcher } from './RouteMatcher.ts'
@@ -17,12 +18,16 @@ import { NotFoundError } from '../errors/NotFoundError.ts'
 import { HttpError } from '../errors/HttpError.ts'
 import { MantiqError } from '../errors/MantiqError.ts'
 import { ConfigRepository } from '../config/ConfigRepository.ts'
+import { RouteMatched } from './events.ts'
 
 export class RouterImpl implements RouterContract {
   private collection = new RouteCollection()
   private registrar = new ResourceRegistrar(this)
   private modelBindings = new Map<string, Constructor<any>>()
   private customBindings = new Map<string, (value: string) => Promise<any>>()
+
+  /** Optional event dispatcher. Set by @mantiq/events when installed. */
+  static _dispatcher: EventDispatcher | null = null
 
   /** Stack of active group option frames */
   private groupStack: RouteGroupOptions[] = []
@@ -133,6 +138,7 @@ export class RouterImpl implements RouterContract {
     for (const route of candidates) {
       const result = RouteMatcher.match(route, pathname)
       if (result) {
+        RouterImpl._dispatcher?.emit(new RouteMatched(route.routeName, route.action, request))
         return {
           action: route.action,
           params: result.params,

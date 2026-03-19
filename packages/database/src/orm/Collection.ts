@@ -1,4 +1,5 @@
 import type { Model } from './Model.ts'
+import { applyMacros } from '@mantiq/core'
 
 /**
  * Typed array wrapper for model query results.
@@ -230,3 +231,6 @@ export class Collection<T extends Model> {
     return this
   }
 }
+
+// Add macro support — Collection.macro('name', fn) / instance.__macro('name')
+applyMacros(Collection)

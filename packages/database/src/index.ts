@@ -64,6 +64,8 @@ export { MigrationRepository } from './migrations/MigrationRepository.ts'
 
 // ── ORM ───────────────────────────────────────────────────────────────────────
 export { Model } from './orm/Model.ts'
+export type { Scope } from './orm/Scope.ts'
+export { ClosureScope } from './orm/Scope.ts'
 export {
   HasOneRelation,
   HasManyRelation,
@@ -89,6 +91,10 @@ export type { MongoConfig as MongoConnectionConfig } from './DatabaseManager.ts'
 
 // ── Bootstrap helpers ─────────────────────────────────────────────────────────
 export { createDatabaseManager, setupModels } from './DatabaseServiceProvider.ts'
+
+// ── Events ───────────────────────────────────────────────────────────────────
+export { QueryExecuted, TransactionBeginning, TransactionCommitted, TransactionRolledBack } from './events/DatabaseEvents.ts'
+export { MigrationStarted, MigrationEnded, MigrationsStarted, MigrationsEnded } from './events/DatabaseEvents.ts'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 export { db, table, schema, mongo, collection, setManager, getManager } from './helpers/db.ts'

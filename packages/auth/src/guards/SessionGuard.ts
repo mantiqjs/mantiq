@@ -1,8 +1,9 @@
 import type { StatefulGuard } from '../contracts/StatefulGuard.ts'
 import type { Authenticatable } from '../contracts/Authenticatable.ts'
 import type { UserProvider } from '../contracts/UserProvider.ts'
-import type { MantiqRequest } from '@mantiq/core'
+import type { MantiqRequest, EventDispatcher } from '@mantiq/core'
 import type { Encrypter } from '@mantiq/core'
+import { Attempting, Authenticated, Login as LoginEvent, Failed, Logout as LogoutEvent } from '../events/AuthEvents.ts'
 
 /**
  * Session-based authentication guard.
@@ -24,6 +25,9 @@ export class SessionGuard implements StatefulGuard {
   private _pendingRememberCookie: { id: string | number; token: string; hash: string } | null = null
   /** Flag to clear the remember cookie (set during logout). */
   private _clearRememberCookie = false
+
+  /** Optional event dispatcher. Set by @mantiq/events when installed. */
+  static _dispatcher: EventDispatcher | null = null
 
   constructor(
     private readonly name: string,
@@ -53,6 +57,7 @@ export class SessionGuard implements StatefulGuard {
       this._user = await this.provider.retrieveById(userId)
       if (this._user) {
         request.setUser(this._user as any)
+        await SessionGuard._dispatcher?.emit(new Authenticated(this.name, this._user))
       }
     }
 
@@ -65,6 +70,7 @@ export class SessionGuard implements StatefulGuard {
         // Re-store in session so subsequent requests don't need the cookie
         this.updateSession(this._user.getAuthIdentifier())
         request.setUser(this._user as any)
+        await SessionGuard._dispatcher?.emit(new Authenticated(this.name, this._user))
       }
     }
 
@@ -108,8 +114,13 @@ export class SessionGuard implements StatefulGuard {
   // ── StatefulGuard contract ──────────────────────────────────────────────
 
   async attempt(credentials: Record<string, any>, remember = false): Promise<boolean> {
+    await SessionGuard._dispatcher?.emit(new Attempting(this.name, credentials, remember))
+
     const user = await this.provider.retrieveByCredentials(credentials)
-    if (!user) return false
+    if (!user) {
+      await SessionGuard._dispatcher?.emit(new Failed(this.name, credentials))
+      return false
+    }
 
     if (await this.provider.validateCredentials(user, credentials)) {
       await this.provider.rehashPasswordIfRequired(user, credentials)
@@ -117,6 +128,7 @@ export class SessionGuard implements StatefulGuard {
       return true
     }
 
+    await SessionGuard._dispatcher?.emit(new Failed(this.name, credentials))
     return false
   }
 
@@ -138,6 +150,9 @@ export class SessionGuard implements StatefulGuard {
     this._user = user
     this._loggedOut = false
     request.setUser(user as any)
+
+    await SessionGuard._dispatcher?.emit(new LoginEvent(this.name, user, remember))
+    await SessionGuard._dispatcher?.emit(new Authenticated(this.name, user))
   }
 
   async loginUsingId(id: string | number, remember = false): Promise<Authenticatable | null> {
@@ -162,6 +177,8 @@ export class SessionGuard implements StatefulGuard {
 
     // Flag remember cookie for clearing
     this._clearRememberCookie = true
+
+    await SessionGuard._dispatcher?.emit(new LogoutEvent(this.name, user))
 
     // Reset state
     this._user = null

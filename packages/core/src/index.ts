@@ -1,6 +1,10 @@
 // ── Application ───────────────────────────────────────────────────────────────
 export { Application } from './application/Application.ts'
 
+// ── Macroable ────────────────────────────────────────────────────────────────
+export { Macroable, applyMacros } from './macroable/Macroable.ts'
+export type { MacroableStatic, MacroableInstance } from './macroable/Macroable.ts'
+
 // ── Contracts (interfaces + base classes) ────────────────────────────────────
 export type { Container, Bindable, Resolvable, Constructor, ContextualBindingBuilder } from './contracts/Container.ts'
 export type { Config } from './contracts/Config.ts'
@@ -42,6 +46,7 @@ export { UploadedFile } from './http/UploadedFile.ts'
 export { HttpKernel } from './http/Kernel.ts'
 export { RouterImpl } from './routing/Router.ts'
 export { Route } from './routing/Route.ts'
+export { RouteMatched } from './routing/events.ts'
 export { Pipeline } from './middleware/Pipeline.ts'
 export { CorsMiddleware } from './middleware/Cors.ts'
 export { TrimStringsMiddleware } from './middleware/TrimStrings.ts'
@@ -62,9 +67,15 @@ export { Argon2Hasher } from './hashing/Argon2Hasher.ts'
 
 // ── Cache ─────────────────────────────────────────────────────────────────────
 export { CacheManager } from './cache/CacheManager.ts'
+export type { CacheConfig } from './cache/CacheManager.ts'
 export { MemoryCacheStore } from './cache/MemoryCacheStore.ts'
 export { FileCacheStore } from './cache/FileCacheStore.ts'
+export { RedisCacheStore } from './cache/RedisCacheStore.ts'
+export type { RedisCacheConfig } from './cache/RedisCacheStore.ts'
+export { MemcachedCacheStore } from './cache/MemcachedCacheStore.ts'
+export type { MemcachedCacheConfig } from './cache/MemcachedCacheStore.ts'
 export { NullCacheStore } from './cache/NullCacheStore.ts'
+export { CacheHit, CacheMissed, KeyWritten, KeyForgotten } from './cache/events.ts'
 
 // ── Session ───────────────────────────────────────────────────────────────────
 export { SessionManager } from './session/SessionManager.ts'
