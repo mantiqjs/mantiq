@@ -1,249 +1,521 @@
 import { useState, useEffect, useCallback } from 'react'
 
-interface User {
-  id: number
-  name: string
-  email: string
-  role: string
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+interface User { id: number; name: string; email: string; role: string }
+interface AppProps { appName?: string; currentUser?: User | null }
+
+// ── API ───────────────────────────────────────────────────────────────────────
+
+async function api<T = any>(url: string, opts: RequestInit = {}): Promise<{ ok: boolean; status: number; data: T }> {
+  const res = await fetch(url, { ...opts, headers: { Accept: 'application/json', ...opts.headers } })
+  const data = res.headers.get('content-type')?.includes('json') ? await res.json() : null
+  return { ok: res.ok, status: res.status, data }
 }
 
-interface AppProps {
-  appName?: string
-  users?: User[]
+function post(url: string, body: object) {
+  return api(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
 }
 
-export function App({ appName = 'MantiqJS', users: initialUsers = [] }: AppProps) {
-  const [users, setUsers] = useState<User[]>(initialUsers)
-  const [form, setForm] = useState({ name: '', email: '', role: 'user' })
-  const [editingId, setEditingId] = useState<number | null>(null)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+// ── Shared UI ─────────────────────────────────────────────────────────────────
 
-  const fetchUsers = useCallback(async () => {
-    const res = await fetch('/api/users', { headers: { Accept: 'application/json' } })
-    const json = await res.json()
-    setUsers(json.data)
-  }, [])
+function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return <div className={`bg-gray-900 rounded-xl border border-gray-800 ${className}`}>{children}</div>
+}
 
-  const resetForm = () => {
-    setForm({ name: '', email: '', role: 'user' })
-    setEditingId(null)
-    setError('')
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
-
-    try {
-      if (editingId) {
-        // Update
-        const res = await fetch(`/api/users/${editingId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-          body: JSON.stringify(form),
-        })
-        if (!res.ok) {
-          const json = await res.json()
-          setError(json.error?.message ?? 'Update failed')
-          return
-        }
-      } else {
-        // Create
-        const res = await fetch('/api/users', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-          body: JSON.stringify(form),
-        })
-        if (!res.ok) {
-          const json = await res.json()
-          setError(json.error?.message ?? 'Create failed')
-          return
-        }
-      }
-      resetForm()
-      await fetchUsers()
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleEdit = (user: User) => {
-    setEditingId(user.id)
-    setForm({ name: user.name, email: user.email, role: user.role })
-    setError('')
-  }
-
-  const handleDelete = async (id: number) => {
-    const res = await fetch(`/api/users/${id}`, {
-      method: 'DELETE',
-      headers: { Accept: 'application/json' },
-    })
-    if (res.ok || res.status === 204) {
-      await fetchUsers()
-      if (editingId === id) resetForm()
-    }
-  }
-
+function Input({ label, ...props }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col items-center p-8">
-      <div className="max-w-3xl w-full space-y-8">
-        {/* Header */}
-        <div className="text-center space-y-2 pt-8">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-            {appName}
-          </h1>
-          <p className="text-gray-400 text-lg">Full-Stack CRUD Demo</p>
-          <p className="text-gray-600 text-sm">Bun + @mantiq/core + @mantiq/database + @mantiq/vite + React + Tailwind</p>
-        </div>
+    <div className="space-y-1">
+      <label className="block text-sm font-medium text-gray-400">{label}</label>
+      <input {...props} className="w-full bg-gray-900 border border-gray-800 rounded-lg px-3.5 py-2.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition-all" />
+    </div>
+  )
+}
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-gray-900 rounded-xl border border-gray-800 p-6 space-y-4">
-          <h2 className="text-lg font-semibold text-gray-200">
-            {editingId ? `Edit User #${editingId}` : 'Create User'}
+function Btn({ children, loading, className = '', ...props }: { children: React.ReactNode; loading?: boolean } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button disabled={loading} {...props}
+      className={`disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-sm py-2.5 rounded-lg transition-colors ${className}`}>
+      {children}
+    </button>
+  )
+}
+
+function Alert({ type, children }: { type: 'error' | 'success'; children: React.ReactNode }) {
+  const styles = type === 'error'
+    ? 'bg-red-500/10 border-red-500/30 text-red-400'
+    : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+  return <div className={`border rounded-lg px-3.5 py-2.5 text-sm ${styles}`}>{children}</div>
+}
+
+function RoleBadge({ role }: { role: string }) {
+  return (
+    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+      role === 'admin' ? 'bg-purple-500/15 text-purple-300 border border-purple-500/20' : 'bg-gray-800 text-gray-400 border border-gray-700'
+    }`}>{role}</span>
+  )
+}
+
+// ── Auth Layout (shared between login & register) ─────────────────────────────
+
+function AuthLayout({ appName, children }: { appName: string; children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen bg-gray-950 flex">
+      {/* Left branding */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-indigo-950 via-gray-950 to-gray-950 items-center justify-center p-16 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_40%,rgba(99,102,241,0.08),transparent_60%)]" />
+        <div className="relative space-y-6 max-w-md">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center">
+              <svg className="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <span className="text-2xl font-bold text-white">{appName}</span>
+          </div>
+          <h2 className="text-4xl font-bold text-white leading-tight">
+            The logical framework<br />for Bun.
           </h2>
-
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg px-4 py-2 text-sm">
-              {error}
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <input
-              type="text"
-              placeholder="Name"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition-colors"
-              required
-            />
-            <input
-              type="email"
-              placeholder="Email"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition-colors"
-              required
-            />
-            <select
-              value={form.role}
-              onChange={(e) => setForm({ ...form, role: e.target.value })}
-              className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-gray-100 focus:outline-none focus:border-indigo-500 transition-colors"
-            >
-              <option value="user">User</option>
-              <option value="admin">Admin</option>
-            </select>
+          <p className="text-gray-400 text-lg leading-relaxed">
+            Session auth, guards, encrypted cookies, CSRF protection — all wired up and ready to go.
+          </p>
+          <div className="flex flex-wrap gap-2 pt-2">
+            {['Session Auth', 'CSRF', 'Encrypted Cookies', 'Guards'].map((t) => (
+              <span key={t} className="text-xs text-indigo-300/70 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-3 py-1">{t}</span>
+            ))}
           </div>
-
-          <div className="flex gap-2">
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-            >
-              {loading ? 'Saving...' : editingId ? 'Update' : 'Create'}
-            </button>
-            {editingId && (
-              <button
-                type="button"
-                onClick={resetForm}
-                className="bg-gray-700 hover:bg-gray-600 text-gray-200 px-6 py-2 rounded-lg font-medium transition-colors"
-              >
-                Cancel
-              </button>
-            )}
-          </div>
-        </form>
-
-        {/* Users Table */}
-        <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-200">
-              Users <span className="text-gray-500 font-normal">({users.length})</span>
-            </h2>
-            <button
-              onClick={fetchUsers}
-              className="text-sm text-gray-400 hover:text-gray-200 transition-colors"
-            >
-              Refresh
-            </button>
-          </div>
-
-          {users.length === 0 ? (
-            <div className="px-6 py-12 text-center text-gray-500">
-              No users yet. Create one above.
-            </div>
-          ) : (
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-800 text-left text-xs text-gray-500 uppercase tracking-wider">
-                  <th className="px-6 py-3">ID</th>
-                  <th className="px-6 py-3">Name</th>
-                  <th className="px-6 py-3">Email</th>
-                  <th className="px-6 py-3">Role</th>
-                  <th className="px-6 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-800">
-                {users.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-800/50 transition-colors">
-                    <td className="px-6 py-3 text-gray-500 text-sm">{user.id}</td>
-                    <td className="px-6 py-3 font-medium">{user.name}</td>
-                    <td className="px-6 py-3 text-gray-400">{user.email}</td>
-                    <td className="px-6 py-3">
-                      <span
-                        className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${
-                          user.role === 'admin'
-                            ? 'bg-purple-500/20 text-purple-300'
-                            : 'bg-gray-700 text-gray-300'
-                        }`}
-                      >
-                        {user.role}
-                      </span>
-                    </td>
-                    <td className="px-6 py-3 text-right space-x-2">
-                      <button
-                        onClick={() => handleEdit(user)}
-                        className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(user.id)}
-                        className="text-sm text-red-400 hover:text-red-300 transition-colors"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
         </div>
+      </div>
 
-        {/* API Explorer */}
-        <div className="flex flex-wrap gap-2 justify-center">
-          {[
-            { href: '/api/ping', label: 'GET /api/ping' },
-            { href: '/api/users', label: 'GET /api/users' },
-          ].map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className="text-sm text-blue-400 px-3 py-1.5 rounded-md border border-gray-700 hover:border-blue-400 transition-colors"
-            >
-              {link.label}
-            </a>
-          ))}
+      {/* Right form */}
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div className="w-full max-w-sm space-y-6">
+          {/* Mobile logo */}
+          <div className="lg:hidden flex items-center justify-center gap-2 mb-2">
+            <div className="w-9 h-9 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center">
+              <svg className="w-4.5 h-4.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <span className="text-lg font-bold text-white">{appName}</span>
+          </div>
+          {children}
         </div>
-
-        <p className="text-center text-gray-600 text-sm pb-8">
-          Powered by Bun + React + Tailwind CSS
-        </p>
       </div>
     </div>
   )
+}
+
+// ── Login Page ────────────────────────────────────────────────────────────────
+
+function LoginPage({ appName, onLogin, onGoRegister }: { appName: string; onLogin: (u: User) => void; onGoRegister: () => void }) {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [remember, setRemember] = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault(); setError(''); setLoading(true)
+    try {
+      const { ok, data } = await post('/login', { email, password, remember })
+      ok ? onLogin(data.user) : setError(data?.error ?? 'Login failed')
+    } catch { setError('Network error') } finally { setLoading(false) }
+  }
+
+  const fill = (e: string) => { setEmail(e); setPassword('password'); setError('') }
+
+  return (
+    <AuthLayout appName={appName}>
+      <div>
+        <h1 className="text-2xl font-bold text-white">Sign in</h1>
+        <p className="text-sm text-gray-500 mt-1">Enter your credentials to continue.</p>
+      </div>
+
+      <form onSubmit={submit} className="space-y-4">
+        {error && <Alert type="error">{error}</Alert>}
+        <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required autoFocus />
+        <Input label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter password" required />
+
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)}
+            className="w-3.5 h-3.5 rounded border-gray-700 bg-gray-900 text-indigo-600 focus:ring-indigo-500/30" />
+          <span className="text-sm text-gray-500">Remember me</span>
+        </label>
+
+        <Btn type="submit" loading={loading} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white">
+          {loading ? 'Signing in...' : 'Sign in'}
+        </Btn>
+      </form>
+
+      <p className="text-sm text-gray-500 text-center">
+        Don't have an account?{' '}
+        <button onClick={onGoRegister} className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors">Create one</button>
+      </p>
+
+      {/* Demo accounts */}
+      <div className="border-t border-gray-800/50 pt-4">
+        <p className="text-xs text-gray-600 mb-2">Quick fill — password is <code className="text-gray-500">password</code></p>
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { email: 'alice@example.com', name: 'Alice', role: 'admin' },
+            { email: 'bob@example.com', name: 'Bob', role: 'user' },
+            { email: 'carol@example.com', name: 'Carol', role: 'user' },
+          ].map((u) => (
+            <button key={u.email} type="button" onClick={() => fill(u.email)}
+              className="text-center bg-gray-900 hover:bg-gray-800 border border-gray-800 hover:border-gray-700 rounded-lg px-2 py-2 transition-colors group">
+              <div className="w-7 h-7 rounded-full bg-gray-800 group-hover:bg-indigo-600/30 flex items-center justify-center text-xs font-bold text-gray-500 group-hover:text-indigo-300 mx-auto mb-1 transition-colors">
+                {u.name[0]}
+              </div>
+              <p className="text-xs text-gray-400 group-hover:text-gray-200 font-medium">{u.name}</p>
+              <p className="text-[10px] text-gray-600">{u.role}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+    </AuthLayout>
+  )
+}
+
+// ── Register Page ─────────────────────────────────────────────────────────────
+
+function RegisterPage({ appName, onRegister, onGoLogin }: { appName: string; onRegister: (u: User) => void; onGoLogin: () => void }) {
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault(); setError(''); setLoading(true)
+    if (password !== confirm) { setError('Passwords do not match.'); setLoading(false); return }
+    try {
+      const { ok, data } = await post('/register', { name, email, password, password_confirmation: confirm })
+      ok ? onRegister(data.user) : setError(data?.error ?? 'Registration failed')
+    } catch { setError('Network error') } finally { setLoading(false) }
+  }
+
+  return (
+    <AuthLayout appName={appName}>
+      <div>
+        <h1 className="text-2xl font-bold text-white">Create account</h1>
+        <p className="text-sm text-gray-500 mt-1">Fill in the details to get started.</p>
+      </div>
+
+      <form onSubmit={submit} className="space-y-4">
+        {error && <Alert type="error">{error}</Alert>}
+        <Input label="Name" type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="John Doe" required autoFocus />
+        <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required />
+        <Input label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min. 6 characters" required minLength={6} />
+        <Input label="Confirm password" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Re-enter password" required minLength={6} />
+
+        <Btn type="submit" loading={loading} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white">
+          {loading ? 'Creating account...' : 'Create account'}
+        </Btn>
+      </form>
+
+      <p className="text-sm text-gray-500 text-center">
+        Already have an account?{' '}
+        <button onClick={onGoLogin} className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors">Sign in</button>
+      </p>
+    </AuthLayout>
+  )
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+
+interface Pagination { total: number; page: number; per_page: number; last_page: number; from: number; to: number; has_more: boolean }
+
+function Dashboard({ appName, user, onLogout }: { appName: string; user: User; onLogout: () => void }) {
+  const [users, setUsers] = useState<User[]>([])
+  const [pag, setPag] = useState<Pagination>({ total: 0, page: 1, per_page: 20, last_page: 1, from: 0, to: 0, has_more: false })
+  const [search, setSearch] = useState('')
+  const [searchInput, setSearchInput] = useState('')
+  const [pingMs, setPingMs] = useState<number | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
+  const [showForm, setShowForm] = useState(false)
+  const [form, setForm] = useState({ name: '', email: '', role: 'user' })
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [formError, setFormError] = useState('')
+  const [formSuccess, setFormSuccess] = useState('')
+  const [formLoading, setFormLoading] = useState(false)
+
+  const fetchUsers = useCallback(async (page = 1, q = search) => {
+    setLoading(true)
+    const params = new URLSearchParams({ page: String(page), per_page: '20' })
+    if (q) params.set('search', q)
+    const { ok, data } = await api(`/api/users?${params}`)
+    if (ok) {
+      setUsers(data.data)
+      setPag({ total: data.total, page: data.page, per_page: data.per_page, last_page: data.last_page, from: data.from, to: data.to, has_more: data.has_more })
+    }
+    setLoading(false)
+  }, [search])
+
+  useEffect(() => { fetchUsers() }, [fetchUsers])
+
+  useEffect(() => {
+    const t0 = performance.now()
+    api('/api/ping').then(() => setPingMs(Math.round(performance.now() - t0)))
+  }, [])
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    setSearch(searchInput)
+    fetchUsers(1, searchInput)
+  }
+
+  const goToPage = (p: number) => fetchUsers(p)
+
+  const handleLogout = async () => { setLoggingOut(true); await post('/logout', {}); onLogout() }
+
+  const resetForm = () => { setForm({ name: '', email: '', role: 'user' }); setEditingId(null); setFormError(''); setShowForm(false) }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault(); setFormError(''); setFormSuccess(''); setFormLoading(true)
+    try {
+      const url = editingId ? `/api/users/${editingId}` : '/api/users'
+      const { ok, data } = await api(url, { method: editingId ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
+      if (ok) { setFormSuccess(editingId ? 'Updated' : 'Created'); resetForm(); await fetchUsers(pag.page); setTimeout(() => setFormSuccess(''), 2000) }
+      else setFormError(data?.error?.message ?? data?.error ?? 'Failed')
+    } finally { setFormLoading(false) }
+  }
+
+  const startEdit = (u: User) => { setEditingId(u.id); setForm({ name: u.name, email: u.email, role: u.role }); setFormError(''); setShowForm(true) }
+
+  const handleDelete = async (id: number) => {
+    await api(`/api/users/${id}`, { method: 'DELETE' })
+    await fetchUsers(pag.page)
+    if (editingId === id) resetForm()
+  }
+
+  const fmt = (n: number) => n.toLocaleString()
+
+  return (
+    <div className="min-h-screen bg-gray-950 text-gray-100">
+      {/* Nav */}
+      <nav className="border-b border-gray-800/80 bg-gray-950/90 backdrop-blur-md sticky top-0 z-20">
+        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center">
+              <svg className="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <span className="text-sm font-bold text-white">{appName}</span>
+            <span className="text-[10px] text-gray-600 hidden sm:inline ml-1">Dashboard</span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-[11px] font-bold text-white">{user.name[0]}</div>
+              <div className="hidden sm:block leading-none">
+                <p className="text-xs font-medium text-gray-300">{user.name}</p>
+                <p className="text-[10px] text-gray-600 mt-0.5">{user.email}</p>
+              </div>
+              {user.role === 'admin' && <RoleBadge role="admin" />}
+            </div>
+            <button onClick={handleLogout} disabled={loggingOut}
+              className="text-xs text-gray-500 hover:text-gray-300 bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-lg px-2.5 py-1.5 transition-colors">
+              {loggingOut ? '...' : 'Sign out'}
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      <main className="max-w-6xl mx-auto px-6 py-8 space-y-6">
+        {/* Welcome */}
+        <div>
+          <h1 className="text-xl font-bold text-white">Welcome back, {user.name.split(' ')[0]}</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Here's an overview of your application.</p>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <Stat label="Total Users" value={fmt(pag.total)} color="indigo" />
+          <Stat label="Page" value={`${pag.page} / ${fmt(pag.last_page)}`} color="purple" />
+          <Stat label="Showing" value={pag.total > 0 ? `${fmt(pag.from)}-${fmt(pag.to)}` : '0'} color="sky" />
+          <Stat label="API Latency" value={pingMs !== null ? `${pingMs}ms` : '...'} color="emerald" />
+        </div>
+
+        {/* Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          {/* Session card */}
+          <Card className="lg:col-span-2 p-5 space-y-4">
+            <h2 className="text-sm font-semibold text-gray-300">Your Session</h2>
+            <div className="space-y-3 text-xs">
+              <Row label="Signed in as" value={user.email} />
+              <Row label="Name" value={user.name} />
+              <Row label="Role" value={<RoleBadge role={user.role} />} />
+              <Row label="User ID" value={`#${user.id}`} />
+              <Row label="Guard" value="session (web)" />
+            </div>
+          </Card>
+
+          {/* Users */}
+          <Card className="lg:col-span-3 overflow-hidden">
+            <div className="px-5 py-3.5 border-b border-gray-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-gray-300">Users <span className="text-gray-600 font-normal">({fmt(pag.total)})</span></h2>
+                <button onClick={() => { resetForm(); setShowForm(true) }}
+                  className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">+ Add</button>
+              </div>
+              {/* Search */}
+              <form onSubmit={handleSearch} className="flex gap-2">
+                <input type="text" placeholder="Search by name or email..." value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  className="flex-1 bg-gray-900 border border-gray-800 rounded-lg px-3 py-1.5 text-xs text-gray-100 placeholder-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition-all" />
+                <Btn type="submit" className="bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1.5 text-xs border border-gray-700">
+                  Search
+                </Btn>
+                {search && (
+                  <button type="button" onClick={() => { setSearchInput(''); setSearch(''); fetchUsers(1, '') }}
+                    className="text-[10px] text-gray-500 hover:text-gray-300 px-2">Clear</button>
+                )}
+              </form>
+            </div>
+
+            {formSuccess && <div className="px-5 py-2"><Alert type="success">{formSuccess}</Alert></div>}
+
+            {showForm && (
+              <form onSubmit={handleSubmit} className="px-5 py-4 border-b border-gray-800 space-y-3 bg-gray-900/50">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-gray-400">{editingId ? `Edit #${editingId}` : 'New user'}</span>
+                  <button type="button" onClick={resetForm} className="text-[10px] text-gray-600 hover:text-gray-400">Cancel</button>
+                </div>
+                {formError && <Alert type="error">{formError}</Alert>}
+                <div className="grid grid-cols-3 gap-2">
+                  <input type="text" placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required
+                    className="bg-gray-800 border border-gray-700 rounded-lg px-2.5 py-1.5 text-xs text-gray-100 placeholder-gray-600 focus:outline-none focus:border-indigo-500" />
+                  <input type="email" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required
+                    className="bg-gray-800 border border-gray-700 rounded-lg px-2.5 py-1.5 text-xs text-gray-100 placeholder-gray-600 focus:outline-none focus:border-indigo-500" />
+                  <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}
+                    className="bg-gray-800 border border-gray-700 rounded-lg px-2.5 py-1.5 text-xs text-gray-100 focus:outline-none focus:border-indigo-500">
+                    <option value="user">user</option><option value="admin">admin</option>
+                  </select>
+                </div>
+                <Btn type="submit" loading={formLoading} className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 text-xs">
+                  {formLoading ? '...' : editingId ? 'Update' : 'Create'}
+                </Btn>
+              </form>
+            )}
+
+            <div className={`divide-y divide-gray-800/50 ${loading ? 'opacity-50' : ''} transition-opacity`}>
+              {users.map((u) => (
+                <div key={u.id} className="px-5 py-2.5 flex items-center justify-between hover:bg-gray-800/20 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${
+                      u.id === user.id ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-500'
+                    }`}>{u.name[0]}</div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-200 leading-tight">
+                        {u.name}{u.id === user.id && <span className="text-[10px] text-indigo-400 ml-1.5">you</span>}
+                      </p>
+                      <p className="text-[11px] text-gray-500">{u.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] text-gray-600 font-mono">#{u.id}</span>
+                    <RoleBadge role={u.role} />
+                    <div className="flex gap-1">
+                      <button onClick={() => startEdit(u)} className="text-[11px] text-gray-600 hover:text-blue-400 transition-colors">Edit</button>
+                      <button onClick={() => handleDelete(u.id)} className="text-[11px] text-gray-600 hover:text-red-400 transition-colors">Del</button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {users.length === 0 && !loading && <div className="px-5 py-10 text-center text-gray-600 text-sm">{search ? 'No matches.' : 'No users.'}</div>}
+            </div>
+
+            {/* Pagination */}
+            {pag.last_page > 1 && (
+              <div className="px-5 py-3 border-t border-gray-800 flex items-center justify-between">
+                <p className="text-[11px] text-gray-500">
+                  {fmt(pag.from)}-{fmt(pag.to)} of {fmt(pag.total)}
+                </p>
+                <div className="flex items-center gap-1">
+                  <PagBtn label="First" disabled={pag.page === 1} onClick={() => goToPage(1)} />
+                  <PagBtn label="Prev" disabled={pag.page === 1} onClick={() => goToPage(pag.page - 1)} />
+                  {pageRange(pag.page, pag.last_page).map((p) => (
+                    <button key={p} onClick={() => goToPage(p)}
+                      className={`min-w-[28px] h-7 text-[11px] rounded-md transition-colors ${
+                        p === pag.page
+                          ? 'bg-indigo-600 text-white font-semibold'
+                          : 'text-gray-500 hover:text-gray-200 hover:bg-gray-800'
+                      }`}>{fmt(p)}</button>
+                  ))}
+                  <PagBtn label="Next" disabled={!pag.has_more} onClick={() => goToPage(pag.page + 1)} />
+                  <PagBtn label="Last" disabled={pag.page === pag.last_page} onClick={() => goToPage(pag.last_page)} />
+                </div>
+              </div>
+            )}
+          </Card>
+        </div>
+
+        {/* Footer */}
+        <div className="bg-gray-900/50 rounded-xl border border-gray-800/50 px-5 py-3">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-[11px] text-gray-600">
+            <span>Bun</span><span>@mantiq/core</span><span>@mantiq/auth</span><span>@mantiq/database</span><span>React</span><span>Tailwind</span>
+          </div>
+        </div>
+      </main>
+    </div>
+  )
+}
+
+function PagBtn({ label, disabled, onClick }: { label: string; disabled: boolean; onClick: () => void }) {
+  return (
+    <button onClick={onClick} disabled={disabled}
+      className="h-7 px-2 text-[11px] text-gray-500 hover:text-gray-200 hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed rounded-md transition-colors">
+      {label}
+    </button>
+  )
+}
+
+function pageRange(current: number, last: number): number[] {
+  const delta = 2
+  const pages: number[] = []
+  const start = Math.max(1, current - delta)
+  const end = Math.min(last, current + delta)
+  for (let i = start; i <= end; i++) pages.push(i)
+  return pages
+}
+
+function Stat({ label, value, color }: { label: string; value: string | number; color: string }) {
+  const bg: Record<string, string> = {
+    indigo: 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400',
+    purple: 'bg-purple-500/10 border-purple-500/20 text-purple-400',
+    sky: 'bg-sky-500/10 border-sky-500/20 text-sky-400',
+    emerald: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
+  }
+  return (
+    <Card className="p-4">
+      <div className={`w-8 h-8 rounded-lg border flex items-center justify-center mb-2.5 text-sm font-bold ${bg[color]}`}>
+        {typeof value === 'number' ? value : '#'}
+      </div>
+      <p className="text-2xl font-bold text-white">{value}</p>
+      <p className="text-[11px] text-gray-500 mt-0.5">{label}</p>
+    </Card>
+  )
+}
+
+function Row({ label, value }: { label: string; value: React.ReactNode }) {
+  return <div className="flex items-center justify-between"><span className="text-gray-500">{label}</span><span className="text-gray-300 font-medium">{value}</span></div>
+}
+
+// ── Root ──────────────────────────────────────────────────────────────────────
+
+export function App({ appName = 'MantiqJS', currentUser = null }: AppProps) {
+  const [user, setUser] = useState<User | null>(currentUser)
+  const [page, setPage] = useState<'login' | 'register'>('login')
+
+  if (!user) {
+    return page === 'login'
+      ? <LoginPage appName={appName} onLogin={setUser} onGoRegister={() => setPage('register')} />
+      : <RegisterPage appName={appName} onRegister={setUser} onGoLogin={() => setPage('login')} />
+  }
+
+  return <Dashboard appName={appName} user={user} onLogout={() => setUser(null)} />
 }

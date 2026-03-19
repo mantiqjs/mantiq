@@ -137,6 +137,24 @@ export class ModelQueryBuilder<T> extends QueryBuilder {
     return result
   }
 
+  // ── Pagination (hydrated) ─────────────────────────────────────────────────
+
+  override async paginate(page = 1, perPage = 15) {
+    const total = await this.count()
+    const lastPage = Math.max(1, Math.ceil(total / perPage))
+    const currentPage = Math.min(page, lastPage)
+    const originalLimit = this.state.limitValue
+    const originalOffset = this.state.offsetValue
+    this.state.limitValue = perPage
+    this.state.offsetValue = (currentPage - 1) * perPage
+    const data = await this.get()
+    this.state.limitValue = originalLimit
+    this.state.offsetValue = originalOffset
+    const from = total === 0 ? 0 : (currentPage - 1) * perPage + 1
+    const to = Math.min(from + data.length - 1, total)
+    return { data, total, perPage, currentPage, lastPage, from, to, hasMore: currentPage < lastPage }
+  }
+
   // ── Aggregates: delegate to raw QB to bypass hydration ────────────────────
 
   override async count(column = '*'): Promise<number> {

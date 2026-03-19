@@ -6,6 +6,7 @@ export default function (router: Router) {
   router.get('/', [HomeController, 'index'])
 
   // Auth routes
+  router.post('/register', [AuthController, 'register'])
   router.post('/login', [AuthController, 'login'])
   router.post('/logout', [AuthController, 'logout']).middleware('auth')
   router.get('/me', [AuthController, 'me']).middleware('auth')

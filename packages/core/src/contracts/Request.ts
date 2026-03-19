@@ -22,6 +22,7 @@ export interface MantiqRequest {
   header(key: string, defaultValue?: string): string | undefined
   headers(): Record<string, string>
   cookie(key: string, defaultValue?: string): string | undefined
+  setCookies(cookies: Record<string, string>): void
   ip(): string
   userAgent(): string
   accepts(...types: string[]): string | false

@@ -107,6 +107,10 @@ export class MantiqRequest implements MantiqRequestContract {
     return this.cookies[key] ?? defaultValue
   }
 
+  setCookies(cookies: Record<string, string>): void {
+    this.cookies = cookies
+  }
+
   ip(): string {
     // @internal: Bun doesn't expose IP on Request — callers should pass it via middleware if needed
     return this.header('x-forwarded-for')?.split(',')[0]?.trim()

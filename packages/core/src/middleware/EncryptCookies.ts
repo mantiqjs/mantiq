@@ -50,23 +50,8 @@ export class EncryptCookies implements Middleware {
       }
     }
 
-    // Rebuild cookie header with decrypted values
-    const newCookieHeader = Object.entries(decrypted)
-      .map(([k, v]) => `${k}=${v}`)
-      .join('; ')
-
-    // Replace the cookie header on the raw request
-    const newHeaders = new Headers(raw.headers)
-    newHeaders.set('cookie', newCookieHeader)
-
-    // We can't mutate the original Request, but the MantiqRequest caches
-    // parsed cookies lazily from the raw request. Since we can't replace the
-    // raw request, we re-parse by creating a modified raw request reference.
-    // However, MantiqRequest already parsed cookies — we need a different approach.
-    // Instead, we rely on the fact that MantiqRequest.cookie() is called lazily.
-    // If cookies were already parsed, this won't help. For now, we'll just
-    // return the request as-is and note that full cookie encryption requires
-    // the middleware to run BEFORE any cookie access.
+    // Inject the decrypted cookies so subsequent middleware/handlers see plain values
+    request.setCookies(decrypted)
     return request
   }
 

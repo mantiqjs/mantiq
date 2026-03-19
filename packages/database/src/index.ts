@@ -80,6 +80,7 @@ export { Document } from './orm/Document.ts'
 // ── Seeders & Factories ───────────────────────────────────────────────────────
 export { Seeder } from './seeders/Seeder.ts'
 export { Factory } from './factories/Factory.ts'
+export { Faker } from './factories/Faker.ts'
 
 // ── Database Manager ──────────────────────────────────────────────────────────
 export { DatabaseManager } from './DatabaseManager.ts'
