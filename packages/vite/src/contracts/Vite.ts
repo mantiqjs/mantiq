@@ -14,6 +14,13 @@ export interface ViteConfig {
   rootElement: string
   /** Name of the hot file (relative to publicDir). Default: 'hot' */
   hotFile: string
+  /** SSR configuration. When set, enables server-side rendering. */
+  ssr?: {
+    /** SSR entry module path (e.g. 'src/ssr.tsx') */
+    entry: string
+    /** Production SSR bundle path. Default: 'bootstrap/ssr/ssr.js' */
+    bundle?: string
+  }
 }
 
 /** A single chunk entry in the Vite 5+ manifest. */
@@ -50,5 +57,34 @@ export interface PageOptions {
   /** Root element ID override (defaults to config value) */
   rootElement?: string
   /** Extra HTML to inject inside <head> (meta tags, fonts, etc.) */
+  head?: string
+  /** Request URL — passed to SSR render() for route-aware rendering */
+  url?: string
+  /** Page component identifier (e.g. 'Dashboard') — used for SSR page lookup */
+  page?: string
+}
+
+/** Result returned by an SSR module's render() function. */
+export interface SSRResult {
+  html: string
+  head?: string
+}
+
+/** The SSR module must export a render() function matching this shape. */
+export interface SSRModule {
+  render(url: string, data?: Record<string, unknown>): Promise<SSRResult> | SSRResult
+}
+
+/** Options passed to `vite.render()` for universal (Inertia-like) page responses. */
+export interface RenderOptions {
+  /** Page component name (e.g. 'Dashboard', 'Login') */
+  page: string
+  /** Client entrypoint(s) for asset tags */
+  entry: string | string[]
+  /** Page data passed to the component */
+  data?: Record<string, unknown>
+  /** HTML document title */
+  title?: string
+  /** Extra HTML to inject inside <head> */
   head?: string
 }

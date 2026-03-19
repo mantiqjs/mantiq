@@ -1,10 +1,15 @@
+import { getReactTemplates } from './kits/react.ts'
+import { getVueTemplates } from './kits/vue.ts'
+import { getSvelteTemplates } from './kits/svelte.ts'
+
 export interface TemplateContext {
   name: string
   appKey: string
+  kit?: 'react' | 'vue' | 'svelte'
 }
 
 export function getTemplates(ctx: TemplateContext): Record<string, string> {
-  return {
+  const templates: Record<string, string> = {
     // ── Root files ──────────────────────────────────────────────────────────
 
     'package.json': JSON.stringify({
@@ -350,4 +355,400 @@ export default class DatabaseSeeder extends Seeder {
 
     'public/.gitkeep': '',
   }
+
+  // Apply starter kit overrides
+  if (ctx.kit) {
+    applyKitOverrides(templates, ctx)
+  }
+
+  return templates
+}
+
+// ── Starter Kit Overrides ────────────────────────────────────────────────────
+
+function applyKitOverrides(templates: Record<string, string>, ctx: TemplateContext): void {
+  const kit = ctx.kit!
+  const mainEntry = kit === 'react' ? 'src/main.tsx' : 'src/main.ts'
+
+  // ── package.json ────────────────────────────────────────────────────────
+  const frameworkDevDeps: Record<string, string> = kit === 'react'
+    ? { 'react': '^19.0.0', 'react-dom': '^19.0.0', '@vitejs/plugin-react': '^4.0.0', '@types/react': '^19.0.0', '@types/react-dom': '^19.0.0' }
+    : kit === 'vue'
+    ? { 'vue': '^3.5.0', '@vitejs/plugin-vue': '^5.0.0' }
+    : { 'svelte': '^4.0.0', '@sveltejs/vite-plugin-svelte': '^3.0.0' }
+
+  templates['package.json'] = JSON.stringify({
+    name: ctx.name,
+    version: '0.0.1',
+    private: true,
+    type: 'module',
+    scripts: {
+      dev: 'bun run --watch index.ts',
+      start: 'bun run index.ts',
+      mantiq: 'bun run mantiq.ts',
+      'dev:frontend': 'vite',
+      'build:frontend': `vite build && vite build --ssr ${kit === 'react' ? 'src/ssr.tsx' : 'src/ssr.ts'} --outDir bootstrap/ssr`,
+    },
+    dependencies: {
+      '@mantiq/auth': '^0.0.1',
+      '@mantiq/cli': '^0.0.1',
+      '@mantiq/core': '^0.0.1',
+      '@mantiq/database': '^0.0.1',
+      '@mantiq/validation': '^0.0.1',
+      '@mantiq/vite': '^0.0.1',
+    },
+    devDependencies: {
+      'bun-types': 'latest',
+      'typescript': '^5.7.0',
+      'vite': '^6.0.0',
+      'tailwindcss': '^4.0.0',
+      '@tailwindcss/vite': '^4.0.0',
+      ...frameworkDevDeps,
+    },
+  }, null, 2) + '\n'
+
+  // ── tsconfig.json (React needs JSX + DOM) ───────────────────────────────
+  if (kit === 'react') {
+    templates['tsconfig.json'] = JSON.stringify({
+      compilerOptions: {
+        target: 'ESNext',
+        module: 'ESNext',
+        moduleResolution: 'bundler',
+        lib: ['ESNext', 'DOM', 'DOM.Iterable'],
+        types: ['bun-types'],
+        jsx: 'react-jsx',
+        strict: true,
+        noImplicitAny: true,
+        strictNullChecks: true,
+        noUncheckedIndexedAccess: true,
+        noImplicitOverride: true,
+        allowImportingTsExtensions: true,
+        noEmit: true,
+        skipLibCheck: true,
+      },
+      include: ['./**/*'],
+      exclude: ['node_modules'],
+    }, null, 2) + '\n'
+  }
+
+  // ── .env ────────────────────────────────────────────────────────────────
+  templates['.env'] = `APP_NAME=${ctx.name}
+APP_ENV=local
+APP_DEBUG=true
+APP_URL=http://localhost:3000
+APP_PORT=3000
+APP_KEY=${ctx.appKey}
+
+DB_CONNECTION=sqlite
+DB_DATABASE=database/database.sqlite
+
+VITE_DEV_SERVER_URL=http://localhost:5173
+`
+
+  templates['.env.example'] = `APP_NAME=${ctx.name}
+APP_ENV=local
+APP_DEBUG=true
+APP_URL=http://localhost:3000
+APP_PORT=3000
+APP_KEY=
+
+DB_CONNECTION=sqlite
+DB_DATABASE=database/database.sqlite
+
+VITE_DEV_SERVER_URL=http://localhost:5173
+`
+
+  // ── .gitignore ──────────────────────────────────────────────────────────
+  templates['.gitignore'] = `node_modules/
+dist/
+*.sqlite
+*.sqlite-journal
+.env
+.DS_Store
+tsconfig.tsbuildinfo
+public/build/
+public/hot
+bootstrap/
+`
+
+  // ── index.ts ────────────────────────────────────────────────────────────
+  templates['index.ts'] = `import { Application, CoreServiceProvider, HttpKernel, RouterImpl, CorsMiddleware, StartSession, EncryptCookies, VerifyCsrfToken } from '@mantiq/core'
+import { ViteServiceProvider, ServeStaticFiles } from '@mantiq/vite'
+import { AuthServiceProvider, Authenticate, RedirectIfAuthenticated } from '@mantiq/auth'
+import { DatabaseServiceProvider } from './app/Providers/DatabaseServiceProvider.ts'
+
+// ── Load .env ─────────────────────────────────────────────────────────────────
+const envFile = Bun.file(import.meta.dir + '/.env')
+if (await envFile.exists()) {
+  const text = await envFile.text()
+  for (const line of text.split('\\n')) {
+    const trimmed = line.trim()
+    if (!trimmed || trimmed.startsWith('#')) continue
+    const eqIdx = trimmed.indexOf('=')
+    if (eqIdx === -1) continue
+    const key = trimmed.slice(0, eqIdx).trim()
+    const value = trimmed.slice(eqIdx + 1).trim()
+    if (key && !(key in process.env)) process.env[key] = value
+  }
+}
+
+// ── Bootstrap ─────────────────────────────────────────────────────────────────
+const app = await Application.create(import.meta.dir, 'config')
+
+await app.registerProviders([CoreServiceProvider, DatabaseServiceProvider, AuthServiceProvider, ViteServiceProvider])
+await app.bootProviders()
+
+// ── Seed default data (only when running the server directly) ────────────────
+if (import.meta.main) {
+  try {
+    const UserSeeder = (await import('./database/seeders/UserSeeder.ts')).default
+    await new UserSeeder().run()
+  } catch {
+    // Table may not exist yet — run: bun mantiq migrate
+  }
+}
+
+// ── Kernel setup ──────────────────────────────────────────────────────────────
+const kernel = app.make(HttpKernel)
+const router = app.make(RouterImpl)
+
+// Register middleware aliases
+kernel.registerMiddleware('cors', CorsMiddleware)
+kernel.registerMiddleware('static', ServeStaticFiles)
+kernel.registerMiddleware('encrypt.cookies', EncryptCookies)
+kernel.registerMiddleware('session', StartSession)
+kernel.registerMiddleware('csrf', VerifyCsrfToken)
+kernel.registerMiddleware('auth', Authenticate)
+kernel.registerMiddleware('guest', RedirectIfAuthenticated)
+
+// Global middleware
+kernel.setGlobalMiddleware(['static', 'cors', 'encrypt.cookies', 'session'])
+
+// ── Routes ────────────────────────────────────────────────────────────────────
+import webRoutes from './routes/web.ts'
+import apiRoutes from './routes/api.ts'
+
+webRoutes(router)
+apiRoutes(router)
+
+// ── Export for CLI ────────────────────────────────────────────────────────────
+export default app
+
+// ── Start ─────────────────────────────────────────────────────────────────────
+if (import.meta.main) {
+  await kernel.start()
+}
+`
+
+  // ── config/vite.ts ──────────────────────────────────────────────────────
+  const ssrEntry = kit === 'react' ? 'src/ssr.tsx' : 'src/ssr.ts'
+  templates['config/vite.ts'] = `import { env } from '@mantiq/core'
+
+export default {
+  devServerUrl: env('VITE_DEV_SERVER_URL', 'http://localhost:5173'),
+  buildDir: 'build',
+  publicDir: import.meta.dir + '/../public',
+  manifest: '.vite/manifest.json',
+  reactRefresh: ${kit === 'react' ? 'true' : 'false'},
+  rootElement: 'app',
+  ssr: {
+    entry: '${kit === 'react' ? 'src/ssr.tsx' : 'src/ssr.ts'}',
+    bundle: 'bootstrap/ssr/ssr.js',
+  },
+}
+`
+
+  // ── routes/web.ts ───────────────────────────────────────────────────────
+  templates['routes/web.ts'] = `import type { Router } from '@mantiq/core'
+import { MantiqResponse } from '@mantiq/core'
+import { PageController } from '../app/Http/Controllers/PageController.ts'
+import { AuthController } from '../app/Http/Controllers/AuthController.ts'
+
+export default function (router: Router) {
+  // Redirect root to dashboard
+  router.get('/', () => MantiqResponse.redirect('/dashboard'))
+
+  // Page routes — each returns HTML (first load) or JSON (client navigation)
+  router.get('/dashboard', [PageController, 'dashboard']).middleware('auth')
+  router.get('/login', [PageController, 'login']).middleware('guest')
+  router.get('/register', [PageController, 'register']).middleware('guest')
+
+  // Auth actions
+  router.post('/login', [AuthController, 'login'])
+  router.post('/register', [AuthController, 'register'])
+  router.post('/logout', [AuthController, 'logout']).middleware('auth')
+}
+`
+
+  // ── routes/api.ts ───────────────────────────────────────────────────────
+  templates['routes/api.ts'] = `import type { Router } from '@mantiq/core'
+import { MantiqResponse } from '@mantiq/core'
+import { User } from '../app/Models/User.ts'
+
+export default function (router: Router) {
+  router.get('/api/ping', () => {
+    return MantiqResponse.json({ status: 'ok', timestamp: new Date().toISOString() })
+  })
+
+  router.get('/api/users', async () => {
+    const users = await User.all()
+    return MantiqResponse.json({ data: users.map((u: any) => u.toObject()) })
+  }).middleware('auth')
+}
+`
+
+  // ── PageController (SSR + universal routing) ────────────────────────────
+  templates['app/Http/Controllers/PageController.ts'] = `import type { MantiqRequest } from '@mantiq/core'
+import { config } from '@mantiq/core'
+import { vite } from '@mantiq/vite'
+import { auth } from '@mantiq/auth'
+import { User } from '../../Models/User.ts'
+
+export class PageController {
+  async dashboard(request: MantiqRequest): Promise<Response> {
+    const manager = auth()
+    manager.setRequest(request)
+    const user = await manager.user()
+
+    const currentUser = user ? {
+      id: (user as any).getAttribute?.('id') ?? user.getAuthIdentifier(),
+      name: (user as any).getAttribute?.('name') ?? '',
+      email: (user as any).getAttribute?.('email') ?? '',
+      role: (user as any).getAttribute?.('role') ?? 'user',
+    } : null
+
+    const users = await User.all()
+
+    return vite().render(request, {
+      page: 'Dashboard',
+      entry: ['src/style.css', '${mainEntry}'],
+      title: config('app.name') + ' — Dashboard',
+      data: {
+        appName: config('app.name'),
+        currentUser,
+        users: users.map((u: any) => u.toObject()),
+      },
+    })
+  }
+
+  async login(request: MantiqRequest): Promise<Response> {
+    return vite().render(request, {
+      page: 'Login',
+      entry: ['src/style.css', '${mainEntry}'],
+      title: config('app.name') + ' — Sign In',
+      data: { appName: config('app.name') },
+    })
+  }
+
+  async register(request: MantiqRequest): Promise<Response> {
+    return vite().render(request, {
+      page: 'Register',
+      entry: ['src/style.css', '${mainEntry}'],
+      title: config('app.name') + ' — Register',
+      data: { appName: config('app.name') },
+    })
+  }
+}
+`
+
+  // ── AuthController ──────────────────────────────────────────────────────
+  templates['app/Http/Controllers/AuthController.ts'] = `import type { MantiqRequest } from '@mantiq/core'
+import { MantiqResponse, HashManager } from '@mantiq/core'
+import { auth } from '@mantiq/auth'
+import { User } from '../../Models/User.ts'
+
+export class AuthController {
+  async register(request: MantiqRequest): Promise<Response> {
+    const body = await request.input() as { name?: string; email?: string; password?: string }
+
+    if (!body.name || !body.email || !body.password) {
+      return MantiqResponse.json({ error: 'Name, email and password are required.' }, 422)
+    }
+    if (body.password.length < 6) {
+      return MantiqResponse.json({ error: 'Password must be at least 6 characters.' }, 422)
+    }
+
+    const existing = await User.where('email', body.email).first()
+    if (existing) {
+      return MantiqResponse.json({ error: 'A user with this email already exists.' }, 422)
+    }
+
+    const hasher = new HashManager({ bcrypt: { rounds: 10 } })
+    const hashed = await hasher.make(body.password)
+
+    const user = await User.create({
+      name: body.name,
+      email: body.email,
+      password: hashed,
+      role: 'user',
+    })
+
+    const manager = auth()
+    manager.setRequest(request)
+    await manager.login(user as any)
+
+    return MantiqResponse.json({ message: 'Registered.', user: user.toObject() }, 201)
+  }
+
+  async login(request: MantiqRequest): Promise<Response> {
+    const body = await request.input() as { email?: string; password?: string; remember?: boolean }
+
+    if (!body.email || !body.password) {
+      return MantiqResponse.json({ error: 'Email and password are required.' }, 422)
+    }
+
+    const manager = auth()
+    manager.setRequest(request)
+
+    const success = await manager.attempt(
+      { email: body.email, password: body.password },
+      body.remember ?? false,
+    )
+
+    if (!success) {
+      return MantiqResponse.json({ error: 'Invalid credentials.' }, 401)
+    }
+
+    const user = await manager.user()
+    return MantiqResponse.json({ message: 'Logged in.', user })
+  }
+
+  async logout(request: MantiqRequest): Promise<Response> {
+    const manager = auth()
+    manager.setRequest(request)
+    await manager.logout()
+    return MantiqResponse.json({ message: 'Logged out.' })
+  }
+}
+`
+
+  // ── UserSeeder ──────────────────────────────────────────────────────────
+  templates['database/seeders/UserSeeder.ts'] = `import { Seeder } from '@mantiq/database'
+import { HashManager } from '@mantiq/core'
+import { User } from '../../app/Models/User.ts'
+
+export default class UserSeeder extends Seeder {
+  override async run() {
+    const existing = await User.where('email', 'admin@example.com').first()
+    if (existing) return
+
+    const hasher = new HashManager({ bcrypt: { rounds: 10 } })
+    await User.create({
+      name: 'Admin',
+      email: 'admin@example.com',
+      password: await hasher.make('password'),
+      role: 'admin',
+    })
+  }
+}
+`
+
+  // ── Merge framework-specific files (vite.config.ts, src/*, etc.) ────────
+  const kitTemplates = kit === 'react'
+    ? getReactTemplates(ctx)
+    : kit === 'vue'
+    ? getVueTemplates(ctx)
+    : getSvelteTemplates(ctx)
+
+  Object.assign(templates, kitTemplates)
 }

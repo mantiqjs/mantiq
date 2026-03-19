@@ -33,6 +33,16 @@ export class ViteServiceProvider extends ServiceProvider {
 
   override async boot(): Promise<void> {
     const vite = this.app.make(Vite)
+
+    // Set the base path so SSR can resolve the production bundle
+    try {
+      const config = this.app.make(ConfigRepository)
+      const basePath = config.get('app.basePath')
+      if (basePath) vite.setBasePath(basePath)
+    } catch {
+      // Config may not be available in all contexts
+    }
+
     await vite.initialize()
   }
 }

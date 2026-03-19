@@ -6,12 +6,17 @@ export type {
   ViteManifest,
   ManifestChunk,
   PageOptions,
+  SSRResult,
+  SSRModule,
+  RenderOptions,
 } from './contracts/Vite.ts'
 
 // ── Errors ───────────────────────────────────────────────────────────────────
 export {
   ViteManifestNotFoundError,
   ViteEntrypointNotFoundError,
+  ViteSSRBundleNotFoundError,
+  ViteSSREntryError,
 } from './errors/ViteError.ts'
 
 // ── Main Class ───────────────────────────────────────────────────────────────

@@ -19,3 +19,23 @@ export class ViteEntrypointNotFoundError extends MantiqError {
     )
   }
 }
+
+/** Thrown when the SSR bundle cannot be found in production. */
+export class ViteSSRBundleNotFoundError extends MantiqError {
+  constructor(bundlePath: string) {
+    super(
+      `SSR bundle not found at "${bundlePath}". Did you run "vite build --ssr"?`,
+      { bundlePath },
+    )
+  }
+}
+
+/** Thrown when the SSR module does not export a valid render() function. */
+export class ViteSSREntryError extends MantiqError {
+  constructor(entry: string, reason: string) {
+    super(
+      `SSR entry "${entry}" is invalid: ${reason}`,
+      { entry, reason },
+    )
+  }
+}

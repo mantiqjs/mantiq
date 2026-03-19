@@ -48,6 +48,12 @@ export class DefaultExceptionHandler implements ExceptionHandler {
     err: HttpError,
     debug: boolean,
   ): Response {
+    // Errors with a redirectTo property (e.g. AuthenticationError) should redirect,
+    // not show the error page — even in debug mode.
+    if ('redirectTo' in err && typeof (err as any).redirectTo === 'string' && !request.expectsJson()) {
+      return MantiqResponse.redirect((err as any).redirectTo)
+    }
+
     if (debug) {
       return MantiqResponse.html(renderDevErrorPage(request, err), err.statusCode)
     }

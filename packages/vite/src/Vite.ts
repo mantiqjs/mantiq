@@ -1,5 +1,5 @@
-import type { ViteConfig, ViteManifest, ManifestChunk, PageOptions } from './contracts/Vite.ts'
-import { ViteManifestNotFoundError, ViteEntrypointNotFoundError } from './errors/ViteError.ts'
+import type { ViteConfig, ViteManifest, ManifestChunk, PageOptions, SSRModule, SSRResult, RenderOptions } from './contracts/Vite.ts'
+import { ViteManifestNotFoundError, ViteEntrypointNotFoundError, ViteSSRBundleNotFoundError, ViteSSREntryError } from './errors/ViteError.ts'
 
 /**
  * Core Vite integration class.
@@ -14,6 +14,14 @@ export class Vite {
   /** null = unchecked, false = not found, string = dev server URL */
   private hotFileCache: string | false | null = null
 
+  // ── SSR state ───────────────────────────────────────────────────────────
+  private readonly ssrEntry: string | null
+  private readonly ssrBundle: string
+  private viteDevServer: any | null = null
+  private ssrModuleCache: SSRModule | null = null
+  /** Application base path (for resolving SSR bundle). Set via setBasePath(). */
+  private basePath: string = ''
+
   constructor(config: Partial<ViteConfig> = {}) {
     this.config = {
       devServerUrl: config.devServerUrl ?? 'http://localhost:5173',
@@ -23,7 +31,10 @@ export class Vite {
       reactRefresh: config.reactRefresh ?? false,
       rootElement: config.rootElement ?? 'app',
       hotFile: config.hotFile ?? 'hot',
+      ...(config.ssr ? { ssr: config.ssr } : {}),
     }
+    this.ssrEntry = config.ssr?.entry ?? null
+    this.ssrBundle = config.ssr?.bundle ?? 'bootstrap/ssr/ssr.js'
   }
 
   // ── Initialization ───────────────────────────────────────────────────────
@@ -221,6 +232,150 @@ export class Vite {
     return `${this.config.publicDir}/${this.config.hotFile}`
   }
 
+  // ── SSR ─────────────────────────────────────────────────────────────────
+
+  /** Whether SSR is enabled (ssr.entry is configured). */
+  isSSR(): boolean {
+    return this.ssrEntry !== null
+  }
+
+  /** Set the application base path (used to resolve SSR bundle in production). */
+  setBasePath(path: string): void {
+    this.basePath = path
+  }
+
+  /**
+   * Universal page render — the Inertia-like protocol.
+   *
+   * - If `X-Mantiq: true` header is present → returns JSON (client navigation).
+   * - Otherwise → returns full HTML with SSR content (if enabled) or CSR shell.
+   *
+   * @example
+   * ```ts
+   * return vite().render(request, {
+   *   page: 'Dashboard',
+   *   entry: ['src/style.css', 'src/main.tsx'],
+   *   data: { users },
+   * })
+   * ```
+   */
+  async render(
+    request: { header(name: string): string | undefined; path(): string },
+    options: RenderOptions,
+  ): Promise<Response> {
+    const url = request.path()
+    const pageData: Record<string, unknown> = { _page: options.page, _url: url, ...(options.data ?? {}) }
+
+    // Client-side navigation → JSON only
+    if (request.header('X-Mantiq') === 'true') {
+      return new Response(JSON.stringify(pageData), {
+        headers: { 'Content-Type': 'application/json', 'X-Mantiq': 'true' },
+      })
+    }
+
+    // First load → full HTML (with SSR if enabled)
+    const html = await this.page({
+      entry: options.entry,
+      title: options.title ?? '',
+      head: options.head ?? '',
+      data: pageData,
+      url,
+      page: options.page,
+    })
+
+    return new Response(html, {
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    })
+  }
+
+  /**
+   * Get or lazily create the embedded Vite dev server (for SSR module loading).
+   * Only used in development mode with SSR enabled.
+   */
+  private async getViteDevServer(): Promise<any> {
+    if (this.viteDevServer) return this.viteDevServer
+
+    const { createServer } = await import('vite')
+    this.viteDevServer = await createServer({
+      server: { middlewareMode: true },
+      appType: 'custom',
+    })
+
+    return this.viteDevServer
+  }
+
+  /**
+   * Load the SSR module. In dev mode, uses Vite's ssrLoadModule for HMR.
+   * In production, imports the pre-built bundle.
+   */
+  private async loadSSRModule(): Promise<SSRModule> {
+    if (this.ssrModuleCache) return this.ssrModuleCache
+
+    if (!this.ssrEntry) {
+      throw new ViteSSREntryError('(none)', 'SSR is not configured. Set ssr.entry in your vite config.')
+    }
+
+    let mod: any
+
+    if (this.isDev()) {
+      // Dev: use Vite's ssrLoadModule for HMR + transform
+      const server = await this.getViteDevServer()
+      mod = await server.ssrLoadModule(this.ssrEntry)
+    } else {
+      // Prod: import the pre-built SSR bundle
+      const bundlePath = this.basePath
+        ? `${this.basePath}/${this.ssrBundle}`
+        : this.ssrBundle
+
+      const file = Bun.file(bundlePath)
+      if (!(await file.exists())) {
+        throw new ViteSSRBundleNotFoundError(bundlePath)
+      }
+
+      mod = await import(bundlePath)
+    }
+
+    if (typeof mod.render !== 'function') {
+      throw new ViteSSREntryError(
+        this.ssrEntry,
+        'Module does not export a render() function.',
+      )
+    }
+
+    // Only cache in production (dev needs fresh modules for HMR)
+    if (!this.isDev()) {
+      this.ssrModuleCache = mod as SSRModule
+    }
+
+    return mod as SSRModule
+  }
+
+  /**
+   * Perform SSR render for a given URL and page data.
+   * Returns the rendered HTML string and optional head tags.
+   */
+  private async renderSSR(url: string, data?: Record<string, unknown>): Promise<SSRResult> {
+    const ssrModule = await this.loadSSRModule()
+
+    try {
+      return await ssrModule.render(url, data)
+    } catch (err) {
+      // In dev, fix the stack trace for better DX
+      if (this.isDev() && this.viteDevServer && err instanceof Error) {
+        this.viteDevServer.ssrFixStacktrace(err)
+      }
+      throw err
+    }
+  }
+
+  /** Close the embedded Vite dev server (cleanup). */
+  async closeDevServer(): Promise<void> {
+    if (this.viteDevServer) {
+      await this.viteDevServer.close()
+      this.viteDevServer = null
+    }
+  }
+
   // ── HTML Shell ───────────────────────────────────────────────────────────
 
   /**
@@ -243,6 +398,7 @@ export class Vite {
       data,
       rootElement = this.config.rootElement,
       head = '',
+      url,
     } = options
 
     const assetTags = await this.assets(entry)
@@ -251,17 +407,34 @@ export class Vite {
       ? `\n    <script>window.__MANTIQ_DATA__ = ${JSON.stringify(data)}</script>`
       : ''
 
+    // SSR: render the page component to HTML on the server
+    let ssrHtml = ''
+    let ssrHead = ''
+    if (this.isSSR() && url) {
+      try {
+        const result = await this.renderSSR(url, data)
+        ssrHtml = result.html ?? ''
+        ssrHead = result.head ?? ''
+      } catch {
+        // SSR failure falls back to CSR shell
+        ssrHtml = ''
+        ssrHead = ''
+      }
+    }
+
+    const headContent = [head, ssrHead].filter(Boolean).join('\n    ')
+
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${escapeHtml(title)}</title>
-    ${head}
+    ${headContent}
     ${assetTags}
 </head>
 <body>
-    <div id="${escapeHtml(rootElement)}"></div>${dataScript}
+    <div id="${escapeHtml(rootElement)}">${ssrHtml}</div>${dataScript}
 </body>
 </html>`
   }
@@ -290,6 +463,11 @@ export class Vite {
   /** @internal Set dev mode state directly (for testing without file I/O). */
   setDevMode(url: string | false): void {
     this.hotFileCache = url
+  }
+
+  /** @internal Set an SSR module directly (for testing without file I/O). */
+  setSSRModule(mod: SSRModule | null): void {
+    this.ssrModuleCache = mod
   }
 
   /** Returns the resolved config (read-only). */
