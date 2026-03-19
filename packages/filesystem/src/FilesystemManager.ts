@@ -3,6 +3,11 @@ import type { FilesystemDriver, PutOptions } from './contracts/FilesystemDriver.
 import type { FilesystemConfig, DiskConfig } from './contracts/FilesystemConfig.ts'
 import { LocalDriver } from './drivers/LocalDriver.ts'
 import { NullDriver } from './drivers/NullDriver.ts'
+import { S3Driver } from './drivers/S3Driver.ts'
+import { GCSDriver } from './drivers/GCSDriver.ts'
+import { AzureBlobDriver } from './drivers/AzureBlobDriver.ts'
+import { FTPDriver } from './drivers/FTPDriver.ts'
+import { SFTPDriver } from './drivers/SFTPDriver.ts'
 
 export class FilesystemManager implements DriverManager<FilesystemDriver>, FilesystemDriver {
   private readonly config: FilesystemConfig
@@ -104,6 +109,67 @@ export class FilesystemManager implements DriverManager<FilesystemDriver>, Files
         )
       case 'null':
         return new NullDriver()
+      case 's3':
+      case 'r2':
+      case 'spaces':
+      case 'minio':
+        return new S3Driver({
+          bucket: diskConfig.bucket as string,
+          region: diskConfig.region as string | undefined,
+          key: diskConfig.key as string | undefined,
+          secret: diskConfig.secret as string | undefined,
+          token: diskConfig.token as string | undefined,
+          endpoint: diskConfig.endpoint as string | undefined,
+          forcePathStyle: diskConfig.forcePathStyle as boolean | undefined,
+          root: diskConfig.root,
+          url: diskConfig.url,
+          visibility: diskConfig.visibility,
+        })
+      case 'gcs':
+        return new GCSDriver({
+          bucket: diskConfig.bucket as string,
+          projectId: diskConfig.projectId as string | undefined,
+          keyFilename: diskConfig.keyFilename as string | undefined,
+          credentials: diskConfig.credentials as Record<string, any> | undefined,
+          root: diskConfig.root,
+          url: diskConfig.url,
+          visibility: diskConfig.visibility,
+        })
+      case 'azure':
+        return new AzureBlobDriver({
+          container: diskConfig.container as string,
+          connectionString: diskConfig.connectionString as string | undefined,
+          accountName: diskConfig.accountName as string | undefined,
+          accountKey: diskConfig.accountKey as string | undefined,
+          sasToken: diskConfig.sasToken as string | undefined,
+          root: diskConfig.root,
+          url: diskConfig.url,
+          visibility: diskConfig.visibility,
+        })
+      case 'ftp':
+        return new FTPDriver({
+          host: diskConfig.host as string,
+          port: diskConfig.port as number | undefined,
+          username: diskConfig.username as string | undefined,
+          password: diskConfig.password as string | undefined,
+          secure: diskConfig.secure as boolean | 'implicit' | undefined,
+          timeout: diskConfig.timeout as number | undefined,
+          root: diskConfig.root,
+          url: diskConfig.url,
+          visibility: diskConfig.visibility,
+        })
+      case 'sftp':
+        return new SFTPDriver({
+          host: diskConfig.host as string,
+          port: diskConfig.port as number | undefined,
+          username: diskConfig.username as string | undefined,
+          password: diskConfig.password as string | undefined,
+          privateKey: diskConfig.privateKey as string | undefined,
+          passphrase: diskConfig.passphrase as string | undefined,
+          root: diskConfig.root,
+          url: diskConfig.url,
+          visibility: diskConfig.visibility,
+        })
       default:
         throw new Error(`Unsupported filesystem driver: "${driverName}". Use extend() to register custom drivers.`)
     }

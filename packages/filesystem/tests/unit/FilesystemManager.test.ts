@@ -108,6 +108,80 @@ describe('proxy methods', () => {
   })
 })
 
+describe('built-in cloud driver creation', () => {
+  it('creates S3Driver for driver: s3', () => {
+    const mgr = new FilesystemManager({
+      default: 's3disk',
+      disks: { s3disk: { driver: 's3', bucket: 'my-bucket', region: 'us-west-2' } },
+    })
+    const disk = mgr.disk('s3disk')
+    expect(disk.path('file.txt')).toBe('file.txt')
+  })
+
+  it('creates S3Driver for driver: r2', () => {
+    const mgr = new FilesystemManager({
+      default: 'r2disk',
+      disks: { r2disk: { driver: 'r2', bucket: 'my-r2-bucket', endpoint: 'https://account.r2.cloudflarestorage.com' } },
+    })
+    const disk = mgr.disk('r2disk')
+    expect(disk.path('file.txt')).toBe('file.txt')
+  })
+
+  it('creates GCSDriver for driver: gcs', () => {
+    const mgr = new FilesystemManager({
+      default: 'gcsdisk',
+      disks: { gcsdisk: { driver: 'gcs', bucket: 'my-gcs-bucket', root: 'data' } },
+    })
+    const disk = mgr.disk('gcsdisk')
+    expect(disk.path('file.txt')).toBe('data/file.txt')
+  })
+
+  it('creates AzureBlobDriver for driver: azure', () => {
+    const mgr = new FilesystemManager({
+      default: 'azuredisk',
+      disks: { azuredisk: { driver: 'azure', container: 'my-container', accountName: 'myaccount', accountKey: 'key==' } },
+    })
+    const disk = mgr.disk('azuredisk')
+    expect(disk.path('file.txt')).toBe('file.txt')
+  })
+
+  it('creates FTPDriver for driver: ftp', () => {
+    const mgr = new FilesystemManager({
+      default: 'ftpdisk',
+      disks: { ftpdisk: { driver: 'ftp', host: 'ftp.example.com', root: '/var/www' } },
+    })
+    const disk = mgr.disk('ftpdisk')
+    expect(disk.path('file.txt')).toBe('/var/www/file.txt')
+  })
+
+  it('creates SFTPDriver for driver: sftp', () => {
+    const mgr = new FilesystemManager({
+      default: 'sftpdisk',
+      disks: { sftpdisk: { driver: 'sftp', host: 'sftp.example.com', root: '/home/user' } },
+    })
+    const disk = mgr.disk('sftpdisk')
+    expect(disk.path('file.txt')).toBe('/home/user/file.txt')
+  })
+
+  it('creates S3Driver for driver: spaces (DigitalOcean)', () => {
+    const mgr = new FilesystemManager({
+      default: 'do',
+      disks: { do: { driver: 'spaces', bucket: 'my-space', endpoint: 'https://nyc3.digitaloceanspaces.com' } },
+    })
+    const disk = mgr.disk('do')
+    expect(disk.path('file.txt')).toBe('file.txt')
+  })
+
+  it('creates S3Driver for driver: minio', () => {
+    const mgr = new FilesystemManager({
+      default: 'minio',
+      disks: { minio: { driver: 'minio', bucket: 'data', endpoint: 'http://localhost:9000', forcePathStyle: true } },
+    })
+    const disk = mgr.disk('minio')
+    expect(disk.path('file.txt')).toBe('file.txt')
+  })
+})
+
 describe('forgetDisk / forgetDisks', () => {
   it('clears cached disk instance', () => {
     const a = manager.disk('local')
