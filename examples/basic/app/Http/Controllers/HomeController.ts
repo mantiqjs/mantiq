@@ -14,6 +14,11 @@ export class HomeController {
     return this.renderSpa(request, 'validation')
   }
 
+  /** GET /cli — serves the SPA shell on the CLI docs page */
+  async cli(request: MantiqRequest): Promise<Response> {
+    return this.renderSpa(request, 'cli')
+  }
+
   private async renderSpa(request: MantiqRequest, currentPage?: string): Promise<Response> {
     // Try to resolve current user from session (no middleware required)
     const manager = auth()

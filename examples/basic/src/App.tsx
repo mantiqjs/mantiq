@@ -227,7 +227,7 @@ function RegisterPage({ appName, onRegister, onGoLogin }: { appName: string; onR
 
 interface Pagination { total: number; page: number; per_page: number; last_page: number; from: number; to: number; has_more: boolean }
 
-function Dashboard({ appName, user, onLogout, onValidation }: { appName: string; user: User; onLogout: () => void; onValidation: () => void }) {
+function Dashboard({ appName, user, onLogout, onValidation, onCli }: { appName: string; user: User; onLogout: () => void; onValidation: () => void; onCli: () => void }) {
   const [users, setUsers] = useState<User[]>([])
   const [pag, setPag] = useState<Pagination>({ total: 0, page: 1, per_page: 20, last_page: 1, from: 0, to: 0, has_more: false })
   const [search, setSearch] = useState('')
@@ -312,6 +312,10 @@ function Dashboard({ appName, user, onLogout, onValidation }: { appName: string;
             <button onClick={onValidation}
               className="text-xs text-indigo-400 hover:text-indigo-300 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/20 rounded-lg px-2.5 py-1.5 transition-colors">
               Validation
+            </button>
+            <button onClick={onCli}
+              className="text-xs text-amber-400 hover:text-amber-300 bg-amber-600/10 hover:bg-amber-600/20 border border-amber-500/20 rounded-lg px-2.5 py-1.5 transition-colors">
+              CLI
             </button>
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-[11px] font-bold text-white">{user.name[0]}</div>
@@ -809,15 +813,366 @@ function ValidationPlayground({ appName, onBack }: { appName: string; onBack: ()
   )
 }
 
+// ── CLI Docs ─────────────────────────────────────────────────────────────────
+
+interface CmdDef {
+  cmd: string
+  description: string
+  flags?: { flag: string; desc: string }[]
+  example?: string
+  output?: string
+}
+
+const CLI_SECTIONS: { title: string; description: string; color: string; commands: CmdDef[] }[] = [
+  {
+    title: 'Generators',
+    description: 'Scaffold models, controllers, migrations, and more with a single command.',
+    color: 'indigo',
+    commands: [
+      {
+        cmd: 'make:model',
+        description: 'Create a new Eloquent-style model class.',
+        flags: [
+          { flag: '-m, --migration', desc: 'Also create a migration file' },
+          { flag: '-f, --factory', desc: 'Also create a model factory' },
+          { flag: '-s, --seed', desc: 'Also create a seeder' },
+        ],
+        example: 'bun mantiq make:model Product -m -f -s',
+        output: `  DONE  Created app/Models/Product.ts
+  DONE  Created database/migrations/20260319_create_products_table.ts
+  DONE  Created database/factories/ProductFactory.ts
+  DONE  Created database/seeders/ProductSeeder.ts`,
+      },
+      {
+        cmd: 'make:controller',
+        description: 'Create a new HTTP controller.',
+        flags: [
+          { flag: '--resource, -r', desc: 'Generate index, show, store, update, destroy methods' },
+        ],
+        example: 'bun mantiq make:controller User --resource',
+        output: '  DONE  Created app/Http/Controllers/UserController.ts',
+      },
+      {
+        cmd: 'make:migration',
+        description: 'Create a new database migration file with a timestamp prefix.',
+        flags: [
+          { flag: '--create=<table>', desc: 'Generate a create table stub' },
+          { flag: '--table=<table>', desc: 'Generate an alter table stub' },
+        ],
+        example: 'bun mantiq make:migration create_orders_table --create=orders',
+        output: '  DONE  Created database/migrations/20260319120000_create_orders_table.ts',
+      },
+      {
+        cmd: 'make:seeder',
+        description: 'Create a new database seeder class.',
+        example: 'bun mantiq make:seeder UserSeeder',
+        output: '  DONE  Created database/seeders/UserSeeder.ts',
+      },
+      {
+        cmd: 'make:factory',
+        description: 'Create a new model factory for generating test data.',
+        example: 'bun mantiq make:factory User',
+        output: '  DONE  Created database/factories/UserFactory.ts',
+      },
+      {
+        cmd: 'make:middleware',
+        description: 'Create a new HTTP middleware class.',
+        example: 'bun mantiq make:middleware RateLimit',
+        output: '  DONE  Created app/Http/Middleware/RateLimitMiddleware.ts',
+      },
+      {
+        cmd: 'make:request',
+        description: 'Create a new form request validation class.',
+        example: 'bun mantiq make:request StoreProduct',
+        output: '  DONE  Created app/Http/Requests/StoreProductRequest.ts',
+      },
+    ],
+  },
+  {
+    title: 'Database',
+    description: 'Run and manage database migrations and seeders.',
+    color: 'emerald',
+    commands: [
+      {
+        cmd: 'migrate',
+        description: 'Run all pending database migrations.',
+        example: 'bun mantiq migrate',
+        output: `  INFO  Running migrations...
+  DONE  20260319_create_users_table ............ migrated
+  DONE  20260319_create_products_table ......... migrated`,
+      },
+      {
+        cmd: 'migrate:rollback',
+        description: 'Rollback the last batch of migrations.',
+        example: 'bun mantiq migrate:rollback',
+        output: '  INFO  Rolling back last batch...',
+      },
+      {
+        cmd: 'migrate:reset',
+        description: 'Rollback all migrations. Requires --force in production.',
+        flags: [
+          { flag: '--force', desc: 'Force the operation in production' },
+        ],
+        example: 'bun mantiq migrate:reset --force',
+      },
+      {
+        cmd: 'migrate:fresh',
+        description: 'Drop all tables and re-run all migrations from scratch.',
+        flags: [
+          { flag: '--seed', desc: 'Run seeders after migrating' },
+        ],
+        example: 'bun mantiq migrate:fresh --seed',
+      },
+      {
+        cmd: 'migrate:status',
+        description: 'Show the current status of each migration.',
+        example: 'bun mantiq migrate:status',
+        output: `  Migration Status
+
+  ----------+---------------------------------------+-------
+   Status   | Migration                             | Batch
+  ----------+---------------------------------------+-------
+   Ran      | 20260319_create_users_table           | 1
+   Ran      | 20260319_create_products_table        | 1
+   Pending  | 20260319_create_orders_table          |
+  ----------+---------------------------------------+-------`,
+      },
+      {
+        cmd: 'seed',
+        description: 'Run database seeders. Defaults to DatabaseSeeder.',
+        example: 'bun mantiq seed UserSeeder',
+        output: `  INFO  Seeding: UserSeeder...
+  DONE  UserSeeder completed.`,
+      },
+    ],
+  },
+  {
+    title: 'Utility',
+    description: 'Development server, route inspection, and interactive REPL.',
+    color: 'amber',
+    commands: [
+      {
+        cmd: 'serve',
+        description: 'Start the development server by bootstrapping the app entry point.',
+        flags: [
+          { flag: '--port=<number>', desc: 'Override the server port (default: 3000)' },
+          { flag: '--host=<string>', desc: 'Override the server host (default: 0.0.0.0)' },
+        ],
+        example: 'bun mantiq serve --port=8080',
+        output: `  Server running on http://localhost:8080`,
+      },
+      {
+        cmd: 'route:list',
+        description: 'List all registered routes with method, path, name, and middleware.',
+        flags: [
+          { flag: '--method=<METHOD>', desc: 'Filter by HTTP method' },
+          { flag: '--path=<prefix>', desc: 'Filter by path prefix' },
+        ],
+        example: 'bun mantiq route:list --method=GET',
+        output: `  Registered Routes
+
+  --------+---------------------+------+-----------
+   Method | Path                | Name | Middleware
+  --------+---------------------+------+-----------
+   GET    | /                   |      |
+   GET    | /validation         |      |
+   GET    | /cli                |      |
+   GET    | /api/users          |      | auth
+  --------+---------------------+------+-----------
+
+  Showing 4 routes`,
+      },
+      {
+        cmd: 'tinker',
+        description: 'Interactive REPL with your app context. Auto-loads models, services, and database connection.',
+        example: 'bun mantiq tinker',
+        output: `  MantiqJS Tinker
+  Available in scope:
+    app, db, connection, router, User, Product
+
+  > await User.all()
+  [ { id: 1, name: 'Admin', email: 'admin@example.com' } ]
+  > User.table
+  'users'`,
+      },
+      {
+        cmd: 'help',
+        description: 'Show all available commands grouped by category.',
+        example: 'bun mantiq help',
+      },
+    ],
+  },
+]
+
+const CLI_SEC_COLORS: Record<string, { bg: string; border: string; text: string; badge: string; accent: string }> = {
+  indigo:  { bg: 'bg-indigo-500/5',  border: 'border-indigo-500/20', text: 'text-indigo-400',  badge: 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400',  accent: 'text-indigo-400' },
+  emerald: { bg: 'bg-emerald-500/5', border: 'border-emerald-500/20', text: 'text-emerald-400', badge: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400', accent: 'text-emerald-400' },
+  amber:   { bg: 'bg-amber-500/5',   border: 'border-amber-500/20',  text: 'text-amber-400',   badge: 'bg-amber-500/10 border-amber-500/20 text-amber-400',     accent: 'text-amber-400' },
+}
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false)
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
+  return (
+    <button onClick={handleCopy} title="Copy to clipboard"
+      className="flex items-center gap-1 text-[10px] text-gray-500 hover:text-gray-300 bg-gray-800/50 hover:bg-gray-800 border border-gray-700/50 rounded px-1.5 py-0.5 transition-all shrink-0">
+      {copied ? (
+        <><svg className="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg><span className="text-emerald-400">Copied</span></>
+      ) : (
+        <><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" strokeWidth={2} /><path strokeWidth={2} d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" /></svg><span>Copy</span></>
+      )}
+    </button>
+  )
+}
+
+function CommandCard({ cmd, sectionColor }: { cmd: CmdDef; sectionColor: string }) {
+  const c = CLI_SEC_COLORS[sectionColor]!
+  return (
+    <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+      {/* Header */}
+      <div className="px-5 py-4 space-y-2">
+        <div className="flex items-start justify-between gap-3">
+          <code className={`text-sm font-bold ${c.accent}`}>{cmd.cmd}</code>
+        </div>
+        <p className="text-sm text-gray-400">{cmd.description}</p>
+
+        {/* Flags */}
+        {cmd.flags && cmd.flags.length > 0 && (
+          <div className="space-y-1 pt-1">
+            <p className="text-[11px] text-gray-500 uppercase tracking-wider font-medium">Options</p>
+            {cmd.flags.map((f) => (
+              <div key={f.flag} className="flex items-start gap-3 text-xs">
+                <code className="text-gray-300 bg-gray-800/80 rounded px-1.5 py-0.5 shrink-0 font-mono">{f.flag}</code>
+                <span className="text-gray-500">{f.desc}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Example */}
+      {cmd.example && (
+        <div className="border-t border-gray-800/80 bg-gray-950/50 px-5 py-3 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-[10px] text-gray-600 uppercase tracking-wider font-medium shrink-0">Example</span>
+              <code className="text-xs text-gray-300 font-mono truncate">{cmd.example}</code>
+            </div>
+            <CopyButton text={cmd.example} />
+          </div>
+
+          {/* Output preview */}
+          {cmd.output && (
+            <pre className="text-[11px] text-gray-500 font-mono leading-relaxed whitespace-pre overflow-x-auto">{cmd.output}</pre>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function CLIDocs({ appName, onBack }: { appName: string; onBack: () => void }) {
+  const totalCommands = CLI_SECTIONS.reduce((n, s) => n + s.commands.length, 0)
+
+  return (
+    <div className="min-h-screen bg-gray-950 text-gray-100">
+      {/* Nav */}
+      <nav className="border-b border-gray-800/80 bg-gray-950/90 backdrop-blur-md sticky top-0 z-20">
+        <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center">
+              <svg className="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <span className="text-sm font-bold text-white">{appName}</span>
+            <span className="text-[10px] text-gray-600 ml-1">CLI Reference</span>
+          </div>
+          <button onClick={onBack}
+            className="text-xs text-gray-500 hover:text-gray-300 bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-lg px-2.5 py-1.5 transition-colors">
+            Back to Dashboard
+          </button>
+        </div>
+      </nav>
+
+      <main className="max-w-5xl mx-auto px-6 py-8 space-y-10">
+        {/* Header */}
+        <div className="space-y-3">
+          <h1 className="text-2xl font-bold text-white">@mantiq/cli</h1>
+          <p className="text-sm text-gray-400 max-w-2xl">
+            {totalCommands} commands for scaffolding code, managing database migrations, and running your development server.
+            Every command is available via <code className="text-gray-300 bg-gray-800/80 rounded px-1.5 py-0.5 text-xs">bun mantiq &lt;command&gt;</code>
+          </p>
+
+          {/* Quick start */}
+          <div className="bg-gray-900 rounded-xl border border-gray-800 px-5 py-4 space-y-2">
+            <p className="text-xs text-gray-500 uppercase tracking-wider font-medium">Quick Start</p>
+            <div className="flex items-center justify-between gap-3">
+              <code className="text-sm text-gray-300 font-mono">bun mantiq help</code>
+              <CopyButton text="bun mantiq help" />
+            </div>
+          </div>
+
+          {/* Section nav */}
+          <div className="flex flex-wrap gap-2">
+            {CLI_SECTIONS.map((s) => (
+              <a key={s.title} href={`#${s.title.toLowerCase()}`}
+                className={`text-[11px] border rounded-full px-3 py-1 transition-colors hover:opacity-80 ${CLI_SEC_COLORS[s.color]!.badge}`}>
+                {s.title} ({s.commands.length})
+              </a>
+            ))}
+          </div>
+        </div>
+
+        {/* Sections */}
+        {CLI_SECTIONS.map((section) => {
+          const c = CLI_SEC_COLORS[section.color]!
+          return (
+            <section key={section.title} id={section.title.toLowerCase()} className="space-y-4">
+              <div className={`rounded-xl border ${c.border} ${c.bg} px-5 py-4`}>
+                <h2 className={`text-lg font-bold ${c.text}`}>{section.title}</h2>
+                <p className="text-sm text-gray-400 mt-0.5">{section.description}</p>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {section.commands.map((cmd) => (
+                  <CommandCard key={cmd.cmd} cmd={cmd} sectionColor={section.color} />
+                ))}
+              </div>
+            </section>
+          )
+        })}
+
+        {/* Footer */}
+        <div className="bg-gray-900/50 rounded-xl border border-gray-800/50 px-5 py-4 space-y-2">
+          <p className="text-xs text-gray-400">
+            <span className="text-gray-300 font-medium">@mantiq/cli</span> — Laravel-inspired CLI toolkit for Bun.
+          </p>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-[11px] text-gray-600">
+            <span>Kernel</span><span>Command</span><span>IO</span><span>Parser</span><span>GeneratorCommand</span><span>{totalCommands} built-in commands</span>
+          </div>
+        </div>
+      </main>
+    </div>
+  )
+}
+
 // ── Root ──────────────────────────────────────────────────────────────────────
 
 export function App({ appName = 'MantiqJS', currentUser = null, currentPage }: AppProps) {
   const [user, setUser] = useState<User | null>(currentUser)
-  const initialPage = currentPage === 'validation' ? 'validation' as const : 'login' as const
-  const [page, setPage] = useState<'login' | 'register' | 'validation'>(initialPage)
+  const initialPage = currentPage === 'validation' ? 'validation' as const : currentPage === 'cli' ? 'cli' as const : 'login' as const
+  const [page, setPage] = useState<'login' | 'register' | 'validation' | 'cli'>(initialPage)
 
   if (page === 'validation') {
     return <ValidationPlayground appName={appName} onBack={() => { window.location.href = '/' }} />
+  }
+
+  if (page === 'cli') {
+    return <CLIDocs appName={appName} onBack={() => { window.location.href = '/' }} />
   }
 
   if (!user) {
@@ -826,5 +1181,5 @@ export function App({ appName = 'MantiqJS', currentUser = null, currentPage }: A
       : <RegisterPage appName={appName} onRegister={setUser} onGoLogin={() => setPage('login')} />
   }
 
-  return <Dashboard appName={appName} user={user} onLogout={() => setUser(null)} onValidation={() => setPage('validation')} />
+  return <Dashboard appName={appName} user={user} onLogout={() => setUser(null)} onValidation={() => setPage('validation')} onCli={() => setPage('cli')} />
 }

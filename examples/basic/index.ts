@@ -28,9 +28,11 @@ const app = await Application.create(import.meta.dir, 'config')
 await app.registerProviders([CoreServiceProvider, DatabaseServiceProvider, AuthServiceProvider, ViteServiceProvider])
 await app.bootProviders()
 
-// ── Seed default data ─────────────────────────────────────────────────────────
-const UserSeeder = (await import('./database/seeders/UserSeeder.ts')).default
-await new UserSeeder().run()
+// ── Seed default data (only when running the server directly) ────────────────
+if (import.meta.main) {
+  const UserSeeder = (await import('./database/seeders/UserSeeder.ts')).default
+  await new UserSeeder().run()
+}
 
 // ── Kernel setup ──────────────────────────────────────────────────────────────
 const kernel = app.make(HttpKernel)
@@ -57,13 +59,17 @@ import apiRoutes from './routes/api.ts'
 webRoutes(router)
 apiRoutes(router)
 
-// Print registered routes on startup
-console.log('\n  Registered routes:')
-for (const route of router.routes()) {
-  const methods = Array.isArray(route.method) ? route.method.join('|') : route.method
-  const name = route.name ? `  (${route.name})` : ''
-  console.log(`    ${methods.padEnd(12)} ${route.path}${name}`)
-}
+// ── Export for CLI ────────────────────────────────────────────────────────────
+export default app
 
-// ── Start ─────────────────────────────────────────────────────────────────────
-await kernel.start()
+// ── Start (only when run directly) ───────────────────────────────────────────
+if (import.meta.main) {
+  console.log('\n  Registered routes:')
+  for (const route of router.routes()) {
+    const methods = Array.isArray(route.method) ? route.method.join('|') : route.method
+    const name = route.name ? `  (${route.name})` : ''
+    console.log(`    ${methods.padEnd(12)} ${route.path}${name}`)
+  }
+
+  await kernel.start()
+}

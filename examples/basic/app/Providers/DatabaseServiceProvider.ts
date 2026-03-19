@@ -19,10 +19,12 @@ export class DatabaseServiceProvider extends ServiceProvider {
     // Resolve the manager (triggers creation via the singleton factory)
     const manager = this.app.make(DatabaseManager)
 
-    // Auto-run migrations on boot (dev convenience — in production you'd run a CLI command)
-    const migrator = new Migrator(manager.connection())
-    const migrationsPath = config('app.basePath') + '/database/migrations'
-    await migrator.run(await loadMigrations(migrationsPath))
+    // Auto-run migrations on boot (dev convenience — skip when running CLI commands)
+    if (import.meta.main) {
+      const migrator = new Migrator(manager.connection())
+      const migrationsPath = config('app.basePath') + '/database/migrations'
+      await migrator.run(await loadMigrations(migrationsPath))
+    }
   }
 }
 

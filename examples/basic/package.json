@@ -7,10 +7,12 @@
     "dev": "bun run --watch index.ts",
     "dev:frontend": "vite",
     "build:frontend": "vite build",
-    "start": "bun run index.ts"
+    "start": "bun run index.ts",
+    "mantiq": "bun run mantiq.ts"
   },
   "dependencies": {
     "@mantiq/auth": "workspace:*",
+    "@mantiq/cli": "workspace:*",
     "@mantiq/core": "workspace:*",
     "@mantiq/database": "workspace:*",
     "@mantiq/validation": "workspace:*",

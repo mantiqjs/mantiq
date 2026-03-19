@@ -17,7 +17,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@mantiq/core": "workspace:*"
+    "@mantiq/core": "workspace:*",
+    "@mantiq/database": "workspace:*"
   },
   "devDependencies": {
     "bun-types": "latest",
