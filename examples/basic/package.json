@@ -17,6 +17,7 @@
     "@mantiq/database": "workspace:*",
     "@mantiq/filesystem": "workspace:*",
     "@mantiq/validation": "workspace:*",
+    "@mantiq/heartbeat": "workspace:*",
     "@mantiq/vite": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

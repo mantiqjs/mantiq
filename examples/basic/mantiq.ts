@@ -21,6 +21,7 @@ import {
   RouteListCommand,
   TinkerCommand,
 } from '@mantiq/cli'
+import { InstallCommand as HeartbeatInstallCommand } from '@mantiq/heartbeat'
 
 const kernel = new Kernel()
 
@@ -41,6 +42,7 @@ kernel.registerAll([
   new ServeCommand(),
   new RouteListCommand(),
   new TinkerCommand(),
+  new HeartbeatInstallCommand(),
 ])
 
 const code = await kernel.run()

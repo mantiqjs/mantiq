@@ -8,7 +8,9 @@
     "paths": {
       "@app/*": ["./app/*"],
       "@mantiq/core": ["../../packages/core/src/index.ts"],
+      "@mantiq/cli": ["../../packages/cli/src/index.ts"],
       "@mantiq/database": ["../../packages/database/src/index.ts"],
+      "@mantiq/heartbeat": ["../../packages/heartbeat/src/index.ts"],
       "@mantiq/vite": ["../../packages/vite/src/index.ts"]
     }
   },

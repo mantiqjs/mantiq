@@ -1,0 +1,26 @@
+{
+  "name": "@mantiq/heartbeat",
+  "version": "0.0.1",
+  "description": "Observability, APM & queue monitoring for MantiqJS",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": {
+    "build": "bun build ./src/index.ts --outdir ./dist --target bun",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@mantiq/core": "workspace:*",
+    "@mantiq/cli": "workspace:*",
+    "@mantiq/queue": "workspace:*",
+    "@mantiq/events": "workspace:*",
+    "@mantiq/database": "workspace:*",
+    "@mantiq/logging": "workspace:*"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "typescript": "^5.7.0"
+  }
+}

@@ -55,6 +55,36 @@ export class HttpKernel {
     this.globalMiddleware = middleware
   }
 
+  /**
+   * Middleware registered by packages that run before the app's global middleware.
+   * Separate from globalMiddleware so setGlobalMiddleware() doesn't overwrite them.
+   */
+  private prependMiddleware: string[] = []
+  private appendMiddleware: string[] = []
+
+  /**
+   * Prepend middleware aliases that run before the app's global middleware.
+   * Useful for packages that need to inject middleware without touching the app's config.
+   */
+  prependGlobalMiddleware(...aliases: string[]): void {
+    for (const alias of aliases) {
+      if (!this.prependMiddleware.includes(alias)) {
+        this.prependMiddleware.push(alias)
+      }
+    }
+  }
+
+  /**
+   * Append middleware aliases that run after the app's global middleware.
+   */
+  appendGlobalMiddleware(...aliases: string[]): void {
+    for (const alias of aliases) {
+      if (!this.appendMiddleware.includes(alias)) {
+        this.appendMiddleware.push(alias)
+      }
+    }
+  }
+
   // ── Request handling ─────────────────────────────────────────────────────
 
   /**
@@ -69,8 +99,9 @@ export class HttpKernel {
     const request = MantiqRequest.fromBun(bunRequest)
 
     try {
-      // Resolve global middleware classes
-      const globalClasses = this.resolveMiddlewareList(this.globalMiddleware)
+      // Combine prepend + global + append middleware
+      const allMiddleware = [...this.prependMiddleware, ...this.globalMiddleware, ...this.appendMiddleware]
+      const globalClasses = this.resolveMiddlewareList(allMiddleware)
 
       const response = await new Pipeline(this.container)
         .send(request)

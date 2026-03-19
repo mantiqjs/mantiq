@@ -2092,6 +2092,7 @@ The framework provides test utilities that developers use in their own apps:
 - [ ] Logging with channels and rotation
 - [ ] SSR support for Inertia
 - [ ] Deployment guides (Docker, Fly.io, Railway, VPS)
+- [ ] Package auto-discovery: scan `@mantiq/*` packages for a `"mantiq"` key in `package.json` declaring providers, commands, and config — auto-register them at boot without manual imports (Laravel-style `extra.laravel.providers`). Eliminates boilerplate in `index.ts` and `mantiq.ts`; packages become fully plug-and-play on install.
 
 ---
 
