@@ -1,6 +1,6 @@
 import type { Router } from '@mantiq/core'
-import { HomeController } from '../app/Http/Controllers/HomeController.ts'
-import { AuthController } from '../app/Http/Controllers/AuthController.ts'
+import { HomeController } from '@app/Http/Controllers/HomeController.ts'
+import { AuthController } from '@app/Http/Controllers/AuthController.ts'
 
 export default function (router: Router) {
   router.get('/', [HomeController, 'index'])

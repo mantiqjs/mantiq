@@ -25,6 +25,7 @@ export class RouterImpl implements RouterContract {
   private registrar = new ResourceRegistrar(this)
   private modelBindings = new Map<string, Constructor<any>>()
   private customBindings = new Map<string, (value: string) => Promise<any>>()
+  private controllerRegistry = new Map<string, Constructor<any>>()
 
   /** Optional event dispatcher. Set by @mantiq/events when installed. */
   static _dispatcher: EventDispatcher | null = null
@@ -33,6 +34,26 @@ export class RouterImpl implements RouterContract {
   private groupStack: RouteGroupOptions[] = []
 
   constructor(private readonly config?: ConfigRepository) {}
+
+  /**
+   * Register controller classes for string-based route actions.
+   *
+   * @example
+   * router.controllers({
+   *   AuthController,
+   *   HomeController,
+   *   UserController,
+   * })
+   *
+   * // Then in routes:
+   * router.get('/login', 'AuthController@login')
+   * router.get('/', 'HomeController@index')
+   */
+  controllers(map: Record<string, Constructor<any>>): void {
+    for (const [name, ctor] of Object.entries(map)) {
+      this.controllerRegistry.set(name, ctor)
+    }
+  }
 
   // ── HTTP method registration ───────────────────────────────────────────────
 
@@ -197,7 +218,8 @@ export class RouterImpl implements RouterContract {
 
   private addRoute(methods: HttpMethod[], path: string, action: RouteAction): Route {
     const mergedPath = this.mergePath(path)
-    const route = new Route(methods, mergedPath, action)
+    const resolvedAction = this.resolveAction(action)
+    const route = new Route(methods, mergedPath, resolvedAction)
 
     // Apply group middleware
     const groupMiddleware = this.groupStack.flatMap((g) => g.middleware ?? [])
@@ -215,6 +237,38 @@ export class RouterImpl implements RouterContract {
 
     this.collection.add(route)
     return route
+  }
+
+  /**
+   * Resolve a string action like 'AuthController@login' to [Constructor, method].
+   */
+  private resolveAction(action: RouteAction): Exclude<RouteAction, string> {
+    if (typeof action !== 'string') return action
+
+    const [controllerName, method] = action.split('@')
+    if (!controllerName || !method) {
+      throw new MantiqError(
+        `Invalid route action string '${action}'. Expected format: 'ControllerName@method'.`,
+      )
+    }
+
+    // Check namespace prefix from group stack
+    const namespace = this.groupStack
+      .map((g) => g.namespace ?? '')
+      .filter(Boolean)
+      .join('/')
+
+    const fullName = namespace ? `${namespace}/${controllerName}` : controllerName
+    const Controller = this.controllerRegistry.get(fullName)
+      ?? this.controllerRegistry.get(controllerName)
+
+    if (!Controller) {
+      throw new MantiqError(
+        `Controller '${controllerName}' not found. Register it with router.controllers({ ${controllerName} }).`,
+      )
+    }
+
+    return [Controller, method]
   }
 
   private mergePath(path: string): string {

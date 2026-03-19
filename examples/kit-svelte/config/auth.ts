@@ -1,4 +1,4 @@
-import { User } from '../app/Models/User.ts'
+import { User } from '@app/Models/User.ts'
 
 export default {
   defaults: {

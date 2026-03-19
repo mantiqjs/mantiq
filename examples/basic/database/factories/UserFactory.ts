@@ -1,7 +1,7 @@
 import { Factory } from '@mantiq/database'
 import { HashManager } from '@mantiq/core'
 import type { Faker } from '@mantiq/database'
-import { User } from '../../app/Models/User.ts'
+import { User } from '@app/Models/User.ts'
 
 const hasher = new HashManager({ bcrypt: { rounds: 10 } })
 let defaultPasswordHash: string | null = null

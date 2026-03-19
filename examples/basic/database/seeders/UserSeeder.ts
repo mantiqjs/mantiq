@@ -1,5 +1,5 @@
 import { Seeder } from '@mantiq/database'
-import { User } from '../../app/Models/User.ts'
+import { User } from '@app/Models/User.ts'
 import { UserFactory } from '../factories/UserFactory.ts'
 
 export default class UserSeeder extends Seeder {

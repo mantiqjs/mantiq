@@ -1,5 +1,5 @@
 import type { MantiqRequest } from '@mantiq/core'
-import { MantiqResponse } from '@mantiq/core'
+import { json } from '@mantiq/core'
 import { Validator, validate, FormRequest } from '@mantiq/validation'
 import type { Rule } from '@mantiq/validation'
 
@@ -57,7 +57,7 @@ export class ValidationController {
     const formRequest = new PlaygroundFormRequest(request)
     try {
       const data = await formRequest.validate()
-      return MantiqResponse.json({
+      return json({
         success: true,
         message: 'All validation rules passed!',
         validated: data,
@@ -65,7 +65,7 @@ export class ValidationController {
       })
     } catch (e: any) {
       if (e?.errors) {
-        return MantiqResponse.json({
+        return json({
           success: false,
           errors: e.errors,
           rules: formRequest.rules(),
@@ -87,10 +87,10 @@ export class ValidationController {
         email: 'required|email',
         score: 'required|numeric|between:0,100',
       })
-      return MantiqResponse.json({ success: true, validated: data })
+      return json({ success: true, validated: data })
     } catch (e: any) {
       if (e?.errors) {
-        return MantiqResponse.json({ success: false, errors: e.errors }, 422)
+        return json({ success: false, errors: e.errors }, 422)
       }
       throw e
     }
@@ -121,10 +121,10 @@ export class ValidationController {
         lucky_number: ['required', 'integer', divisibleBy],
       })
       const data = await v.validate()
-      return MantiqResponse.json({ success: true, validated: data })
+      return json({ success: true, validated: data })
     } catch (e: any) {
       if (e?.errors) {
-        return MantiqResponse.json({ success: false, errors: e.errors }, 422)
+        return json({ success: false, errors: e.errors }, 422)
       }
       throw e
     }
@@ -142,10 +142,10 @@ export class ValidationController {
     try {
       const v = new Validator(data, rules)
       const validated = await v.validate()
-      return MantiqResponse.json({ success: true, validated })
+      return json({ success: true, validated })
     } catch (e: any) {
       if (e?.errors) {
-        return MantiqResponse.json({ success: false, errors: e.errors }, 422)
+        return json({ success: false, errors: e.errors }, 422)
       }
       throw e
     }
@@ -158,7 +158,7 @@ export class ValidationController {
    */
   rules(_request: MantiqRequest): Response {
     const request = new PlaygroundFormRequest(_request)
-    return MantiqResponse.json({
+    return json({
       rules: request.rules(),
       messages: request.messages(),
       attributes: request.attributes(),

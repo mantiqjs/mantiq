@@ -19,7 +19,10 @@
     "noImplicitOverride": true,
     "allowImportingTsExtensions": true,
     "noEmit": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "paths": {
+      "@app/*": ["./app/*"]
+    }
   },
   "include": [
     "./**/*"

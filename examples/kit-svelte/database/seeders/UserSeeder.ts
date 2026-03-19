@@ -1,6 +1,6 @@
 import { Seeder } from '@mantiq/database'
 import { HashManager } from '@mantiq/core'
-import { User } from '../../app/Models/User.ts'
+import { User } from '@app/Models/User.ts'
 
 export default class UserSeeder extends Seeder {
   override async run() {

@@ -1,5 +1,5 @@
 import type { MantiqRequest } from '@mantiq/core'
-import { MantiqResponse } from '@mantiq/core'
+import { json } from '@mantiq/core'
 import { storage } from '@mantiq/filesystem'
 
 export class StorageController {
@@ -10,18 +10,18 @@ export class StorageController {
     const contents = body.contents as string | undefined
 
     if (!path || contents === undefined) {
-      return MantiqResponse.json({ error: 'path and contents are required' }, 422)
+      return json({ error: 'path and contents are required' }, 422)
     }
 
     if (path.includes('..') || path.startsWith('/')) {
-      return MantiqResponse.json({ error: 'Invalid path' }, 422)
+      return json({ error: 'Invalid path' }, 422)
     }
 
     const disk = (body.disk as string) ?? 'local'
     await storage(disk).put(path, contents)
     const size = await storage(disk).size(path)
 
-    return MantiqResponse.json({ message: 'File written', path, size })
+    return json({ message: 'File written', path, size })
   }
 
   /** GET /api/storage/read?path=...&disk=... — read a text file */
@@ -30,17 +30,17 @@ export class StorageController {
     const disk = request.query('disk') ?? 'local'
 
     if (!path) {
-      return MantiqResponse.json({ error: 'path is required' }, 422)
+      return json({ error: 'path is required' }, 422)
     }
 
     const driver = storage(disk)
     const contents = await driver.get(path)
 
     if (contents === null) {
-      return MantiqResponse.json({ error: 'File not found', path }, 404)
+      return json({ error: 'File not found', path }, 404)
     }
 
-    return MantiqResponse.json({ path, contents, size: await driver.size(path) })
+    return json({ path, contents, size: await driver.size(path) })
   }
 
   /** GET /api/storage/list?directory=...&disk=... — list files */
@@ -62,7 +62,7 @@ export class StorageController {
       })),
     )
 
-    return MantiqResponse.json({ directory: directory || '/', files: fileDetails, directories })
+    return json({ directory: directory || '/', files: fileDetails, directories })
   }
 
   /** DELETE /api/storage/delete — delete files */
@@ -72,11 +72,11 @@ export class StorageController {
     const disk = (body.disk as string) ?? 'local'
 
     if (!path) {
-      return MantiqResponse.json({ error: 'path is required' }, 422)
+      return json({ error: 'path is required' }, 422)
     }
 
     const result = await storage(disk).delete(path)
-    return MantiqResponse.json({ deleted: result, path })
+    return json({ deleted: result, path })
   }
 
   /** GET /api/storage/info?path=...&disk=... — get file info */
@@ -85,14 +85,14 @@ export class StorageController {
     const disk = request.query('disk') ?? 'local'
 
     if (!path) {
-      return MantiqResponse.json({ error: 'path is required' }, 422)
+      return json({ error: 'path is required' }, 422)
     }
 
     const driver = storage(disk)
     const exists = await driver.exists(path)
 
     if (!exists) {
-      return MantiqResponse.json({ error: 'File not found', path }, 404)
+      return json({ error: 'File not found', path }, 404)
     }
 
     const [size, lastModified, mimeType, visibility] = await Promise.all([
@@ -102,7 +102,7 @@ export class StorageController {
       driver.getVisibility(path),
     ])
 
-    return MantiqResponse.json({ path, size, lastModified, mimeType, visibility })
+    return json({ path, size, lastModified, mimeType, visibility })
   }
 
   /** POST /api/storage/upload — upload a file */
@@ -112,7 +112,7 @@ export class StorageController {
     const file = request.file('file')
 
     if (!file) {
-      return MantiqResponse.json({ error: 'No file uploaded' }, 422)
+      return json({ error: 'No file uploaded' }, 422)
     }
 
     const disk = request.query('disk') ?? 'local'
@@ -122,7 +122,7 @@ export class StorageController {
 
     await storage(disk).put(path, await file.bytes())
 
-    return MantiqResponse.json({
+    return json({
       message: 'File uploaded',
       path,
       name: file.name(),

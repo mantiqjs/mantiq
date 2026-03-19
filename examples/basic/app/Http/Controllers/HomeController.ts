@@ -1,5 +1,5 @@
 import type { MantiqRequest } from '@mantiq/core'
-import { MantiqResponse, config } from '@mantiq/core'
+import { html, config } from '@mantiq/core'
 import { vite } from '@mantiq/vite'
 import { auth } from '@mantiq/auth'
 
@@ -43,7 +43,7 @@ export class HomeController {
       // Not authenticated — that's fine
     }
 
-    return MantiqResponse.html(
+    return html(
       await vite().page({
         entry: ['src/style.css', 'src/main.tsx'],
         title: config('app.name'),

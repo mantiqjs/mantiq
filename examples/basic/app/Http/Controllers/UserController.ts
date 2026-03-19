@@ -1,5 +1,5 @@
 import type { MantiqRequest } from '@mantiq/core'
-import { MantiqResponse, abort, HashManager } from '@mantiq/core'
+import { json, noContent, abort, HashManager } from '@mantiq/core'
 import { User } from '../../Models/User.ts'
 
 export class UserController {
@@ -16,7 +16,7 @@ export class UserController {
     }
 
     const result = await query.paginate(page, perPage)
-    return MantiqResponse.json({
+    return json({
       data: (result.data as User[]).map((u) => u.toObject()),
       total: result.total,
       page: result.currentPage,
@@ -33,7 +33,7 @@ export class UserController {
     const id = Number(request.param('user'))
     const user = await User.find(id)
     if (!user) abort(404, `User ${id} not found`)
-    return MantiqResponse.json({ data: user!.toObject() })
+    return json({ data: user!.toObject() })
   }
 
   /** POST /api/users */
@@ -42,7 +42,7 @@ export class UserController {
     const { name, email } = body
 
     if (!name || !email) {
-      return MantiqResponse.json(
+      return json(
         { error: { message: 'name and email are required', status: 422 } },
         422,
       )
@@ -53,7 +53,7 @@ export class UserController {
     const password = await hasher.make(crypto.randomUUID())
 
     const user = await User.create({ name, email, role: body.role ?? 'user', password })
-    return MantiqResponse.json({ data: user.toObject() }, 201)
+    return json({ data: user.toObject() }, 201)
   }
 
   /** PUT /api/users/:id */
@@ -68,7 +68,7 @@ export class UserController {
     if (body.role) user!.set('role', body.role)
     await user!.save()
 
-    return MantiqResponse.json({ data: user!.toObject() })
+    return json({ data: user!.toObject() })
   }
 
   /** DELETE /api/users/:id */
@@ -77,6 +77,6 @@ export class UserController {
     const user = await User.find(id)
     if (!user) abort(404, `User ${id} not found`)
     await user!.delete()
-    return MantiqResponse.noContent()
+    return noContent()
   }
 }

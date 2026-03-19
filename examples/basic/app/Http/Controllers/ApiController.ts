@@ -1,10 +1,10 @@
 import type { MantiqRequest } from '@mantiq/core'
-import { MantiqResponse, config } from '@mantiq/core'
+import { json, config } from '@mantiq/core'
 
 export class ApiController {
   /** GET /api/ping */
   ping(_request: MantiqRequest): Response {
-    return MantiqResponse.json({
+    return json({
       status: 'ok',
       app: config('app.name'),
       env: config('app.env'),
@@ -16,7 +16,7 @@ export class ApiController {
   /** POST /api/echo — echoes the request body back */
   async echo(request: MantiqRequest): Promise<Response> {
     const body = await request.input()
-    return MantiqResponse.json({
+    return json({
       echoed: body,
       method: request.method(),
       path: request.path(),

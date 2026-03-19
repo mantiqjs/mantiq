@@ -1,7 +1,7 @@
 import { Seeder, db } from '@mantiq/database'
 import { HashManager } from '@mantiq/core'
 import { UserFactory } from '../factories/UserFactory.ts'
-import { User } from '../../app/Models/User.ts'
+import { User } from '@app/Models/User.ts'
 
 export default class MillionUserSeeder extends Seeder {
   override async run() {

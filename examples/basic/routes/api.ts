@@ -1,8 +1,8 @@
 import type { Router } from '@mantiq/core'
-import { ApiController } from '../app/Http/Controllers/ApiController.ts'
-import { UserController } from '../app/Http/Controllers/UserController.ts'
-import { ValidationController } from '../app/Http/Controllers/ValidationController.ts'
-import { StorageController } from '../app/Http/Controllers/StorageController.ts'
+import { ApiController } from '@app/Http/Controllers/ApiController.ts'
+import { UserController } from '@app/Http/Controllers/UserController.ts'
+import { ValidationController } from '@app/Http/Controllers/ValidationController.ts'
+import { StorageController } from '@app/Http/Controllers/StorageController.ts'
 
 export default function (router: Router) {
   router.group({ prefix: '/api' }, (r) => {

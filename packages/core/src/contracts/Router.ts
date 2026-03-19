@@ -6,11 +6,13 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'OPTIONS'
 export type RouteAction =
   | [Constructor<any>, string]
   | ((request: MantiqRequest) => any)
+  | string
 
 export interface RouteGroupOptions {
   prefix?: string
   middleware?: string[]
   as?: string
+  namespace?: string
 }
 
 export interface RouteMatch {
@@ -46,6 +48,8 @@ export interface Router {
   routes(): RouteDefinition[]
   model(param: string, model: Constructor<any>): void
   bind(param: string, resolver: (value: string) => Promise<any>): void
+  /** Register controller classes for string-based resolution ('AuthController@login') */
+  controllers(map: Record<string, Constructor<any>>): void
 }
 
 export interface RouterRoute {

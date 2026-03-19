@@ -128,10 +128,12 @@ export class HttpKernel {
 
     if (typeof action === 'function') {
       result = await action(request)
-    } else {
+    } else if (Array.isArray(action)) {
       const [ControllerClass, method] = action
       const controller = this.container.make(ControllerClass)
       result = await (controller as any)[method](request)
+    } else {
+      throw new Error(`Unresolved string action '${action}'. Controllers must be registered with router.controllers().`)
     }
 
     return this.prepareResponse(result)

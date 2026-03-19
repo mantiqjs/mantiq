@@ -1,11 +1,11 @@
 import type { Router } from '@mantiq/core'
-import { MantiqResponse } from '@mantiq/core'
-import { PageController } from '../app/Http/Controllers/PageController.ts'
-import { AuthController } from '../app/Http/Controllers/AuthController.ts'
+import { redirect } from '@mantiq/core'
+import { PageController } from '@app/Http/Controllers/PageController.ts'
+import { AuthController } from '@app/Http/Controllers/AuthController.ts'
 
 export default function (router: Router) {
   // Redirect root to dashboard
-  router.get('/', () => MantiqResponse.redirect('/dashboard'))
+  router.get('/', () => redirect('/dashboard'))
 
   // Page routes — each returns HTML (first load) or JSON (client navigation)
   router.get('/dashboard', [PageController, 'dashboard']).middleware('auth')
