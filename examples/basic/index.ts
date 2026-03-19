@@ -1,6 +1,7 @@
 import { Application, CoreServiceProvider, HttpKernel, RouterImpl, CorsMiddleware, StartSession, EncryptCookies, VerifyCsrfToken } from '@mantiq/core'
 import { ViteServiceProvider, ServeStaticFiles } from '@mantiq/vite'
 import { AuthServiceProvider, Authenticate, RedirectIfAuthenticated } from '@mantiq/auth'
+import { FilesystemServiceProvider } from '@mantiq/filesystem'
 import { DatabaseServiceProvider } from './app/Providers/DatabaseServiceProvider.ts'
 import { LogRequestsMiddleware } from './app/Http/Middleware/LogRequests.ts'
 import { RequireJsonMiddleware } from './app/Http/Middleware/RequireJson.ts'
@@ -25,7 +26,7 @@ if (await envFile.exists()) {
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 const app = await Application.create(import.meta.dir, 'config')
 
-await app.registerProviders([CoreServiceProvider, DatabaseServiceProvider, AuthServiceProvider, ViteServiceProvider])
+await app.registerProviders([CoreServiceProvider, DatabaseServiceProvider, AuthServiceProvider, FilesystemServiceProvider, ViteServiceProvider])
 await app.bootProviders()
 
 // ── Seed default data (only when running the server directly) ────────────────

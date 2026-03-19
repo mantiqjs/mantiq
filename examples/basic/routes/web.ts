@@ -6,6 +6,7 @@ export default function (router: Router) {
   router.get('/', [HomeController, 'index'])
   router.get('/validation', [HomeController, 'validation'])
   router.get('/cli', [HomeController, 'cli'])
+  router.get('/storage', [HomeController, 'storage'])
 
   // Auth routes
   router.post('/register', [AuthController, 'register'])

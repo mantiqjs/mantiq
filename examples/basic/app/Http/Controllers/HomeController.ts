@@ -19,6 +19,11 @@ export class HomeController {
     return this.renderSpa(request, 'cli')
   }
 
+  /** GET /storage — serves the SPA shell on the storage showcase page */
+  async storage(request: MantiqRequest): Promise<Response> {
+    return this.renderSpa(request, 'storage')
+  }
+
   private async renderSpa(request: MantiqRequest, currentPage?: string): Promise<Response> {
     // Try to resolve current user from session (no middleware required)
     const manager = auth()

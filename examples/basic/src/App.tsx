@@ -227,7 +227,7 @@ function RegisterPage({ appName, onRegister, onGoLogin }: { appName: string; onR
 
 interface Pagination { total: number; page: number; per_page: number; last_page: number; from: number; to: number; has_more: boolean }
 
-function Dashboard({ appName, user, onLogout, onValidation, onCli }: { appName: string; user: User; onLogout: () => void; onValidation: () => void; onCli: () => void }) {
+function Dashboard({ appName, user, onLogout, onValidation, onCli, onStorage }: { appName: string; user: User; onLogout: () => void; onValidation: () => void; onCli: () => void; onStorage: () => void }) {
   const [users, setUsers] = useState<User[]>([])
   const [pag, setPag] = useState<Pagination>({ total: 0, page: 1, per_page: 20, last_page: 1, from: 0, to: 0, has_more: false })
   const [search, setSearch] = useState('')
@@ -316,6 +316,10 @@ function Dashboard({ appName, user, onLogout, onValidation, onCli }: { appName: 
             <button onClick={onCli}
               className="text-xs text-amber-400 hover:text-amber-300 bg-amber-600/10 hover:bg-amber-600/20 border border-amber-500/20 rounded-lg px-2.5 py-1.5 transition-colors">
               CLI
+            </button>
+            <button onClick={onStorage}
+              className="text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-600/10 hover:bg-emerald-600/20 border border-emerald-500/20 rounded-lg px-2.5 py-1.5 transition-colors">
+              Storage
             </button>
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-[11px] font-bold text-white">{user.name[0]}</div>
@@ -1160,12 +1164,351 @@ function CLIDocs({ appName, onBack }: { appName: string; onBack: () => void }) {
   )
 }
 
+// ── Storage Playground ───────────────────────────────────────────────────────
+
+interface FileEntry { path: string; size: number; lastModified: number }
+
+function StoragePlayground({ appName, onBack }: { appName: string; onBack: () => void }) {
+  const [disk, setDisk] = useState<'local' | 'public'>('local')
+  const [files, setFiles] = useState<FileEntry[]>([])
+  const [dirs, setDirs] = useState<string[]>([])
+  const [currentDir, setCurrentDir] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  // Write form
+  const [writePath, setWritePath] = useState('')
+  const [writeContents, setWriteContents] = useState('')
+  const [writeStatus, setWriteStatus] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
+
+  // Read viewer
+  const [readPath, setReadPath] = useState('')
+  const [readContents, setReadContents] = useState<string | null>(null)
+  const [readError, setReadError] = useState('')
+
+  // Info viewer
+  const [infoPath, setInfoPath] = useState('')
+  const [fileInfo, setFileInfo] = useState<any>(null)
+
+  const fetchFiles = useCallback(async (dir = currentDir) => {
+    setLoading(true)
+    try {
+      const params = new URLSearchParams({ disk })
+      if (dir) params.set('directory', dir)
+      const res = await fetch(`/api/storage/list?${params}`)
+      const data = await res.json()
+      if (res.ok) {
+        setFiles(data.files ?? [])
+        setDirs(data.directories ?? [])
+      }
+    } catch { /* ignore */ }
+    setLoading(false)
+  }, [disk, currentDir])
+
+  useEffect(() => { fetchFiles() }, [fetchFiles])
+
+  const handleWrite = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setWriteStatus(null)
+    try {
+      const res = await fetch('/api/storage/write', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: writePath, contents: writeContents, disk }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setWriteStatus({ type: 'success', msg: `Written ${data.size} bytes to ${data.path}` })
+        setWritePath('')
+        setWriteContents('')
+        fetchFiles()
+      } else {
+        setWriteStatus({ type: 'error', msg: data.error ?? 'Write failed' })
+      }
+    } catch { setWriteStatus({ type: 'error', msg: 'Network error' }) }
+  }
+
+  const handleRead = async (path: string) => {
+    setReadError('')
+    setReadContents(null)
+    setReadPath(path)
+    try {
+      const res = await fetch(`/api/storage/read?path=${encodeURIComponent(path)}&disk=${disk}`)
+      const data = await res.json()
+      if (res.ok) setReadContents(data.contents)
+      else setReadError(data.error ?? 'Read failed')
+    } catch { setReadError('Network error') }
+  }
+
+  const handleInfo = async (path: string) => {
+    setFileInfo(null)
+    setInfoPath(path)
+    try {
+      const res = await fetch(`/api/storage/info?path=${encodeURIComponent(path)}&disk=${disk}`)
+      const data = await res.json()
+      if (res.ok) setFileInfo(data)
+    } catch { /* ignore */ }
+  }
+
+  const handleDelete = async (path: string) => {
+    await fetch('/api/storage/delete', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path, disk }),
+    })
+    fetchFiles()
+    if (readPath === path) { setReadContents(null); setReadPath('') }
+    if (infoPath === path) { setFileInfo(null); setInfoPath('') }
+  }
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const formData = new FormData()
+    formData.append('file', file)
+    try {
+      const res = await fetch(`/api/storage/upload?disk=${disk}&directory=${currentDir || 'uploads'}`, {
+        method: 'POST',
+        body: formData,
+      })
+      if (res.ok) fetchFiles()
+    } catch { /* ignore */ }
+    e.target.value = ''
+  }
+
+  const navigateDir = (dir: string) => {
+    setCurrentDir(dir)
+    setReadContents(null)
+    setReadPath('')
+    setFileInfo(null)
+    setInfoPath('')
+  }
+
+  const parentDir = currentDir.includes('/') ? currentDir.split('/').slice(0, -1).join('/') : currentDir ? '' : null
+
+  const fmtSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  }
+
+  const fmtDate = (ms: number) => new Date(ms).toLocaleString()
+
+  return (
+    <div className="min-h-screen bg-gray-950 text-gray-100">
+      {/* Header */}
+      <nav className="border-b border-gray-800/80 bg-gray-950/90 backdrop-blur-md sticky top-0 z-20">
+        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <button onClick={onBack} className="text-xs text-gray-400 hover:text-white transition-colors mr-2">&larr; Back</button>
+            <div className="w-7 h-7 rounded-lg bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center">
+              <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+              </svg>
+            </div>
+            <span className="text-sm font-bold text-white">{appName}</span>
+            <span className="text-[10px] text-gray-600 hidden sm:inline ml-1">Storage</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-gray-500">Disk:</span>
+            {(['local', 'public'] as const).map((d) => (
+              <button key={d} onClick={() => setDisk(d)}
+                className={`text-xs px-2.5 py-1 rounded-lg border transition-colors ${
+                  disk === d
+                    ? 'text-emerald-400 bg-emerald-600/20 border-emerald-500/30'
+                    : 'text-gray-500 bg-gray-900 border-gray-800 hover:text-gray-300'
+                }`}>
+                {d}
+              </button>
+            ))}
+          </div>
+        </div>
+      </nav>
+
+      <main className="max-w-6xl mx-auto px-6 py-8 space-y-6">
+        {/* Top info */}
+        <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl px-5 py-4">
+          <h1 className="text-lg font-bold text-emerald-400">@mantiq/filesystem</h1>
+          <p className="text-sm text-gray-400 mt-1">
+            Storage abstraction with driver-based architecture. Currently viewing the <span className="text-emerald-300 font-medium">{disk}</span> disk.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left column: File browser */}
+          <div className="space-y-4">
+            <Card className="p-5">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-sm font-bold text-gray-200">File Browser</h2>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {currentDir ? `/${currentDir}` : '/'} {loading && '(loading...)'}
+                  </p>
+                </div>
+                <label className="text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-600/10 hover:bg-emerald-600/20 border border-emerald-500/20 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer">
+                  Upload
+                  <input type="file" className="hidden" onChange={handleUpload} />
+                </label>
+              </div>
+
+              {/* Directory navigation */}
+              {parentDir !== null && (
+                <button onClick={() => navigateDir(parentDir)}
+                  className="w-full text-left text-xs text-gray-400 hover:text-gray-200 bg-gray-800/50 hover:bg-gray-800 rounded-lg px-3 py-2 mb-2 transition-colors">
+                  .. (parent directory)
+                </button>
+              )}
+
+              {/* Directories */}
+              {dirs.map((d) => (
+                <button key={d} onClick={() => navigateDir(d)}
+                  className="w-full text-left text-xs text-amber-400 hover:text-amber-300 bg-gray-800/30 hover:bg-gray-800/60 rounded-lg px-3 py-2 mb-1 transition-colors flex items-center gap-2">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                  </svg>
+                  {d.split('/').pop()}
+                </button>
+              ))}
+
+              {/* Files */}
+              {files.length === 0 && dirs.length === 0 && !loading && (
+                <p className="text-xs text-gray-600 text-center py-6">Empty directory</p>
+              )}
+              {files.map((f) => (
+                <div key={f.path} className="flex items-center justify-between bg-gray-800/30 rounded-lg px-3 py-2 mb-1 group hover:bg-gray-800/60 transition-colors">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <svg className="w-3.5 h-3.5 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span className="text-xs text-gray-300 truncate">{f.path.split('/').pop()}</span>
+                    <span className="text-[10px] text-gray-600">{fmtSize(f.size)}</span>
+                  </div>
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => handleRead(f.path)} className="text-[10px] text-indigo-400 hover:text-indigo-300 px-1.5 py-0.5 rounded">Read</button>
+                    <button onClick={() => handleInfo(f.path)} className="text-[10px] text-cyan-400 hover:text-cyan-300 px-1.5 py-0.5 rounded">Info</button>
+                    <button onClick={() => handleDelete(f.path)} className="text-[10px] text-red-400 hover:text-red-300 px-1.5 py-0.5 rounded">Del</button>
+                  </div>
+                </div>
+              ))}
+            </Card>
+
+            {/* Write form */}
+            <Card className="p-5">
+              <h2 className="text-sm font-bold text-gray-200 mb-3">Write File</h2>
+              <form onSubmit={handleWrite} className="space-y-3">
+                <Input label="Path" placeholder="hello.txt" value={writePath} onChange={(e) => setWritePath(e.target.value)} required />
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-400">Contents</label>
+                  <textarea value={writeContents} onChange={(e) => setWriteContents(e.target.value)}
+                    rows={4} placeholder="File contents..."
+                    className="w-full bg-gray-900 border border-gray-800 rounded-lg px-3.5 py-2.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 transition-all font-mono text-xs resize-none" />
+                </div>
+                <Btn type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white px-4">
+                  Write to {disk} disk
+                </Btn>
+                {writeStatus && <Alert type={writeStatus.type}>{writeStatus.msg}</Alert>}
+              </form>
+            </Card>
+          </div>
+
+          {/* Right column: Read + Info */}
+          <div className="space-y-4">
+            {/* Read viewer */}
+            <Card className="p-5">
+              <h2 className="text-sm font-bold text-gray-200 mb-3">File Contents</h2>
+              {readPath ? (
+                <div>
+                  <p className="text-xs text-gray-500 mb-2 font-mono">{readPath}</p>
+                  {readError ? (
+                    <Alert type="error">{readError}</Alert>
+                  ) : readContents !== null ? (
+                    <pre className="bg-gray-900 border border-gray-800 rounded-lg p-3 text-xs text-gray-300 font-mono whitespace-pre-wrap break-words max-h-64 overflow-y-auto">{readContents}</pre>
+                  ) : (
+                    <p className="text-xs text-gray-600">Loading...</p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-xs text-gray-600 text-center py-8">Click "Read" on a file to view its contents</p>
+              )}
+            </Card>
+
+            {/* Info panel */}
+            <Card className="p-5">
+              <h2 className="text-sm font-bold text-gray-200 mb-3">File Info</h2>
+              {fileInfo ? (
+                <div className="space-y-2">
+                  <InfoRow label="Path" value={fileInfo.path} />
+                  <InfoRow label="Size" value={fmtSize(fileInfo.size)} />
+                  <InfoRow label="Modified" value={fmtDate(fileInfo.lastModified)} />
+                  <InfoRow label="MIME Type" value={fileInfo.mimeType ?? 'unknown'} />
+                  <InfoRow label="Visibility" value={fileInfo.visibility} />
+                </div>
+              ) : (
+                <p className="text-xs text-gray-600 text-center py-8">Click "Info" on a file to view its metadata</p>
+              )}
+            </Card>
+
+            {/* API Reference */}
+            <Card className="p-5">
+              <h2 className="text-sm font-bold text-gray-200 mb-3">API Reference</h2>
+              <div className="space-y-2 text-xs">
+                {[
+                  { method: 'storage()', desc: 'Get the default disk (FilesystemManager)' },
+                  { method: "storage('s3')", desc: 'Get a specific disk by name' },
+                  { method: '.put(path, contents)', desc: 'Write a file' },
+                  { method: '.get(path)', desc: 'Read file as string' },
+                  { method: '.exists(path)', desc: 'Check if file exists' },
+                  { method: '.delete(path)', desc: 'Delete a file' },
+                  { method: '.files(dir?)', desc: 'List files in directory' },
+                  { method: '.copy(from, to)', desc: 'Copy a file' },
+                  { method: '.move(from, to)', desc: 'Move/rename a file' },
+                  { method: '.size(path)', desc: 'Get file size in bytes' },
+                  { method: '.makeDirectory(path)', desc: 'Create a directory' },
+                  { method: '.allFiles(dir?)', desc: 'List files recursively' },
+                  { method: '.setVisibility(path, v)', desc: "Set 'public' or 'private'" },
+                  { method: '.stream(path)', desc: 'Get ReadableStream' },
+                  { method: '.append(path, text)', desc: 'Append to file' },
+                  { method: '.prepend(path, text)', desc: 'Prepend to file' },
+                ].map((item) => (
+                  <div key={item.method} className="flex items-start gap-2">
+                    <code className="text-emerald-400 font-mono shrink-0">{item.method}</code>
+                    <span className="text-gray-500">{item.desc}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="bg-gray-900/50 rounded-xl border border-gray-800/50 px-5 py-4 space-y-2">
+          <p className="text-xs text-gray-400">
+            <span className="text-gray-300 font-medium">@mantiq/filesystem</span> — Storage abstraction with local, S3, GCS, R2 drivers.
+          </p>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-[11px] text-gray-600">
+            <span>FilesystemManager</span><span>LocalDriver</span><span>NullDriver</span><span>FilesystemServiceProvider</span><span>storage() helper</span>
+          </div>
+        </div>
+      </main>
+    </div>
+  )
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between py-1.5 border-b border-gray-800/50 last:border-0">
+      <span className="text-gray-500">{label}</span>
+      <span className="text-gray-300 font-mono text-xs">{value}</span>
+    </div>
+  )
+}
+
 // ── Root ──────────────────────────────────────────────────────────────────────
 
 export function App({ appName = 'MantiqJS', currentUser = null, currentPage }: AppProps) {
   const [user, setUser] = useState<User | null>(currentUser)
-  const initialPage = currentPage === 'validation' ? 'validation' as const : currentPage === 'cli' ? 'cli' as const : 'login' as const
-  const [page, setPage] = useState<'login' | 'register' | 'validation' | 'cli'>(initialPage)
+  const initialPage = currentPage === 'validation' ? 'validation' as const : currentPage === 'cli' ? 'cli' as const : currentPage === 'storage' ? 'storage' as const : 'login' as const
+  const [page, setPage] = useState<'login' | 'register' | 'validation' | 'cli' | 'storage'>(initialPage)
 
   if (page === 'validation') {
     return <ValidationPlayground appName={appName} onBack={() => { window.location.href = '/' }} />
@@ -1175,11 +1518,15 @@ export function App({ appName = 'MantiqJS', currentUser = null, currentPage }: A
     return <CLIDocs appName={appName} onBack={() => { window.location.href = '/' }} />
   }
 
+  if (page === 'storage') {
+    return <StoragePlayground appName={appName} onBack={() => { window.location.href = '/' }} />
+  }
+
   if (!user) {
     return page === 'login'
       ? <LoginPage appName={appName} onLogin={setUser} onGoRegister={() => setPage('register')} />
       : <RegisterPage appName={appName} onRegister={setUser} onGoLogin={() => setPage('login')} />
   }
 
-  return <Dashboard appName={appName} user={user} onLogout={() => setUser(null)} onValidation={() => setPage('validation')} onCli={() => setPage('cli')} />
+  return <Dashboard appName={appName} user={user} onLogout={() => setUser(null)} onValidation={() => setPage('validation')} onCli={() => setPage('cli')} onStorage={() => setPage('storage')} />
 }

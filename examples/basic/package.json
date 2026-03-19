@@ -15,6 +15,7 @@
     "@mantiq/cli": "workspace:*",
     "@mantiq/core": "workspace:*",
     "@mantiq/database": "workspace:*",
+    "@mantiq/filesystem": "workspace:*",
     "@mantiq/validation": "workspace:*",
     "@mantiq/vite": "workspace:*",
     "react": "^19.0.0",
