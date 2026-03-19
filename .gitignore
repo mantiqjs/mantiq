@@ -3,9 +3,14 @@ dist/
 .env
 .env.local
 *.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.tsbuildinfo
 storage/framework/
 storage/logs/
+**/storage/app/uploads/
 .cache/
 .turbo/
+.devdbrc
 bun.lockb
 *.lock
