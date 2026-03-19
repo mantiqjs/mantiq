@@ -1,0 +1,22 @@
+{
+  "name": "create-mantiq",
+  "version": "0.0.1",
+  "description": "Scaffold a new MantiqJS application",
+  "type": "module",
+  "bin": {
+    "create-mantiq": "./src/index.ts"
+  },
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "bun build ./src/index.ts --outdir ./dist --target bun",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "typescript": "^5.7.0"
+  }
+}

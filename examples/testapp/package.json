@@ -1,0 +1,22 @@
+{
+  "name": "testapp",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch index.ts",
+    "start": "bun run index.ts",
+    "mantiq": "bun run mantiq.ts"
+  },
+  "dependencies": {
+    "@mantiq/auth": "^0.0.1",
+    "@mantiq/cli": "^0.0.1",
+    "@mantiq/core": "^0.0.1",
+    "@mantiq/database": "^0.0.1",
+    "@mantiq/validation": "^0.0.1"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "typescript": "^5.7.0"
+  }
+}
