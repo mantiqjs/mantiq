@@ -1,7 +1,7 @@
 {
   "name": "@mantiq/events",
   "version": "0.0.1",
-  "description": "Event dispatcher, listeners",
+  "description": "Event dispatcher, listeners, observers, and broadcasting for MantiqJS",
   "type": "module",
   "main": "./src/index.ts",
   "exports": { ".": "./src/index.ts" },
@@ -12,5 +12,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": { "@mantiq/core": "workspace:*" },
-  "devDependencies": { "bun-types": "latest", "typescript": "^5.7.0" }
+  "peerDependencies": { "@mantiq/database": "workspace:*", "@mantiq/auth": "workspace:*" },
+  "peerDependenciesMeta": { "@mantiq/database": { "optional": true }, "@mantiq/auth": { "optional": true } },
+  "devDependencies": { "@mantiq/database": "workspace:*", "@mantiq/auth": "workspace:*", "bun-types": "latest", "typescript": "^5.7.0" }
 }
