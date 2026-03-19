@@ -24,4 +24,16 @@ export class NullCacheStore implements CacheStore {
   async flush(): Promise<void> {
     // noop
   }
+
+  async increment(_key: string, value = 1): Promise<number> {
+    return value
+  }
+
+  async decrement(_key: string, value = 1): Promise<number> {
+    return -value
+  }
+
+  async add(_key: string, _value: unknown, _ttl?: number): Promise<boolean> {
+    return false
+  }
 }

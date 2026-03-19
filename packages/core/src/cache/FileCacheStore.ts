@@ -80,6 +80,23 @@ export class FileCacheStore implements CacheStore {
     }
   }
 
+  async increment(key: string, value = 1): Promise<number> {
+    const current = await this.get<number>(key)
+    const newValue = (current ?? 0) + value
+    await this.put(key, newValue)
+    return newValue
+  }
+
+  async decrement(key: string, value = 1): Promise<number> {
+    return this.increment(key, -value)
+  }
+
+  async add(key: string, value: unknown, ttl?: number): Promise<boolean> {
+    if (await this.has(key)) return false
+    await this.put(key, value, ttl)
+    return true
+  }
+
   // ── Internal ────────────────────────────────────────────────────────────
 
   private path(key: string): string {

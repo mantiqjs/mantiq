@@ -28,4 +28,22 @@ export interface CacheStore {
    * Remove all items from the cache.
    */
   flush(): Promise<void>
+
+  /**
+   * Increment a numeric value in the cache.
+   * Returns the new value.
+   */
+  increment(key: string, value?: number): Promise<number>
+
+  /**
+   * Decrement a numeric value in the cache.
+   * Returns the new value.
+   */
+  decrement(key: string, value?: number): Promise<number>
+
+  /**
+   * Store an item in the cache if the key does not already exist.
+   * Returns true if the value was stored, false if key already exists.
+   */
+  add(key: string, value: unknown, ttl?: number): Promise<boolean>
 }
