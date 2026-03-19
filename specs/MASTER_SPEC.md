@@ -16,7 +16,7 @@ MantiqJS brings convention-over-configuration, elegant APIs, and zero decision f
 
 - **Zero decision fatigue.** One clear, documented answer for every architectural question.
 - **Convention over configuration.** Sensible defaults that work out of the box.
-- **Backend-focused.** Frontend is the developer's choice, connected through the Inertia protocol.
+- **Backend-focused.** Frontend is the developer's choice, connected through Vite SSR and the universal routing protocol.
 - **Bun-native.** Built on Bun's native APIs. No Node.js compatibility layers.
 - **Type-safe by default.** TypeScript is not optional. The type system provides better DX than string-based PHP conventions.
 - **Progressively complex.** Productive in five minutes. Extensible without limits.
@@ -59,8 +59,8 @@ MantiqJS brings convention-over-configuration, elegant APIs, and zero decision f
 │  HTTP Kernel · WS Kernel · Exception Handler           │
 ├──────────┬──────────┬──────────┬─────────────────────┤
 │ @mantiq/ │ @mantiq/ │ @mantiq/ │ @mantiq/            │
-│ database │ auth     │ inertia  │ queue · mail · cache │
-│ helpers  │          │          │ realtime · events    │
+│ database │ auth     │ vite     │ queue · mail         │
+│ helpers  │ filesys  │          │ realtime · events    │
 ├──────────┴──────────┴──────────┴─────────────────────┤
 │                  Bun Runtime APIs                      │
 │  Bun.serve · WebSocket · bun:sqlite · Bun.file        │
@@ -75,8 +75,7 @@ MantiqJS brings convention-over-configuration, elegant APIs, and zero decision f
 |---------------------|----------------------------------------------|-----------|
 | `@mantiq/core`      | Service container, router, middleware, HTTP kernel, config, exception handler | [packages/core.md](packages/core.md) |
 | `@mantiq/database`  | Query builder, ORM, migrations, seeders      | [packages/database.md](packages/database.md) |
-| `@mantiq/inertia`   | Inertia protocol server adapter              | [packages/inertia.md](packages/inertia.md) |
-| `@mantiq/vite`      | Vite+ dev server & manifest integration      | [packages/vite.md](packages/vite.md) |
+| `@mantiq/vite`      | Vite+ dev server, SSR, universal routing     | [packages/vite.md](packages/vite.md) |
 | `@mantiq/auth`      | Session & token auth, guards, providers      | [packages/auth.md](packages/auth.md) |
 | `@mantiq/cli`       | Command runner, code generators, dev server   | [packages/cli.md](packages/cli.md) |
 | `@mantiq/validation`| Rule engine, form requests                   | [packages/validation.md](packages/validation.md) |
@@ -87,7 +86,6 @@ MantiqJS brings convention-over-configuration, elegant APIs, and zero decision f
 | Package             | Purpose                                      | Spec File |
 |---------------------|----------------------------------------------|-----------|
 | `@mantiq/queue`     | Job dispatching, workers, retry logic        | [packages/queue.md](packages/queue.md) |
-| `@mantiq/cache`     | Cache drivers (memory, file, Redis)          | [packages/cache.md](packages/cache.md) |
 | `@mantiq/mail`      | Mail transports, message builder             | [packages/mail.md](packages/mail.md) |
 | `@mantiq/events`    | Event dispatcher, listeners                  | [packages/events.md](packages/events.md) |
 | `@mantiq/realtime`  | WebSocket, SSE, channels, broadcasting       | [packages/realtime.md](packages/realtime.md) |
@@ -116,12 +114,10 @@ mantiqjs/
 ├── packages/
 │   ├── core/
 │   ├── database/
-│   ├── inertia/
 │   ├── vite/
 │   ├── auth/
 │   ├── cli/
 │   ├── queue/
-│   ├── cache/
 │   ├── mail/
 │   ├── events/
 │   ├── realtime/
@@ -161,11 +157,9 @@ This defines which packages depend on which. This is critical for build order, i
 @mantiq/database       → @mantiq/core (container, config, events)
 @mantiq/validation     → @mantiq/core (container, config)
 @mantiq/auth           → @mantiq/core, @mantiq/database, @mantiq/validation
-@mantiq/inertia        → @mantiq/core (middleware, response)
 @mantiq/vite           → @mantiq/core (config)
 @mantiq/cli            → @mantiq/core (container, config, providers)
 @mantiq/queue          → @mantiq/core (container, config, events)
-@mantiq/cache          → @mantiq/core (container, config)
 @mantiq/mail           → @mantiq/core (container, config), @mantiq/queue (optional)
 @mantiq/events         → @mantiq/core (container, config)
 @mantiq/realtime       → @mantiq/core (container, config, middleware), @mantiq/events
@@ -192,10 +186,9 @@ When the application boots (`bootstrap/app.ts`), providers are loaded in this or
 6. **Auth provider** — Depends on session, database
 7. **Validation provider** — Registers rules
 8. **Routing provider** — Loads route files, registers middleware
-9. **Inertia provider** — Registers Inertia middleware and response macro
-10. **Vite provider** — Registers asset helpers
-11. **Event provider** — Discovers and registers listeners
-12. **Queue provider** — Registers queue connections and worker
+9. **Vite provider** — Registers asset helpers, SSR, and page rendering
+10. **Event provider** — Discovers and registers listeners
+11. **Queue provider** — Registers queue connections and worker
 13. **Mail provider** — Registers mail transports
 14. **Realtime provider** — Registers WebSocket/SSE handlers
 15. **Application providers** — Developer's custom providers (`app/Providers/`)
@@ -452,7 +445,7 @@ my-app/
 │   ├── auth.ts
 │   ├── cors.ts
 │   ├── database.ts
-│   ├── inertia.ts
+│   ├── vite.ts
 │   ├── mail.ts
 │   ├── queue.ts
 │   ├── cache.ts
@@ -471,7 +464,7 @@ my-app/
 │       ├── Pages/
 │       └── Components/
 ├── routes/
-│   ├── web.ts              ← Routes with session/Inertia middleware
+│   ├── web.ts              ← Routes with session middleware
 │   ├── api.ts              ← Stateless API routes
 │   ├── channels.ts         ← Channel authorization definitions
 │   └── console.ts          ← CLI command scheduling
@@ -611,12 +604,11 @@ bunx create-mantiq my-app --ui=vanilla
 
 **Frontend (varies by kit):**
 - Vite+ configuration with the appropriate framework plugin
-- Inertia client adapter installed and configured
+- Vite SSR with universal routing (Inertia-like protocol built into @mantiq/vite)
 - Tailwind CSS pre-configured
 - TypeScript on both sides
 - Example pages: Welcome, Dashboard, Login, Register, Forgot Password, Profile
 - Shared layout component with navigation
-- Form helper components for Inertia forms
 
 ### 9.3 Post-Scaffold Experience
 
@@ -677,16 +669,16 @@ Packages: `@mantiq/database`
 
 ### Phase 3 — Frontend Bridge (Milestone: "Full Stack")
 
-Packages: `@mantiq/inertia`, `@mantiq/vite`
+Package: `@mantiq/vite`
 
-- [ ] Inertia server adapter with full protocol compliance
-- [ ] Shared data middleware
-- [ ] Inertia response helper
-- [ ] Vite+ dev mode integration
-- [ ] Vite+ production manifest reading
-- [ ] HTML shell renderer
+- [x] Vite dev mode integration
+- [x] Vite production manifest reading
+- [x] HTML shell renderer
+- [x] SSR with universal routing (Inertia-like protocol)
+- [x] JSON response for client-side navigation (`X-Mantiq` header)
+- [x] Page component architecture (React, Vue, Svelte kits)
 
-**Gate:** Controller returns `Inertia.render()`, a React/Vue/Svelte page renders in the browser with live database data.
+**Gate:** Controller returns `vite().render()`, a React/Vue/Svelte page renders in the browser with live database data. ✅ Complete
 
 ### Phase 4 — Auth & Validation (Milestone: "Production Ready")
 
@@ -728,10 +720,9 @@ Packages: `@mantiq/cli`
 
 ### Phase 7 — Ecosystem
 
-Packages: `@mantiq/queue`, `@mantiq/cache`, `@mantiq/mail`, `@mantiq/events`, `@mantiq/realtime`, `@mantiq/logging`
+Packages: `@mantiq/queue`, `@mantiq/mail`, `@mantiq/events`, `@mantiq/realtime`, `@mantiq/logging`
 
 - [ ] Queue: dispatching, SQLite driver, Redis driver, worker, batching, chaining
-- [ ] Cache: memory, file, Redis drivers
 - [ ] Mail: SMTP, Resend, Mailgun transports
 - [x] Events: sync dispatch, listeners, subscribers, model events, observers, broadcasting, test fakes
 - [ ] Realtime: WebSocket, SSE, channels, Echo client
@@ -788,10 +779,10 @@ Addon packages version independently since they evolve on their own cadence.
 ### 12.1 Structure (mantiqjs.com/docs)
 
 - **Getting Started** — installation, first project, directory structure, core concepts
-- **The Basics** — routing, controllers, middleware, requests, responses, views (Inertia)
+- **The Basics** — routing, controllers, middleware, requests, responses, views
 - **Database** — configuration, query builder, migrations, ORM, relationships, seeding
 - **Security** — authentication, authorization, CSRF, encryption, hashing
-- **Frontend** — Inertia integration, Vite+ setup, asset handling
+- **Frontend** — Vite SSR, universal routing, asset handling
 - **Advanced** — service container, providers, events, queues, cache, mail, real-time
 - **Utilities** — Str, Arr, Num, Collection helpers
 - **Addons** — media, AI, agents, search, social auth, billing, notifications
@@ -865,7 +856,7 @@ VITE_PORT=5173
 |------------------------|---------------------------------------------|
 | Illuminate             | @mantiq/*                                   |
 | Artisan                | `mantiq` CLI                                |
-| Blade                  | Inertia (React/Vue/Svelte)                  |
+| Blade                  | Vite SSR (React/Vue/Svelte)                 |
 | Eloquent               | @mantiq/database ORM                        |
 | Vite plugin            | @mantiq/vite                                |
 | Breeze / Jetstream     | Starter kits (react/vue/svelte/vanilla)     |
@@ -891,14 +882,12 @@ Each package has its own detailed specification. The master spec (this file) def
 |------------------------------------|-------------|
 | [packages/core.md](packages/core.md)           | 📝 To write |
 | [packages/database.md](packages/database.md)   | 📝 To write |
-| [packages/inertia.md](packages/inertia.md)     | 📝 To write |
 | [packages/vite.md](packages/vite.md)           | 📝 To write |
 | [packages/auth.md](packages/auth.md)           | 📝 To write |
 | [packages/cli.md](packages/cli.md)             | 📝 To write |
 | [packages/validation.md](packages/validation.md)| 📝 To write |
 | [packages/helpers.md](packages/helpers.md)     | 📝 To write |
 | [packages/queue.md](packages/queue.md)         | 📝 To write |
-| [packages/cache.md](packages/cache.md)         | 📝 To write |
 | [packages/mail.md](packages/mail.md)           | 📝 To write |
 | [packages/events.md](packages/events.md)       | ✅ Complete |
 | [packages/realtime.md](packages/realtime.md)   | 📝 To write |

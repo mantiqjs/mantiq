@@ -453,7 +453,7 @@ Controllers can return various types. The kernel converts them to `Response`:
 | `string` | `Response` with `text/html` content type |
 | `object` / `array` | `Response.json()` |
 | `null` / `undefined` | 204 No Content |
-| `InertiaResponse` | Handled by Inertia adapter (see @mantiq/inertia spec) |
+| `ViteRenderResponse` | Handled by @mantiq/vite SSR + universal routing |
 
 ---
 

@@ -72,12 +72,10 @@ Developers who love TypeScript and Bun's performance should not have to sacrific
 |---------------------|----------------------------------------------|-----------|
 | `@mantiq/core`      | Service container, router, middleware, HTTP kernel, config, exception handler | Critical  |
 | `@mantiq/database`  | Query builder, ORM, migrations, seeders      | Critical  |
-| `@mantiq/inertia`   | Inertia protocol server adapter              | Critical  |
-| `@mantiq/vite`      | Vite+ dev server & manifest integration      | Critical  |
+| `@mantiq/vite`      | Vite+ dev server, SSR, universal routing     | Critical  |
 | `@mantiq/auth`      | Session & token auth, guards, providers      | Critical  |
 | `@mantiq/cli`       | Command runner, code generators, dev server   | Critical  |
 | `@mantiq/queue`     | Job dispatching, workers, retry logic        | Secondary |
-| `@mantiq/cache`     | Cache drivers (memory, file, Redis)          | Secondary |
 | `@mantiq/mail`      | Mail transports, message builder             | Secondary |
 | `@mantiq/events`    | Event dispatcher, listeners                  | Secondary |
 | `@mantiq/validation`| Rule engine, form requests                   | Critical  |
