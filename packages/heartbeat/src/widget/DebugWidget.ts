@@ -67,6 +67,41 @@ export function renderWidget(data: {
     </div>
   </div>
 </div>
-<script>document.addEventListener('keydown',function(e){if(e.key==='Escape')document.getElementById('__mw_panel').style.display='none'});</script>
+<script>
+(function(){
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')document.getElementById('__mw_panel').style.display='none'});
+
+  // Intercept fetch to read X-Heartbeat header and update widget
+  var _fetch=window.fetch;
+  window.fetch=function(){
+    return _fetch.apply(this,arguments).then(function(res){
+      var h=res.headers.get('X-Heartbeat');
+      if(h)updateWidget(h);
+      return res;
+    });
+  };
+
+  function updateWidget(header){
+    // Format: 15ms;1.6MB;200;0q
+    var p=header.split(';');
+    if(p.length<4)return;
+    var dur=p[0],mem=p[1],status=parseInt(p[2]),queries=p[3];
+    var sc=status>=500?'#f87171':status>=400?'#fbbf24':'#34d399';
+
+    // Update pill
+    var pill=document.getElementById('__mw_stats');
+    if(pill)pill.innerHTML='<span id="__mw_dot" style="width:5px;height:5px;border-radius:50%;background:'+sc+';flex-shrink:0"></span><b style="color:#fafafa;font-weight:600">'+dur+'</b><span id="__mw_sep" style="color:#27272a">&middot;</span><span>'+mem+'</span><span id="__mw_sep" style="color:#27272a">&middot;</span><span>'+queries+'</span>';
+
+    // Update panel grid
+    var cells=document.querySelectorAll('#__mw_grid .cell .val');
+    if(cells.length>=4){
+      cells[0].innerHTML=dur.replace('ms','')+'<small>ms</small>';
+      cells[1].innerHTML=mem.replace('MB','')+'<small>MB</small>';
+      cells[2].innerHTML=status;cells[2].style.color=sc;
+      cells[3].innerHTML=queries.replace('q','');
+    }
+  }
+})();
+</script>
 <!-- /mantiq:heartbeat-widget -->`
 }
