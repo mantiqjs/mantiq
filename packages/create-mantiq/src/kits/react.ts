@@ -297,12 +297,41 @@ export default function Dashboard({ appName = '${ctx.name}', currentUser, users:
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
-      <nav className="border-b border-gray-200 dark:border-gray-800/80 bg-white/90 dark:bg-gray-950/90 backdrop-blur-md sticky top-0 z-20">
-        <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
-          <span className="text-sm font-bold text-gray-900 dark:text-white">{appName}</span>
+    <div className="min-h-screen flex bg-gray-50 dark:bg-gray-950">
+      {/* Sidebar */}
+      <aside className="w-60 fixed inset-y-0 left-0 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col z-30">
+        <div className="h-14 flex items-center px-5 border-b border-gray-200 dark:border-gray-800">
+          <span className="text-sm font-semibold text-gray-900 dark:text-white">{appName}</span>
+        </div>
+        <nav className="flex-1 px-3 py-3 space-y-0.5">
+          <a href="/dashboard" className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white">
+            <svg className="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+            Dashboard
+          </a>
+          <a href="#users-section" onClick={(e) => { e.preventDefault(); document.getElementById('users-section')?.scrollIntoView({ behavior: 'smooth' }) }} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+            Users
+          </a>
+        </nav>
+        <div className="px-3 py-3 mt-auto border-t border-gray-200 dark:border-gray-800 space-y-0.5">
+          <a href="/_heartbeat" className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" /></svg>
+            Heartbeat
+          </a>
+          <a href="/api/ping" className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+            API Ping
+          </a>
+        </div>
+      </aside>
+
+      {/* Main */}
+      <div className="flex-1 ml-60">
+        {/* Top bar */}
+        <header className="h-14 border-b border-gray-200 dark:border-gray-800 bg-white/90 dark:bg-gray-950/90 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between px-6">
+          <h1 className="text-sm font-medium text-gray-900 dark:text-gray-200">Dashboard</h1>
           <div className="flex items-center gap-3">
-            <button onClick={toggleTheme} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title="Toggle theme">
+            <button onClick={toggleTheme} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title="Toggle theme">
               {isDark ? (
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -314,73 +343,52 @@ export default function Dashboard({ appName = '${ctx.name}', currentUser, users:
               )}
             </button>
             <span className="text-xs text-gray-500 dark:text-gray-400">{currentUser?.name}</span>
-            <button onClick={handleLogout}
-              className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-gray-100 dark:bg-gray-900 hover:bg-gray-200 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-1.5 transition-colors">
+            <button onClick={handleLogout} className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 transition-colors">
               Logout
             </button>
           </div>
-        </div>
-      </nav>
+        </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-8 space-y-6 animate-fade-up">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Welcome back, {currentUser?.name}</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Here's what's happening with your application.</p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <a href="/heartbeat" className="group bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 p-5 hover:border-emerald-500/40 transition-colors">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-200">Heartbeat Dashboard</h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Monitor application health</p>
-              </div>
-              <span className="text-emerald-600 dark:text-emerald-400 text-sm group-hover:translate-x-0.5 transition-transform">&rarr;</span>
-            </div>
-          </a>
-          <a href="/api/ping" className="group bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 p-5 hover:border-emerald-500/40 transition-colors">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-200">API Ping</h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Test API connectivity</p>
-              </div>
-              <span className="text-emerald-600 dark:text-emerald-400 text-sm group-hover:translate-x-0.5 transition-transform">&rarr;</span>
-            </div>
-          </a>
-        </div>
-
-        <div className="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
-            <h2 className="text-sm font-bold text-gray-900 dark:text-gray-200">Users</h2>
-            <span className="text-xs text-gray-500 dark:text-gray-400">{loading ? 'Loading...' : \`\${users.length} total\`}</span>
+        {/* Content */}
+        <main className="p-6 space-y-6 animate-fade-up">
+          <div className="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Welcome back, {currentUser?.name}</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Here's what's happening with your application.</p>
           </div>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 dark:border-gray-800 text-left text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                <th className="px-5 py-3 font-medium">Name</th>
-                <th className="px-5 py-3 font-medium">Email</th>
-                <th className="px-5 py-3 font-medium">Role</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800/60">
-              {users.map((u) => (
-                <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
-                  <td className="px-5 py-3 text-gray-900 dark:text-gray-200">{u.name}</td>
-                  <td className="px-5 py-3 text-gray-500 dark:text-gray-400">{u.email}</td>
-                  <td className="px-5 py-3">
-                    <span className={\`text-[10px] px-2 py-0.5 rounded-full font-medium \${
-                      u.role === 'admin' ? 'bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/20' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'
-                    }\`}>{u.role}</span>
-                  </td>
+
+          <div id="users-section" className="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+              <h2 className="text-sm font-bold text-gray-900 dark:text-gray-200">Users</h2>
+              <span className="text-xs text-gray-500 dark:text-gray-400">{loading ? 'Loading...' : \`\${users.length} total\`}</span>
+            </div>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 dark:border-gray-800 text-left text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-5 py-3 font-medium">Name</th>
+                  <th className="px-5 py-3 font-medium">Email</th>
+                  <th className="px-5 py-3 font-medium">Role</th>
                 </tr>
-              ))}
-              {users.length === 0 && !loading && (
-                <tr><td colSpan={3} className="px-5 py-8 text-center text-gray-400 dark:text-gray-600">No users found</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </main>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800/60">
+                {users.map((u) => (
+                  <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
+                    <td className="px-5 py-3 text-gray-900 dark:text-gray-200">{u.name}</td>
+                    <td className="px-5 py-3 text-gray-500 dark:text-gray-400">{u.email}</td>
+                    <td className="px-5 py-3">
+                      <span className={\`text-[10px] px-2 py-0.5 rounded-full font-medium \${
+                        u.role === 'admin' ? 'bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/20' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'
+                      }\`}>{u.role}</span>
+                    </td>
+                  </tr>
+                ))}
+                {users.length === 0 && !loading && (
+                  <tr><td colSpan={3} className="px-5 py-8 text-center text-gray-400 dark:text-gray-600">No users found</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </main>
+      </div>
     </div>
   )
 }

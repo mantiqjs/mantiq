@@ -96,6 +96,13 @@ export function render(_url: string, data?: Record<string, any>) {
 
   $: PageComponent = pages[currentPage] ?? null
 
+  // Initialize theme immediately to prevent flash
+  if (typeof window !== 'undefined') {
+    const theme = localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    document.documentElement.classList.toggle('dark', theme === 'dark')
+  }
+
   async function navigate(href: string) {
     const res = await fetch(href, {
       headers: { 'X-Mantiq': 'true', Accept: 'application/json' },
@@ -272,7 +279,7 @@ export function render(_url: string, data?: Record<string, any>) {
 `,
 
     'src/pages/Dashboard.svelte': `<script lang="ts">
-  import { onMount } from 'svelte'
+  import { onMount, getContext } from 'svelte'
   import { api, post } from '../lib/api.ts'
 
   export let appName: string = '${ctx.name}'
@@ -280,9 +287,20 @@ export function render(_url: string, data?: Record<string, any>) {
   export let users: any[] = []
   export let navigate: (href: string) => void
 
+  const ctxNavigate = getContext<(href: string) => void>('navigate')
+
   let localUsers: any[] = users ?? []
   let loading = !users?.length
   let isDark = true
+
+  const navItems = [
+    { label: 'Dashboard', icon: 'grid', href: '/dashboard', active: true },
+  ]
+
+  const bottomLinks = [
+    { label: 'Heartbeat', icon: 'heart', href: '/heartbeat' },
+    { label: 'API Ping', icon: 'zap', href: '/api/ping' },
+  ]
 
   async function fetchUsers() {
     loading = true
@@ -293,7 +311,7 @@ export function render(_url: string, data?: Record<string, any>) {
 
   async function handleLogout() {
     await post('/logout', {})
-    navigate('/login')
+    ;(navigate ?? ctxNavigate)('/login')
   }
 
   function toggleTheme() {
@@ -310,10 +328,56 @@ export function render(_url: string, data?: Record<string, any>) {
   })
 </script>
 
-<div class="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors">
-  <nav class="border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-950/90 backdrop-blur-md sticky top-0 z-20">
-    <div class="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
-      <span class="text-sm font-bold text-gray-900 dark:text-white">{appName}</span>
+<div class="min-h-screen flex bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors">
+  <!-- Sidebar -->
+  <aside class="w-60 flex-shrink-0 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col fixed inset-y-0 left-0 z-30">
+    <!-- App name -->
+    <div class="h-14 flex items-center px-5 border-b border-gray-200 dark:border-gray-800">
+      <div class="flex items-center gap-2.5">
+        <div class="w-7 h-7 rounded-lg bg-emerald-600 flex items-center justify-center">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+        </div>
+        <span class="text-sm font-bold text-gray-900 dark:text-white">{appName}</span>
+      </div>
+    </div>
+
+    <!-- Nav items -->
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      {#each navItems as item}
+        <a href={item.href}
+          class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+            {item.active
+              ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'}">
+          {#if item.icon === 'grid'}
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+          {/if}
+          {item.label}
+        </a>
+      {/each}
+    </nav>
+
+    <!-- Bottom links -->
+    <div class="px-3 py-4 border-t border-gray-200 dark:border-gray-800 space-y-1">
+      {#each bottomLinks as link}
+        <a href={link.href}
+          class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+          {#if link.icon === 'heart'}
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+          {:else if link.icon === 'zap'}
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+          {/if}
+          {link.label}
+        </a>
+      {/each}
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <div class="flex-1 ml-60 flex flex-col min-h-screen">
+    <!-- Header -->
+    <header class="h-14 flex items-center justify-between px-6 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-950/90 backdrop-blur-md sticky top-0 z-20">
+      <h1 class="text-sm font-semibold text-gray-900 dark:text-white">Dashboard</h1>
       <div class="flex items-center gap-3">
         <button on:click={toggleTheme} class="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" aria-label="Toggle theme">
           {#if isDark}
@@ -325,66 +389,48 @@ export function render(_url: string, data?: Record<string, any>) {
         <span class="text-xs text-gray-500 dark:text-gray-400">{currentUser?.name}</span>
         <button on:click={handleLogout} class="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-gray-100 dark:bg-gray-900 hover:bg-gray-200 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-1.5 transition-colors">Logout</button>
       </div>
-    </div>
-  </nav>
+    </header>
 
-  <main class="max-w-5xl mx-auto px-6 py-8 space-y-6 animate-fade-up">
-    <div>
-      <h1 class="text-xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Welcome back, {currentUser?.name}.</p>
-    </div>
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <a href="/heartbeat" class="group bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 p-5 hover:border-emerald-300 dark:hover:border-emerald-500/40 transition-colors">
-        <div class="flex items-center justify-between">
-          <div>
-            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Heartbeat Dashboard</h3>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Monitor application health</p>
-          </div>
-          <span class="text-emerald-600 dark:text-emerald-400 group-hover:translate-x-0.5 transition-transform">&rarr;</span>
-        </div>
-      </a>
-      <a href="/api/ping" class="group bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 p-5 hover:border-emerald-300 dark:hover:border-emerald-500/40 transition-colors">
-        <div class="flex items-center justify-between">
-          <div>
-            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">API Ping</h3>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Test API connectivity</p>
-          </div>
-          <span class="text-emerald-600 dark:text-emerald-400 group-hover:translate-x-0.5 transition-transform">&rarr;</span>
-        </div>
-      </a>
-    </div>
-
-    <div class="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
-      <div class="px-5 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
-        <h2 class="text-sm font-bold text-gray-900 dark:text-gray-200">Users</h2>
-        <span class="text-xs text-gray-500 dark:text-gray-400">{loading ? 'Loading...' : localUsers.length + ' total'}</span>
+    <!-- Page content -->
+    <main class="flex-1 px-6 py-8 space-y-6 animate-fade-up">
+      <!-- Welcome card -->
+      <div class="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
+        <h2 class="text-lg font-bold text-gray-900 dark:text-white">Welcome back, {currentUser?.name}</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Here's what's happening with your application.</p>
       </div>
-      <table class="w-full text-sm">
-        <thead>
-          <tr class="border-b border-gray-200 dark:border-gray-800 text-left text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            <th class="px-5 py-3 font-medium">Name</th>
-            <th class="px-5 py-3 font-medium">Email</th>
-            <th class="px-5 py-3 font-medium">Role</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100 dark:divide-gray-800/60">
-          {#each localUsers as u (u.id)}
-            <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
-              <td class="px-5 py-3 text-gray-900 dark:text-gray-200">{u.name}</td>
-              <td class="px-5 py-3 text-gray-500 dark:text-gray-400">{u.email}</td>
-              <td class="px-5 py-3">
-                <span class="text-[10px] px-2 py-0.5 rounded-full font-medium border {u.role === 'admin' ? 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/20' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700'}">{u.role}</span>
-              </td>
+
+      <!-- Users table -->
+      <div class="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+          <h2 class="text-sm font-bold text-gray-900 dark:text-gray-200">Users</h2>
+          <span class="text-xs text-gray-500 dark:text-gray-400">{loading ? 'Loading...' : localUsers.length + ' total'}</span>
+        </div>
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-gray-200 dark:border-gray-800 text-left text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th class="px-5 py-3 font-medium">Name</th>
+              <th class="px-5 py-3 font-medium">Email</th>
+              <th class="px-5 py-3 font-medium">Role</th>
             </tr>
-          {/each}
-          {#if localUsers.length === 0 && !loading}
-            <tr><td colspan="3" class="px-5 py-8 text-center text-gray-400 dark:text-gray-600">No users found</td></tr>
-          {/if}
-        </tbody>
-      </table>
-    </div>
-  </main>
+          </thead>
+          <tbody class="divide-y divide-gray-100 dark:divide-gray-800/60">
+            {#each localUsers as u (u.id)}
+              <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
+                <td class="px-5 py-3 text-gray-900 dark:text-gray-200">{u.name}</td>
+                <td class="px-5 py-3 text-gray-500 dark:text-gray-400">{u.email}</td>
+                <td class="px-5 py-3">
+                  <span class="text-[10px] px-2 py-0.5 rounded-full font-medium border {u.role === 'admin' ? 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/20' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700'}">{u.role}</span>
+                </td>
+              </tr>
+            {/each}
+            {#if localUsers.length === 0 && !loading}
+              <tr><td colspan="3" class="px-5 py-8 text-center text-gray-400 dark:text-gray-600">No users found</td></tr>
+            {/if}
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
 </div>
 `,
   }

@@ -120,7 +120,7 @@ onMounted(() => {
 
   // Initialize theme: localStorage > system preference > dark default
   const theme = localStorage.getItem('theme') ||
-    (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'dark')
+    (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
   document.documentElement.classList.toggle('dark', theme === 'dark')
 })
 
@@ -327,7 +327,7 @@ async function handleSubmit() {
 `,
 
     'src/pages/Dashboard.vue': `<script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, inject } from 'vue'
 import { api, post } from '../lib/api.ts'
 
 const props = defineProps<{
@@ -341,6 +341,7 @@ const appName = props.appName ?? '${ctx.name}'
 const users = ref(props.users ?? [])
 const loading = ref(!props.users?.length)
 const isDark = ref(true)
+const nav = inject<(href: string) => void>('navigate', props.navigate)
 
 function toggleTheme() {
   const dark = document.documentElement.classList.toggle('dark')
@@ -361,21 +362,64 @@ async function handleLogout() {
 }
 
 onMounted(() => {
-  const theme = localStorage.getItem('theme') ||
-    (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'dark')
-  document.documentElement.classList.toggle('dark', theme === 'dark')
-  isDark.value = theme === 'dark'
-
+  isDark.value = document.documentElement.classList.contains('dark')
   if (!props.users?.length) fetchUsers()
 })
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors">
-    <!-- Navbar -->
-    <nav class="border-b border-gray-200 dark:border-gray-800/80 bg-white/80 dark:bg-gray-950/90 backdrop-blur-md sticky top-0 z-20">
-      <div class="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
+  <div class="min-h-screen flex bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors">
+    <!-- Sidebar -->
+    <aside class="w-60 flex-shrink-0 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col fixed inset-y-0 left-0 z-30">
+      <!-- App name -->
+      <div class="h-14 flex items-center px-5 border-b border-gray-200 dark:border-gray-800">
         <span class="text-sm font-bold text-gray-900 dark:text-white">{{ appName }}</span>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="flex-1 px-3 py-4 space-y-1">
+        <a
+          href="/dashboard"
+          class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+        >
+          <!-- Dashboard icon -->
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+          </svg>
+          Dashboard
+        </a>
+      </nav>
+
+      <!-- Bottom links -->
+      <div class="px-3 py-4 border-t border-gray-200 dark:border-gray-800 space-y-1">
+        <a
+          href="/heartbeat"
+          class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        >
+          <!-- Heart/pulse icon -->
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+          </svg>
+          Heartbeat
+        </a>
+        <a
+          href="/api/ping"
+          class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        >
+          <!-- Signal/wifi icon -->
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.858 15.355-5.858 21.213 0" />
+          </svg>
+          API Ping
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main area -->
+    <div class="flex-1 ml-60 flex flex-col min-h-screen">
+      <!-- Header -->
+      <header class="h-14 flex items-center justify-between px-6 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-950/90 backdrop-blur-md sticky top-0 z-20">
+        <h1 class="text-sm font-semibold text-gray-900 dark:text-white">Dashboard</h1>
         <div class="flex items-center gap-3">
           <!-- Dark/Light toggle -->
           <button
@@ -400,80 +444,53 @@ onMounted(() => {
             Logout
           </button>
         </div>
-      </div>
-    </nav>
+      </header>
 
-    <main class="max-w-5xl mx-auto px-6 py-8 space-y-6">
-      <!-- Welcome section -->
-      <div class="animate-fade-up">
-        <h1 class="text-xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Welcome back, {{ currentUser?.name }}.</p>
-      </div>
-
-      <!-- Quick links -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-up">
-        <a
-          href="/heartbeat"
-          class="group bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 p-5 hover:border-emerald-300 dark:hover:border-emerald-800 transition-colors"
-        >
-          <div class="flex items-center justify-between">
-            <div>
-              <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">Heartbeat Dashboard</h3>
-              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Monitor application health</p>
-            </div>
-            <span class="text-emerald-600 dark:text-emerald-400 group-hover:translate-x-0.5 transition-transform">&rarr;</span>
-          </div>
-        </a>
-        <a
-          href="/api/ping"
-          class="group bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 p-5 hover:border-emerald-300 dark:hover:border-emerald-800 transition-colors"
-        >
-          <div class="flex items-center justify-between">
-            <div>
-              <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">API Ping</h3>
-              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Test API connectivity</p>
-            </div>
-            <span class="text-emerald-600 dark:text-emerald-400 group-hover:translate-x-0.5 transition-transform">&rarr;</span>
-          </div>
-        </a>
-      </div>
-
-      <!-- Users table -->
-      <div class="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden animate-fade-up">
-        <div class="px-5 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
-          <h2 class="text-sm font-bold text-gray-800 dark:text-gray-200">Users</h2>
-          <span class="text-xs text-gray-500 dark:text-gray-400">{{ loading ? 'Loading...' : users.length + ' total' }}</span>
+      <!-- Content -->
+      <main class="flex-1 px-6 py-8 space-y-6">
+        <!-- Welcome card -->
+        <div class="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 p-6 animate-fade-up">
+          <h2 class="text-lg font-bold text-gray-900 dark:text-white">Welcome back, {{ currentUser?.name }}</h2>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Here's what's happening with your application.</p>
         </div>
-        <table class="w-full text-sm">
-          <thead>
-            <tr class="border-b border-gray-200 dark:border-gray-800 text-left text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              <th class="px-5 py-3 font-medium">Name</th>
-              <th class="px-5 py-3 font-medium">Email</th>
-              <th class="px-5 py-3 font-medium">Role</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100 dark:divide-gray-800/60">
-            <tr v-for="u in users" :key="u.id" class="hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
-              <td class="px-5 py-3 text-gray-800 dark:text-gray-200">{{ u.name }}</td>
-              <td class="px-5 py-3 text-gray-500 dark:text-gray-400">{{ u.email }}</td>
-              <td class="px-5 py-3">
-                <span
-                  :class="u.role === 'admin'
-                    ? 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/20'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700'"
-                  class="text-[10px] px-2 py-0.5 rounded-full font-medium border"
-                >
-                  {{ u.role }}
-                </span>
-              </td>
-            </tr>
-            <tr v-if="users.length === 0 && !loading">
-              <td colspan="3" class="px-5 py-8 text-center text-gray-400 dark:text-gray-600">No users found</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </main>
+
+        <!-- Users table -->
+        <div class="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden animate-fade-up">
+          <div class="px-5 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+            <h2 class="text-sm font-bold text-gray-900 dark:text-gray-200">Users</h2>
+            <span class="text-xs text-gray-500 dark:text-gray-400">{{ loading ? 'Loading...' : users.length + ' total' }}</span>
+          </div>
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-gray-200 dark:border-gray-800 text-left text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th class="px-5 py-3 font-medium">Name</th>
+                <th class="px-5 py-3 font-medium">Email</th>
+                <th class="px-5 py-3 font-medium">Role</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-gray-800/60">
+              <tr v-for="u in users" :key="u.id" class="hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
+                <td class="px-5 py-3 text-gray-900 dark:text-gray-200">{{ u.name }}</td>
+                <td class="px-5 py-3 text-gray-500 dark:text-gray-400">{{ u.email }}</td>
+                <td class="px-5 py-3">
+                  <span
+                    :class="u.role === 'admin'
+                      ? 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/20'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700'"
+                    class="text-[10px] px-2 py-0.5 rounded-full font-medium border"
+                  >
+                    {{ u.role }}
+                  </span>
+                </td>
+              </tr>
+              <tr v-if="users.length === 0 && !loading">
+                <td colspan="3" class="px-5 py-8 text-center text-gray-400 dark:text-gray-600">No users found</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
   </div>
 </template>
 `,
