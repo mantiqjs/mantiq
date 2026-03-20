@@ -35,6 +35,7 @@ export function getTemplates(ctx: TemplateContext): Record<string, string> {
         '@mantiq/queue': '^0.1.2',
         '@mantiq/realtime': '^0.1.2',
         '@mantiq/validation': '^0.1.2',
+        '@mantiq/mail': '^0.2.0',
       },
       devDependencies: {
         'bun-types': 'latest',
@@ -74,6 +75,7 @@ DB_DATABASE=database/database.sqlite
 
 LOG_CHANNEL=stack
 QUEUE_CONNECTION=sync
+MAIL_MAILER=log
 `,
 
     '.env.example': `APP_NAME=${ctx.name}
@@ -115,6 +117,7 @@ import { QueueServiceProvider } from '@mantiq/queue'
 import { ValidationServiceProvider } from '@mantiq/validation'
 import { HeartbeatServiceProvider, HeartbeatMiddleware } from '@mantiq/heartbeat'
 import { RealtimeServiceProvider } from '@mantiq/realtime'
+import { MailServiceProvider } from '@mantiq/mail'
 import { DatabaseServiceProvider } from './app/Providers/DatabaseServiceProvider.ts'
 
 // ── Load .env ─────────────────────────────────────────────────────────────────
@@ -146,6 +149,7 @@ await app.registerProviders([
   ValidationServiceProvider,
   HeartbeatServiceProvider,
   RealtimeServiceProvider,
+  MailServiceProvider,
 ])
 await app.bootProviders()
 
@@ -221,6 +225,7 @@ import {
   ScheduleRunCommand,
 } from '@mantiq/queue'
 import { InstallCommand as HeartbeatInstallCommand } from '@mantiq/heartbeat'
+import { MakeMailCommand } from '@mantiq/mail'
 
 const kernel = new Kernel()
 
@@ -250,6 +255,7 @@ kernel.registerAll([
   new MakeRuleCommand(),
   new MakeSeederCommand(),
   new MakeTestCommand(),
+  new MakeMailCommand(),
 
   // Queue
   new QueueWorkCommand(),
@@ -387,6 +393,60 @@ export default {
     driver: 'sqlite' as const,
     database: import.meta.dir + '/../database/queue.sqlite',
     table: 'failed_jobs',
+  },
+}
+`,
+
+    'config/mail.ts': `import { env } from '@mantiq/core'
+
+export default {
+  default: env('MAIL_MAILER', 'log'),
+
+  from: {
+    address: env('MAIL_FROM_ADDRESS', 'hello@example.com'),
+    name: env('MAIL_FROM_NAME', '${ctx.name}'),
+  },
+
+  mailers: {
+    smtp: {
+      driver: 'smtp' as const,
+      host: env('MAIL_HOST', 'localhost'),
+      port: Number(env('MAIL_PORT', '587')),
+      username: env('MAIL_USERNAME', ''),
+      password: env('MAIL_PASSWORD', ''),
+      encryption: env('MAIL_ENCRYPTION', 'starttls') as 'tls' | 'starttls' | 'none',
+    },
+
+    resend: {
+      driver: 'resend' as const,
+      apiKey: env('RESEND_API_KEY', ''),
+    },
+
+    sendgrid: {
+      driver: 'sendgrid' as const,
+      apiKey: env('SENDGRID_API_KEY', ''),
+    },
+
+    mailgun: {
+      driver: 'mailgun' as const,
+      apiKey: env('MAILGUN_API_KEY', ''),
+      domain: env('MAILGUN_DOMAIN', ''),
+    },
+
+    postmark: {
+      driver: 'postmark' as const,
+      serverToken: env('POSTMARK_TOKEN', ''),
+    },
+
+    ses: {
+      driver: 'ses' as const,
+      region: env('AWS_REGION', 'us-east-1'),
+      accessKeyId: env('AWS_ACCESS_KEY_ID', ''),
+      secretAccessKey: env('AWS_SECRET_ACCESS_KEY', ''),
+    },
+
+    log: { driver: 'log' as const },
+    array: { driver: 'array' as const },
   },
 }
 `,
@@ -673,6 +733,7 @@ function applyKitOverrides(templates: Record<string, string>, ctx: TemplateConte
       '@mantiq/queue': '^0.1.2',
       '@mantiq/realtime': '^0.1.2',
       '@mantiq/validation': '^0.1.2',
+        '@mantiq/mail': '^0.2.0',
       '@mantiq/vite': '^0.1.2',
     },
     devDependencies: {
@@ -771,6 +832,7 @@ import { QueueServiceProvider } from '@mantiq/queue'
 import { ValidationServiceProvider } from '@mantiq/validation'
 import { HeartbeatServiceProvider, HeartbeatMiddleware } from '@mantiq/heartbeat'
 import { RealtimeServiceProvider } from '@mantiq/realtime'
+import { MailServiceProvider } from '@mantiq/mail'
 import { DatabaseServiceProvider } from './app/Providers/DatabaseServiceProvider.ts'
 
 // ── Load .env ─────────────────────────────────────────────────────────────────
@@ -803,6 +865,7 @@ await app.registerProviders([
   ValidationServiceProvider,
   HeartbeatServiceProvider,
   RealtimeServiceProvider,
+  MailServiceProvider,
 ])
 await app.bootProviders()
 
