@@ -133,6 +133,29 @@ const install = Bun.spawn(['bun', 'install'], {
 await install.exited
 spin.stop('Dependencies installed')
 
+// ── Install shadcn components (if selected) ─────────────────────────────────
+if (ui === 'shadcn' && kit === 'react') {
+  const shadcnSpin = term.spinner('Installing shadcn/ui components')
+
+  const run = async (args: string[]) => {
+    const p = Bun.spawn(['bunx', '--bun', ...args], {
+      cwd: projectDir,
+      stdout: 'pipe',
+      stderr: 'pipe',
+      env: { ...process.env, CI: 'true' },
+    })
+    await p.exited
+  }
+
+  // Init shadcn
+  await run(['shadcn@latest', 'init', '--defaults', '--force'])
+
+  // Install core components + sidebar
+  await run(['shadcn@latest', 'add', 'button', 'input', 'label', 'card', 'badge', 'table', 'avatar', 'separator', 'dropdown-menu', 'sheet', 'tooltip', 'sidebar', '--overwrite', '-y'])
+
+  shadcnSpin.stop('shadcn/ui components installed')
+}
+
 // ── Build frontend (if kit) ─────────────────────────────────────────────────
 if (kit) {
   const buildSpin = term.spinner('Building frontend assets')
