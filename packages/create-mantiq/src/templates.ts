@@ -520,7 +520,7 @@ export class HomeController {
     <div class="g">
       <a class="l" href="/_heartbeat">Heartbeat<span class="a">&rarr;</span></a>
       <a class="l" href="/api/ping">API Ping<span class="a">&rarr;</span></a>
-      <a class="l" href="https://github.com/abdullahkhan/mantiq" target="_blank" rel="noopener">GitHub<span class="a">&nearr;</span></a>
+      <a class="l" href="https://github.com/mantiqjs/mantiq" target="_blank" rel="noopener">GitHub<span class="a">&nearr;</span></a>
       <a class="l" href="https://www.npmjs.com/org/mantiq" target="_blank" rel="noopener">npm<span class="a">&nearr;</span></a>
     </div>
     <div class="e">

@@ -2,7 +2,7 @@
 
 Filesystem abstraction for MantiqJS — Local, S3, GCS, Azure Blob, FTP, and SFTP drivers.
 
-Part of [MantiqJS](https://github.com/abdullahkhan/mantiq) — a batteries-included TypeScript web framework for Bun.
+Part of [MantiqJS](https://github.com/mantiqjs/mantiq) — a batteries-included TypeScript web framework for Bun.
 
 ## Installation
 
@@ -12,7 +12,7 @@ bun add @mantiq/filesystem
 
 ## Documentation
 
-See the [MantiqJS repository](https://github.com/abdullahkhan/mantiq) for full documentation.
+See the [MantiqJS repository](https://github.com/mantiqjs/mantiq) for full documentation.
 
 ## License
 

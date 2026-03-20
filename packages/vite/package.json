@@ -5,14 +5,14 @@
   "type": "module",
   "license": "MIT",
   "author": "Abdullah Khan",
-  "homepage": "https://github.com/abdullahkhan/mantiq/tree/main/packages/vite",
+  "homepage": "https://github.com/mantiqjs/mantiq/tree/main/packages/vite",
   "repository": {
     "type": "git",
-    "url": "https://github.com/abdullahkhan/mantiq.git",
+    "url": "https://github.com/mantiqjs/mantiq.git",
     "directory": "packages/vite"
   },
   "bugs": {
-    "url": "https://github.com/abdullahkhan/mantiq/issues"
+    "url": "https://github.com/mantiqjs/mantiq/issues"
   },
   "keywords": [
     "mantiq",
