@@ -136,29 +136,41 @@ export class HeartbeatMiddleware implements Middleware {
         }
       }
 
-      // Attach debug stats header: duration;memory;status;queries
-      if (process.env.APP_DEBUG === 'true' && response!) {
-        try {
-          const mem = (Math.abs(process.memoryUsage().rss - startMemory) / 1024 / 1024).toFixed(1)
-          const headers = new Headers(response!.headers)
-          headers.set('X-Heartbeat', `${Math.round(duration)}ms;${mem}MB;${response!.status};0q`)
-          headers.set('Access-Control-Expose-Headers', [headers.get('Access-Control-Expose-Headers'), 'X-Heartbeat'].filter(Boolean).join(', '))
-          response = new Response(response!.body, { status: response!.status, statusText: response!.statusText, headers })
-        } catch { /* ignore */ }
-      }
-
       // Flush entries (fire-and-forget)
       this.heartbeat.flush()
     }
 
-    // Inject debug widget into HTML responses when APP_DEBUG=true
+    // Debug mode: attach X-Heartbeat header + inject widget
     if (process.env.APP_DEBUG === 'true' && response!) {
-      const ct = response!.headers.get('content-type') ?? ''
-      if (ct.includes('text/html') && response!.status < 400) {
-        const duration = performance.now() - startTime
-        const memUsage = process.memoryUsage().rss - startMemory
-        response = await this.injectWidget(response!, duration, memUsage)
-      }
+      const totalDuration = performance.now() - startTime
+      const totalMemory = Math.abs(process.memoryUsage().rss - startMemory)
+      const mem = (totalMemory / 1024 / 1024).toFixed(1)
+      const statsHeader = `${Math.round(totalDuration)}ms;${mem}MB;${response!.status};0q`
+
+      try {
+        const ct = response!.headers.get('content-type') ?? ''
+        const isHtml = ct.includes('text/html') && response!.status < 400
+        const cloned = response!.clone()
+        const body = await cloned.text()
+        const headers = new Headers(response!.headers)
+
+        headers.set('X-Heartbeat', statsHeader)
+        headers.set('Access-Control-Expose-Headers', [headers.get('Access-Control-Expose-Headers'), 'X-Heartbeat'].filter(Boolean).join(', '))
+
+        let finalBody = body
+        if (isHtml && this.heartbeat.config.widget?.enabled !== false && body.includes('</body>')) {
+          const widget = renderWidget({
+            duration: totalDuration,
+            memory: totalMemory,
+            status: response!.status,
+            queries: 0,
+            dashboardPath: this.heartbeat.config.dashboard.path,
+          })
+          finalBody = body.replace('</body>', widget + '\n</body>')
+        }
+
+        response = new Response(finalBody, { status: response!.status, statusText: response!.statusText, headers })
+      } catch (e) { console.error('[Heartbeat Widget]', e) }
     }
 
     return response!
@@ -225,29 +237,4 @@ export class HeartbeatMiddleware implements Middleware {
     }
   }
 
-  private async injectWidget(response: Response, duration: number, memory: number): Promise<Response> {
-    if (this.heartbeat.config.widget?.enabled === false) return response
-
-    try {
-      const html = await response.text()
-      if (!html.includes('</body>')) return new Response(html, { status: response.status, statusText: response.statusText, headers: response.headers })
-
-      const widget = renderWidget({
-        duration,
-        memory: Math.abs(memory),
-        status: response.status,
-        queries: 0, // TODO: wire up query count from QueryWatcher
-        dashboardPath: this.heartbeat.config.dashboard.path,
-      })
-
-      const injected = html.replace('</body>', widget + '\n</body>')
-      return new Response(injected, {
-        status: response.status,
-        statusText: response.statusText,
-        headers: response.headers,
-      })
-    } catch {
-      return response
-    }
-  }
 }
