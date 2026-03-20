@@ -133,17 +133,37 @@ export class HttpKernel {
    */
   async start(): Promise<void> {
     const config = this.container.make(ConfigRepository)
-    const port = config.get<number>('app.port', 3000)
+    const preferredPort = config.get<number>('app.port', 3000)
     const hostname = config.get<string>('app.host', '0.0.0.0')
 
-    Bun.serve({
-      port,
-      hostname,
-      fetch: (req, server) => this.handle(req, server),
-      websocket: this.wsKernel.getBunHandlers(),
-    })
+    let port = preferredPort
+    const maxAttempts = 20
 
-    console.log(`Server running at http://${hostname === '0.0.0.0' ? 'localhost' : hostname}:${port}`)
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        Bun.serve({
+          port,
+          hostname,
+          fetch: (req, server) => this.handle(req, server),
+          websocket: this.wsKernel.getBunHandlers(),
+        })
+
+        const display = hostname === '0.0.0.0' ? 'localhost' : hostname
+        if (port !== preferredPort) {
+          console.log(`Port ${preferredPort} in use, using ${port} instead`)
+        }
+        console.log(`Server running at http://${display}:${port}`)
+        return
+      } catch (err: any) {
+        if (err?.code === 'EADDRINUSE') {
+          port++
+          continue
+        }
+        throw err
+      }
+    }
+
+    throw new Error(`No available port found (tried ${preferredPort}–${port - 1})`)
   }
 
   // ── Private ───────────────────────────────────────────────────────────────
