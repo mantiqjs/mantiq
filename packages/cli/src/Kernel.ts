@@ -88,8 +88,7 @@ export class Kernel {
   }
 
   private showHelp(_parsed: ParsedArgs): void {
-    this.io.heading('MantiqJS CLI')
-    this.io.newLine()
+    this.io.brand()
     this.io.line('  Usage: mantiq <command> [arguments] [options]')
     this.io.newLine()
 
@@ -110,7 +109,7 @@ export class Kernel {
 
     for (const [prefix, cmds] of sortedGroups) {
       if (prefix) {
-        this.io.line(`  ${this.io.yellow(prefix)}`)
+        this.io.line(`  ${this.io.emerald(prefix)}`)
       }
       const sorted = cmds.sort((a, b) => a.name.localeCompare(b.name))
       for (const cmd of sorted) {

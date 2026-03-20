@@ -8,8 +8,7 @@ export class AboutCommand extends Command {
   override async handle(_args: ParsedArgs): Promise<number> {
     const env = process.env
 
-    this.io.heading('MantiqJS Framework')
-    this.io.line('')
+    this.io.brand()
 
     // Environment
     this.io.info('  Environment')
@@ -57,7 +56,7 @@ export class AboutCommand extends Command {
     for (const pkg of packages) {
       try {
         require.resolve(`@mantiq/${pkg}`)
-        this.io.line(`    ${this.io.green('●')} @mantiq/${pkg}`)
+        this.io.line(`    ${this.io.emerald('●')} @mantiq/${pkg}`)
       } catch {
         this.io.line(`    ${this.io.gray('○')} @mantiq/${pkg}`)
       }

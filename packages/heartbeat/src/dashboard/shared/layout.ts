@@ -46,7 +46,7 @@ export function renderLayout(options: {
     </div>
     <nav>${nav}</nav>
     <div class="sidebar-footer">
-      <span class="sidebar-brand-footer">mantiq</span>
+      <span class="sidebar-brand-footer"><span style="color:var(--accent)">●</span> mantiq</span>
     </div>
   </aside>
   <main>
@@ -93,8 +93,8 @@ const CSS = `
 :root,[data-theme="light"]{
   --bg-0:#fff;--bg-1:#f9fafb;--bg-2:#f3f4f6;--bg-3:#e5e7eb;
   --fg-0:#111827;--fg-1:#374151;--fg-2:#6b7280;--fg-3:#9ca3af;
-  --border:#e5e7eb;--ring:rgba(99,102,241,.25);
-  --accent:#6366f1;--accent-soft:rgba(99,102,241,.1);
+  --border:#e5e7eb;--ring:rgba(16,185,129,.25);
+  --accent:#10b981;--accent-soft:rgba(16,185,129,.1);
   --green:#16a34a;--green-soft:rgba(22,163,74,.1);
   --amber:#d97706;--amber-soft:rgba(217,119,6,.1);
   --red:#dc2626;--red-soft:rgba(220,38,38,.1);
@@ -103,8 +103,8 @@ const CSS = `
 [data-theme="dark"]{
   --bg-0:#0a0a0b;--bg-1:#111113;--bg-2:#1a1a1d;--bg-3:#27272a;
   --fg-0:#fafafa;--fg-1:#d4d4d8;--fg-2:#71717a;--fg-3:#52525b;
-  --border:#27272a;--ring:rgba(99,102,241,.3);
-  --accent:#818cf8;--accent-soft:rgba(129,140,248,.1);
+  --border:#27272a;--ring:rgba(52,211,153,.3);
+  --accent:#34d399;--accent-soft:rgba(52,211,153,.1);
   --green:#4ade80;--green-soft:rgba(74,222,128,.08);
   --amber:#fbbf24;--amber-soft:rgba(251,191,36,.08);
   --red:#f87171;--red-soft:rgba(248,113,113,.08);
@@ -195,7 +195,7 @@ tbody tr:hover td{background:var(--bg-2)}
 .b-green{background:var(--green-soft);color:var(--green)}
 .b-amber{background:var(--amber-soft);color:var(--amber)}
 .b-red{background:var(--red-soft);color:var(--red)}
-.b-blue{background:var(--blue-soft);color:var(--accent)}
+.b-blue{background:var(--blue-soft);color:var(--blue)}
 .b-mute{background:var(--bg-3);color:var(--fg-2)}
 
 /* Tabs */

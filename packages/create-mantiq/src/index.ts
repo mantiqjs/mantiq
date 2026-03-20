@@ -5,11 +5,12 @@ import { randomBytes } from 'node:crypto'
 import { getTemplates } from './templates.ts'
 
 // ── ANSI helpers ─────────────────────────────────────────────────────────────
-const bold = (s: string) => `\x1b[1m${s}\x1b[0m`
-const green = (s: string) => `\x1b[32m${s}\x1b[0m`
-const cyan = (s: string) => `\x1b[36m${s}\x1b[0m`
-const dim = (s: string) => `\x1b[2m${s}\x1b[0m`
-const red = (s: string) => `\x1b[31m${s}\x1b[0m`
+const R = '\x1b[0m'
+const bold = (s: string) => `\x1b[1m${s}${R}`
+const dim = (s: string) => `\x1b[2m${s}${R}`
+const red = (s: string) => `\x1b[31m${s}${R}`
+const emerald = (s: string) => `\x1b[38;2;52;211;153m${s}${R}`
+const gray = (s: string) => `\x1b[90m${s}${R}`
 
 // ── Parse args ───────────────────────────────────────────────────────────────
 const rawArgs = process.argv.slice(2)
@@ -38,13 +39,13 @@ type Kit = typeof validKits[number]
 
 if (!projectName) {
   console.log(`
-  ${bold('create-mantiq')} — Scaffold a new MantiqJS application
+  ${emerald('mantiq')} ${dim('framework')}
 
   ${bold('Usage:')}
-    bun create mantiq ${cyan('<project-name>')} [options]
+    bun create mantiq ${emerald('<project-name>')} [options]
 
   ${bold('Options:')}
-    --kit=${cyan('react|vue|svelte')}    Add a frontend starter kit
+    --kit=${emerald('react|vue|svelte')}    Add a frontend starter kit
     --no-git                   Skip git initialization
 
   ${bold('Examples:')}
@@ -69,8 +70,8 @@ if (existsSync(projectDir)) {
 }
 
 // ── Generate ─────────────────────────────────────────────────────────────────
-const kitLabel = kit ? ` with ${bold(kit)} starter kit` : ''
-console.log(`\n  ${bold('Creating')} ${cyan(projectName)}${kitLabel}...\n`)
+const kitLabel = kit ? ` ${dim('with')} ${bold(kit)}` : ''
+console.log(`\n  ${emerald('mantiq')}  Creating ${bold(projectName)}${kitLabel}\n`)
 
 const appKey = `base64:${randomBytes(32).toString('base64')}`
 const templates = getTemplates({ name: projectName, appKey, kit: kit as Kit | undefined })
@@ -82,8 +83,8 @@ for (const relativePath of files) {
   mkdirSync(dirname(fullPath), { recursive: true })
   await Bun.write(fullPath, templates[relativePath]!)
 
-  const display = relativePath.endsWith('.gitkeep') ? dim(relativePath) : green(relativePath)
-  console.log(`    ${green('+')} ${display}`)
+  const display = relativePath.endsWith('.gitkeep') ? dim(relativePath) : relativePath
+  console.log(`    ${emerald('+')} ${display}`)
 }
 
 // ── Install dependencies ─────────────────────────────────────────────────────
@@ -100,7 +101,6 @@ await install.exited
 if (kit) {
   console.log(`\n  ${bold('Building frontend assets...')}\n`)
 
-  // Client build
   const viteBuild = Bun.spawn(['npx', 'vite', 'build'], {
     cwd: projectDir,
     stdout: 'inherit',
@@ -108,7 +108,6 @@ if (kit) {
   })
   await viteBuild.exited
 
-  // SSR build
   const ssrEntry = kit === 'react' ? 'src/ssr.tsx' : 'src/ssr.ts'
   console.log(`\n  ${bold('Building SSR bundle...')}\n`)
 
@@ -148,32 +147,23 @@ if (!noGit) {
 
 // ── Done ─────────────────────────────────────────────────────────────────────
 const frontendSteps = kit
-  ? `    ${cyan('bun run')} dev:frontend     ${dim('# start Vite dev server (in a second terminal)')}\n`
+  ? `    ${emerald('bun run')} dev:frontend     ${dim('# start Vite dev server')}\n`
   : ''
 
 console.log(`
-  ${green('✓')} ${bold('Created')} ${cyan(projectName)} ${bold('successfully!')}
+  ${emerald('mantiq')}  ${bold(projectName)} ready.
 
   ${bold('Next steps:')}
 
-    ${cyan('cd')} ${projectName}
-    ${cyan('bun mantiq')} migrate       ${dim('# run database migrations')}
-    ${cyan('bun run')} dev              ${dim('# start development server')}
-${frontendSteps}    ${cyan('bun mantiq')} tinker        ${dim('# interactive REPL')}
-
-  ${bold('Included packages:')}
-
-    ${dim('core · database · auth · validation · filesystem · logging')}
-    ${dim('events · queue · realtime · heartbeat · helpers · cli')}
-
+    ${emerald('cd')} ${projectName}
+    ${emerald('bun mantiq')} migrate       ${dim('# run database migrations')}
+    ${emerald('bun run')} dev              ${dim('# start development server')}
+${frontendSteps}
   ${bold('Useful commands:')}
 
-    ${cyan('bun mantiq')} route:list    ${dim('# list all registered routes')}
-    ${cyan('bun mantiq')} queue:work    ${dim('# start processing queued jobs')}
-    ${cyan('bun mantiq')} make:model    ${dim('# generate a new model')}
-    ${cyan('bun mantiq')} make:job      ${dim('# generate a new job class')}
+    ${emerald('bun mantiq')} route:list    ${dim('# list all registered routes')}
+    ${emerald('bun mantiq')} make:model    ${dim('# generate a new model')}
+    ${emerald('bun mantiq')} about         ${dim('# framework environment info')}
 
-  ${dim('Dashboard: http://localhost:3000/_heartbeat')}
-
-  ${dim('Happy building!')}
+  ${dim('Dashboard  http://localhost:3000/_heartbeat')}
 `)

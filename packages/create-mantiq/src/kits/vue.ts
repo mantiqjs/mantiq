@@ -21,6 +21,11 @@ export default defineConfig({
 `,
 
     'src/style.css': `@import "tailwindcss";
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up { animation: fadeUp 0.4s ease-out; }
 `,
 
     'src/pages.ts': `import Login from './pages/Login.vue'
@@ -112,6 +117,11 @@ function handlePop() { navigate(location.pathname) }
 onMounted(() => {
   document.addEventListener('click', handleClick)
   window.addEventListener('popstate', handlePop)
+
+  // Initialize theme: localStorage > system preference > dark default
+  const theme = localStorage.getItem('theme') ||
+    (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'dark')
+  document.documentElement.classList.toggle('dark', theme === 'dark')
 })
 
 onUnmounted(() => {
@@ -126,7 +136,7 @@ onUnmounted(() => {
 `,
 
     'src/pages/Login.vue': `<script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { post } from '../lib/api.ts'
 
 const props = defineProps<{
@@ -139,6 +149,14 @@ const email = ref('admin@example.com')
 const password = ref('password')
 const error = ref('')
 const loading = ref(false)
+const mounted = ref(false)
+
+onMounted(() => {
+  const theme = localStorage.getItem('theme') ||
+    (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'dark')
+  document.documentElement.classList.toggle('dark', theme === 'dark')
+  requestAnimationFrame(() => { mounted.value = true })
+})
 
 async function handleSubmit() {
   error.value = ''; loading.value = true
@@ -150,39 +168,58 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-950 flex">
-    <div class="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-indigo-950 via-gray-950 to-gray-950 items-center justify-center p-16 relative overflow-hidden">
-      <div class="absolute inset-0 bg-[radial-gradient(circle_at_30%_40%,rgba(99,102,241,0.08),transparent_60%)]" />
-      <div class="relative space-y-6 max-w-md">
-        <div class="flex items-center gap-3">
-          <div class="w-12 h-12 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center">
-            <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-          </div>
-          <span class="text-2xl font-bold text-white">{{ appName }}</span>
-        </div>
-        <h2 class="text-4xl font-bold text-white leading-tight">Build something<br>amazing.</h2>
-        <p class="text-gray-400 text-lg leading-relaxed">Session auth, encrypted cookies, CSRF protection — all wired up and ready to go.</p>
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center px-4 py-12 transition-colors">
+    <div
+      :class="mounted ? 'animate-fade-up' : 'opacity-0'"
+      class="w-full max-w-sm"
+    >
+      <!-- App name -->
+      <div class="text-center mb-8">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ appName }}</h2>
       </div>
-    </div>
-    <div class="flex-1 flex items-center justify-center p-8">
-      <div class="bg-gray-900 rounded-xl border border-gray-800 w-full max-w-md p-8 space-y-6">
+
+      <!-- Card -->
+      <div class="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 p-8 shadow-sm space-y-6">
         <div>
-          <h1 class="text-xl font-bold text-white">Welcome back</h1>
-          <p class="text-sm text-gray-500 mt-1">Sign in to your account</p>
+          <h1 class="text-xl font-bold text-gray-900 dark:text-white">Welcome back</h1>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Sign in to your account</p>
         </div>
-        <div v-if="error" class="bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg px-3.5 py-2.5 text-sm">{{ error }}</div>
+
+        <!-- Error -->
+        <div v-if="error" class="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 rounded-lg px-3.5 py-2.5 text-sm">{{ error }}</div>
+
+        <!-- Form -->
         <form @submit.prevent="handleSubmit" class="space-y-4">
-          <div class="space-y-1">
-            <label class="block text-sm font-medium text-gray-400">Email</label>
-            <input v-model="email" type="email" required class="w-full bg-gray-900 border border-gray-800 rounded-lg px-3.5 py-2.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition-all" />
+          <div class="space-y-1.5">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+            <input
+              v-model="email"
+              type="email"
+              required
+              class="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3.5 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+            />
           </div>
-          <div class="space-y-1">
-            <label class="block text-sm font-medium text-gray-400">Password</label>
-            <input v-model="password" type="password" required class="w-full bg-gray-900 border border-gray-800 rounded-lg px-3.5 py-2.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition-all" />
+          <div class="space-y-1.5">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
+            <input
+              v-model="password"
+              type="password"
+              required
+              class="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3.5 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+            />
           </div>
-          <button type="submit" :disabled="loading" class="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold text-sm py-2.5 rounded-lg transition-colors">Sign in</button>
+          <button
+            type="submit"
+            :disabled="loading"
+            class="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold text-sm py-2.5 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900"
+          >
+            {{ loading ? 'Signing in...' : 'Sign in' }}
+          </button>
         </form>
-        <p class="text-sm text-gray-500 text-center">Don't have an account? <a href="/register" class="text-indigo-400 hover:text-indigo-300">Register</a></p>
+
+        <p class="text-sm text-gray-500 dark:text-gray-400 text-center">
+          Don't have an account? <a href="/register" class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 dark:hover:text-emerald-300 font-medium">Register</a>
+        </p>
       </div>
     </div>
   </div>
@@ -190,7 +227,7 @@ async function handleSubmit() {
 `,
 
     'src/pages/Register.vue': `<script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { post } from '../lib/api.ts'
 
 const props = defineProps<{
@@ -204,6 +241,14 @@ const email = ref('')
 const password = ref('')
 const error = ref('')
 const loading = ref(false)
+const mounted = ref(false)
+
+onMounted(() => {
+  const theme = localStorage.getItem('theme') ||
+    (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'dark')
+  document.documentElement.classList.toggle('dark', theme === 'dark')
+  requestAnimationFrame(() => { mounted.value = true })
+})
 
 async function handleSubmit() {
   error.value = ''; loading.value = true
@@ -215,43 +260,66 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-950 flex">
-    <div class="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-indigo-950 via-gray-950 to-gray-950 items-center justify-center p-16 relative overflow-hidden">
-      <div class="absolute inset-0 bg-[radial-gradient(circle_at_30%_40%,rgba(99,102,241,0.08),transparent_60%)]" />
-      <div class="relative space-y-6 max-w-md">
-        <div class="flex items-center gap-3">
-          <div class="w-12 h-12 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center">
-            <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-          </div>
-          <span class="text-2xl font-bold text-white">{{ appName }}</span>
-        </div>
-        <h2 class="text-4xl font-bold text-white leading-tight">Build something<br>amazing.</h2>
-        <p class="text-gray-400 text-lg leading-relaxed">Session auth, encrypted cookies, CSRF protection — all wired up and ready to go.</p>
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center px-4 py-12 transition-colors">
+    <div
+      :class="mounted ? 'animate-fade-up' : 'opacity-0'"
+      class="w-full max-w-sm"
+    >
+      <!-- App name -->
+      <div class="text-center mb-8">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ appName }}</h2>
       </div>
-    </div>
-    <div class="flex-1 flex items-center justify-center p-8">
-      <div class="bg-gray-900 rounded-xl border border-gray-800 w-full max-w-md p-8 space-y-6">
+
+      <!-- Card -->
+      <div class="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 p-8 shadow-sm space-y-6">
         <div>
-          <h1 class="text-xl font-bold text-white">Create an account</h1>
-          <p class="text-sm text-gray-500 mt-1">Get started with {{ appName }}</p>
+          <h1 class="text-xl font-bold text-gray-900 dark:text-white">Create an account</h1>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Get started with {{ appName }}</p>
         </div>
-        <div v-if="error" class="bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg px-3.5 py-2.5 text-sm">{{ error }}</div>
+
+        <!-- Error -->
+        <div v-if="error" class="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 rounded-lg px-3.5 py-2.5 text-sm">{{ error }}</div>
+
+        <!-- Form -->
         <form @submit.prevent="handleSubmit" class="space-y-4">
-          <div class="space-y-1">
-            <label class="block text-sm font-medium text-gray-400">Name</label>
-            <input v-model="name" required class="w-full bg-gray-900 border border-gray-800 rounded-lg px-3.5 py-2.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition-all" />
+          <div class="space-y-1.5">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
+            <input
+              v-model="name"
+              required
+              class="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3.5 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+            />
           </div>
-          <div class="space-y-1">
-            <label class="block text-sm font-medium text-gray-400">Email</label>
-            <input v-model="email" type="email" required class="w-full bg-gray-900 border border-gray-800 rounded-lg px-3.5 py-2.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition-all" />
+          <div class="space-y-1.5">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+            <input
+              v-model="email"
+              type="email"
+              required
+              class="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3.5 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+            />
           </div>
-          <div class="space-y-1">
-            <label class="block text-sm font-medium text-gray-400">Password</label>
-            <input v-model="password" type="password" required class="w-full bg-gray-900 border border-gray-800 rounded-lg px-3.5 py-2.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition-all" />
+          <div class="space-y-1.5">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
+            <input
+              v-model="password"
+              type="password"
+              required
+              class="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3.5 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+            />
           </div>
-          <button type="submit" :disabled="loading" class="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold text-sm py-2.5 rounded-lg transition-colors">Create account</button>
+          <button
+            type="submit"
+            :disabled="loading"
+            class="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold text-sm py-2.5 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900"
+          >
+            {{ loading ? 'Creating account...' : 'Create account' }}
+          </button>
         </form>
-        <p class="text-sm text-gray-500 text-center">Already have an account? <a href="/login" class="text-indigo-400 hover:text-indigo-300">Sign in</a></p>
+
+        <p class="text-sm text-gray-500 dark:text-gray-400 text-center">
+          Already have an account? <a href="/login" class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 dark:hover:text-emerald-300 font-medium">Sign in</a>
+        </p>
       </div>
     </div>
   </div>
@@ -272,6 +340,13 @@ const props = defineProps<{
 const appName = props.appName ?? '${ctx.name}'
 const users = ref(props.users ?? [])
 const loading = ref(!props.users?.length)
+const isDark = ref(true)
+
+function toggleTheme() {
+  const dark = document.documentElement.classList.toggle('dark')
+  isDark.value = dark
+  localStorage.setItem('theme', dark ? 'dark' : 'light')
+}
 
 async function fetchUsers() {
   loading.value = true
@@ -286,54 +361,114 @@ async function handleLogout() {
 }
 
 onMounted(() => {
+  const theme = localStorage.getItem('theme') ||
+    (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'dark')
+  document.documentElement.classList.toggle('dark', theme === 'dark')
+  isDark.value = theme === 'dark'
+
   if (!props.users?.length) fetchUsers()
 })
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-950 text-gray-100">
-    <nav class="border-b border-gray-800/80 bg-gray-950/90 backdrop-blur-md sticky top-0 z-20">
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors">
+    <!-- Navbar -->
+    <nav class="border-b border-gray-200 dark:border-gray-800/80 bg-white/80 dark:bg-gray-950/90 backdrop-blur-md sticky top-0 z-20">
       <div class="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
-        <div class="flex items-center gap-2.5">
-          <div class="w-7 h-7 rounded-lg bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center">
-            <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-          </div>
-          <span class="text-sm font-bold text-white">{{ appName }}</span>
-        </div>
+        <span class="text-sm font-bold text-gray-900 dark:text-white">{{ appName }}</span>
         <div class="flex items-center gap-3">
-          <span class="text-xs text-gray-400">{{ currentUser?.name }}</span>
-          <button @click="handleLogout" class="text-xs text-gray-500 hover:text-white bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-lg px-3 py-1.5 transition-colors">Logout</button>
+          <!-- Dark/Light toggle -->
+          <button
+            @click="toggleTheme"
+            class="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
+          >
+            <!-- Sun icon (shown in dark mode) -->
+            <svg v-if="isDark" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+            <!-- Moon icon (shown in light mode) -->
+            <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+            </svg>
+          </button>
+          <span class="text-xs text-gray-500 dark:text-gray-400">{{ currentUser?.name }}</span>
+          <button
+            @click="handleLogout"
+            class="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-gray-100 dark:bg-gray-900 hover:bg-gray-200 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-1.5 transition-colors"
+          >
+            Logout
+          </button>
         </div>
       </div>
     </nav>
+
     <main class="max-w-5xl mx-auto px-6 py-8 space-y-6">
-      <div>
-        <h1 class="text-xl font-bold text-white">Dashboard</h1>
-        <p class="text-sm text-gray-500 mt-1">Welcome back, {{ currentUser?.name }}.</p>
+      <!-- Welcome section -->
+      <div class="animate-fade-up">
+        <h1 class="text-xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Welcome back, {{ currentUser?.name }}.</p>
       </div>
-      <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
-        <div class="px-5 py-4 border-b border-gray-800 flex items-center justify-between">
-          <h2 class="text-sm font-bold text-gray-200">Users</h2>
-          <span class="text-xs text-gray-500">{{ loading ? 'Loading...' : users.length + ' total' }}</span>
+
+      <!-- Quick links -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-up">
+        <a
+          href="/heartbeat"
+          class="group bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 p-5 hover:border-emerald-300 dark:hover:border-emerald-800 transition-colors"
+        >
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">Heartbeat Dashboard</h3>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Monitor application health</p>
+            </div>
+            <span class="text-emerald-600 dark:text-emerald-400 group-hover:translate-x-0.5 transition-transform">&rarr;</span>
+          </div>
+        </a>
+        <a
+          href="/api/ping"
+          class="group bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 p-5 hover:border-emerald-300 dark:hover:border-emerald-800 transition-colors"
+        >
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">API Ping</h3>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Test API connectivity</p>
+            </div>
+            <span class="text-emerald-600 dark:text-emerald-400 group-hover:translate-x-0.5 transition-transform">&rarr;</span>
+          </div>
+        </a>
+      </div>
+
+      <!-- Users table -->
+      <div class="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden animate-fade-up">
+        <div class="px-5 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+          <h2 class="text-sm font-bold text-gray-800 dark:text-gray-200">Users</h2>
+          <span class="text-xs text-gray-500 dark:text-gray-400">{{ loading ? 'Loading...' : users.length + ' total' }}</span>
         </div>
         <table class="w-full text-sm">
           <thead>
-            <tr class="border-b border-gray-800 text-left text-xs text-gray-500 uppercase tracking-wider">
+            <tr class="border-b border-gray-200 dark:border-gray-800 text-left text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <th class="px-5 py-3 font-medium">Name</th>
               <th class="px-5 py-3 font-medium">Email</th>
               <th class="px-5 py-3 font-medium">Role</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-800/60">
-            <tr v-for="u in users" :key="u.id" class="hover:bg-gray-900/50 transition-colors">
-              <td class="px-5 py-3 text-gray-200">{{ u.name }}</td>
-              <td class="px-5 py-3 text-gray-400">{{ u.email }}</td>
+          <tbody class="divide-y divide-gray-100 dark:divide-gray-800/60">
+            <tr v-for="u in users" :key="u.id" class="hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
+              <td class="px-5 py-3 text-gray-800 dark:text-gray-200">{{ u.name }}</td>
+              <td class="px-5 py-3 text-gray-500 dark:text-gray-400">{{ u.email }}</td>
               <td class="px-5 py-3">
-                <span :class="u.role === 'admin' ? 'bg-purple-500/15 text-purple-300 border-purple-500/20' : 'bg-gray-800 text-gray-400 border-gray-700'" class="text-[10px] px-2 py-0.5 rounded-full font-medium border">{{ u.role }}</span>
+                <span
+                  :class="u.role === 'admin'
+                    ? 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/20'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700'"
+                  class="text-[10px] px-2 py-0.5 rounded-full font-medium border"
+                >
+                  {{ u.role }}
+                </span>
               </td>
             </tr>
             <tr v-if="users.length === 0 && !loading">
-              <td colspan="3" class="px-5 py-8 text-center text-gray-600">No users found</td>
+              <td colspan="3" class="px-5 py-8 text-center text-gray-400 dark:text-gray-600">No users found</td>
             </tr>
           </tbody>
         </table>

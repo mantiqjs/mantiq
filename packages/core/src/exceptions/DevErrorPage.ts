@@ -107,24 +107,27 @@ export function renderDevErrorPage(request: MantiqRequest, error: unknown): stri
 
     :root {
       --bg: #ffffff;
-      --bg-surface: #f8fafc;
-      --bg-elevated: #f1f5f9;
-      --bg-code: #f8fafc;
+      --bg-surface: #f9fafb;
+      --bg-elevated: #f3f4f6;
+      --bg-code: #f9fafb;
       --text: #0f172a;
       --text-secondary: #475569;
       --text-muted: #94a3b8;
-      --border: #e2e8f0;
-      --accent: #ef4444;
-      --accent-soft: #fef2f2;
-      --accent-text: #dc2626;
-      --link: #2563eb;
-      --badge-bg: #f1f5f9;
+      --border: #e5e7eb;
+      --accent: #10b981;
+      --accent-soft: rgba(16,185,129,0.08);
+      --accent-text: #059669;
+      --error: #ef4444;
+      --error-soft: #fef2f2;
+      --error-text: #dc2626;
+      --link: #059669;
+      --badge-bg: #f3f4f6;
       --badge-text: #475569;
-      --frame-hover: #f1f5f9;
-      --frame-active-bg: #fef2f2;
-      --frame-active-border: #fca5a5;
+      --frame-hover: #f3f4f6;
+      --frame-active-bg: rgba(16,185,129,0.06);
+      --frame-active-border: #6ee7b7;
       --tab-active-bg: #ffffff;
-      --tab-active-border: #ef4444;
+      --tab-active-border: #10b981;
       --vendor-opacity: 0.45;
       --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
       --shadow-lg: 0 4px 6px -1px rgba(0,0,0,.07), 0 2px 4px -2px rgba(0,0,0,.05);
@@ -134,25 +137,28 @@ export function renderDevErrorPage(request: MantiqRequest, error: unknown): stri
     }
 
     html.dark {
-      --bg: #0c0c0c;
-      --bg-surface: #141414;
-      --bg-elevated: #1c1c1c;
-      --bg-code: #141414;
+      --bg: #0a0a0b;
+      --bg-surface: #111113;
+      --bg-elevated: #1a1a1d;
+      --bg-code: #111113;
       --text: #e2e8f0;
       --text-secondary: #94a3b8;
       --text-muted: #64748b;
-      --border: #262626;
-      --accent: #ef4444;
-      --accent-soft: #1c1111;
-      --accent-text: #f87171;
-      --link: #60a5fa;
-      --badge-bg: #1e1e1e;
+      --border: #27272a;
+      --accent: #34d399;
+      --accent-soft: rgba(16,185,129,0.10);
+      --accent-text: #34d399;
+      --error: #f87171;
+      --error-soft: rgba(248,113,113,0.08);
+      --error-text: #f87171;
+      --link: #34d399;
+      --badge-bg: #1a1a1d;
       --badge-text: #94a3b8;
-      --frame-hover: #1c1c1c;
-      --frame-active-bg: #1c1111;
-      --frame-active-border: #7f1d1d;
-      --tab-active-bg: #141414;
-      --tab-active-border: #ef4444;
+      --frame-hover: #1a1a1d;
+      --frame-active-bg: rgba(16,185,129,0.06);
+      --frame-active-border: #10b981;
+      --tab-active-bg: #111113;
+      --tab-active-border: #10b981;
       --shadow: 0 1px 3px rgba(0,0,0,.3);
       --shadow-lg: 0 4px 6px -1px rgba(0,0,0,.4);
     }
@@ -184,13 +190,13 @@ export function renderDevErrorPage(request: MantiqRequest, error: unknown): stri
       gap: 8px;
       font-size: 13px;
       font-weight: 600;
-      color: var(--accent-text);
+      color: var(--error-text);
       letter-spacing: 0.02em;
     }
     .error-label .dot {
       width: 8px; height: 8px;
       border-radius: 50%;
-      background: var(--accent);
+      background: var(--error);
       display: inline-block;
     }
     .error-message {
@@ -252,9 +258,9 @@ export function renderDevErrorPage(request: MantiqRequest, error: unknown): stri
       letter-spacing: 0.03em;
     }
     .badge-status {
-      color: var(--accent-text);
-      background: var(--accent-soft);
-      border-color: var(--accent);
+      color: var(--error-text);
+      background: var(--error-soft);
+      border-color: var(--error);
     }
 
     /* ── Tabs ──────────────────────── */
@@ -421,7 +427,7 @@ export function renderDevErrorPage(request: MantiqRequest, error: unknown): stri
       <span class="badge">${escapeHtml(request.fullUrl())}</span>
       <span class="badge badge-status">${statusCode}</span>
       <span class="badge">Bun ${escapeHtml(bunVersion)}</span>
-      <span class="badge">MantiqJS</span>
+      <span class="badge" style="color:var(--accent);border-color:var(--accent)">mantiq</span>
     </div>
   </div>
 

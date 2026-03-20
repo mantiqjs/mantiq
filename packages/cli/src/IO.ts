@@ -17,15 +17,16 @@ const FG = {
   cyan: `${ESC}36m`,
   white: `${ESC}37m`,
   gray: `${ESC}90m`,
+  emerald: `${ESC}38;2;52;211;153m`,
 } as const
 
 export class IO {
   info(msg: string): void {
-    console.log(`${FG.blue}  INFO${RESET}  ${msg}`)
+    console.log(`${FG.gray}  INFO${RESET}  ${msg}`)
   }
 
   success(msg: string): void {
-    console.log(`${FG.green}  DONE${RESET}  ${msg}`)
+    console.log(`${FG.emerald}  DONE${RESET}  ${msg}`)
   }
 
   error(msg: string): void {
@@ -60,7 +61,13 @@ export class IO {
   yellow(msg: string): string { return `${FG.yellow}${msg}${RESET}` }
   cyan(msg: string): string { return `${FG.cyan}${msg}${RESET}` }
   gray(msg: string): string { return `${FG.gray}${msg}${RESET}` }
+  emerald(msg: string): string { return `${FG.emerald}${msg}${RESET}` }
   bold(msg: string): string { return `${BOLD}${msg}${RESET}` }
+
+  /** Print brand mark */
+  brand(): void {
+    console.log(`\n  ${FG.emerald}mantiq${RESET} ${DIM}framework${RESET}\n`)
+  }
 
   /** Print a table with aligned columns */
   table(headers: string[], rows: string[][]): void {
