@@ -15,3 +15,5 @@ storage/logs/
 .devdbrc
 bun.lockb
 *.lock
+specs/
+addons/
