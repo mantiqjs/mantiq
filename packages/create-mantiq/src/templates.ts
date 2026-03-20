@@ -36,6 +36,7 @@ export function getTemplates(ctx: TemplateContext): Record<string, string> {
         '@mantiq/realtime': '^0.1.2',
         '@mantiq/validation': '^0.1.2',
         '@mantiq/mail': '^0.2.0',
+        '@mantiq/notify': '^0.1.0',
       },
       devDependencies: {
         'bun-types': 'latest',
@@ -118,6 +119,7 @@ import { ValidationServiceProvider } from '@mantiq/validation'
 import { HeartbeatServiceProvider, HeartbeatMiddleware } from '@mantiq/heartbeat'
 import { RealtimeServiceProvider } from '@mantiq/realtime'
 import { MailServiceProvider } from '@mantiq/mail'
+import { NotificationServiceProvider } from '@mantiq/notify'
 import { DatabaseServiceProvider } from './app/Providers/DatabaseServiceProvider.ts'
 
 // ── Load .env ─────────────────────────────────────────────────────────────────
@@ -150,6 +152,7 @@ await app.registerProviders([
   HeartbeatServiceProvider,
   RealtimeServiceProvider,
   MailServiceProvider,
+  NotificationServiceProvider,
 ])
 await app.bootProviders()
 
@@ -226,6 +229,7 @@ import {
 } from '@mantiq/queue'
 import { InstallCommand as HeartbeatInstallCommand } from '@mantiq/heartbeat'
 import { MakeMailCommand } from '@mantiq/mail'
+import { MakeNotificationCommand } from '@mantiq/notify'
 
 const kernel = new Kernel()
 
@@ -256,6 +260,7 @@ kernel.registerAll([
   new MakeSeederCommand(),
   new MakeTestCommand(),
   new MakeMailCommand(),
+  new MakeNotificationCommand(),
 
   // Queue
   new QueueWorkCommand(),
@@ -448,6 +453,11 @@ export default {
     log: { driver: 'log' as const },
     array: { driver: 'array' as const },
   },
+}
+`,
+
+    'config/notify.ts': `export default {
+  channels: {},
 }
 `,
 
@@ -734,6 +744,7 @@ function applyKitOverrides(templates: Record<string, string>, ctx: TemplateConte
       '@mantiq/realtime': '^0.1.2',
       '@mantiq/validation': '^0.1.2',
         '@mantiq/mail': '^0.2.0',
+        '@mantiq/notify': '^0.1.0',
       '@mantiq/vite': '^0.1.2',
     },
     devDependencies: {
@@ -833,6 +844,7 @@ import { ValidationServiceProvider } from '@mantiq/validation'
 import { HeartbeatServiceProvider, HeartbeatMiddleware } from '@mantiq/heartbeat'
 import { RealtimeServiceProvider } from '@mantiq/realtime'
 import { MailServiceProvider } from '@mantiq/mail'
+import { NotificationServiceProvider } from '@mantiq/notify'
 import { DatabaseServiceProvider } from './app/Providers/DatabaseServiceProvider.ts'
 
 // ── Load .env ─────────────────────────────────────────────────────────────────
@@ -866,6 +878,7 @@ await app.registerProviders([
   HeartbeatServiceProvider,
   RealtimeServiceProvider,
   MailServiceProvider,
+  NotificationServiceProvider,
 ])
 await app.bootProviders()
 

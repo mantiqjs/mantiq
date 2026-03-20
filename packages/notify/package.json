@@ -1,0 +1,64 @@
+{
+  "name": "@mantiq/notify",
+  "version": "0.1.0",
+  "description": "Multi-channel notifications — mail, database, broadcast, SMS, Slack, webhook",
+  "type": "module",
+  "license": "MIT",
+  "author": "Abdullah Khan",
+  "homepage": "https://github.com/mantiqjs/mantiq/tree/main/packages/notify",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mantiqjs/mantiq.git",
+    "directory": "packages/notify"
+  },
+  "bugs": {
+    "url": "https://github.com/mantiqjs/mantiq/issues"
+  },
+  "keywords": [
+    "mantiq",
+    "mantiqjs",
+    "bun",
+    "typescript",
+    "framework",
+    "notifications",
+    "mail",
+    "sms",
+    "slack"
+  ],
+  "engines": {
+    "bun": ">=1.1.0"
+  },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "bun": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "files": [
+    "src/",
+    "package.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "bun build ./src/index.ts --outdir ./dist --target bun",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@mantiq/core": "^0.1.0",
+    "@mantiq/database": "^0.1.0",
+    "@mantiq/mail": "^0.2.0",
+    "@mantiq/events": "^0.1.0",
+    "@mantiq/realtime": "^0.1.0",
+    "@mantiq/queue": "^0.1.0",
+    "@mantiq/cli": "^0.1.0"
+  }
+}
