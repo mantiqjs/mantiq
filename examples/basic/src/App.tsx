@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -227,7 +227,7 @@ function RegisterPage({ appName, onRegister, onGoLogin }: { appName: string; onR
 
 interface Pagination { total: number; page: number; per_page: number; last_page: number; from: number; to: number; has_more: boolean }
 
-function Dashboard({ appName, user, onLogout, onValidation, onCli, onStorage }: { appName: string; user: User; onLogout: () => void; onValidation: () => void; onCli: () => void; onStorage: () => void }) {
+function Dashboard({ appName, user, onLogout, onValidation, onCli, onStorage, onChat }: { appName: string; user: User; onLogout: () => void; onValidation: () => void; onCli: () => void; onStorage: () => void; onChat: () => void }) {
   const [users, setUsers] = useState<User[]>([])
   const [pag, setPag] = useState<Pagination>({ total: 0, page: 1, per_page: 20, last_page: 1, from: 0, to: 0, has_more: false })
   const [search, setSearch] = useState('')
@@ -241,6 +241,54 @@ function Dashboard({ appName, user, onLogout, onValidation, onCli, onStorage }: 
   const [formError, setFormError] = useState('')
   const [formSuccess, setFormSuccess] = useState('')
   const [formLoading, setFormLoading] = useState(false)
+
+  // SSE streaming state
+  const [streaming, setStreaming] = useState(false)
+  const [streamUsers, setStreamUsers] = useState<User[]>([])
+  const [streamHighlight, setStreamHighlight] = useState<number | null>(null)
+  const [streamCycle, setStreamCycle] = useState(0)
+  const [streamSource, setStreamSource] = useState<EventSource | null>(null)
+  const streamEndRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    streamEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [streamUsers, streamHighlight])
+
+  const startStream = useCallback(() => {
+    if (streamSource) { streamSource.close() }
+    setStreamUsers([])
+    setStreamCycle(0)
+    const es = new EventSource('/api/users/stream')
+    es.addEventListener('total', (e) => {
+      const { count } = JSON.parse(e.data)
+      setPag((p) => ({ ...p, total: count }))
+    })
+    es.addEventListener('user', (e) => {
+      const u = JSON.parse(e.data)
+      setStreamHighlight(u.id)
+      setStreamUsers((prev) => {
+        const exists = prev.find((x) => x.id === u.id)
+        if (exists) return prev.map((x) => x.id === u.id ? u : x)
+        return [...prev, u]
+      })
+      setTimeout(() => setStreamHighlight(null), 400)
+    })
+    es.addEventListener('cycle', () => {
+      setStreamCycle((c) => c + 1)
+    })
+    es.onerror = () => { /* reconnects automatically */ }
+    setStreamSource(es)
+    setStreaming(true)
+  }, [streamSource])
+
+  const stopStream = useCallback(() => {
+    streamSource?.close()
+    setStreamSource(null)
+    setStreaming(false)
+  }, [streamSource])
+
+  // Clean up SSE on unmount
+  useEffect(() => () => { streamSource?.close() }, [streamSource])
 
   const fetchUsers = useCallback(async (page = 1, q = search) => {
     setLoading(true)
@@ -320,6 +368,10 @@ function Dashboard({ appName, user, onLogout, onValidation, onCli, onStorage }: 
             <button onClick={onStorage}
               className="text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-600/10 hover:bg-emerald-600/20 border border-emerald-500/20 rounded-lg px-2.5 py-1.5 transition-colors">
               Storage
+            </button>
+            <button onClick={onChat}
+              className="text-xs text-rose-400 hover:text-rose-300 bg-rose-600/10 hover:bg-rose-600/20 border border-rose-500/20 rounded-lg px-2.5 py-1.5 transition-colors">
+              Chat
             </button>
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-[11px] font-bold text-white">{user.name[0]}</div>
@@ -466,10 +518,89 @@ function Dashboard({ appName, user, onLogout, onValidation, onCli, onStorage }: 
           </Card>
         </div>
 
+        {/* SSE Live Stream */}
+        <Card className="overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-gray-800 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-6 h-6 rounded-lg bg-cyan-600/20 border border-cyan-500/30 flex items-center justify-center">
+                <svg className="w-3 h-3 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+              </div>
+              <h2 className="text-sm font-semibold text-gray-300">SSE Live Stream</h2>
+              {streaming && (
+                <span className="flex items-center gap-1 text-[10px] text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 rounded-full px-2 py-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                  Streaming {streamCycle > 0 && `· cycle ${streamCycle + 1}`}
+                </span>
+              )}
+              {!streaming && streamUsers.length > 0 && (
+                <span className="text-[10px] text-gray-600">Paused · {streamUsers.length} received</span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {streaming && (
+                <button onClick={() => { setStreamUsers([]); setStreamCycle(0) }}
+                  className="text-[10px] text-gray-500 hover:text-gray-300 transition-colors">Clear</button>
+              )}
+              <button onClick={streaming ? stopStream : startStream}
+                className={`text-[11px] px-3 py-1.5 rounded-lg border font-medium transition-colors ${
+                  streaming
+                    ? 'text-red-400 bg-red-600/10 border-red-500/20 hover:bg-red-600/20'
+                    : 'text-cyan-400 bg-cyan-600/10 border-cyan-500/20 hover:bg-cyan-600/20'
+                }`}>
+                {streaming ? 'Stop' : 'Start Stream'}
+              </button>
+            </div>
+          </div>
+
+          {!streaming && streamUsers.length === 0 && (
+            <div className="px-5 py-10 text-center space-y-2">
+              <p className="text-sm text-gray-500">Server-Sent Events demo</p>
+              <p className="text-xs text-gray-600 max-w-md mx-auto">
+                Click <strong className="text-cyan-400">Start Stream</strong> to open an SSE connection. Users are streamed from the database in paginated chunks of 20, one every 500ms, looping infinitely.
+              </p>
+            </div>
+          )}
+
+          {(streaming || streamUsers.length > 0) && (
+            <div className="divide-y divide-gray-800/50 max-h-80 overflow-y-auto">
+              {streamUsers.map((u) => (
+                <div key={u.id} className={`px-5 py-2 flex items-center justify-between transition-all duration-300 ${
+                  streamHighlight === u.id ? 'bg-cyan-500/10' : ''
+                }`}>
+                  <div className="flex items-center gap-3">
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 transition-colors duration-300 ${
+                      streamHighlight === u.id ? 'bg-cyan-600 text-white' : 'bg-gray-800 text-gray-500'
+                    }`}>{u.name[0]}</div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-200 leading-tight">{u.name}</p>
+                      <p className="text-[10px] text-gray-500">{u.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-gray-600 font-mono">#{u.id}</span>
+                    <RoleBadge role={u.role} />
+                  </div>
+                </div>
+              ))}
+              <div ref={streamEndRef} />
+            </div>
+          )}
+
+          <div className="px-5 py-2.5 border-t border-gray-800/50 flex items-center justify-between">
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-gray-600">
+              <span>EventSource API</span>
+              <span>Chunked (20/page)</span>
+              <span>Auto-reconnect</span>
+              <span>text/event-stream</span>
+            </div>
+            <span className="text-[10px] text-gray-600">{streamUsers.length} users received</span>
+          </div>
+        </Card>
+
         {/* Footer */}
         <div className="bg-gray-900/50 rounded-xl border border-gray-800/50 px-5 py-3">
           <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-[11px] text-gray-600">
-            <span>Bun</span><span>@mantiq/core</span><span>@mantiq/auth</span><span>@mantiq/database</span><span>React</span><span>Tailwind</span>
+            <span>Bun</span><span>@mantiq/core</span><span>@mantiq/auth</span><span>@mantiq/database</span><span>@mantiq/realtime</span><span>React</span><span>Tailwind</span>
           </div>
         </div>
       </main>
@@ -1503,12 +1634,510 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   )
 }
 
+// ── Chat (Realtime Showcase) ──────────────────────────────────────────────────
+
+interface ChatMessage {
+  id: string
+  userId: number
+  userName: string
+  text: string
+  fileUrl?: string
+  fileName?: string
+  fileType?: string
+  timestamp: number
+}
+
+interface OnlineMember {
+  userId: number | string
+  info: { name: string; email: string }
+}
+
+function useWebSocket(user: User) {
+  const [ws, setWs] = useState<WebSocket | null>(null)
+  const [connected, setConnected] = useState(false)
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [onlineMembers, setOnlineMembers] = useState<OnlineMember[]>([])
+  const [typingUsers, setTypingUsers] = useState<Map<string, { name: string; timer: ReturnType<typeof setTimeout> }>>(new Map())
+  const wsRef = { current: ws }
+  wsRef.current = ws
+
+  useEffect(() => {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    const params = new URLSearchParams({ userId: String(user.id), name: user.name, email: user.email })
+    const socket = new WebSocket(`${protocol}//${window.location.host}/ws?${params}`)
+
+    socket.onopen = () => {
+      setConnected(true)
+      // Subscribe to presence channel
+      socket.send(JSON.stringify({ event: 'subscribe', channel: 'presence:chat.lobby' }))
+    }
+
+    socket.onmessage = (e) => {
+      try {
+        const msg = JSON.parse(e.data)
+
+        switch (msg.event) {
+          case 'member:here':
+            setOnlineMembers(msg.data || [])
+            break
+
+          case 'member:joined':
+            setOnlineMembers((prev) => {
+              if (prev.find((m) => m.userId === msg.data.userId)) return prev
+              return [...prev, msg.data]
+            })
+            break
+
+          case 'member:left':
+            setOnlineMembers((prev) => prev.filter((m) => m.userId !== msg.data.userId))
+            setTypingUsers((prev) => {
+              const next = new Map(prev)
+              next.delete(String(msg.data.userId))
+              return next
+            })
+            break
+
+          case 'client:message': {
+            const chatMsg: ChatMessage = {
+              id: `${msg.data.userId}-${msg.data.timestamp}`,
+              userId: msg.data.userId,
+              userName: msg.data.userName,
+              text: msg.data.text,
+              fileUrl: msg.data.fileUrl,
+              fileName: msg.data.fileName,
+              fileType: msg.data.fileType,
+              timestamp: msg.data.timestamp,
+            }
+            setMessages((prev) => [...prev, chatMsg])
+            // Clear typing for this user
+            setTypingUsers((prev) => {
+              const next = new Map(prev)
+              const entry = next.get(String(msg.data.userId))
+              if (entry) clearTimeout(entry.timer)
+              next.delete(String(msg.data.userId))
+              return next
+            })
+            break
+          }
+
+          case 'client:typing': {
+            const uid = String(msg.data.userId)
+            setTypingUsers((prev) => {
+              const next = new Map(prev)
+              const existing = next.get(uid)
+              if (existing) clearTimeout(existing.timer)
+              const timer = setTimeout(() => {
+                setTypingUsers((p) => { const n = new Map(p); n.delete(uid); return n })
+              }, 3000)
+              next.set(uid, { name: msg.data.userName, timer })
+              return next
+            })
+            break
+          }
+
+          case 'pong':
+          case 'connected':
+          case 'subscribed':
+            break
+        }
+      } catch { /* ignore parse errors */ }
+    }
+
+    socket.onclose = () => setConnected(false)
+    socket.onerror = () => setConnected(false)
+
+    setWs(socket)
+
+    // Ping keepalive
+    const pingInterval = setInterval(() => {
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ event: 'ping' }))
+      }
+    }, 20000)
+
+    return () => {
+      clearInterval(pingInterval)
+      socket.close()
+    }
+  }, [user.id, user.name, user.email])
+
+  const sendMessage = useCallback((text: string, file?: { url: string; name: string; type: string }) => {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return
+    const data: any = {
+      userId: user.id,
+      userName: user.name,
+      text,
+      timestamp: Date.now(),
+    }
+    if (file) {
+      data.fileUrl = file.url
+      data.fileName = file.name
+      data.fileType = file.type
+    }
+    ws.send(JSON.stringify({ event: 'whisper', channel: 'presence:chat.lobby', type: 'message', data }))
+    // Add to local messages immediately (whisper doesn't echo back to sender)
+    setMessages((prev) => [...prev, { id: `${user.id}-${data.timestamp}`, ...data }])
+  }, [ws, user])
+
+  const sendTyping = useCallback(() => {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return
+    ws.send(JSON.stringify({
+      event: 'whisper',
+      channel: 'presence:chat.lobby',
+      type: 'typing',
+      data: { userId: user.id, userName: user.name },
+    }))
+  }, [ws, user])
+
+  return { connected, messages, onlineMembers, typingUsers, sendMessage, sendTyping }
+}
+
+function SSEDemo() {
+  const [sseConnected, setSseConnected] = useState(false)
+  const [sseEvents, setSseEvents] = useState<Array<{ id: string; event: string; data: any; time: string }>>([])
+  const [sseChannel, setSseChannel] = useState('announcements')
+  const [sseBroadcastEvent, setSseBroadcastEvent] = useState('notification')
+  const [sseBroadcastMsg, setSseBroadcastMsg] = useState('Hello from SSE!')
+  const [eventSource, setEventSource] = useState<EventSource | null>(null)
+
+  const connectSSE = () => {
+    if (eventSource) { eventSource.close(); setEventSource(null); setSseConnected(false) }
+    const es = new EventSource(`/api/chat/sse?channels=${sseChannel}`)
+    es.addEventListener('connected', (e) => {
+      setSseConnected(true)
+      setSseEvents((prev) => [...prev, { id: String(prev.length), event: 'connected', data: JSON.parse(e.data), time: new Date().toLocaleTimeString() }])
+    })
+    es.addEventListener('subscribed', (e) => {
+      setSseEvents((prev) => [...prev, { id: String(prev.length), event: 'subscribed', data: JSON.parse(e.data), time: new Date().toLocaleTimeString() }])
+    })
+    es.addEventListener('broadcast', (e) => {
+      setSseEvents((prev) => [...prev, { id: String(prev.length), event: 'broadcast', data: JSON.parse(e.data), time: new Date().toLocaleTimeString() }])
+    })
+    // Catch any custom event names
+    es.onmessage = (e) => {
+      setSseEvents((prev) => [...prev, { id: String(prev.length), event: 'message', data: JSON.parse(e.data), time: new Date().toLocaleTimeString() }])
+    }
+    es.onerror = () => { setSseConnected(false) }
+    setEventSource(es)
+  }
+
+  const disconnectSSE = () => {
+    eventSource?.close()
+    setEventSource(null)
+    setSseConnected(false)
+  }
+
+  const broadcastSSE = async () => {
+    await fetch('/api/chat/sse/broadcast', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ channel: sseChannel, event: sseBroadcastEvent, data: { message: sseBroadcastMsg, timestamp: Date.now() } }),
+    })
+  }
+
+  return (
+    <div className="border-t border-gray-800/50 flex flex-col">
+      <div className="px-3 py-2 border-b border-gray-800/30">
+        <div className="flex items-center justify-between">
+          <h4 className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">SSE Demo</h4>
+          <div className={`w-1.5 h-1.5 rounded-full ${sseConnected ? 'bg-emerald-400' : 'bg-gray-600'}`} />
+        </div>
+      </div>
+      <div className="px-3 py-2 space-y-2">
+        <input value={sseChannel} onChange={(e) => setSseChannel(e.target.value)} placeholder="Channel"
+          className="w-full bg-gray-900 border border-gray-800 rounded px-2 py-1 text-[11px] text-gray-300 focus:outline-none focus:border-indigo-500/50" />
+        <div className="flex gap-1">
+          {!sseConnected ? (
+            <button onClick={connectSSE} className="flex-1 text-[10px] bg-emerald-600/20 text-emerald-400 border border-emerald-500/20 rounded px-2 py-1 hover:bg-emerald-600/30 transition-colors">Connect</button>
+          ) : (
+            <button onClick={disconnectSSE} className="flex-1 text-[10px] bg-red-600/20 text-red-400 border border-red-500/20 rounded px-2 py-1 hover:bg-red-600/30 transition-colors">Disconnect</button>
+          )}
+        </div>
+        {sseConnected && (
+          <>
+            <input value={sseBroadcastEvent} onChange={(e) => setSseBroadcastEvent(e.target.value)} placeholder="Event name"
+              className="w-full bg-gray-900 border border-gray-800 rounded px-2 py-1 text-[11px] text-gray-300 focus:outline-none focus:border-indigo-500/50" />
+            <input value={sseBroadcastMsg} onChange={(e) => setSseBroadcastMsg(e.target.value)} placeholder="Message"
+              className="w-full bg-gray-900 border border-gray-800 rounded px-2 py-1 text-[11px] text-gray-300 focus:outline-none focus:border-indigo-500/50" />
+            <button onClick={broadcastSSE} className="w-full text-[10px] bg-indigo-600/20 text-indigo-400 border border-indigo-500/20 rounded px-2 py-1 hover:bg-indigo-600/30 transition-colors">
+              Broadcast
+            </button>
+          </>
+        )}
+        {/* Event log */}
+        {sseEvents.length > 0 && (
+          <div className="max-h-32 overflow-y-auto space-y-0.5">
+            {sseEvents.slice(-10).map((ev) => (
+              <div key={ev.id} className="text-[10px] text-gray-500 flex items-start gap-1">
+                <span className="text-gray-600 shrink-0">{ev.time}</span>
+                <span className={`shrink-0 font-medium ${ev.event === 'broadcast' ? 'text-indigo-400' : 'text-emerald-500'}`}>{ev.event}</span>
+                <span className="text-gray-600 truncate">{JSON.stringify(ev.data)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="px-3 py-2 border-t border-gray-800/30">
+        <p className="text-[10px] text-gray-600">
+          <span className="text-gray-500 font-medium">@mantiq/realtime</span> — WebSocket + SSE
+        </p>
+      </div>
+    </div>
+  )
+}
+
+function ChatRoom({ appName, user, onBack }: { appName: string; user: User; onBack: () => void }) {
+  const { connected, messages, onlineMembers, typingUsers, sendMessage, sendTyping } = useWebSocket(user)
+  const [input, setInput] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const messagesEndRef = { current: null as HTMLDivElement | null }
+  const fileInputRef = { current: null as HTMLInputElement | null }
+  const typingTimeoutRef = { current: null as ReturnType<typeof setTimeout> | null }
+
+  // Auto-scroll to bottom on new messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  const handleSend = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!input.trim()) return
+    sendMessage(input.trim())
+    setInput('')
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInput(e.target.value)
+    // Throttle typing indicator to once per 2 seconds
+    if (!typingTimeoutRef.current) {
+      sendTyping()
+      typingTimeoutRef.current = setTimeout(() => { typingTimeoutRef.current = null }, 2000)
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSend(e)
+    }
+  }
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await fetch('/api/chat/upload', { method: 'POST', body: formData })
+      const data = await res.json()
+      if (res.ok) {
+        sendMessage(file.name, { url: data.url, name: data.name, type: data.type })
+      }
+    } catch { /* ignore */ }
+    setUploading(false)
+    // Reset file input
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const typingList = [...typingUsers.values()].map((t) => t.name)
+
+  const formatTime = (ts: number) => {
+    const d = new Date(ts)
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  }
+
+  const isImage = (type?: string) => type?.startsWith('image/')
+
+  return (
+    <div className="h-screen bg-gray-950 text-gray-100 flex flex-col">
+      {/* Nav */}
+      <nav className="border-b border-gray-800/80 bg-gray-950/90 backdrop-blur-md shrink-0 z-20">
+        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button onClick={onBack} className="text-gray-400 hover:text-white transition-colors" title="Back">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+            </button>
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-rose-600/20 border border-rose-500/30 flex items-center justify-center">
+                <svg className="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+              </div>
+              <span className="text-sm font-bold text-white">{appName}</span>
+              <span className="text-[10px] text-gray-600 hidden sm:inline">Realtime Chat</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5">
+              <div className={`w-2 h-2 rounded-full ${connected ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]' : 'bg-red-400'}`} />
+              <span className="text-[11px] text-gray-500">{connected ? 'Connected' : 'Disconnected'}</span>
+            </div>
+            <div className="flex items-center gap-1.5 bg-gray-900 border border-gray-800 rounded-lg px-2.5 py-1.5">
+              <div className="w-5 h-5 rounded-full bg-indigo-600 flex items-center justify-center text-[10px] font-bold text-white">{user.name[0]}</div>
+              <span className="text-xs text-gray-300">{user.name}</span>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Main area */}
+      <div className="flex-1 flex overflow-hidden max-w-7xl w-full mx-auto">
+        {/* Messages */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Message list */}
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1">
+            {messages.length === 0 && (
+              <div className="flex flex-col items-center justify-center h-full text-gray-600 space-y-3">
+                <svg className="w-12 h-12 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                <p className="text-sm">No messages yet. Say hello!</p>
+                <p className="text-xs text-gray-700">Messages are peer-to-peer via WebSocket — no database.</p>
+              </div>
+            )}
+            {messages.map((msg, i) => {
+              const isOwn = msg.userId === user.id
+              const showAvatar = i === 0 || messages[i - 1].userId !== msg.userId || msg.timestamp - messages[i - 1].timestamp > 60000
+              return (
+                <div key={msg.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'} ${showAvatar ? 'mt-3' : 'mt-0.5'}`}>
+                  <div className={`flex gap-2 max-w-[70%] ${isOwn ? 'flex-row-reverse' : ''}`}>
+                    {showAvatar ? (
+                      <div className={`w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-[11px] font-bold text-white ${isOwn ? 'bg-indigo-600' : 'bg-rose-600'}`}>
+                        {msg.userName[0]}
+                      </div>
+                    ) : <div className="w-7 flex-shrink-0" />}
+                    <div>
+                      {showAvatar && (
+                        <div className={`flex items-center gap-2 mb-0.5 ${isOwn ? 'justify-end' : ''}`}>
+                          <span className="text-[11px] font-medium text-gray-400">{isOwn ? 'You' : msg.userName}</span>
+                          <span className="text-[10px] text-gray-600">{formatTime(msg.timestamp)}</span>
+                        </div>
+                      )}
+                      <div className={`rounded-2xl px-3.5 py-2 text-sm leading-relaxed ${isOwn ? 'bg-indigo-600 text-white rounded-tr-md' : 'bg-gray-800 text-gray-200 rounded-tl-md'}`}>
+                        {msg.fileUrl && (
+                          <div className="mb-1.5">
+                            {isImage(msg.fileType) ? (
+                              <img src={msg.fileUrl} alt={msg.fileName} className="rounded-lg max-w-[280px] max-h-[200px] object-cover" />
+                            ) : (
+                              <a href={msg.fileUrl} target="_blank" rel="noreferrer"
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs ${isOwn ? 'bg-indigo-700/50 hover:bg-indigo-700/70' : 'bg-gray-700/50 hover:bg-gray-700/70'} transition-colors`}>
+                                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                                <span className="truncate">{msg.fileName || 'Attachment'}</span>
+                              </a>
+                            )}
+                          </div>
+                        )}
+                        {msg.text && !msg.fileUrl && msg.text}
+                        {msg.text && msg.fileUrl && msg.text !== msg.fileName && <span>{msg.text}</span>}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+            <div ref={(el) => { messagesEndRef.current = el }} />
+          </div>
+
+          {/* Typing indicator */}
+          <div className="px-4 h-6 flex items-center">
+            {typingList.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <div className="flex gap-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-gray-500 animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-1.5 h-1.5 rounded-full bg-gray-500 animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-1.5 h-1.5 rounded-full bg-gray-500 animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
+                <span className="text-[11px] text-gray-500">
+                  {typingList.length === 1 ? `${typingList[0]} is typing` : `${typingList.join(', ')} are typing`}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Input */}
+          <div className="border-t border-gray-800/80 px-4 py-3 shrink-0">
+            <form onSubmit={handleSend} className="flex items-center gap-2">
+              <input type="file" ref={(el) => { fileInputRef.current = el }} className="hidden" onChange={handleFileUpload} />
+              <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading || !connected}
+                className="p-2 text-gray-500 hover:text-gray-300 hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-50"
+                title="Share file">
+                {uploading ? (
+                  <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                )}
+              </button>
+              <input
+                value={input}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                disabled={!connected}
+                placeholder={connected ? 'Type a message...' : 'Connecting...'}
+                className="flex-1 bg-gray-900 border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20 transition-all disabled:opacity-50"
+                autoFocus
+              />
+              <button type="submit" disabled={!input.trim() || !connected}
+                className="p-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-800 disabled:text-gray-600 text-white rounded-xl transition-colors">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {/* Online members sidebar */}
+        <div className="w-64 border-l border-gray-800/80 bg-gray-950 shrink-0 hidden lg:flex flex-col">
+          <div className="px-4 py-3 border-b border-gray-800/50">
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Online — {onlineMembers.length}</h3>
+          </div>
+          <div className="flex-1 overflow-y-auto py-2">
+            {onlineMembers.map((m) => {
+              const isTyping = typingUsers.has(String(m.userId))
+              return (
+                <div key={String(m.userId)} className="flex items-center gap-2.5 px-4 py-1.5 hover:bg-gray-900/50 transition-colors">
+                  <div className="relative">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ${Number(m.userId) === user.id ? 'bg-indigo-600' : 'bg-rose-600'}`}>
+                      {m.info.name[0]}
+                    </div>
+                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 border-2 border-gray-950 rounded-full" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-gray-200 truncate">
+                      {m.info.name}
+                      {Number(m.userId) === user.id && <span className="text-[10px] text-gray-600 ml-1">(you)</span>}
+                    </p>
+                    {isTyping ? (
+                      <p className="text-[10px] text-indigo-400 flex items-center gap-1">
+                        typing
+                        <span className="flex gap-0.5">
+                          <span className="w-1 h-1 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+                          <span className="w-1 h-1 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                          <span className="w-1 h-1 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+                        </span>
+                      </p>
+                    ) : (
+                      <p className="text-[10px] text-gray-600 truncate">{m.info.email}</p>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+            {onlineMembers.length === 0 && (
+              <p className="text-xs text-gray-600 text-center py-6">No one online yet</p>
+            )}
+          </div>
+
+          {/* SSE Demo */}
+          <SSEDemo />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Root ──────────────────────────────────────────────────────────────────────
 
 export function App({ appName = 'MantiqJS', currentUser = null, currentPage }: AppProps) {
   const [user, setUser] = useState<User | null>(currentUser)
-  const initialPage = currentPage === 'validation' ? 'validation' as const : currentPage === 'cli' ? 'cli' as const : currentPage === 'storage' ? 'storage' as const : 'login' as const
-  const [page, setPage] = useState<'login' | 'register' | 'validation' | 'cli' | 'storage'>(initialPage)
+  const initialPage = currentPage === 'validation' ? 'validation' as const : currentPage === 'cli' ? 'cli' as const : currentPage === 'storage' ? 'storage' as const : currentPage === 'chat' ? 'chat' as const : 'login' as const
+  const [page, setPage] = useState<'login' | 'register' | 'validation' | 'cli' | 'storage' | 'chat'>(initialPage)
 
   if (page === 'validation') {
     return <ValidationPlayground appName={appName} onBack={() => { window.location.href = '/' }} />
@@ -1522,11 +2151,19 @@ export function App({ appName = 'MantiqJS', currentUser = null, currentPage }: A
     return <StoragePlayground appName={appName} onBack={() => { window.location.href = '/' }} />
   }
 
+  if (page === 'chat') {
+    if (!user) {
+      // Chat requires auth — redirect to login
+      return <LoginPage appName={appName} onLogin={(u) => { setUser(u) }} onGoRegister={() => setPage('register')} />
+    }
+    return <ChatRoom appName={appName} user={user} onBack={() => { window.location.href = '/' }} />
+  }
+
   if (!user) {
     return page === 'login'
       ? <LoginPage appName={appName} onLogin={setUser} onGoRegister={() => setPage('register')} />
       : <RegisterPage appName={appName} onRegister={setUser} onGoLogin={() => setPage('login')} />
   }
 
-  return <Dashboard appName={appName} user={user} onLogout={() => setUser(null)} onValidation={() => setPage('validation')} onCli={() => setPage('cli')} onStorage={() => setPage('storage')} />
+  return <Dashboard appName={appName} user={user} onLogout={() => setUser(null)} onValidation={() => setPage('validation')} onCli={() => setPage('cli')} onStorage={() => setPage('storage')} onChat={() => setPage('chat')} />
 }

@@ -71,6 +71,74 @@ export class UserController {
     return json({ data: user!.toObject() })
   }
 
+  /**
+   * GET /api/users/stream
+   *
+   * SSE endpoint that streams users one-by-one in an infinite loop.
+   * Each user is sent as a JSON event with a delay between them.
+   */
+  async stream(_request: MantiqRequest): Promise<Response> {
+    const CHUNK_SIZE = 20
+
+    const stream = new ReadableStream({
+      async start(controller) {
+        let eventId = 0
+        const send = (event: string, data: any) => {
+          eventId++
+          controller.enqueue(`id: ${eventId}\nevent: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
+        }
+
+        // Stream users in an infinite loop, paginated in chunks
+        while (true) {
+          try {
+            // Get total count once per cycle
+            const total = await User.query().count()
+            send('total', { count: total })
+
+            let offset = 0
+            let page = 1
+
+            while (true) {
+              const chunk = await User.query()
+                .orderBy('id', 'asc')
+                .limit(CHUNK_SIZE)
+                .offset(offset)
+                .get() as User[]
+
+              if (chunk.length === 0) break
+
+              send('page', { page, size: chunk.length, total })
+
+              for (const user of chunk) {
+                send('user', user.toObject())
+                await new Promise((r) => setTimeout(r, 500))
+              }
+
+              if (chunk.length < CHUNK_SIZE) break
+              offset += CHUNK_SIZE
+              page++
+            }
+
+            // Pause before restarting the loop
+            send('cycle', { message: 'Restarting stream...' })
+            await new Promise((r) => setTimeout(r, 2000))
+          } catch {
+            await new Promise((r) => setTimeout(r, 5000))
+          }
+        }
+      },
+    })
+
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache, no-transform',
+        'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no',
+      },
+    })
+  }
+
   /** DELETE /api/users/:id */
   async destroy(request: MantiqRequest): Promise<Response> {
     const id = Number(request.param('user'))

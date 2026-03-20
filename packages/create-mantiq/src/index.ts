@@ -161,5 +161,19 @@ console.log(`
     ${cyan('bun run')} dev              ${dim('# start development server')}
 ${frontendSteps}    ${cyan('bun mantiq')} tinker        ${dim('# interactive REPL')}
 
+  ${bold('Included packages:')}
+
+    ${dim('core · database · auth · validation · filesystem · logging')}
+    ${dim('events · queue · realtime · heartbeat · helpers · cli')}
+
+  ${bold('Useful commands:')}
+
+    ${cyan('bun mantiq')} route:list    ${dim('# list all registered routes')}
+    ${cyan('bun mantiq')} queue:work    ${dim('# start processing queued jobs')}
+    ${cyan('bun mantiq')} make:model    ${dim('# generate a new model')}
+    ${cyan('bun mantiq')} make:job      ${dim('# generate a new job class')}
+
+  ${dim('Dashboard: http://localhost:3000/_heartbeat')}
+
   ${dim('Happy building!')}
 `)

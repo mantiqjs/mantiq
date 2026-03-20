@@ -4,6 +4,8 @@ import { AuthServiceProvider, Authenticate, RedirectIfAuthenticated } from '@man
 import { FilesystemServiceProvider } from '@mantiq/filesystem'
 import { DatabaseServiceProvider } from './app/Providers/DatabaseServiceProvider.ts'
 import { HeartbeatServiceProvider } from './app/Providers/HeartbeatServiceProvider.ts'
+import { RealtimeServiceProvider } from './app/Providers/RealtimeServiceProvider.ts'
+import { EventServiceProvider } from '@mantiq/events'
 import { LogRequestsMiddleware } from './app/Http/Middleware/LogRequests.ts'
 import { RequireJsonMiddleware } from './app/Http/Middleware/RequireJson.ts'
 
@@ -27,7 +29,7 @@ if (await envFile.exists()) {
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 const app = await Application.create(import.meta.dir, 'config')
 
-await app.registerProviders([CoreServiceProvider, DatabaseServiceProvider, AuthServiceProvider, FilesystemServiceProvider, ViteServiceProvider, HeartbeatServiceProvider])
+await app.registerProviders([CoreServiceProvider, DatabaseServiceProvider, AuthServiceProvider, FilesystemServiceProvider, ViteServiceProvider, HeartbeatServiceProvider, EventServiceProvider, RealtimeServiceProvider])
 await app.bootProviders()
 
 // ── Seed default data (only when running the server directly) ────────────────

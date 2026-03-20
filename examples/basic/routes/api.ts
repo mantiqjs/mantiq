@@ -3,6 +3,7 @@ import { ApiController } from '@app/Http/Controllers/ApiController.ts'
 import { UserController } from '@app/Http/Controllers/UserController.ts'
 import { ValidationController } from '@app/Http/Controllers/ValidationController.ts'
 import { StorageController } from '@app/Http/Controllers/StorageController.ts'
+import { ChatController } from '@app/Http/Controllers/ChatController.ts'
 
 export default function (router: Router) {
   router.group({ prefix: '/api' }, (r) => {
@@ -23,6 +24,18 @@ export default function (router: Router) {
     r.delete('/storage/delete', [StorageController, 'destroy'])
     r.get('/storage/info', [StorageController, 'info'])
     r.post('/storage/upload', [StorageController, 'upload'])
+
+    // Chat file upload & serving
+    r.post('/chat/upload', [ChatController, 'upload'])
+    r.get('/chat/files/:filename', [ChatController, 'serve'])
+
+    // SSE endpoints
+    r.get('/chat/sse', [ChatController, 'stream'])
+    r.post('/chat/sse/broadcast', [ChatController, 'sseBroadcast'])
+    r.get('/chat/sse/stats', [ChatController, 'sseStats'])
+
+    // SSE user stream (before apiResource so it doesn't match :user param)
+    r.get('/users/stream', [UserController, 'stream'])
 
     // Protected routes — require authentication
     r.group({ middleware: ['auth'] }, (auth) => {

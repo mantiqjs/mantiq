@@ -27,6 +27,13 @@ export function getTemplates(ctx: TemplateContext): Record<string, string> {
         '@mantiq/cli': '^0.0.1',
         '@mantiq/core': '^0.0.1',
         '@mantiq/database': '^0.0.1',
+        '@mantiq/events': '^0.0.1',
+        '@mantiq/filesystem': '^0.0.1',
+        '@mantiq/heartbeat': '^0.0.1',
+        '@mantiq/helpers': '^0.0.1',
+        '@mantiq/logging': '^0.0.1',
+        '@mantiq/queue': '^0.0.1',
+        '@mantiq/realtime': '^0.0.1',
         '@mantiq/validation': '^0.0.1',
       },
       devDependencies: {
@@ -64,6 +71,9 @@ APP_KEY=${ctx.appKey}
 
 DB_CONNECTION=sqlite
 DB_DATABASE=database/database.sqlite
+
+LOG_CHANNEL=stack
+QUEUE_CONNECTION=sync
 `,
 
     '.env.example': `APP_NAME=${ctx.name}
@@ -75,21 +85,36 @@ APP_KEY=
 
 DB_CONNECTION=sqlite
 DB_DATABASE=database/database.sqlite
+
+LOG_CHANNEL=stack
+QUEUE_CONNECTION=sync
 `,
 
     '.gitignore': `node_modules/
 dist/
 *.sqlite
 *.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
 .env
 .DS_Store
 tsconfig.tsbuildinfo
+storage/logs/
+storage/app/
+storage/heartbeat/
 `,
 
     // ── Entry points ────────────────────────────────────────────────────────
 
     'index.ts': `import { Application, CoreServiceProvider, HttpKernel, RouterImpl, CorsMiddleware, StartSession, EncryptCookies, VerifyCsrfToken } from '@mantiq/core'
 import { AuthServiceProvider, Authenticate, RedirectIfAuthenticated } from '@mantiq/auth'
+import { FilesystemServiceProvider } from '@mantiq/filesystem'
+import { LoggingServiceProvider } from '@mantiq/logging'
+import { EventServiceProvider } from '@mantiq/events'
+import { QueueServiceProvider } from '@mantiq/queue'
+import { ValidationServiceProvider } from '@mantiq/validation'
+import { HeartbeatServiceProvider, HeartbeatMiddleware } from '@mantiq/heartbeat'
+import { RealtimeServiceProvider } from '@mantiq/realtime'
 import { DatabaseServiceProvider } from './app/Providers/DatabaseServiceProvider.ts'
 
 // ── Load .env ─────────────────────────────────────────────────────────────────
@@ -110,7 +135,18 @@ if (await envFile.exists()) {
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 const app = await Application.create(import.meta.dir, 'config')
 
-await app.registerProviders([CoreServiceProvider, DatabaseServiceProvider, AuthServiceProvider])
+await app.registerProviders([
+  CoreServiceProvider,
+  DatabaseServiceProvider,
+  AuthServiceProvider,
+  FilesystemServiceProvider,
+  LoggingServiceProvider,
+  EventServiceProvider,
+  QueueServiceProvider,
+  ValidationServiceProvider,
+  HeartbeatServiceProvider,
+  RealtimeServiceProvider,
+])
 await app.bootProviders()
 
 // ── Kernel setup ──────────────────────────────────────────────────────────────
@@ -124,9 +160,10 @@ kernel.registerMiddleware('session', StartSession)
 kernel.registerMiddleware('csrf', VerifyCsrfToken)
 kernel.registerMiddleware('auth', Authenticate)
 kernel.registerMiddleware('guest', RedirectIfAuthenticated)
+kernel.registerMiddleware('heartbeat', HeartbeatMiddleware)
 
 // Global middleware
-kernel.setGlobalMiddleware(['cors', 'encrypt.cookies', 'session'])
+kernel.setGlobalMiddleware(['cors', 'encrypt.cookies', 'session', 'heartbeat'])
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 import webRoutes from './routes/web.ts'
@@ -166,16 +203,28 @@ import {
   RouteListCommand,
   TinkerCommand,
 } from '@mantiq/cli'
+import {
+  QueueWorkCommand,
+  QueueRetryCommand,
+  QueueFailedCommand,
+  QueueFlushCommand,
+  MakeJobCommand,
+  ScheduleRunCommand,
+} from '@mantiq/queue'
+import { InstallCommand as HeartbeatInstallCommand } from '@mantiq/heartbeat'
 
 const kernel = new Kernel()
 
 kernel.registerAll([
+  // Database
   new MigrateCommand(),
   new MigrateRollbackCommand(),
   new MigrateResetCommand(),
   new MigrateFreshCommand(),
   new MigrateStatusCommand(),
   new SeedCommand(),
+
+  // Code generators
   new MakeControllerCommand(),
   new MakeModelCommand(),
   new MakeMigrationCommand(),
@@ -183,9 +232,22 @@ kernel.registerAll([
   new MakeFactoryCommand(),
   new MakeMiddlewareCommand(),
   new MakeRequestCommand(),
+  new MakeJobCommand(),
+
+  // Queue
+  new QueueWorkCommand(),
+  new QueueRetryCommand(),
+  new QueueFailedCommand(),
+  new QueueFlushCommand(),
+  new ScheduleRunCommand(),
+
+  // Utilities
   new ServeCommand(),
   new RouteListCommand(),
   new TinkerCommand(),
+
+  // Heartbeat
+  new HeartbeatInstallCommand(),
 ])
 
 const code = await kernel.run()
@@ -237,6 +299,131 @@ export default {
   },
 }
 `,
+
+    'config/filesystem.ts': `import { env } from '@mantiq/core'
+
+export default {
+  default: env('FILESYSTEM_DISK', 'local'),
+
+  disks: {
+    local: {
+      driver: 'local' as const,
+      root: import.meta.dir + '/../storage/app',
+    },
+    public: {
+      driver: 'local' as const,
+      root: import.meta.dir + '/../storage/app/public',
+      visibility: 'public' as const,
+    },
+  },
+}
+`,
+
+    'config/logging.ts': `import { env } from '@mantiq/core'
+
+export default {
+  default: env('LOG_CHANNEL', 'stack'),
+
+  channels: {
+    stack: {
+      driver: 'stack' as const,
+      channels: ['console', 'daily'],
+    },
+    console: {
+      driver: 'console' as const,
+      level: 'debug' as const,
+    },
+    daily: {
+      driver: 'daily' as const,
+      path: 'storage/logs/mantiq.log',
+      level: 'debug' as const,
+      days: 14,
+    },
+    file: {
+      driver: 'file' as const,
+      path: 'storage/logs/mantiq.log',
+      level: 'debug' as const,
+    },
+  },
+}
+`,
+
+    'config/queue.ts': `import { env } from '@mantiq/core'
+
+export default {
+  default: env('QUEUE_CONNECTION', 'sync'),
+
+  connections: {
+    sync: {
+      driver: 'sync' as const,
+    },
+    sqlite: {
+      driver: 'sqlite' as const,
+      database: import.meta.dir + '/../database/queue.sqlite',
+      table: 'jobs',
+      retryAfter: 60,
+    },
+  },
+
+  failed: {
+    driver: 'sqlite' as const,
+    database: import.meta.dir + '/../database/queue.sqlite',
+    table: 'failed_jobs',
+  },
+}
+`,
+
+    'config/heartbeat.ts': `export default {
+  enabled: true,
+
+  storage: {
+    driver: 'sqlite' as const,
+    path: 'storage/heartbeat/heartbeat.sqlite',
+    retention: 86400,   // 24 hours
+    pruneInterval: 300,  // 5 minutes
+  },
+
+  queue: {
+    connection: 'sync',
+    queue: 'heartbeat',
+    batchSize: 50,
+    flushInterval: 1000,
+  },
+
+  watchers: {
+    request:   { enabled: true, slow_threshold: 1000, ignore: [] },
+    query:     { enabled: true, slow_threshold: 100, detect_n_plus_one: true },
+    exception: { enabled: true, ignore: [] },
+    cache:     { enabled: true },
+    job:       { enabled: true },
+    event:     { enabled: true, ignore: [] },
+    model:     { enabled: true },
+    log:       { enabled: true, level: 'debug' },
+    schedule:  { enabled: true },
+  },
+
+  tracing: {
+    enabled: true,
+    propagate: true,
+  },
+
+  sampling: {
+    rate: 1.0,
+    always_sample_errors: true,
+  },
+
+  dashboard: {
+    enabled: true,
+    path: '/_heartbeat',
+    middleware: [],
+  },
+}
+`,
+
+    // ── Storage ─────────────────────────────────────────────────────────────
+
+    'storage/app/.gitkeep': '',
+    'storage/logs/.gitkeep': '',
 
     // ── Routes ──────────────────────────────────────────────────────────────
 
@@ -394,6 +581,13 @@ function applyKitOverrides(templates: Record<string, string>, ctx: TemplateConte
       '@mantiq/cli': '^0.0.1',
       '@mantiq/core': '^0.0.1',
       '@mantiq/database': '^0.0.1',
+      '@mantiq/events': '^0.0.1',
+      '@mantiq/filesystem': '^0.0.1',
+      '@mantiq/heartbeat': '^0.0.1',
+      '@mantiq/helpers': '^0.0.1',
+      '@mantiq/logging': '^0.0.1',
+      '@mantiq/queue': '^0.0.1',
+      '@mantiq/realtime': '^0.0.1',
       '@mantiq/validation': '^0.0.1',
       '@mantiq/vite': '^0.0.1',
     },
@@ -442,6 +636,9 @@ APP_KEY=${ctx.appKey}
 DB_CONNECTION=sqlite
 DB_DATABASE=database/database.sqlite
 
+LOG_CHANNEL=stack
+QUEUE_CONNECTION=sync
+
 VITE_DEV_SERVER_URL=http://localhost:5173
 `
 
@@ -455,6 +652,9 @@ APP_KEY=
 DB_CONNECTION=sqlite
 DB_DATABASE=database/database.sqlite
 
+LOG_CHANNEL=stack
+QUEUE_CONNECTION=sync
+
 VITE_DEV_SERVER_URL=http://localhost:5173
 `
 
@@ -463,9 +663,14 @@ VITE_DEV_SERVER_URL=http://localhost:5173
 dist/
 *.sqlite
 *.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
 .env
 .DS_Store
 tsconfig.tsbuildinfo
+storage/logs/
+storage/app/
+storage/heartbeat/
 public/build/
 public/hot
 bootstrap/
@@ -475,6 +680,13 @@ bootstrap/
   templates['index.ts'] = `import { Application, CoreServiceProvider, HttpKernel, RouterImpl, CorsMiddleware, StartSession, EncryptCookies, VerifyCsrfToken } from '@mantiq/core'
 import { ViteServiceProvider, ServeStaticFiles } from '@mantiq/vite'
 import { AuthServiceProvider, Authenticate, RedirectIfAuthenticated } from '@mantiq/auth'
+import { FilesystemServiceProvider } from '@mantiq/filesystem'
+import { LoggingServiceProvider } from '@mantiq/logging'
+import { EventServiceProvider } from '@mantiq/events'
+import { QueueServiceProvider } from '@mantiq/queue'
+import { ValidationServiceProvider } from '@mantiq/validation'
+import { HeartbeatServiceProvider, HeartbeatMiddleware } from '@mantiq/heartbeat'
+import { RealtimeServiceProvider } from '@mantiq/realtime'
 import { DatabaseServiceProvider } from './app/Providers/DatabaseServiceProvider.ts'
 
 // ── Load .env ─────────────────────────────────────────────────────────────────
@@ -495,7 +707,19 @@ if (await envFile.exists()) {
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 const app = await Application.create(import.meta.dir, 'config')
 
-await app.registerProviders([CoreServiceProvider, DatabaseServiceProvider, AuthServiceProvider, ViteServiceProvider])
+await app.registerProviders([
+  CoreServiceProvider,
+  DatabaseServiceProvider,
+  AuthServiceProvider,
+  ViteServiceProvider,
+  FilesystemServiceProvider,
+  LoggingServiceProvider,
+  EventServiceProvider,
+  QueueServiceProvider,
+  ValidationServiceProvider,
+  HeartbeatServiceProvider,
+  RealtimeServiceProvider,
+])
 await app.bootProviders()
 
 // ── Seed default data (only when running the server directly) ────────────────
@@ -520,9 +744,10 @@ kernel.registerMiddleware('session', StartSession)
 kernel.registerMiddleware('csrf', VerifyCsrfToken)
 kernel.registerMiddleware('auth', Authenticate)
 kernel.registerMiddleware('guest', RedirectIfAuthenticated)
+kernel.registerMiddleware('heartbeat', HeartbeatMiddleware)
 
 // Global middleware
-kernel.setGlobalMiddleware(['static', 'cors', 'encrypt.cookies', 'session'])
+kernel.setGlobalMiddleware(['static', 'cors', 'encrypt.cookies', 'session', 'heartbeat'])
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 import webRoutes from './routes/web.ts'

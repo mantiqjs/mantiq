@@ -24,6 +24,11 @@ export class HomeController {
     return this.renderSpa(request, 'storage')
   }
 
+  /** GET /chat — serves the SPA shell on the realtime chat page */
+  async chat(request: MantiqRequest): Promise<Response> {
+    return this.renderSpa(request, 'chat')
+  }
+
   private async renderSpa(request: MantiqRequest, currentPage?: string): Promise<Response> {
     // Try to resolve current user from session (no middleware required)
     const manager = auth()
