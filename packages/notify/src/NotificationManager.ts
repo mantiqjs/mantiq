@@ -10,6 +10,12 @@ import { BroadcastChannel } from './channels/BroadcastChannel.ts'
 import { SmsChannel } from './channels/SmsChannel.ts'
 import { SlackChannel } from './channels/SlackChannel.ts'
 import { WebhookChannel } from './channels/WebhookChannel.ts'
+import { DiscordChannel } from './channels/DiscordChannel.ts'
+import { TelegramChannel } from './channels/TelegramChannel.ts'
+import { WhatsAppChannel } from './channels/WhatsAppChannel.ts'
+import { IMessageChannel } from './channels/IMessageChannel.ts'
+import { RcsChannel } from './channels/RcsChannel.ts'
+import { FirebaseChannel } from './channels/FirebaseChannel.ts'
 
 /**
  * NotificationManager — routes notifications through channels.
@@ -101,18 +107,22 @@ export class NotificationManager {
   // ── Private ───────────────────────────────────────────────────────────────
 
   private registerBuiltInChannels(): void {
+    // Zero-config channels (no credentials needed)
     this._channels.set('mail', new MailChannel())
     this._channels.set('database', new DatabaseChannel())
     this._channels.set('broadcast', new BroadcastChannel())
     this._channels.set('webhook', new WebhookChannel())
+    this._channels.set('discord', new DiscordChannel())
 
-    // Lazy-load SMS and Slack (need config)
-    if (this.config.channels?.sms) {
-      this._factories.set('sms', () => new SmsChannel(this.config.channels!.sms!))
-    }
-    if (this.config.channels?.slack) {
-      this._factories.set('slack', () => new SlackChannel(this.config.channels!.slack!))
-    }
+    // Config-based channels (lazy-loaded when config present)
+    const ch = this.config.channels
+    if (ch?.sms) this._factories.set('sms', () => new SmsChannel(ch.sms!))
+    if (ch?.slack) this._factories.set('slack', () => new SlackChannel(ch.slack!))
+    if (ch?.telegram) this._factories.set('telegram', () => new TelegramChannel(ch.telegram!))
+    if (ch?.whatsapp) this._factories.set('whatsapp', () => new WhatsAppChannel(ch.whatsapp!))
+    if (ch?.imessage) this._factories.set('imessage', () => new IMessageChannel(ch.imessage!))
+    if (ch?.rcs) this._factories.set('rcs', () => new RcsChannel(ch.rcs!))
+    if (ch?.firebase) this._factories.set('firebase', () => new FirebaseChannel(ch.firebase!))
   }
 
   private async queueNotification(notifiable: Notifiable, notification: Notification): Promise<void> {
