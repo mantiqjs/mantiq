@@ -8,6 +8,7 @@ import { IO } from './IO.ts'
 export class Kernel {
   private commands = new Map<string, Command>()
   private io = new IO()
+  private discovered = false
 
   constructor(public readonly app: any = null) {}
 
@@ -21,7 +22,39 @@ export class Kernel {
     return this
   }
 
+  /**
+   * Auto-discover and register command files from app/Console/Commands/.
+   * Each file must export a class that extends Command.
+   */
+  async discover(basePath?: string): Promise<this> {
+    if (this.discovered) return this
+
+    const dir = (basePath ?? process.cwd()) + '/app/Console/Commands'
+    const glob = new Bun.Glob('**/*Command.ts')
+
+    try {
+      for await (const file of glob.scan({ cwd: dir, absolute: false })) {
+        try {
+          const mod = await import(dir + '/' + file)
+          for (const exported of Object.values(mod)) {
+            if (typeof exported === 'function' && (exported as any).prototype?.name && (exported as any).prototype?.handle) {
+              this.register(new (exported as any)())
+            }
+          }
+        } catch {
+          // Skip files that can't be imported
+        }
+      }
+    } catch {
+      // Directory doesn't exist — no commands to discover
+    }
+
+    this.discovered = true
+    return this
+  }
+
   async run(argv: string[] = process.argv): Promise<number> {
+    await this.discover()
     const parsed = parse(argv)
 
     if (parsed.command === 'help' || parsed.command === '--help' || parsed.command === '-h' || parsed.flags['help'] || parsed.flags['h']) {
