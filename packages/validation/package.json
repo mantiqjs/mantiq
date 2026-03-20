@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/validation",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "Rule engine, form requests",
   "type": "module",
   "license": "MIT",
@@ -45,11 +45,11 @@
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
-  "dependencies": {
-    "@mantiq/core": "^0.1.0"
-  },
   "devDependencies": {
     "bun-types": "latest",
     "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@mantiq/core": "^0.1.0"
   }
 }

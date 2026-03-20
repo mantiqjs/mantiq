@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/filesystem",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "Filesystem abstraction — local, S3, GCS, R2, Azure, FTP, SFTP drivers with uniform API",
   "type": "module",
   "license": "MIT",
@@ -45,14 +45,12 @@
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
-  "dependencies": {
-    "@mantiq/core": "^0.1.0"
-  },
   "devDependencies": {
     "bun-types": "latest",
     "typescript": "^5.7.0"
   },
   "peerDependencies": {
+    "@mantiq/core": "^0.1.0",
     "@aws-sdk/client-s3": "^3.0.0",
     "@aws-sdk/s3-request-presigner": "^3.0.0",
     "@google-cloud/storage": "^7.0.0",

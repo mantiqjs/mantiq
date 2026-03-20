@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/queue",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "Job dispatching, workers, retry logic",
   "type": "module",
   "license": "MIT",
@@ -45,15 +45,13 @@
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
-  "dependencies": {
-    "@mantiq/core": "^0.1.0",
-    "@mantiq/cli": "^0.1.0"
-  },
   "devDependencies": {
     "bun-types": "latest",
     "typescript": "^5.7.0"
   },
   "peerDependencies": {
+    "@mantiq/core": "^0.1.0",
+    "@mantiq/cli": "^0.1.0",
     "ioredis": ">=5.0.0",
     "@aws-sdk/client-sqs": ">=3.0.0",
     "kafkajs": ">=2.0.0"

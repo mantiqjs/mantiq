@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/auth",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "Session & token auth, guards, providers",
   "type": "module",
   "license": "MIT",
@@ -45,12 +45,12 @@
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
-  "dependencies": {
-    "@mantiq/core": "^0.1.0",
-    "@mantiq/database": "^0.1.0"
-  },
   "devDependencies": {
     "bun-types": "latest",
     "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@mantiq/core": "^0.1.0",
+    "@mantiq/database": "^0.1.0"
   }
 }
