@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/realtime",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "WebSocket, SSE, channels, broadcasting",
   "type": "module",
   "license": "MIT",
@@ -46,8 +46,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@mantiq/core": "workspace:*",
-    "@mantiq/events": "workspace:*"
+    "@mantiq/core": "^0.0.1",
+    "@mantiq/events": "^0.0.1"
   },
   "devDependencies": {
     "bun-types": "latest",

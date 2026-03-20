@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/mail",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Mail transports, message builder",
   "type": "module",
   "license": "MIT",
@@ -46,13 +46,13 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@mantiq/core": "workspace:*"
+    "@mantiq/core": "^0.0.1"
   },
   "devDependencies": {
     "bun-types": "latest",
     "typescript": "^5.7.0"
   },
   "optionalDependencies": {
-    "@mantiq/queue": "workspace:*"
+    "@mantiq/queue": "^0.0.1"
   }
 }
