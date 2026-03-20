@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/heartbeat",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "Observability, APM & queue monitoring for MantiqJS",
   "type": "module",
   "license": "MIT",
@@ -46,12 +46,12 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@mantiq/core": "^0.0.1",
-    "@mantiq/cli": "^0.0.1",
-    "@mantiq/queue": "^0.0.1",
-    "@mantiq/events": "^0.0.1",
-    "@mantiq/database": "^0.0.1",
-    "@mantiq/logging": "^0.0.1"
+    "@mantiq/core": "^0.1.0",
+    "@mantiq/cli": "^0.1.0",
+    "@mantiq/queue": "^0.1.0",
+    "@mantiq/events": "^0.1.0",
+    "@mantiq/database": "^0.1.0",
+    "@mantiq/logging": "^0.1.0"
   },
   "devDependencies": {
     "bun-types": "latest",

@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/cli",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "Command runner, code generators, dev server",
   "type": "module",
   "license": "MIT",
@@ -49,8 +49,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@mantiq/core": "^0.0.1",
-    "@mantiq/database": "^0.0.1"
+    "@mantiq/core": "^0.1.0",
+    "@mantiq/database": "^0.1.0"
   },
   "devDependencies": {
     "bun-types": "latest",

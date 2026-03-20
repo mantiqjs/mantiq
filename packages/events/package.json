@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/events",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "Event dispatcher, listeners, observers, and broadcasting for MantiqJS",
   "type": "module",
   "license": "MIT",
@@ -46,17 +46,17 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@mantiq/core": "^0.0.1"
+    "@mantiq/core": "^0.1.0"
   },
   "devDependencies": {
-    "@mantiq/database": "^0.0.1",
-    "@mantiq/auth": "^0.0.1",
+    "@mantiq/database": "^0.1.0",
+    "@mantiq/auth": "^0.1.0",
     "bun-types": "latest",
     "typescript": "^5.7.0"
   },
   "peerDependencies": {
-    "@mantiq/database": "^0.0.1",
-    "@mantiq/auth": "^0.0.1"
+    "@mantiq/database": "^0.1.0",
+    "@mantiq/auth": "^0.1.0"
   },
   "peerDependenciesMeta": {
     "@mantiq/database": {

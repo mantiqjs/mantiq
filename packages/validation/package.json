@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/validation",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "Rule engine, form requests",
   "type": "module",
   "license": "MIT",
@@ -46,7 +46,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@mantiq/core": "^0.0.1"
+    "@mantiq/core": "^0.1.0"
   },
   "devDependencies": {
     "bun-types": "latest",
