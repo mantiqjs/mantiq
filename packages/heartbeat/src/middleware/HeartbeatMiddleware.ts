@@ -215,7 +215,7 @@ export class HeartbeatMiddleware implements Middleware {
   }
 
   private async injectWidget(response: Response, duration: number, memory: number): Promise<Response> {
-    if (!this.heartbeat.config.widget?.enabled) return response
+    if (this.heartbeat.config.widget?.enabled === false) return response
 
     try {
       const html = await response.text()
