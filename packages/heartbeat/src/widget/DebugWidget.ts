@@ -1,9 +1,6 @@
 /**
  * Floating debug widget — injected into HTML responses when APP_DEBUG=true.
- * Shows request duration, memory, status, query count, and links to Heartbeat.
- *
- * Renders as a small pill at bottom-right that expands on hover/click.
- * Minimal footprint — all inline, no external deps.
+ * Compact pill with mantiq branding, expands to stats panel on click.
  */
 
 export function renderWidget(data: {
@@ -19,41 +16,57 @@ export function renderWidget(data: {
   const statusColor = status >= 500 ? '#f87171' : status >= 400 ? '#fbbf24' : '#34d399'
 
   return `<!-- mantiq:heartbeat-widget -->
-<div id="__mantiq_widget" style="position:fixed;bottom:16px;right:16px;z-index:99999;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;font-size:12px;pointer-events:auto;">
-  <div id="__mw_pill" style="display:flex;align-items:center;gap:8px;background:#0a0a0b;border:1px solid #27272a;border-radius:8px;padding:6px 12px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.4);transition:all .2s ease;color:#a1a1aa;" onclick="document.getElementById('__mw_panel').style.display=document.getElementById('__mw_panel').style.display==='none'?'block':'none'">
-    <span style="width:6px;height:6px;border-radius:50%;background:${statusColor};flex-shrink:0"></span>
-    <span style="color:#fafafa;font-weight:600">${durationMs}ms</span>
-    <span style="color:#52525b">·</span>
-    <span>${memMB}MB</span>
-    <span style="color:#52525b">·</span>
-    <span>${queries}q</span>
-    <span style="color:#34d399;font-size:10px;margin-left:2px">▲</span>
+<style>
+#__mw{position:fixed;bottom:16px;right:16px;z-index:99999;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;font-size:12px}
+#__mw_pill{display:flex;align-items:center;gap:6px;background:#0a0a0b;border:1px solid #27272a;border-radius:100px;padding:7px 14px 7px 10px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.5);color:#71717a;transition:border-color .2s;user-select:none}
+#__mw_pill:hover{border-color:#34d399}
+#__mw_logo{display:flex;align-items:center;gap:5px;color:#34d399;font-weight:700;font-size:11px;letter-spacing:-.01em;border-right:1px solid #27272a;padding-right:8px;margin-right:2px}
+#__mw_logo span{width:5px;height:5px;border-radius:50%;background:#34d399}
+#__mw_stats{display:flex;align-items:center;gap:6px}
+#__mw_stats b{color:#fafafa;font-weight:600}
+#__mw_dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+#__mw_sep{color:#27272a}
+#__mw_panel{display:none;position:absolute;bottom:calc(100% + 10px);right:0;background:#0a0a0b;border:1px solid #27272a;border-radius:12px;min-width:280px;box-shadow:0 12px 32px rgba(0,0,0,.6);overflow:hidden}
+#__mw_panel header{padding:14px 16px;border-bottom:1px solid #1e1e1e;display:flex;align-items:center;justify-content:space-between}
+#__mw_panel header .brand{display:flex;align-items:center;gap:6px;color:#fafafa;font-weight:700;font-size:12px;letter-spacing:-.01em}
+#__mw_panel header .brand i{width:6px;height:6px;border-radius:50%;background:#34d399}
+#__mw_panel header a{color:#52525b;text-decoration:none;font-size:11px}
+#__mw_panel header a:hover{color:#34d399}
+#__mw_grid{display:grid;grid-template-columns:1fr 1fr;gap:0}
+#__mw_grid .cell{padding:14px 16px;border-bottom:1px solid #1e1e1e}
+#__mw_grid .cell:nth-child(odd){border-right:1px solid #1e1e1e}
+#__mw_grid .cell label{display:block;color:#52525b;font-size:10px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+#__mw_grid .cell .val{color:#fafafa;font-weight:700;font-size:18px;letter-spacing:-.02em}
+#__mw_grid .cell .val small{color:#52525b;font-size:11px;font-weight:400;margin-left:1px}
+#__mw_cta{padding:12px 16px}
+#__mw_cta a{display:flex;align-items:center;justify-content:center;gap:6px;color:#0a0a0b;background:#34d399;padding:8px;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;transition:background .15s}
+#__mw_cta a:hover{background:#10b981}
+</style>
+<div id="__mw">
+  <div id="__mw_pill" onclick="document.getElementById('__mw_panel').style.display=document.getElementById('__mw_panel').style.display==='none'?'block':'none'">
+    <div id="__mw_logo"><span></span>mantiq</div>
+    <div id="__mw_stats">
+      <span id="__mw_dot" style="background:${statusColor}"></span>
+      <b>${durationMs}ms</b>
+      <span id="__mw_sep">&middot;</span>
+      <span>${memMB}MB</span>
+      <span id="__mw_sep">&middot;</span>
+      <span>${queries}q</span>
+    </div>
   </div>
-  <div id="__mw_panel" style="display:none;position:absolute;bottom:calc(100% + 8px);right:0;background:#0a0a0b;border:1px solid #27272a;border-radius:10px;padding:0;min-width:260px;box-shadow:0 8px 24px rgba(0,0,0,.5);overflow:hidden;">
-    <div style="padding:12px 14px;border-bottom:1px solid #1e1e1e;display:flex;align-items:center;justify-content:space-between;">
-      <span style="color:#34d399;font-weight:600;font-size:11px;letter-spacing:.03em">● HEARTBEAT</span>
-      <a href="${dashboardPath}" style="color:#52525b;text-decoration:none;font-size:11px;transition:color .15s" onmouseover="this.style.color='#34d399'" onmouseout="this.style.color='#52525b'">Dashboard →</a>
+  <div id="__mw_panel">
+    <header>
+      <div class="brand"><i></i>mantiq</div>
+      <a href="${dashboardPath}">Dashboard &rarr;</a>
+    </header>
+    <div id="__mw_grid">
+      <div class="cell"><label>Duration</label><div class="val">${durationMs}<small>ms</small></div></div>
+      <div class="cell"><label>Memory</label><div class="val">${memMB}<small>MB</small></div></div>
+      <div class="cell"><label>Status</label><div class="val" style="color:${statusColor}">${status}</div></div>
+      <div class="cell"><label>Queries</label><div class="val">${queries}</div></div>
     </div>
-    <div style="padding:10px 14px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-      <div>
-        <div style="color:#52525b;font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Duration</div>
-        <div style="color:#fafafa;font-weight:600;font-size:14px">${durationMs}<span style="color:#52525b;font-size:11px;font-weight:400">ms</span></div>
-      </div>
-      <div>
-        <div style="color:#52525b;font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Memory</div>
-        <div style="color:#fafafa;font-weight:600;font-size:14px">${memMB}<span style="color:#52525b;font-size:11px;font-weight:400">MB</span></div>
-      </div>
-      <div>
-        <div style="color:#52525b;font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Status</div>
-        <div style="color:${statusColor};font-weight:600;font-size:14px">${status}</div>
-      </div>
-      <div>
-        <div style="color:#52525b;font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Queries</div>
-        <div style="color:#fafafa;font-weight:600;font-size:14px">${queries}</div>
-      </div>
-    </div>
-    <div style="padding:8px 14px;border-top:1px solid #1e1e1e;">
-      <a href="${dashboardPath}" style="display:block;text-align:center;color:#0a0a0b;background:#34d399;padding:6px;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none;transition:background .15s" onmouseover="this.style.background='#10b981'" onmouseout="this.style.background='#34d399'">Open Heartbeat</a>
+    <div id="__mw_cta">
+      <a href="${dashboardPath}">Open Heartbeat &rarr;</a>
     </div>
   </div>
 </div>
