@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/heartbeat",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Observability, APM & queue monitoring for MantiqJS",
   "type": "module",
   "license": "MIT",

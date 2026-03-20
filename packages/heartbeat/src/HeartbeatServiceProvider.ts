@@ -196,8 +196,8 @@ export class HeartbeatServiceProvider extends ServiceProvider {
     const onAny = eventBus.onAny.bind(eventBus)
 
     for (const [key, watcher] of watcherMap) {
-      const watcherConfig = config.watchers[key]
-      if (!watcherConfig.enabled) continue
+      const watcherConfig = config.watchers[key as keyof typeof config.watchers]
+      if (!watcherConfig?.enabled) continue
 
       watcher.configure(watcherConfig as Record<string, any>)
       heartbeat.addWatcher(watcher)
