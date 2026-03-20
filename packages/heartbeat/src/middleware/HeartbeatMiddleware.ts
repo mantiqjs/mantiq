@@ -142,6 +142,7 @@ export class HeartbeatMiddleware implements Middleware {
           const mem = (Math.abs(process.memoryUsage().rss - startMemory) / 1024 / 1024).toFixed(1)
           const headers = new Headers(response!.headers)
           headers.set('X-Heartbeat', `${Math.round(duration)}ms;${mem}MB;${response!.status};0q`)
+          headers.set('Access-Control-Expose-Headers', [headers.get('Access-Control-Expose-Headers'), 'X-Heartbeat'].filter(Boolean).join(', '))
           response = new Response(response!.body, { status: response!.status, statusText: response!.statusText, headers })
         } catch { /* ignore */ }
       }
