@@ -485,9 +485,9 @@ import type { Authenticatable } from '@mantiq/auth'
 
 export class User extends Model implements Authenticatable {
   static override table = 'users'
-  static override fillable = ['name', 'email', 'role', 'password']
+  static override fillable = ['name', 'email', 'password']
   static override guarded = ['id']
-  static override hidden = ['password', 'remember_token', 'created_at', 'updated_at']
+  static override hidden = ['password', 'remember_token']
   static override timestamps = true
 
   getAuthIdentifierName(): string { return 'id' }
@@ -535,7 +535,6 @@ export default class CreateUsersTable extends Migration {
       t.string('name', 100)
       t.string('email', 150).unique()
       t.string('password', 255)
-      t.string('role', 20).default('user')
       t.string('remember_token', 100).nullable()
       t.timestamps()
     })
@@ -857,7 +856,6 @@ export class PageController {
       id: (user as any).getAttribute?.('id') ?? user.getAuthIdentifier(),
       name: (user as any).getAttribute?.('name') ?? '',
       email: (user as any).getAttribute?.('email') ?? '',
-      role: (user as any).getAttribute?.('role') ?? 'user',
     } : null
 
     const users = await User.all()
@@ -923,7 +921,6 @@ export class AuthController {
       name: body.name,
       email: body.email,
       password: hashed,
-      role: 'user',
     })
 
     const manager = auth()
@@ -980,7 +977,6 @@ export default class UserSeeder extends Seeder {
       name: 'Admin',
       email: 'admin@example.com',
       password: await hasher.make('password'),
-      role: 'admin',
     })
   }
 }

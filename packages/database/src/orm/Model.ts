@@ -416,6 +416,10 @@ export abstract class Model {
     return this.toObject()
   }
 
+  [Symbol.for('nodejs.util.inspect.custom')](): Record<string, any> {
+    return this.toObject()
+  }
+
   // ── Persistence ────────────────────────────────────────────────────────────
 
   /**
