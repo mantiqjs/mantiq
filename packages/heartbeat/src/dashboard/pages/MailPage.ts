@@ -7,17 +7,20 @@ export async function renderMailPage(store: HeartbeatStore, basePath: string): P
   const entries = await store.getEntries('mail', 50)
 
   const rows = entries.map((e) => {
-    const c = JSON.parse(e.content) as MailEntryContent
-    const to = c.to.length > 2
-      ? `${escapeHtml(c.to.slice(0, 2).join(', '))} +${c.to.length - 2}`
-      : escapeHtml(c.to.join(', '))
+    let c: MailEntryContent
+    try { c = JSON.parse(e.content) } catch { return '' }
+    if (!c?.to) return ''
+    const recipients = Array.isArray(c.to) ? c.to : []
+    const to = recipients.length > 2
+      ? `${escapeHtml(recipients.slice(0, 2).join(', '))} +${recipients.length - 2}`
+      : escapeHtml(recipients.join(', '))
 
     return `<tr>
       <td style="padding:10px 14px">
         <a href="${basePath}/mail/${e.uuid}" style="color:var(--fg-0);text-decoration:none;font-weight:500">${escapeHtml(c.subject || '(no subject)')}</a>
       </td>
-      <td class="mono sm" style="padding:10px 14px;color:var(--fg-2)">${to}</td>
-      <td style="padding:10px 14px">${badge(c.mailer, 'mute')}</td>
+      <td class="mono sm" style="padding:10px 14px;color:var(--fg-2)">${to || '—'}</td>
+      <td style="padding:10px 14px">${badge(c.mailer ?? 'unknown', 'mute')}</td>
       <td style="padding:10px 14px">${c.queued ? badge('queued', 'amber') : badge('sent', 'green')}</td>
       <td style="padding:10px 14px">${durationBadge(c.duration)}</td>
       <td class="sm dim" style="padding:10px 14px;text-align:right">${timeAgo(e.created_at)}</td>
