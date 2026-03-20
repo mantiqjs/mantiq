@@ -9,6 +9,7 @@ dist/
 storage/framework/
 storage/logs/
 **/storage/app/uploads/
+**/storage/app/chat-files/
 .cache/
 .turbo/
 .devdbrc
