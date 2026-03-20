@@ -98,10 +98,11 @@ export class HeartbeatMiddleware implements Middleware {
         this.tracer.endRequest()
       }
 
-      // Capture response data
+      // Capture response data (must rebuild response so body stays available for upstream middleware)
       if (this.requestWatcher && !error) {
         const responseHeaders = this.captureResponseHeaders(response!)
-        const { body: responseBody, size: responseSize } = await this.captureResponseBody(response!)
+        const { body: responseBody, size: responseSize, rebuilt } = await this.captureResponseBody(response!)
+        if (rebuilt) response = rebuilt
 
         this.requestWatcher.recordRequest({
           method: request.method(),
@@ -168,7 +169,7 @@ export class HeartbeatMiddleware implements Middleware {
     return headers
   }
 
-  private async captureResponseBody(response: Response): Promise<{ body: string | null; size: number | null }> {
+  private async captureResponseBody(response: Response): Promise<{ body: string | null; size: number | null; rebuilt: Response | null }> {
     const contentType = response.headers.get('content-type') ?? ''
 
     // Only capture JSON responses
@@ -176,23 +177,29 @@ export class HeartbeatMiddleware implements Middleware {
 
     if (!isCaptureable || !response.body) {
       const size = parseInt(response.headers.get('content-length') ?? '0', 10) || null
-      return { body: null, size }
+      return { body: null, size, rebuilt: null }
     }
 
     try {
-      // Clone and read the body
-      const cloned = response.clone()
-      const text = await cloned.text()
+      // Read the body text — this consumes the stream
+      const text = await response.text()
       const size = text.length
 
-      // Truncate large responses
+      // Truncate large responses for logging
       const body = text.length > MAX_RESPONSE_BODY
         ? text.slice(0, MAX_RESPONSE_BODY) + `... (truncated, ${text.length} bytes total)`
         : text
 
-      return { body, size }
+      // Rebuild the response so upstream middleware still has a body
+      const rebuilt = new Response(text, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+      })
+
+      return { body, size, rebuilt }
     } catch {
-      return { body: null, size: null }
+      return { body: null, size: null, rebuilt: null }
     }
   }
 }
