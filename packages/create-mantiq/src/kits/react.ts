@@ -275,6 +275,8 @@ export default function Dashboard({ appName = '${ctx.name}', currentUser, users:
   const [users, setUsers] = useState<User[]>(initialUsers ?? [])
   const [loading, setLoading] = useState(!initialUsers?.length)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
+  const [accountOpen, setAccountOpen] = useState(false)
   const [isDark, setIsDark] = useState(() =>
     typeof document !== 'undefined' ? document.documentElement.classList.contains('dark') : true
   )
@@ -307,34 +309,39 @@ export default function Dashboard({ appName = '${ctx.name}', currentUser, users:
       {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-30 lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
       {/* Sidebar */}
-      <aside className={\`fixed inset-y-0 left-0 w-60 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col z-40 transition-transform duration-200 lg:translate-x-0 \${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}\`}>
+      <aside className={\`fixed inset-y-0 left-0 \${sidebarOpen ? 'w-60 translate-x-0' : '-translate-x-full'} \${collapsed ? 'lg:w-16' : 'lg:w-60'} bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col z-40 transition-all duration-200 lg:translate-x-0\`}>
         <div className="h-14 flex items-center px-5 border-b border-gray-200 dark:border-gray-800">
-          <span className="text-sm font-semibold text-gray-900 dark:text-white">{appName}</span>
+          <span className={\`text-sm font-semibold text-gray-900 dark:text-white \${collapsed ? 'lg:hidden' : ''}\`}>{appName}</span>
         </div>
         <nav className="flex-1 px-3 py-3 space-y-0.5">
           <a href="/dashboard" onClick={() => setSidebarOpen(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white">
-            <svg className="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
-            Dashboard
+            <svg className="w-4 h-4 text-gray-500 dark:text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+            <span className={\`\${collapsed ? 'lg:hidden' : ''}\`}>Dashboard</span>
           </a>
           <a href="#users-section" onClick={(e) => { e.preventDefault(); setSidebarOpen(false); document.getElementById('users-section')?.scrollIntoView({ behavior: 'smooth' }) }} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-            Users
+            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+            <span className={\`\${collapsed ? 'lg:hidden' : ''}\`}>Users</span>
           </a>
         </nav>
+
+        {/* Collapse toggle */}
+        <div className="px-3 py-2 hidden lg:block">
+          <button onClick={() => setCollapsed(!collapsed)} className="flex items-center justify-center w-full px-2.5 py-2 rounded-lg text-sm text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <span className="text-xs font-mono">{collapsed ? '>>' : '<<'}</span>
+          </button>
+        </div>
+
+        {/* Bottom links */}
         <div className="px-3 py-3 mt-auto border-t border-gray-200 dark:border-gray-800 space-y-0.5">
-          <a href="/_heartbeat" onClick={() => setSidebarOpen(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" /></svg>
-            Heartbeat
-          </a>
-          <a href="/api/ping" onClick={() => setSidebarOpen(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-            API Ping
+          <a href="https://github.com/mantiqjs/mantiq" target="_blank" rel="noopener" className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" /></svg>
+            <span className={\`\${collapsed ? 'lg:hidden' : ''}\`}>Documentation</span>
           </a>
         </div>
       </aside>
 
       {/* Main */}
-      <div className="flex-1 lg:ml-60">
+      <div className={\`flex-1 \${collapsed ? 'lg:ml-16' : 'lg:ml-60'} transition-all duration-200\`}>
         {/* Top bar */}
         <header className="h-14 border-b border-gray-200 dark:border-gray-800 bg-white/90 dark:bg-gray-950/90 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between px-6">
           <div className="flex items-center">
@@ -355,10 +362,30 @@ export default function Dashboard({ appName = '${ctx.name}', currentUser, users:
                 </svg>
               )}
             </button>
-            <span className="text-xs text-gray-500 dark:text-gray-400">{currentUser?.name}</span>
-            <button onClick={handleLogout} className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 transition-colors">
-              Logout
-            </button>
+            {/* Account dropdown */}
+            <div className="relative">
+              <button onClick={() => setAccountOpen(!accountOpen)} className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                  {currentUser?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+                </div>
+                <span className="text-sm text-gray-700 dark:text-gray-300 hidden sm:block">{currentUser?.name}</span>
+                <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+              </button>
+              {accountOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setAccountOpen(false)} />
+                  <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg shadow-lg py-1 z-50">
+                    <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-800">
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">{currentUser?.name}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">{currentUser?.email}</div>
+                    </div>
+                    <button onClick={handleLogout} className="w-full text-left px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white transition-colors">
+                      Sign out
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </header>
 

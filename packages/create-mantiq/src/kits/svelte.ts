@@ -297,15 +297,10 @@ export function render(_url: string, data?: Record<string, any>) {
   let loading = !users?.length
   let isDark = true
   let sidebarOpen = false
+  let collapsed = false
+  let accountOpen = false
 
-  const navItems = [
-    { label: 'Dashboard', icon: 'grid', href: '/dashboard', active: true },
-  ]
-
-  const bottomLinks = [
-    { label: 'Heartbeat', icon: 'heart', href: '/heartbeat' },
-    { label: 'API Ping', icon: 'zap', href: '/api/ping' },
-  ]
+  $: userInitials = currentUser?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) ?? ''
 
   async function fetchUsers() {
     loading = true
@@ -340,53 +335,48 @@ export function render(_url: string, data?: Record<string, any>) {
   {/if}
 
   <!-- Sidebar -->
-  <aside class="fixed inset-y-0 left-0 w-60 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col z-40 transition-transform duration-200 lg:translate-x-0 {sidebarOpen ? 'translate-x-0' : '-translate-x-full'}">
+  <aside class="fixed inset-y-0 left-0 {sidebarOpen ? 'w-60 translate-x-0' : '-translate-x-full'} {collapsed ? 'lg:w-16' : 'lg:w-60'} bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col z-40 transition-all duration-200 lg:translate-x-0">
     <!-- App name -->
     <div class="h-14 flex items-center px-5 border-b border-gray-200 dark:border-gray-800">
       <div class="flex items-center gap-2.5">
-        <div class="w-7 h-7 rounded-lg bg-emerald-600 flex items-center justify-center">
+        <div class="w-7 h-7 rounded-lg bg-emerald-600 flex items-center justify-center shrink-0">
           <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
         </div>
-        <span class="text-sm font-bold text-gray-900 dark:text-white">{appName}</span>
+        <span class="text-sm font-bold text-gray-900 dark:text-white {collapsed ? 'lg:hidden' : ''}">{appName}</span>
       </div>
     </div>
 
     <!-- Nav items -->
     <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-      {#each navItems as item}
-        <a href={item.href}
-          on:click={() => sidebarOpen = false}
-          class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
-            {item.active
-              ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'}">
-          {#if item.icon === 'grid'}
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
-          {/if}
-          {item.label}
-        </a>
-      {/each}
+      <a href="/dashboard"
+        on:click={() => sidebarOpen = false}
+        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+        <span class="{collapsed ? 'lg:hidden' : ''}">Dashboard</span>
+      </a>
     </nav>
 
+    <!-- Collapse toggle -->
+    <div class="px-3 py-2 hidden lg:block">
+      <button on:click={() => collapsed = !collapsed} class="flex items-center justify-center w-full px-2.5 py-2 rounded-lg text-sm text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+        <span class="text-xs font-mono">{collapsed ? '>>' : '<<'}</span>
+      </button>
+    </div>
+
     <!-- Bottom links -->
-    <div class="px-3 py-4 border-t border-gray-200 dark:border-gray-800 space-y-1">
-      {#each bottomLinks as link}
-        <a href={link.href}
-          on:click={() => sidebarOpen = false}
-          class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-          {#if link.icon === 'heart'}
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
-          {:else if link.icon === 'zap'}
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-          {/if}
-          {link.label}
-        </a>
-      {/each}
+    <div class="px-3 py-4 mt-auto border-t border-gray-200 dark:border-gray-800 space-y-1">
+      <a href="https://github.com/mantiqjs/mantiq"
+        target="_blank"
+        rel="noopener"
+        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+        <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" /></svg>
+        <span class="{collapsed ? 'lg:hidden' : ''}">Documentation</span>
+      </a>
     </div>
   </aside>
 
   <!-- Main content -->
-  <div class="flex-1 lg:ml-60 flex flex-col min-h-screen">
+  <div class="flex-1 {collapsed ? 'lg:ml-16' : 'lg:ml-60'} flex flex-col min-h-screen transition-all duration-200">
     <!-- Header -->
     <header class="h-14 flex items-center justify-between px-6 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-950/90 backdrop-blur-md sticky top-0 z-20">
       <div class="flex items-center">
@@ -403,8 +393,28 @@ export function render(_url: string, data?: Record<string, any>) {
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
           {/if}
         </button>
-        <span class="text-xs text-gray-500 dark:text-gray-400">{currentUser?.name}</span>
-        <button on:click={handleLogout} class="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-gray-100 dark:bg-gray-900 hover:bg-gray-200 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-1.5 transition-colors">Logout</button>
+        <!-- Account dropdown -->
+        <div class="relative">
+          <button on:click={() => accountOpen = !accountOpen} class="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <div class="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-xs font-medium text-emerald-700 dark:text-emerald-300">
+              {userInitials}
+            </div>
+            <span class="text-sm text-gray-700 dark:text-gray-300 hidden sm:block">{currentUser?.name}</span>
+            <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+          </button>
+          {#if accountOpen}
+            <div class="fixed inset-0 z-40" on:click={() => accountOpen = false}></div>
+            <div class="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg shadow-lg py-1 z-50">
+              <div class="px-3 py-2 border-b border-gray-100 dark:border-gray-800">
+                <div class="text-sm font-medium text-gray-900 dark:text-white">{currentUser?.name}</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">{currentUser?.email}</div>
+              </div>
+              <button on:click={handleLogout} class="w-full text-left px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white transition-colors">
+                Sign out
+              </button>
+            </div>
+          {/if}
+        </div>
       </div>
     </header>
 
