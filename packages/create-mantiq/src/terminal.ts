@@ -25,34 +25,31 @@ export interface SelectOption {
 }
 
 export class Terminal {
-  /** Show branded header box */
+  /** Show branded ASCII header */
   header(): void {
-    const w = 41
-    const pad = (s: string, len: number) => s + ' '.repeat(Math.max(0, len - stripAnsi(s).length))
-    write('\n')
-    write(`  ${GRAY}┌${'─'.repeat(w)}┐${R}\n`)
-    write(`  ${GRAY}│${R}${' '.repeat(w)}${GRAY}│${R}\n`)
-    write(`  ${GRAY}│${R}   ${EMERALD}·${R}${BOLD}mantiq${R}${' '.repeat(w - 10)}${GRAY}│${R}\n`)
-    write(`  ${GRAY}│${R}    ${DIM}create a new application${R}${' '.repeat(w - 28)}${GRAY}│${R}\n`)
-    write(`  ${GRAY}│${R}${' '.repeat(w)}${GRAY}│${R}\n`)
-    write(`  ${GRAY}└${'─'.repeat(w)}┘${R}\n`)
-    write('\n')
+    write('\n\n')
+    write(`   ${EMERALD}▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇${R}\n`)
+    write(`\n`)
+    write(`   ${EMERALD}●${R}  ${BOLD}mantiq${R}   ${GRAY}│${R}   ${DIM}The Bun framework for artisans${R}\n`)
+    write(`\n`)
+    write(`   ${GRAY}───────────────────────────────────────────────${R}\n`)
+    write('\n\n')
   }
 
   /** Arrow-key select prompt */
   async select(label: string, options: SelectOption[]): Promise<string> {
     let selected = 0
     const render = () => {
-      let out = `  ${EMERALD}◆${R}  ${BOLD}${label}${R}\n`
+      let out = `   ${EMERALD}◆${R}  ${BOLD}${label}${R}\n`
       for (let i = 0; i < options.length; i++) {
         const opt = options[i]!
         const active = i === selected
         const bullet = active ? `${EMERALD}●${R}` : `${GRAY}○${R}`
-        const text = active ? `${WHITE}${opt.label}${R}` : `${GRAY}${opt.label}${R}`
-        const hint = opt.hint ? ` ${DIM}${opt.hint}${R}` : ''
-        out += `  ${GRAY}│${R}  ${bullet} ${text}${hint}\n`
+        const text = active ? `${WHITE}${BOLD}${opt.label}${R}` : `${GRAY}${opt.label}${R}`
+        const hint = opt.hint ? `  ${DIM}${opt.hint}${R}` : ''
+        out += `      ${bullet}  ${text}${hint}\n`
       }
-      out += `  ${GRAY}└${R}\n`
+      out += `\n`
       return out
     }
 
@@ -79,7 +76,7 @@ export class Terminal {
           write(UP(lines) + CLEAR_LINE)
           for (let i = 0; i < lines; i++) write(`${CLEAR_LINE}\n`)
           write(UP(lines))
-          write(`  ${EMERALD}◇${R}  ${label} ${EMERALD}${options[selected]!.label}${R}\n\n`)
+          write(`   ${EMERALD}◇${R}  ${label}  ${EMERALD}${options[selected]!.label}${R}\n\n`)
           resolve(options[selected]!.value)
           return
         } else if (key === '\x03') { // Ctrl+C
