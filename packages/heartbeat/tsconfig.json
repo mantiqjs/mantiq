@@ -2,12 +2,5 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": { "rootDir": ".", "outDir": "./dist" },
   "include": ["src/**/*", "tests/**/*"],
-  "exclude": ["node_modules", "dist"],
-  "references": [
-    { "path": "../core" },
-    { "path": "../queue" },
-    { "path": "../events" },
-    { "path": "../database" },
-    { "path": "../logging" }
-  ]
+  "exclude": ["node_modules", "dist"]
 }
