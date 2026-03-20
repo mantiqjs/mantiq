@@ -30,7 +30,6 @@ export async function renderExceptionsPage(store: HeartbeatStore, basePath: stri
   })
 
   const content = `
-    <h1 class="page-title">Exceptions</h1>
     <div class="stats">
       ${stat('Total', entries.length.toString())}
       ${stat('Groups', groups.length.toString(), 'Unique')}

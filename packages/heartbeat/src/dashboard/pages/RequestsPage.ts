@@ -20,7 +20,6 @@ export async function renderRequestsPage(store: HeartbeatStore, basePath: string
   })
 
   const content = `
-    <h1 class="page-title">Requests</h1>
     <div class="card">
       ${table(['Method', 'Path', 'Status', 'Duration', 'IP', 'Time'], rows)}
     </div>

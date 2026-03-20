@@ -29,7 +29,6 @@ export async function renderCachePage(store: HeartbeatStore, basePath: string): 
   })
 
   const content = `
-    <h1 class="page-title">Cache</h1>
     <div class="stats">
       ${stat('Hit Rate', hitRate, `${hits} hits / ${misses} misses`)}
       ${stat('Hits', hits.toString())}

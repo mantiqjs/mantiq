@@ -51,24 +51,24 @@ export async function renderRequestDetailPage(store: HeartbeatStore, uuid: strin
   const mdEscaped = md.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$')
 
   const content = `
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-      <a href="${basePath}/requests" style="color:var(--fg-3);text-decoration:none;font-size:13px">&larr; Requests</a>
-      <div style="margin-left:auto">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <a href="${basePath}/requests" style="color:var(--fg-3);text-decoration:none;font-size:13px;display:flex;align-items:center;gap:4px">&larr; <span>Requests</span></a>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
         <button class="copy-btn" onclick="copyMd()" title="Copy full request as Markdown">${COPY_ICON}<span>Copy as Markdown</span></button>
       </div>
     </div>
 
-    <div class="copy-bar">
-      <code>${entry.uuid}</code>
-      <button class="copy-btn" onclick="copyText('${entry.uuid}', this)" title="Copy ID">${COPY_ICON}</button>
-    </div>
-
-    <div class="copy-bar">
-      <code style="color:var(--fg-1);font-size:13px;font-weight:500">${escapeHtml(requestLine)}</code>
-      ${statusBadge(c.status)}
-      ${durationBadge(c.duration)}
-      <span class="sm dim" style="flex-shrink:0">${timeStr}</span>
-      <button class="copy-btn" onclick="copyText('${escapeHtml(requestLine)}', this)" title="Copy request">${COPY_ICON}</button>
+    <div class="card mb" style="padding:16px 18px">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <code style="color:var(--fg-1);font-size:14px;font-weight:600;letter-spacing:-.01em">${escapeHtml(requestLine)}</code>
+        ${statusBadge(c.status)}
+        ${durationBadge(c.duration)}
+        <span class="sm dim" style="flex-shrink:0">${timeStr}</span>
+        <button class="copy-btn" onclick="copyText('${escapeHtml(requestLine)}', this)" title="Copy request" style="margin-left:auto">${COPY_ICON}</button>
+      </div>
+      <div style="margin-top:8px">
+        <code class="sm dim" style="font-size:11px">${entry.uuid}</code>
+      </div>
     </div>
 
     <div class="stats">

@@ -30,7 +30,6 @@ export async function renderQueriesPage(store: HeartbeatStore, basePath: string)
   })
 
   const content = `
-    <h1 class="page-title">Queries</h1>
     <div class="stats">
       ${stat('Total', entries.length.toString())}
       ${stat('Slow', slowCount.toString(), '> threshold')}

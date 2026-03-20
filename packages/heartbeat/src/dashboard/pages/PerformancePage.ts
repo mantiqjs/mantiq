@@ -16,7 +16,6 @@ export function renderPerformancePage(metrics: MetricsCollector, basePath: strin
   const errorRate = totalRequests > 0 ? ((totalErrors / totalRequests) * 100).toFixed(1) + '%' : '0%'
 
   const content = `
-    <h1 class="page-title">Performance</h1>
 
     <div class="card mb">
       <div class="card-title">Latency</div>

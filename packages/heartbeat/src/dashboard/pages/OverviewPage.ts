@@ -50,7 +50,6 @@ export async function renderOverviewPage(store: HeartbeatStore, metrics: Metrics
   ], labels)
 
   const content = `
-    <h1 class="page-title">Overview</h1>
     <div class="stats">
       ${stat('Requests', requestCount.toLocaleString(), 'Total recorded')}
       ${stat('P95 Latency', formatDuration(p95), 'Response time')}

@@ -29,7 +29,6 @@ export async function renderJobsPage(store: HeartbeatStore, basePath: string): P
   })
 
   const content = `
-    <h1 class="page-title">Jobs</h1>
     <div class="stats">
       ${stat('Processed', processed.toString(), 'Completed')}
       ${stat('Failed', failed.toString())}

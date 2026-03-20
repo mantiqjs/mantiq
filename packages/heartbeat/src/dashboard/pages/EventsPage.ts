@@ -16,7 +16,6 @@ export async function renderEventsPage(store: HeartbeatStore, basePath: string):
   })
 
   const content = `
-    <h1 class="page-title">Events</h1>
     <div class="card">
       ${table(['Event', 'Listeners', 'Time'], rows)}
     </div>

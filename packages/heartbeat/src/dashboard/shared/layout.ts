@@ -51,6 +51,7 @@ export function renderLayout(options: {
   </aside>
   <main>
     <div class="topbar">
+      <h1 class="page-title">${title}</h1>
       <button class="theme-btn" onclick="toggleTheme()" title="Toggle theme">${ICONS.moon}</button>
     </div>
     ${content}
@@ -156,8 +157,8 @@ body{
 
 /* Main */
 main{margin-left:200px;flex:1;padding:24px 28px;max-width:1200px;position:relative}
-.topbar{display:flex;justify-content:flex-end;margin-bottom:8px}
-.page-title{font-size:18px;font-weight:600;letter-spacing:-.02em;margin-bottom:20px;color:var(--fg-0)}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.page-title{font-size:18px;font-weight:600;letter-spacing:-.02em;color:var(--fg-0);margin:0}
 
 /* Cards */
 .card{
