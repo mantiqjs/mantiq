@@ -3,6 +3,7 @@ import { existsSync, mkdirSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { randomBytes } from 'node:crypto'
 import { getTemplates } from './templates.ts'
+import { Terminal } from './terminal.ts'
 
 // ── ANSI helpers ─────────────────────────────────────────────────────────────
 const R = '\x1b[0m'
@@ -10,7 +11,6 @@ const bold = (s: string) => `\x1b[1m${s}${R}`
 const dim = (s: string) => `\x1b[2m${s}${R}`
 const red = (s: string) => `\x1b[31m${s}${R}`
 const emerald = (s: string) => `\x1b[38;2;52;211;153m${s}${R}`
-const gray = (s: string) => `\x1b[90m${s}${R}`
 
 // ── Parse args ───────────────────────────────────────────────────────────────
 const rawArgs = process.argv.slice(2)
@@ -31,34 +31,31 @@ for (const arg of rawArgs) {
   }
 }
 
-const projectName = positional[0]
-const noGit = !!flags['no-git']
-const kit = flags['kit'] as string | undefined
 const validKits = ['react', 'vue', 'svelte'] as const
 type Kit = typeof validKits[number]
 
+const projectName = positional[0]
+const noGit = !!flags['no-git']
+const isCI = !process.stdin.isTTY || !!flags['yes'] || !!flags['y']
+
 if (!projectName) {
   console.log(`
-  ${emerald('mantiq')} ${dim('framework')}
+  ${emerald('·')}${bold('mantiq')} ${dim('framework')}
 
   ${bold('Usage:')}
     bun create mantiq ${emerald('<project-name>')} [options]
 
   ${bold('Options:')}
-    --kit=${emerald('react|vue|svelte')}    Add a frontend starter kit
+    --kit=${emerald('react|vue|svelte')}    Frontend framework
+    --ui=${emerald('shadcn')}               UI component library (React only)
     --no-git                   Skip git initialization
+    --yes                      Accept defaults (non-interactive)
 
   ${bold('Examples:')}
     bun create mantiq my-app
     bun create mantiq my-app --kit=react
-    bun create mantiq my-app --kit=vue
-    bun create mantiq my-app --kit=svelte
+    bun create mantiq my-app --kit=react --ui=shadcn
 `)
-  process.exit(1)
-}
-
-if (kit && !validKits.includes(kit as Kit)) {
-  console.error(`\n  ${red('ERROR')}  Invalid kit "${kit}". Valid options: ${validKits.join(', ')}\n`)
   process.exit(1)
 }
 
@@ -69,12 +66,52 @@ if (existsSync(projectDir)) {
   process.exit(1)
 }
 
+// ── Interactive prompts ──────────────────────────────────────────────────────
+const term = new Terminal()
+
+let kit: Kit | undefined = flags['kit'] as Kit | undefined
+let ui: 'shadcn' | 'none' = (flags['ui'] as string) === 'shadcn' ? 'shadcn' : 'none'
+
+if (!isCI && !kit) {
+  // Show branded header
+  term.header()
+
+  // Framework selection
+  const framework = await term.select('Which framework would you like to use?', [
+    { value: 'react', label: 'React', hint: 'Recommended' },
+    { value: 'vue', label: 'Vue' },
+    { value: 'svelte', label: 'Svelte' },
+    { value: 'none', label: 'None', hint: 'API only' },
+  ])
+
+  kit = framework === 'none' ? undefined : framework as Kit
+
+  // UI kit selection (React only)
+  if (kit === 'react' && !flags['ui']) {
+    const uiChoice = await term.select('Which UI kit?', [
+      { value: 'none', label: 'Plain Tailwind' },
+      { value: 'shadcn', label: 'shadcn/ui', hint: 'Radix + Tailwind' },
+    ])
+    ui = uiChoice as 'shadcn' | 'none'
+  }
+} else {
+  // Validate flags
+  if (kit && !validKits.includes(kit as Kit)) {
+    console.error(`\n  ${red('ERROR')}  Invalid kit "${kit}". Valid options: ${validKits.join(', ')}\n`)
+    process.exit(1)
+  }
+  if (ui === 'shadcn' && kit !== 'react') {
+    console.error(`\n  ${red('ERROR')}  shadcn/ui is only available with --kit=react\n`)
+    process.exit(1)
+  }
+  term.header()
+}
+
 // ── Generate ─────────────────────────────────────────────────────────────────
-const kitLabel = kit ? ` ${dim('with')} ${bold(kit)}` : ''
-console.log(`\n  ${emerald('mantiq')}  Creating ${bold(projectName)}${kitLabel}\n`)
+term.step('Scaffolding project')
 
 const appKey = `base64:${randomBytes(32).toString('base64')}`
-const templates = getTemplates({ name: projectName, appKey, kit: kit as Kit | undefined })
+const templates = getTemplates({ name: projectName, appKey, kit, ui })
 
 // Write all files
 const files = Object.keys(templates).sort()
@@ -82,88 +119,64 @@ for (const relativePath of files) {
   const fullPath = `${projectDir}/${relativePath}`
   mkdirSync(dirname(fullPath), { recursive: true })
   await Bun.write(fullPath, templates[relativePath]!)
-
-  const display = relativePath.endsWith('.gitkeep') ? dim(relativePath) : relativePath
-  console.log(`    ${emerald('+')} ${display}`)
 }
+console.log(`  ${dim(`${files.length} files created`)}`)
 
 // ── Install dependencies ─────────────────────────────────────────────────────
-console.log(`\n  ${bold('Installing dependencies...')}\n`)
+const spin = term.spinner('Installing dependencies')
 
 const install = Bun.spawn(['bun', 'install'], {
   cwd: projectDir,
-  stdout: 'inherit',
-  stderr: 'inherit',
+  stdout: 'pipe',
+  stderr: 'pipe',
 })
 await install.exited
+spin.stop('Dependencies installed')
 
 // ── Build frontend (if kit) ─────────────────────────────────────────────────
 if (kit) {
-  console.log(`\n  ${bold('Building frontend assets...')}\n`)
+  const buildSpin = term.spinner('Building frontend assets')
 
   const viteBuild = Bun.spawn(['npx', 'vite', 'build'], {
     cwd: projectDir,
-    stdout: 'inherit',
-    stderr: 'inherit',
+    stdout: 'pipe',
+    stderr: 'pipe',
   })
   await viteBuild.exited
 
   const ssrEntry = kit === 'react' ? 'src/ssr.tsx' : 'src/ssr.ts'
-  console.log(`\n  ${bold('Building SSR bundle...')}\n`)
-
   const ssrBuild = Bun.spawn(['npx', 'vite', 'build', '--ssr', ssrEntry, '--outDir', 'bootstrap/ssr'], {
     cwd: projectDir,
-    stdout: 'inherit',
-    stderr: 'inherit',
+    stdout: 'pipe',
+    stderr: 'pipe',
   })
   await ssrBuild.exited
+  buildSpin.stop('Frontend built')
 }
 
 // ── Git init ─────────────────────────────────────────────────────────────────
 if (!noGit) {
-  const gitInit = Bun.spawn(['git', 'init'], {
-    cwd: projectDir,
-    stdout: 'pipe',
-    stderr: 'pipe',
-  })
-  await gitInit.exited
-
-  const gitAdd = Bun.spawn(['git', 'add', '-A'], {
-    cwd: projectDir,
-    stdout: 'pipe',
-    stderr: 'pipe',
-  })
-  await gitAdd.exited
-
-  const gitCommit = Bun.spawn(['git', 'commit', '-m', 'Initial commit — scaffolded with create-mantiq'], {
-    cwd: projectDir,
-    stdout: 'pipe',
-    stderr: 'pipe',
-  })
-  await gitCommit.exited
-
-  console.log(`  ${dim('Initialized git repository.')}`)
+  const gitSpin = term.spinner('Initializing git')
+  const run = async (args: string[]) => {
+    const p = Bun.spawn(args, { cwd: projectDir, stdout: 'pipe', stderr: 'pipe' })
+    await p.exited
+  }
+  await run(['git', 'init'])
+  await run(['git', 'add', '-A'])
+  await run(['git', 'commit', '-m', 'Initial commit — scaffolded with create-mantiq'])
+  gitSpin.stop('Git initialized')
 }
 
 // ── Done ─────────────────────────────────────────────────────────────────────
-const frontendSteps = kit
-  ? `    ${emerald('bun run')} dev:frontend     ${dim('# start Vite dev server')}\n`
-  : ''
+const summaryLines = [
+  `${emerald('✓')} ${bold(projectName)} created`,
+  '',
+  `${dim('Framework')}    ${kit ? bold(kit.charAt(0).toUpperCase() + kit.slice(1)) : dim('None (API only)')}`,
+  ...(kit === 'react' ? [`${dim('UI Kit')}       ${ui === 'shadcn' ? bold('shadcn/ui') : dim('Plain Tailwind')}`] : []),
+  '',
+  `${emerald('cd')} ${projectName}`,
+  `${emerald('bun mantiq')} migrate`,
+  `${emerald('bun run')} dev`,
+]
 
-console.log(`
-  ${emerald('mantiq')}  ${bold(projectName)} ready.
-
-  ${bold('Next steps:')}
-
-    ${emerald('cd')} ${projectName}
-    ${emerald('bun mantiq')} migrate       ${dim('# run database migrations')}
-    ${emerald('bun run')} dev              ${dim('# start development server')}
-${frontendSteps}
-  ${bold('Useful commands:')}
-
-    ${emerald('bun mantiq')} route:list    ${dim('# list all registered routes')}
-    ${emerald('bun mantiq')} make:model    ${dim('# generate a new model')}
-    ${emerald('bun mantiq')} about         ${dim('# framework environment info')}
-
-  ${dim('Dashboard  http://localhost:3000/_heartbeat')}
-`)
+term.box(summaryLines)

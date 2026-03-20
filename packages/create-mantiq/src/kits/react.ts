@@ -274,6 +274,7 @@ interface DashboardProps {
 export default function Dashboard({ appName = '${ctx.name}', currentUser, users: initialUsers, navigate }: DashboardProps) {
   const [users, setUsers] = useState<User[]>(initialUsers ?? [])
   const [loading, setLoading] = useState(!initialUsers?.length)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [isDark, setIsDark] = useState(() =>
     typeof document !== 'undefined' ? document.documentElement.classList.contains('dark') : true
   )
@@ -302,27 +303,30 @@ export default function Dashboard({ appName = '${ctx.name}', currentUser, users:
 
   return (
     <div className="min-h-screen flex bg-gray-50 dark:bg-gray-950">
+      {/* Mobile overlay */}
+      {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-30 lg:hidden" onClick={() => setSidebarOpen(false)} />}
+
       {/* Sidebar */}
-      <aside className="w-60 fixed inset-y-0 left-0 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col z-30">
+      <aside className={\`fixed inset-y-0 left-0 w-60 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col z-40 transition-transform duration-200 lg:translate-x-0 \${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}\`}>
         <div className="h-14 flex items-center px-5 border-b border-gray-200 dark:border-gray-800">
           <span className="text-sm font-semibold text-gray-900 dark:text-white">{appName}</span>
         </div>
         <nav className="flex-1 px-3 py-3 space-y-0.5">
-          <a href="/dashboard" className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white">
+          <a href="/dashboard" onClick={() => setSidebarOpen(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white">
             <svg className="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
             Dashboard
           </a>
-          <a href="#users-section" onClick={(e) => { e.preventDefault(); document.getElementById('users-section')?.scrollIntoView({ behavior: 'smooth' }) }} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+          <a href="#users-section" onClick={(e) => { e.preventDefault(); setSidebarOpen(false); document.getElementById('users-section')?.scrollIntoView({ behavior: 'smooth' }) }} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
             Users
           </a>
         </nav>
         <div className="px-3 py-3 mt-auto border-t border-gray-200 dark:border-gray-800 space-y-0.5">
-          <a href="/_heartbeat" className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+          <a href="/_heartbeat" onClick={() => setSidebarOpen(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" /></svg>
             Heartbeat
           </a>
-          <a href="/api/ping" className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+          <a href="/api/ping" onClick={() => setSidebarOpen(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
             API Ping
           </a>
@@ -330,10 +334,15 @@ export default function Dashboard({ appName = '${ctx.name}', currentUser, users:
       </aside>
 
       {/* Main */}
-      <div className="flex-1 ml-60">
+      <div className="flex-1 lg:ml-60">
         {/* Top bar */}
         <header className="h-14 border-b border-gray-200 dark:border-gray-800 bg-white/90 dark:bg-gray-950/90 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between px-6">
-          <h1 className="text-sm font-medium text-gray-900 dark:text-gray-200">Dashboard</h1>
+          <div className="flex items-center">
+            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 lg:hidden mr-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+            </button>
+            <h1 className="text-sm font-medium text-gray-900 dark:text-gray-200">Dashboard</h1>
+          </div>
           <div className="flex items-center gap-3">
             <button onClick={toggleTheme} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title="Toggle theme">
               {isDark ? (

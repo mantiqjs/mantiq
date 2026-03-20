@@ -345,6 +345,7 @@ const appName = props.appName ?? '${ctx.name}'
 const users = ref(props.users ?? [])
 const loading = ref(!props.users?.length)
 const isDark = ref(true)
+const sidebarOpen = ref(false)
 const nav = inject<(href: string) => void>('navigate', props.navigate)
 
 function toggleTheme() {
@@ -373,8 +374,14 @@ onMounted(() => {
 
 <template>
   <div class="min-h-screen flex bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors">
+    <!-- Mobile overlay -->
+    <div v-if="sidebarOpen" class="fixed inset-0 bg-black/50 z-30 lg:hidden" @click="sidebarOpen = false" />
+
     <!-- Sidebar -->
-    <aside class="w-60 flex-shrink-0 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col fixed inset-y-0 left-0 z-30">
+    <aside
+      :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+      class="fixed inset-y-0 left-0 w-60 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col z-40 transition-transform duration-200 lg:translate-x-0"
+    >
       <!-- App name -->
       <div class="h-14 flex items-center px-5 border-b border-gray-200 dark:border-gray-800">
         <span class="text-sm font-bold text-gray-900 dark:text-white">{{ appName }}</span>
@@ -384,6 +391,7 @@ onMounted(() => {
       <nav class="flex-1 px-3 py-4 space-y-1">
         <a
           href="/dashboard"
+          @click="sidebarOpen = false"
           class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
         >
           <!-- Dashboard icon -->
@@ -398,6 +406,7 @@ onMounted(() => {
       <div class="px-3 py-4 border-t border-gray-200 dark:border-gray-800 space-y-1">
         <a
           href="/heartbeat"
+          @click="sidebarOpen = false"
           class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         >
           <!-- Heart/pulse icon -->
@@ -408,6 +417,7 @@ onMounted(() => {
         </a>
         <a
           href="/api/ping"
+          @click="sidebarOpen = false"
           class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         >
           <!-- Signal/wifi icon -->
@@ -420,10 +430,15 @@ onMounted(() => {
     </aside>
 
     <!-- Main area -->
-    <div class="flex-1 ml-60 flex flex-col min-h-screen">
+    <div class="flex-1 lg:ml-60 flex flex-col min-h-screen">
       <!-- Header -->
       <header class="h-14 flex items-center justify-between px-6 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-950/90 backdrop-blur-md sticky top-0 z-20">
-        <h1 class="text-sm font-semibold text-gray-900 dark:text-white">Dashboard</h1>
+        <div class="flex items-center">
+          <button @click="sidebarOpen = !sidebarOpen" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 lg:hidden mr-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+          </button>
+          <h1 class="text-sm font-semibold text-gray-900 dark:text-white">Dashboard</h1>
+        </div>
         <div class="flex items-center gap-3">
           <!-- Dark/Light toggle -->
           <button

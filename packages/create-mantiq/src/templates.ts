@@ -1,11 +1,13 @@
 import { getReactTemplates } from './kits/react.ts'
 import { getVueTemplates } from './kits/vue.ts'
 import { getSvelteTemplates } from './kits/svelte.ts'
+import { getShadcnTemplates } from './ui/shadcn.ts'
 
 export interface TemplateContext {
   name: string
   appKey: string
   kit?: 'react' | 'vue' | 'svelte'
+  ui?: 'shadcn' | 'none'
 }
 
 export function getTemplates(ctx: TemplateContext): Record<string, string> {
@@ -1202,4 +1204,17 @@ export default class UserSeeder extends Seeder {
     : getSvelteTemplates(ctx)
 
   Object.assign(templates, kitTemplates)
+
+  // ── Apply shadcn/ui overlay (React only) ──────────────────────────────
+  if (ctx.ui === 'shadcn' && kit === 'react') {
+    const shadcn = getShadcnTemplates(ctx)
+
+    // Merge shadcn deps into package.json
+    const pkg = JSON.parse(templates['package.json']!)
+    Object.assign(pkg.dependencies, shadcn.dependencies)
+    templates['package.json'] = JSON.stringify(pkg, null, 2) + '\n'
+
+    // Merge shadcn files (overrides pages + adds components)
+    Object.assign(templates, shadcn.files)
+  }
 }
