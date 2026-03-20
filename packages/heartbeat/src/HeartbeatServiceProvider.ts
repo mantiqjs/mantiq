@@ -18,6 +18,7 @@ import { JobWatcher } from './watchers/JobWatcher.ts'
 import { EventWatcher } from './watchers/EventWatcher.ts'
 import { ModelWatcher } from './watchers/ModelWatcher.ts'
 import { LogWatcher } from './watchers/LogWatcher.ts'
+import { MailWatcher } from './watchers/MailWatcher.ts'
 import { ScheduleWatcher } from './watchers/ScheduleWatcher.ts'
 import { CreateHeartbeatTables } from './migrations/CreateHeartbeatTables.ts'
 import { DashboardController } from './dashboard/DashboardController.ts'
@@ -187,6 +188,7 @@ export class HeartbeatServiceProvider extends ServiceProvider {
       ['event', new EventWatcher()],
       ['model', new ModelWatcher()],
       ['log', new LogWatcher()],
+      ['mail', new MailWatcher()],
       ['schedule', new ScheduleWatcher()],
     ]
 

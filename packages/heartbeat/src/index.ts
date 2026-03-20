@@ -43,6 +43,7 @@ export { EventWatcher } from './watchers/EventWatcher.ts'
 export { ModelWatcher } from './watchers/ModelWatcher.ts'
 export { LogWatcher } from './watchers/LogWatcher.ts'
 export { ScheduleWatcher } from './watchers/ScheduleWatcher.ts'
+export { MailWatcher } from './watchers/MailWatcher.ts'
 
 // ── Tracing ─────────────────────────────────────────────────────────────────
 export { Tracer } from './tracing/Tracer.ts'

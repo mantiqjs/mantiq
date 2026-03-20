@@ -9,6 +9,8 @@ import { renderCachePage } from './pages/CachePage.ts'
 import { renderEventsPage } from './pages/EventsPage.ts'
 import { renderPerformancePage } from './pages/PerformancePage.ts'
 import { renderRequestDetailPage } from './pages/RequestDetailPage.ts'
+import { renderMailPage } from './pages/MailPage.ts'
+import { renderMailDetailPage } from './pages/MailDetailPage.ts'
 import type { EntryType } from '../contracts/Entry.ts'
 
 /**
@@ -69,12 +71,20 @@ export class DashboardController {
         return renderEventsPage(this.store, this.basePath)
       case 'performance':
         return renderPerformancePage(this.metrics, this.basePath)
+      case 'mail':
+        return renderMailPage(this.store, this.basePath)
     }
 
     // Parameterized routes
     const requestDetail = sub.match(/^requests\/([a-f0-9-]+)$/)
     if (requestDetail) {
       const html = await renderRequestDetailPage(this.store, requestDetail[1]!, this.basePath)
+      return html ?? this.render404()
+    }
+
+    const mailDetail = sub.match(/^mail\/([a-f0-9-]+)$/)
+    if (mailDetail) {
+      const html = await renderMailDetailPage(this.store, mailDetail[1]!, this.basePath)
       return html ?? this.render404()
     }
 

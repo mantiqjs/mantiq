@@ -11,6 +11,7 @@ export type EntryType =
   | 'model'
   | 'log'
   | 'schedule'
+  | 'mail'
 
 /**
  * A raw pending entry before it's persisted — pushed by watchers into the buffer.
@@ -123,6 +124,20 @@ export interface ScheduleEntryContent {
   expression: string
   duration: number
   status: 'success' | 'error'
+}
+
+export interface MailEntryContent {
+  to: string[]
+  cc: string[]
+  bcc: string[]
+  subject: string
+  from: string
+  mailer: string
+  html: string | null
+  text: string | null
+  attachments: string[]
+  duration: number
+  queued: boolean
 }
 
 // ── Span types ──────────────────────────────────────────────────────────────
