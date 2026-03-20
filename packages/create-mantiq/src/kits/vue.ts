@@ -108,6 +108,8 @@ function handleClick(e: MouseEvent) {
   const anchor = (e.target as HTMLElement).closest('a')
   const href = anchor?.getAttribute('href')
   if (!href?.startsWith('/') || anchor?.target || e.ctrlKey || e.metaKey) return
+  const spaRoutes = ['/login', '/register', '/dashboard']
+  if (!spaRoutes.some(r => href === r || href.startsWith(r + '?'))) return
   e.preventDefault()
   navigate(href)
 }
