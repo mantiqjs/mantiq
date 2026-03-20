@@ -37,6 +37,17 @@ export function cn(...inputs: ClassValue[]) {
       'src/style.css': `@import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+ * shadcn/ui theme — default: emerald
+ *
+ * To swap themes, visit https://ui.shadcn.com/themes
+ * Pick a theme, copy the CSS variables, and replace
+ * the :root and .dark blocks below.
+ *
+ * Or install a community theme:
+ *   bunx --bun shadcn@latest add @ss-themes/caffeine
+ */
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

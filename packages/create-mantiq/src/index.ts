@@ -78,7 +78,7 @@ if (!isCI && !kit) {
 
   // Framework selection
   const framework = await term.select('Which framework would you like to use?', [
-    { value: 'react', label: 'React', hint: 'Recommended' },
+    { value: 'react', label: 'React' },
     { value: 'vue', label: 'Vue' },
     { value: 'svelte', label: 'Svelte' },
     { value: 'none', label: 'None', hint: 'API only' },
@@ -168,15 +168,12 @@ if (!noGit) {
 }
 
 // ── Done ─────────────────────────────────────────────────────────────────────
-const summaryLines = [
-  `${emerald('✓')} ${bold(projectName)} created`,
-  '',
-  `${dim('Framework')}    ${kit ? bold(kit.charAt(0).toUpperCase() + kit.slice(1)) : dim('None (API only)')}`,
-  ...(kit === 'react' ? [`${dim('UI Kit')}       ${ui === 'shadcn' ? bold('shadcn/ui') : dim('Plain Tailwind')}`] : []),
-  '',
-  `${emerald('cd')} ${projectName}`,
-  `${emerald('bun mantiq')} migrate`,
-  `${emerald('bun run')} dev`,
-]
+console.log(`\n   ${emerald('✓')}  ${bold(projectName)} created\n`)
+console.log(`   ${dim('Framework')}    ${kit ? bold(kit.charAt(0).toUpperCase() + kit.slice(1)) : dim('None (API only)')}`)
+if (kit === 'react') console.log(`   ${dim('UI Kit')}       ${ui === 'shadcn' ? bold('shadcn/ui') : dim('Plain Tailwind')}`)
+console.log(`\n   ${dim('Next steps:')}\n`)
+console.log(`   cd ${projectName}`)
+console.log(`   bun mantiq migrate`)
+console.log(`   bun run dev\n`)
 
-term.box(summaryLines)
+process.exit(0)
