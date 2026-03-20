@@ -475,6 +475,12 @@ export class HomeController {
     const debug = config('app.debug') ? 'Enabled' : 'Disabled'
     const bunVersion = typeof Bun !== 'undefined' ? Bun.version : 'unknown'
 
+    let mantiqVersion = '0.0.0'
+    try {
+      const pkg = await Bun.file(require.resolve('@mantiq/core/package.json')).json()
+      mantiqVersion = pkg.version
+    } catch { /* fallback */ }
+
     const html = \`<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -515,7 +521,7 @@ export class HomeController {
 <body>
   <div class="c">
     <div class="w"><span class="d">.</span>mantiq</div>
-    <div class="v">v0.0.1 — \${appName}</div>
+    <div class="v">v\${mantiqVersion} — \${appName}</div>
     <hr>
     <div class="g">
       <a class="l" href="/_heartbeat">Heartbeat<span class="a">&rarr;</span></a>
