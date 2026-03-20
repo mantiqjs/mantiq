@@ -26,6 +26,7 @@ export interface HeartbeatConfig {
   tracing: { enabled: boolean; propagate: boolean }
   sampling: { rate: number; always_sample_errors: boolean }
   dashboard: { path: string; middleware: string[]; enabled: boolean }
+  widget?: { enabled: boolean }
 }
 
 export const DEFAULT_CONFIG: HeartbeatConfig = {
@@ -56,4 +57,5 @@ export const DEFAULT_CONFIG: HeartbeatConfig = {
   tracing: { enabled: true, propagate: true },
   sampling: { rate: 1.0, always_sample_errors: true },
   dashboard: { path: '/_heartbeat', middleware: [], enabled: true },
+  widget: { enabled: true },
 }

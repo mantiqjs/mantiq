@@ -45,6 +45,9 @@ export { LogWatcher } from './watchers/LogWatcher.ts'
 export { ScheduleWatcher } from './watchers/ScheduleWatcher.ts'
 export { MailWatcher } from './watchers/MailWatcher.ts'
 
+// ── Widget ──────────────────────────────────────────────────────────────────
+export { renderWidget } from './widget/DebugWidget.ts'
+
 // ── Tracing ─────────────────────────────────────────────────────────────────
 export { Tracer } from './tracing/Tracer.ts'
 export { Span } from './tracing/Span.ts'

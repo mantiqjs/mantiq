@@ -3,6 +3,7 @@ import type { Heartbeat } from '../Heartbeat.ts'
 import type { Tracer } from '../tracing/Tracer.ts'
 import type { RequestWatcher } from '../watchers/RequestWatcher.ts'
 import type { MetricsCollector } from '../metrics/MetricsCollector.ts'
+import { renderWidget } from '../widget/DebugWidget.ts'
 
 /** Max response body size to capture (16 KB). */
 const MAX_RESPONSE_BODY = 16_384
@@ -139,6 +140,16 @@ export class HeartbeatMiddleware implements Middleware {
       this.heartbeat.flush()
     }
 
+    // Inject debug widget into HTML responses when APP_DEBUG=true
+    if (process.env.APP_DEBUG === 'true' && response!) {
+      const ct = response!.headers.get('content-type') ?? ''
+      if (ct.includes('text/html') && response!.status < 400) {
+        const duration = performance.now() - startTime
+        const memUsage = process.memoryUsage().rss - startMemory
+        response = await this.injectWidget(response!, duration, memUsage)
+      }
+    }
+
     return response!
   }
 
@@ -200,6 +211,32 @@ export class HeartbeatMiddleware implements Middleware {
       return { body, size, rebuilt }
     } catch {
       return { body: null, size: null, rebuilt: null }
+    }
+  }
+
+  private async injectWidget(response: Response, duration: number, memory: number): Promise<Response> {
+    if (!this.heartbeat.config.widget?.enabled) return response
+
+    try {
+      const html = await response.text()
+      if (!html.includes('</body>')) return new Response(html, { status: response.status, statusText: response.statusText, headers: response.headers })
+
+      const widget = renderWidget({
+        duration,
+        memory: Math.abs(memory),
+        status: response.status,
+        queries: 0, // TODO: wire up query count from QueryWatcher
+        dashboardPath: this.heartbeat.config.dashboard.path,
+      })
+
+      const injected = html.replace('</body>', widget + '\n</body>')
+      return new Response(injected, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+      })
+    } catch {
+      return response
     }
   }
 }
