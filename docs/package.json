@@ -10,8 +10,19 @@
     "build:frontend": "vite build && vite build --ssr src/ssr.tsx --outDir bootstrap/ssr"
   },
   "dependencies": {
-    "@mantiq/core": "workspace:*",
-    "@mantiq/vite": "workspace:*",
+    "@mantiq/auth": "^0.1.0",
+    "@mantiq/cli": "^0.1.0",
+    "@mantiq/core": "^0.1.0",
+    "@mantiq/database": "^0.1.0",
+    "@mantiq/events": "^0.1.0",
+    "@mantiq/filesystem": "^0.1.0",
+    "@mantiq/heartbeat": "^0.1.0",
+    "@mantiq/helpers": "^0.1.0",
+    "@mantiq/logging": "^0.1.0",
+    "@mantiq/queue": "^0.1.0",
+    "@mantiq/realtime": "^0.1.0",
+    "@mantiq/validation": "^0.1.0",
+    "@mantiq/vite": "^0.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
