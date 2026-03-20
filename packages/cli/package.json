@@ -3,13 +3,45 @@
   "version": "0.0.1",
   "description": "Command runner, code generators, dev server",
   "type": "module",
+  "license": "MIT",
+  "author": "Abdullah Khan",
+  "homepage": "https://github.com/abdullahkhan/mantiq/tree/main/packages/cli",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/abdullahkhan/mantiq.git",
+    "directory": "packages/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/abdullahkhan/mantiq/issues"
+  },
+  "keywords": [
+    "mantiq",
+    "mantiqjs",
+    "bun",
+    "typescript",
+    "framework",
+    "cli"
+  ],
+  "engines": {
+    "bun": ">=1.1.0"
+  },
   "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "bun": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
   "bin": {
     "mantiq": "./src/bin.ts"
   },
-  "exports": {
-    ".": "./src/index.ts"
-  },
+  "files": [
+    "src/",
+    "package.json",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "bun build ./src/index.ts --outdir ./dist --target bun",
     "test": "bun test",

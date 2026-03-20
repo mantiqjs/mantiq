@@ -11,10 +11,13 @@
   ],
   "scripts": {
     "build": "bun run --filter '*' build",
-    "test": "bun run --filter '*' test",
+    "test": "bun test packages/",
+    "test:ci": "bun test packages/ --exclude '**/mssql*'",
     "lint": "bun run --filter '*' lint",
     "typecheck": "bun run --filter '*' typecheck",
-    "clean": "bun run --filter '*' clean"
+    "clean": "bun run --filter '*' clean",
+    "publish:all": "bun run --filter '@mantiq/*' publish --access public",
+    "version:all": "bun run --filter '@mantiq/*' version"
   },
   "devDependencies": {
     "typescript": "^5.7.0"

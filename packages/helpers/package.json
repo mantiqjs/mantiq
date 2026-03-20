@@ -3,10 +3,42 @@
   "version": "0.0.1",
   "description": "Str, Arr, Num, Collection utilities",
   "type": "module",
-  "main": "./src/index.ts",
-  "exports": {
-    ".": "./src/index.ts"
+  "license": "MIT",
+  "author": "Abdullah Khan",
+  "homepage": "https://github.com/abdullahkhan/mantiq/tree/main/packages/helpers",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/abdullahkhan/mantiq.git",
+    "directory": "packages/helpers"
   },
+  "bugs": {
+    "url": "https://github.com/abdullahkhan/mantiq/issues"
+  },
+  "keywords": [
+    "mantiq",
+    "mantiqjs",
+    "bun",
+    "typescript",
+    "framework",
+    "helpers"
+  ],
+  "engines": {
+    "bun": ">=1.1.0"
+  },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "bun": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "files": [
+    "src/",
+    "package.json",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "bun build ./src/index.ts --outdir ./dist --target bun",
     "test": "bun test",

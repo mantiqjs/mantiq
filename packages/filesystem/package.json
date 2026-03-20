@@ -3,10 +3,42 @@
   "version": "0.0.1",
   "description": "Filesystem abstraction — local, S3, GCS, R2, Azure, FTP, SFTP drivers with uniform API",
   "type": "module",
-  "main": "./src/index.ts",
-  "exports": {
-    ".": "./src/index.ts"
+  "license": "MIT",
+  "author": "Abdullah Khan",
+  "homepage": "https://github.com/abdullahkhan/mantiq/tree/main/packages/filesystem",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/abdullahkhan/mantiq.git",
+    "directory": "packages/filesystem"
   },
+  "bugs": {
+    "url": "https://github.com/abdullahkhan/mantiq/issues"
+  },
+  "keywords": [
+    "mantiq",
+    "mantiqjs",
+    "bun",
+    "typescript",
+    "framework",
+    "filesystem"
+  ],
+  "engines": {
+    "bun": ">=1.1.0"
+  },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "bun": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "files": [
+    "src/",
+    "package.json",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "bun build ./src/index.ts --outdir ./dist --target bun",
     "test": "bun test",
@@ -15,6 +47,10 @@
   },
   "dependencies": {
     "@mantiq/core": "workspace:*"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "typescript": "^5.7.0"
   },
   "peerDependencies": {
     "@aws-sdk/client-s3": "^3.0.0",
@@ -25,15 +61,23 @@
     "ssh2-sftp-client": "^11.0.0"
   },
   "peerDependenciesMeta": {
-    "@aws-sdk/client-s3": { "optional": true },
-    "@aws-sdk/s3-request-presigner": { "optional": true },
-    "@google-cloud/storage": { "optional": true },
-    "@azure/storage-blob": { "optional": true },
-    "basic-ftp": { "optional": true },
-    "ssh2-sftp-client": { "optional": true }
-  },
-  "devDependencies": {
-    "bun-types": "latest",
-    "typescript": "^5.7.0"
+    "@aws-sdk/client-s3": {
+      "optional": true
+    },
+    "@aws-sdk/s3-request-presigner": {
+      "optional": true
+    },
+    "@google-cloud/storage": {
+      "optional": true
+    },
+    "@azure/storage-blob": {
+      "optional": true
+    },
+    "basic-ftp": {
+      "optional": true
+    },
+    "ssh2-sftp-client": {
+      "optional": true
+    }
   }
 }

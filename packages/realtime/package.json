@@ -3,8 +3,42 @@
   "version": "0.0.1",
   "description": "WebSocket, SSE, channels, broadcasting",
   "type": "module",
+  "license": "MIT",
+  "author": "Abdullah Khan",
+  "homepage": "https://github.com/abdullahkhan/mantiq/tree/main/packages/realtime",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/abdullahkhan/mantiq.git",
+    "directory": "packages/realtime"
+  },
+  "bugs": {
+    "url": "https://github.com/abdullahkhan/mantiq/issues"
+  },
+  "keywords": [
+    "mantiq",
+    "mantiqjs",
+    "bun",
+    "typescript",
+    "framework",
+    "realtime"
+  ],
+  "engines": {
+    "bun": ">=1.1.0"
+  },
   "main": "./src/index.ts",
-  "exports": { ".": "./src/index.ts" },
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "bun": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "files": [
+    "src/",
+    "package.json",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "bun build ./src/index.ts --outdir ./dist --target bun",
     "test": "bun test",
@@ -15,5 +49,8 @@
     "@mantiq/core": "workspace:*",
     "@mantiq/events": "workspace:*"
   },
-  "devDependencies": { "bun-types": "latest", "typescript": "^5.7.0" }
+  "devDependencies": {
+    "bun-types": "latest",
+    "typescript": "^5.7.0"
+  }
 }
