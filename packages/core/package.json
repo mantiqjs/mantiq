@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/core",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Service container, router, middleware, HTTP kernel, config, and exception handler",
   "type": "module",
   "license": "MIT",
