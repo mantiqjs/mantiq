@@ -37,8 +37,14 @@ export class Kernel {
         try {
           const mod = await import(dir + '/' + file)
           for (const exported of Object.values(mod)) {
-            if (typeof exported === 'function' && (exported as any).prototype?.name && (exported as any).prototype?.handle) {
-              this.register(new (exported as any)())
+            if (typeof exported !== 'function') continue
+            try {
+              const instance = new (exported as any)()
+              if (instance.name && typeof instance.handle === 'function') {
+                this.register(instance)
+              }
+            } catch {
+              // Not instantiable or not a command
             }
           }
         } catch {
