@@ -44,8 +44,15 @@ export function parse(argv: string[]): ParsedArgs {
         }
       }
     } else if (arg.startsWith('-') && arg.length === 2) {
-      // Short flag: -m, -f, etc.
-      flags[arg[1]!] = true
+      // Short flag: -m, -f, -p 8080, etc.
+      const key = arg[1]!
+      const next = raw[i + 1]
+      if (next && !next.startsWith('-')) {
+        flags[key] = next
+        i++
+      } else {
+        flags[key] = true
+      }
     } else {
       args.push(arg)
     }

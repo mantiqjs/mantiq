@@ -8,11 +8,11 @@ import { readdirSync, existsSync } from 'node:fs'
  * Like Laravel's `php artisan tinker`.
  */
 export class TinkerCommand extends Command {
-  name = 'tinker'
-  description = 'Interact with your application (REPL)'
-  usage = 'tinker'
+  override name = 'tinker'
+  override description = 'Interact with your application (REPL)'
+  override usage = 'tinker'
 
-  async handle(_args: ParsedArgs): Promise<number> {
+  override async handle(_args: ParsedArgs): Promise<number> {
     // ── Bootstrap the app ──────────────────────────────────────────────────
     let app: any = null
     const context: Record<string, any> = {}

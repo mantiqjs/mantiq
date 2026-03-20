@@ -3,11 +3,11 @@ import type { ParsedArgs } from '../Parser.ts'
 import { existsSync, mkdirSync } from 'node:fs'
 
 export class MakeMigrationCommand extends Command {
-  name = 'make:migration'
-  description = 'Create a new migration file'
-  usage = 'make:migration <name> [--create=table] [--table=table]'
+  override name = 'make:migration'
+  override description = 'Create a new migration file'
+  override usage = 'make:migration <name> [--create=table] [--table=table]'
 
-  async handle(args: ParsedArgs): Promise<number> {
+  override async handle(args: ParsedArgs): Promise<number> {
     const rawName = args.args[0]
     if (!rawName) {
       this.io.error('Please provide a migration name. Usage: make:migration <name>')

@@ -4,10 +4,10 @@ import { Migrator } from '@mantiq/database'
 import { getManager } from '@mantiq/database'
 
 export class MigrateCommand extends Command {
-  name = 'migrate'
-  description = 'Run pending database migrations'
+  override name = 'migrate'
+  override description = 'Run pending database migrations'
 
-  async handle(_args: ParsedArgs): Promise<number> {
+  override async handle(_args: ParsedArgs): Promise<number> {
     const connection = getManager().connection()
     const migrationsPath = this.resolveMigrationsPath()
     const migrator = new Migrator(connection, { migrationsPath })

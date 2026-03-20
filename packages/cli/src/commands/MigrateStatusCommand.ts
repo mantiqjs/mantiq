@@ -4,10 +4,10 @@ import { Migrator } from '@mantiq/database'
 import { getManager } from '@mantiq/database'
 
 export class MigrateStatusCommand extends Command {
-  name = 'migrate:status'
-  description = 'Show the status of each migration'
+  override name = 'migrate:status'
+  override description = 'Show the status of each migration'
 
-  async handle(_args: ParsedArgs): Promise<number> {
+  override async handle(_args: ParsedArgs): Promise<number> {
     const connection = getManager().connection()
     const migrator = new Migrator(connection, { migrationsPath: `${process.cwd()}/database/migrations` })
 

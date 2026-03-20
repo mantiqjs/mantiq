@@ -17,7 +17,7 @@ export abstract class GeneratorCommand extends Command {
   /** Generate the file content */
   abstract stub(name: string, args: ParsedArgs): string
 
-  async handle(args: ParsedArgs): Promise<number> {
+  override async handle(args: ParsedArgs): Promise<number> {
     const rawName = args.args[0]
     if (!rawName) {
       this.io.error(`Please provide a name. Usage: ${this.name} <name>`)

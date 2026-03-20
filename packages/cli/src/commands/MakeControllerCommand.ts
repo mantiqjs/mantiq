@@ -2,14 +2,14 @@ import { GeneratorCommand } from './GeneratorCommand.ts'
 import type { ParsedArgs } from '../Parser.ts'
 
 export class MakeControllerCommand extends GeneratorCommand {
-  name = 'make:controller'
-  description = 'Create a new controller class'
-  usage = 'make:controller <name> [--resource]'
+  override name = 'make:controller'
+  override description = 'Create a new controller class'
+  override usage = 'make:controller <name> [--resource]'
 
-  directory() { return 'app/Http/Controllers' }
-  suffix() { return 'Controller' }
+  override directory() { return 'app/Http/Controllers' }
+  override suffix() { return 'Controller' }
 
-  stub(name: string, args: ParsedArgs): string {
+  override stub(name: string, args: ParsedArgs): string {
     const className = `${name}Controller`
     const isResource = !!args.flags['resource'] || !!args.flags['r']
 

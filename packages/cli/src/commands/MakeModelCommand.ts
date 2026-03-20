@@ -3,14 +3,14 @@ import type { ParsedArgs } from '../Parser.ts'
 import { existsSync, mkdirSync } from 'node:fs'
 
 export class MakeModelCommand extends GeneratorCommand {
-  name = 'make:model'
-  description = 'Create a new model class'
-  usage = 'make:model <name> [-m|--migration] [-f|--factory] [-s|--seed]'
+  override name = 'make:model'
+  override description = 'Create a new model class'
+  override usage = 'make:model <name> [-m|--migration] [-f|--factory] [-s|--seed]'
 
-  directory() { return 'app/Models' }
-  suffix() { return '' }
+  override directory() { return 'app/Models' }
+  override suffix() { return '' }
 
-  stub(name: string): string {
+  override stub(name: string): string {
     const tableName = this.toTableName(name)
     return `import { Model } from '@mantiq/database'
 

@@ -2,11 +2,11 @@ import { Command } from '../Command.ts'
 import type { ParsedArgs } from '../Parser.ts'
 
 export class RouteListCommand extends Command {
-  name = 'route:list'
-  description = 'List all registered routes'
-  usage = 'route:list [--method=GET] [--path=prefix]'
+  override name = 'route:list'
+  override description = 'List all registered routes'
+  override usage = 'route:list [--method=GET] [--path=prefix]'
 
-  async handle(args: ParsedArgs): Promise<number> {
+  override async handle(args: ParsedArgs): Promise<number> {
     try {
       const entryPath = `${process.cwd()}/index.ts`
       const mod = await import(entryPath)

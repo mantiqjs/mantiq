@@ -2,11 +2,11 @@ import { Command } from '../Command.ts'
 import type { ParsedArgs } from '../Parser.ts'
 
 export class ServeCommand extends Command {
-  name = 'serve'
-  description = 'Start the development server'
-  usage = 'serve [--port=3000] [--host=0.0.0.0]'
+  override name = 'serve'
+  override description = 'Start the development server'
+  override usage = 'serve [--port=3000] [--host=0.0.0.0]'
 
-  async handle(args: ParsedArgs): Promise<number> {
+  override async handle(args: ParsedArgs): Promise<number> {
     const port = args.flags['port'] ? Number(args.flags['port']) : undefined
     const host = args.flags['host'] as string | undefined
 

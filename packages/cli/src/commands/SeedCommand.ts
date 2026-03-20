@@ -3,11 +3,11 @@ import type { ParsedArgs } from '../Parser.ts'
 import { getManager } from '@mantiq/database'
 
 export class SeedCommand extends Command {
-  name = 'seed'
-  description = 'Run database seeders'
-  usage = 'seed [SeederName]'
+  override name = 'seed'
+  override description = 'Run database seeders'
+  override usage = 'seed [SeederName]'
 
-  async handle(args: ParsedArgs): Promise<number> {
+  override async handle(args: ParsedArgs): Promise<number> {
     const connection = getManager().connection()
     const seederName = args.args[0] ?? 'DatabaseSeeder'
     const seedersDir = `${process.cwd()}/database/seeders`

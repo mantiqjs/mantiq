@@ -4,10 +4,10 @@ import { Migrator } from '@mantiq/database'
 import { getManager } from '@mantiq/database'
 
 export class MigrateRollbackCommand extends Command {
-  name = 'migrate:rollback'
-  description = 'Rollback the last batch of migrations'
+  override name = 'migrate:rollback'
+  override description = 'Rollback the last batch of migrations'
 
-  async handle(_args: ParsedArgs): Promise<number> {
+  override async handle(_args: ParsedArgs): Promise<number> {
     const connection = getManager().connection()
     const migrator = new Migrator(connection, { migrationsPath: `${process.cwd()}/database/migrations` })
 

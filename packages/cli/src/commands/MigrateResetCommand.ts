@@ -4,10 +4,10 @@ import { Migrator } from '@mantiq/database'
 import { getManager } from '@mantiq/database'
 
 export class MigrateResetCommand extends Command {
-  name = 'migrate:reset'
-  description = 'Rollback all migrations'
+  override name = 'migrate:reset'
+  override description = 'Rollback all migrations'
 
-  async handle(args: ParsedArgs): Promise<number> {
+  override async handle(args: ParsedArgs): Promise<number> {
     if (!args.flags['force'] && process.env['APP_ENV'] === 'production') {
       this.io.error('Use --force to run in production.')
       return 1
