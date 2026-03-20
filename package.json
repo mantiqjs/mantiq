@@ -16,8 +16,7 @@
     "lint": "bun run --filter '*' lint",
     "typecheck": "bun run --filter '*' typecheck",
     "clean": "bun run --filter '*' clean",
-    "publish:all": "bun run --filter '@mantiq/*' publish --access public",
-    "version:all": "bun run --filter '@mantiq/*' version"
+    "publish:all": "for dir in packages/*/; do (cd \"$dir\" && npm publish --access public); done"
   },
   "devDependencies": {
     "typescript": "^5.7.0"
