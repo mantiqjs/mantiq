@@ -58,6 +58,46 @@ jobs:
           --health-timeout 5s
           --health-retries 10
 
+      meilisearch:
+        image: getmeili/meilisearch:latest
+        env:
+          MEILI_MASTER_KEY: testkey
+          MEILI_NO_ANALYTICS: true
+        ports:
+          - 7700:7700
+        options: >-
+          --health-cmd "curl -sf http://localhost:7700/health"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+      typesense:
+        image: typesense/typesense:27.1
+        env:
+          TYPESENSE_API_KEY: testkey
+          TYPESENSE_DATA_DIR: /data
+        ports:
+          - 8108:8108
+        options: >-
+          --health-cmd "curl -sf http://localhost:8108/health"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+      elasticsearch:
+        image: elasticsearch:8.17.0
+        env:
+          discovery.type: single-node
+          xpack.security.enabled: "false"
+          ES_JAVA_OPTS: "-Xms256m -Xmx256m"
+        ports:
+          - 9200:9200
+        options: >-
+          --health-cmd "curl -sf http://localhost:9200/_cluster/health"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 15
+
     steps:
       - uses: actions/checkout@v4
 
@@ -92,6 +132,14 @@ jobs:
           MSSQL_DB: mantiq_test
           MSSQL_USER: sa
           MSSQL_PASSWORD: YourStrong@Passw0rd
+          MEILI_HOST: http://127.0.0.1:7700
+          MEILI_KEY: testkey
+          TYPESENSE_HOST: 127.0.0.1
+          TYPESENSE_PORT: 8108
+          TYPESENSE_KEY: testkey
+          ES_HOST: http://127.0.0.1:9200
+          ALGOLIA_APP_ID: ${{ secrets.ALGOLIA_APP_ID }}
+          ALGOLIA_API_KEY: ${{ secrets.ALGOLIA_API_KEY }}
         run: bun run test:ci
 
   typecheck:
