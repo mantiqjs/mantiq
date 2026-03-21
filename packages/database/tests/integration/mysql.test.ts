@@ -283,7 +283,10 @@ describe('MySQL Migration DDL — all column types', () => {
     expect(Number(row!['big_count'])).toBe(9999999999)
     expect(Number(row!['views'])).toBe(42)
     expect(Number(row!['price'])).toBeCloseTo(99.99)
-    expect(row!['birth_date']).toBe('2000-01-15')
+    // MySQL returns Date objects for date columns
+    const bd = row!['birth_date']
+    const dateStr = bd instanceof Date ? bd.toISOString().slice(0, 10) : String(bd).slice(0, 10)
+    expect(dateStr).toBe('2000-01-15')
     expect(row!['external_id']).toBe('550e8400-e29b-41d4-a716-446655440000')
 
     const meta = JSON.parse(row!['metadata'] as string)
@@ -885,7 +888,7 @@ describe('MySQL ORM Model', () => {
       static override fillable = ['name', 'email', 'meta']
     }
     SecretUser.setConnection(conn)
-    const user = await SecretUser.create({ name: 'Secret', email: 'sec@orm.com', meta: 'hidden' })
+    const user = await SecretUser.create({ name: 'Secret', email: 'sec@orm.com', meta: JSON.stringify({ secret: true }) })
     const found = await SecretUser.find(user.getKey())
     const obj = found!.toObject()
     expect(obj['name']).toBe('Secret')

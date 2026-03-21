@@ -408,7 +408,9 @@ export class QueryBuilder {
   // ── Pagination ────────────────────────────────────────────────────────────
 
   async paginate(page = 1, perPage = 15): Promise<PaginationResult> {
-    const total = await this.clone().count()
+    const countQuery = this.clone()
+    countQuery.state.orders = []
+    const total = await countQuery.count()
     const lastPage = Math.max(1, Math.ceil(total / perPage))
     const currentPage = Math.min(page, lastPage)
     const data = await this.clone().limit(perPage).offset((currentPage - 1) * perPage).get()
