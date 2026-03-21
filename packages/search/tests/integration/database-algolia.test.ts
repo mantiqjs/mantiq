@@ -158,8 +158,8 @@ describe.skipIf(!algoliaAvailable)('AlgoliaEngine (live API)', () => {
     await engine.update(models)
 
     // Wait for Algolia to finish indexing
-    await new Promise((resolve) => setTimeout(resolve, 5000))
-  })
+    await new Promise((resolve) => setTimeout(resolve, 3000))
+  }, 15000) // Increase timeout for beforeAll
 
   afterAll(async () => {
     try {
@@ -203,7 +203,7 @@ describe.skipIf(!algoliaAvailable)('AlgoliaEngine (live API)', () => {
     const result = await engine.search(builder)
 
     expect(result.total).toBe(0)
-  })
+  }, 10000)
 
   it('flushes the index', async () => {
     await engine.flush(INDEX_NAME)
@@ -215,5 +215,5 @@ describe.skipIf(!algoliaAvailable)('AlgoliaEngine (live API)', () => {
     const result = await engine.search(builder)
 
     expect(result.total).toBe(0)
-  })
+  }, 10000)
 })

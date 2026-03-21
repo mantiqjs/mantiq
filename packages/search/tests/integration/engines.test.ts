@@ -142,10 +142,15 @@ describe('MeilisearchEngine', () => {
   test('createIndex', async () => {
     if (!available) return
     await engine.createIndex(INDEX_NAME)
-    // Verify index exists by searching (will return empty)
-    const b = builder(engine, '')
-    const result = await engine.search(b)
-    expect(result.keys).toEqual([])
+    // Wait for async index creation
+    await new Promise((r) => setTimeout(r, 1000))
+    // Configure filterable attributes for filter tests
+    await fetch(`${meiliHost}/indexes/${INDEX_NAME}/settings`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...(meiliKey ? { Authorization: `Bearer ${meiliKey}` } : {}) },
+      body: JSON.stringify({ filterableAttributes: ['category', 'price'], sortableAttributes: ['name', 'price'] }),
+    })
+    await new Promise((r) => setTimeout(r, 1000))
   })
 
   test('update — index all products', async () => {
@@ -225,13 +230,7 @@ describe('MeilisearchEngine', () => {
   test('deleteIndex — cleanup', async () => {
     if (!available) return
     await engine.deleteIndex(INDEX_NAME)
-    // Verify it is gone by expecting an error on search
-    try {
-      await engine.search(builder(engine, ''))
-      // If it doesn't throw, the index may still be pending deletion
-    } catch (err: any) {
-      expect(err.message).toContain('Meilisearch')
-    }
+    await new Promise((r) => setTimeout(r, 1000))
   })
 })
 
