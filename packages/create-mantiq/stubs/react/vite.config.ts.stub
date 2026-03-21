@@ -15,7 +15,7 @@ export default defineConfig({
     outDir: 'public/build',
     manifest: true,
     emptyOutDir: true,
-    rollupOptions: {
+    rolldownOptions: {
       input: ['src/main.tsx', 'src/style.css'],
     },
   },

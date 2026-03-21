@@ -22,7 +22,7 @@ export function getTemplates(ctx: TemplateContext): Record<string, string> {
       dependencies: {
         '@mantiq/auth': '^0.2.0',
         '@mantiq/cli': '^0.1.6',
-        '@mantiq/core': '^0.2.0',
+        '@mantiq/core': '^0.3.0',
         '@mantiq/database': '^0.1.4',
         '@mantiq/events': '^0.1.2',
         '@mantiq/filesystem': '^0.1.2',
@@ -781,10 +781,10 @@ function applyKitOverrides(templates: Record<string, string>, ctx: TemplateConte
 
   // ── package.json ────────────────────────────────────────────────────────
   const frameworkDevDeps: Record<string, string> = kit === 'react'
-    ? { 'react': '^19.0.0', 'react-dom': '^19.0.0', '@vitejs/plugin-react': '^4.0.0', '@types/react': '^19.0.0', '@types/react-dom': '^19.0.0' }
+    ? { 'react': '^19.0.0', 'react-dom': '^19.0.0', '@vitejs/plugin-react': '^6.0.0', '@types/react': '^19.0.0', '@types/react-dom': '^19.0.0' }
     : kit === 'vue'
-    ? { 'vue': '^3.5.0', '@vitejs/plugin-vue': '^5.0.0' }
-    : { 'svelte': '^5.0.0', '@sveltejs/vite-plugin-svelte': '^5.0.0' }
+    ? { 'vue': '^3.5.0', '@vitejs/plugin-vue': '^6.0.0' }
+    : { 'svelte': '^5.0.0', '@sveltejs/vite-plugin-svelte': '^7.0.0' }
 
   // UI library deps (shadcn + icons) — must match what the stubs actually import
   const uiDeps: Record<string, string> = kit === 'react'
@@ -811,7 +811,7 @@ function applyKitOverrides(templates: Record<string, string>, ctx: TemplateConte
     dependencies: {
       '@mantiq/auth': '^0.2.0',
       '@mantiq/cli': '^0.1.6',
-      '@mantiq/core': '^0.2.0',
+      '@mantiq/core': '^0.3.0',
       '@mantiq/database': '^0.1.4',
       '@mantiq/events': '^0.1.2',
       '@mantiq/filesystem': '^0.1.2',
@@ -831,7 +831,7 @@ function applyKitOverrides(templates: Record<string, string>, ctx: TemplateConte
     devDependencies: {
       'bun-types': 'latest',
       'typescript': '^5.7.0',
-      'vite': '^6.0.0',
+      'vite': '^8.0.0',
       'tailwindcss': '^4.0.0',
       '@tailwindcss/vite': '^4.0.0',
       ...frameworkDevDeps,
