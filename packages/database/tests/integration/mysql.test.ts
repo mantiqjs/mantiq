@@ -289,7 +289,10 @@ describe('MySQL Migration DDL — all column types', () => {
     expect(dateStr).toBe('2000-01-15')
     expect(row!['external_id']).toBe('550e8400-e29b-41d4-a716-446655440000')
 
-    const meta = JSON.parse(row!['metadata'] as string)
+    // MySQL may return JSON columns as parsed objects or strings
+    const meta = typeof row!['metadata'] === 'string'
+      ? JSON.parse(row!['metadata'] as string)
+      : row!['metadata']
     expect(meta).toEqual({ key: 'value' })
   })
 
