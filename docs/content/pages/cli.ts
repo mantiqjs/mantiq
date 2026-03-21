@@ -108,9 +108,7 @@ bun mantiq migrate:fresh --seed
 # Fresh migration + run seeders
 </code></pre>
 
-<div class="warning">
-<p><code>migrate:fresh</code> drops <strong>all</strong> tables in the database and re-runs migrations. All existing data will be permanently lost. Never run this in production.</p>
-</div>
+<p><code>migrate:fresh</code> drops all tables in the database and re-runs migrations. All existing data will be permanently lost &mdash; never run this in production.</p>
 
 <h3>migrate:reset</h3>
 <p>Roll back all migrations (return to a clean database):</p>
@@ -256,8 +254,6 @@ args.args       // ['User']
 args.flags      // { migration: true, force: true }
 </code></pre>
 
-<div class="note">
-<p>Commands are grouped by prefix in the help output. For example, <code>reminders:send</code> and <code>reminders:list</code> would appear under a <code>reminders</code> section, making it easy to discover related commands.</p>
-</div>
+<p>Commands are grouped by prefix in the help output. For example, <code>reminders:send</code> and <code>reminders:list</code> appear under a <code>reminders</code> section.</p>
 `
 }

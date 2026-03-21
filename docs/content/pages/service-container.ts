@@ -123,10 +123,10 @@ const config = app().make(ConfigRepository)
 const config = app().make('config')
 // Error: No binding found for 'config'</code></pre>
 
-<div class="warning">
-  <strong>Important:</strong> Always use the class constructor as the key, not a string.
-  String keys only work if you have registered an explicit alias for them.
-</div>
+<p>
+  Always use the class constructor as the key, not a string. String keys only work if you
+  have registered an explicit alias for them.
+</p>
 
 <h3>Bindable Types</h3>
 
@@ -242,11 +242,10 @@ const orderCtrl = app(OrderController) // gets OrderLogger</code></pre>
 // ServiceA -&gt; needs ServiceB -&gt; needs ServiceA
 // ContainerResolutionError: Circular dependency detected while resolving ServiceA</code></pre>
 
-<div class="note">
-  <strong>Tip:</strong> If you encounter a circular dependency, refactor one of the services
-  to use setter injection or a factory pattern. You can also use deferred service providers
-  to break initialization cycles.
-</div>
+<p>
+  If you encounter a circular dependency, refactor one of the services to use setter injection
+  or a factory pattern. Deferred service providers can also help break initialization cycles.
+</p>
 
 <h2>Method Injection</h2>
 
@@ -268,11 +267,10 @@ const orderCtrl = app(OrderController) // gets OrderLogger</code></pre>
 <pre><code class="language-typescript">app().flush()
 // All bindings, instances, aliases, and contextual bindings are removed</code></pre>
 
-<div class="warning">
-  <strong>Warning:</strong> Flushing the container removes all framework bindings. Only use
-  this in tests where you need a clean slate, and be sure to re-register the providers your
-  test depends on.
-</div>
+<p>
+  Flushing the container removes all framework bindings, so only use it in tests where you
+  need a clean slate. Be sure to re-register the providers your test depends on.
+</p>
 
 <h2>The app() Helper</h2>
 

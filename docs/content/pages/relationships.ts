@@ -179,9 +179,7 @@ const users = await User.with('posts').get()
 
 <p>This results in exactly two queries per relationship, regardless of how many parent records exist.</p>
 
-<div class="note">
 <p>For <code>belongsToMany</code> relationships, eager loading runs three queries: one for the parents, one for the pivot rows, and one for the related models.</p>
-</div>
 
 <h2>Relationship Method Signatures</h2>
 <p>For reference, here are the full method signatures for each relationship type:</p>

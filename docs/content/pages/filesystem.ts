@@ -231,8 +231,6 @@ await storage('public').put('avatars/user-1.jpg', imageData)
 await storage('local').put('contracts/nda.pdf', pdfData)
 </code></pre>
 
-<div class="note">
-<p>The <code>storage()</code> helper without arguments returns the <code>FilesystemManager</code>, which proxies calls to the default disk. You can call <code>storage().disk('name')</code> to switch disks explicitly.</p>
-</div>
+<p>The <code>storage()</code> helper without arguments returns the <code>FilesystemManager</code>, which proxies calls to the default disk. Call <code>storage().disk('name')</code> to switch disks explicitly.</p>
 `
 }

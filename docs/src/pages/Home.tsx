@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import {
-  Book, Github, Copy, Check, ArrowRight, Sparkles,
+  Command, Github, Copy, Check, ArrowRight, Sparkles,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -89,8 +89,10 @@ export default function Home({ navigate }: HomeProps) {
               className="flex items-center gap-2 text-foreground no-underline"
               onClick={(e) => { e.preventDefault(); navigate('/') }}
             >
-              <Book className="h-5 w-5 text-primary" />
-              <span className="font-mono text-lg font-bold tracking-tight">mantiq</span>
+              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                <Command className="size-4" />
+              </div>
+              <span className="text-lg font-semibold tracking-tight">mantiq</span>
             </a>
             <nav className="flex items-center gap-1">
               <Button variant="ghost" size="sm" asChild>

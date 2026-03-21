@@ -12,7 +12,7 @@ export default {
 
 <p>This creates a file in <code>app/Requests/</code>:</p>
 
-<pre><code class="language-typescript">import { FormRequest } from '@mantiq/core'
+<pre><code class="language-typescript">import { FormRequest } from '@mantiq/validation'
 
 export class StoreUserRequest extends FormRequest {
   /**
@@ -86,29 +86,28 @@ export class StoreUserRequest extends FormRequest {
 }
 </code></pre>
 
-<div class="note">
-<p>Authorization in form requests is checked <em>before</em> validation runs. If <code>authorize()</code> returns false, the validation rules are never executed.</p>
-</div>
+<p>Authorization is checked before validation runs. If <code>authorize()</code> returns false, the validation rules are never executed.</p>
 
 <h2>Using Form Requests in Controllers</h2>
-<p>Type-hint the form request in your controller method. The framework automatically resolves the form request from the container, runs authorization and validation, and injects the validated instance:</p>
+<p>Create a form request instance with the incoming request and call <code>validate()</code>. If authorization fails or validation fails, an error is thrown:</p>
 
 <pre><code class="language-typescript">import { StoreUserRequest } from '../Requests/StoreUserRequest.ts'
 
 class UserController {
-  async store(request: StoreUserRequest) {
-    // If we reach here, authorization passed and data is valid
-    const validated = request.validated()
+  async store(request: MantiqRequest) {
+    const form = new StoreUserRequest(request)
+    const data = await form.validate()
 
-    const user = await User.create(validated)
+    const user = await User.create(data)
     return MantiqResponse.json(user.toObject(), 201)
   }
 
-  async update(request: UpdateUserRequest) {
+  async update(request: MantiqRequest) {
     const user = await User.findOrFail(request.param('id'))
-    const validated = request.validated()
+    const form = new UpdateUserRequest(request)
+    const data = await form.validate()
 
-    user.fill(validated)
+    user.fill(data)
     await user.save()
 
     return MantiqResponse.json(user.toObject())
@@ -116,7 +115,7 @@ class UserController {
 }
 </code></pre>
 
-<p>The auto-validation happens transparently. If validation fails, a <code>ValidationError</code> is thrown and the controller method is never called.</p>
+<p>If validation fails, a <code>ValidationError</code> is thrown. If <code>authorize()</code> returns false, an <code>UnauthorizedError</code> is thrown.</p>
 
 <h2>Custom Error Messages</h2>
 <p>Override the <code>messages()</code> method to provide custom error messages for specific field-rule combinations:</p>
@@ -157,9 +156,9 @@ class UserController {
 </code></pre>
 
 <h2>Accessing Validated Data</h2>
-<p>After validation passes, the <code>validated()</code> method returns only the fields that were defined in your rules, with their validated values. This prevents any extra fields from sneaking through:</p>
+<p>After calling <code>validate()</code>, only the fields defined in your rules are returned with their validated values. This prevents any extra fields from sneaking through:</p>
 
-<pre><code class="language-typescript">const validated = request.validated()
+<pre><code class="language-typescript">const validated = request.validate()
 // Only contains keys defined in rules(): { name, email, password }
 // Even if the request body included additional fields like is_admin
 </code></pre>
@@ -168,7 +167,7 @@ class UserController {
 <p>Here is a full example showing a form request for creating a blog post:</p>
 
 <pre><code class="language-typescript">// app/Requests/StorePostRequest.ts
-import { FormRequest } from '@mantiq/core'
+import { FormRequest } from '@mantiq/validation'
 
 export class StorePostRequest extends FormRequest {
   override authorize(): boolean {
@@ -202,9 +201,12 @@ export class StorePostRequest extends FormRequest {
 
 // app/Controllers/PostController.ts
 class PostController {
-  async store(request: StorePostRequest) {
+  async store(request: MantiqRequest) {
+    const form = new StorePostRequest(request)
+    const data = await form.validate()
+
     const post = await Post.create({
-      ...request.validated(),
+      ...data,
       user_id: request.user().getAuthIdentifier(),
     })
 

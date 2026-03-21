@@ -303,9 +303,7 @@ await Http.patch(url, body)
 await Http.delete(url)
 </code></pre>
 
-<div class="note">
 <p>Non-2xx responses throw an <code>HttpError</code> with <code>.response</code> and <code>.status</code> properties attached. Catch these to handle API errors.</p>
-</div>
 
 <h3 id="fluent-builder">Fluent Builder</h3>
 <pre><code class="language-typescript">const response = await Http

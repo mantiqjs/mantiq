@@ -325,9 +325,7 @@ await db().table('settings')
     { value: 'dark' }       // data to set
   )</code></pre>
 
-<div class="warning">
-  <strong>Warning:</strong> Calling <code>update()</code> without a <code>where()</code> clause will update <em>every</em> row in the table. Always add conditions before updating.
-</div>
+<p>Calling <code>update()</code> without a <code>where()</code> clause will update every row in the table. Always add conditions before updating.</p>
 
 <h2>Deleting</h2>
 
@@ -380,8 +378,6 @@ console.log(query.getBindings())
 const admins = await base.clone().where('role', 'admin').get()
 const total = await base.clone().count()</code></pre>
 
-<div class="note">
-  <strong>Tip:</strong> The query builder is mutable &mdash; methods like <code>where()</code> modify and return the same instance. If you need to reuse a base query, always <code>clone()</code> it before adding additional conditions.
-</div>
+<p>The query builder is mutable &mdash; methods like <code>where()</code> modify and return the same instance. If you need to reuse a base query, always <code>clone()</code> it before adding additional conditions.</p>
 `
 }

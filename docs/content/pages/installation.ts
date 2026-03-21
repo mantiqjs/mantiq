@@ -234,10 +234,6 @@ bun test
 # Run all tests
 bun test --recursive</code></pre>
 
-<div class="note">
-  <strong>Next steps:</strong> Now that your project is running, read the
-  <a href="/docs/directory-structure">Directory Structure</a> guide to understand what
-  each file and folder does.
-</div>
+<p>Now that your project is running, read the <a href="/docs/directory-structure">Directory Structure</a> guide to understand what each file and folder does.</p>
 `
 }

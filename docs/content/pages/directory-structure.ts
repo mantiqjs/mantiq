@@ -77,9 +77,9 @@ if (import.meta.main) {
 </p>
 
 <pre><code class="language-typescript">import app from './index.ts'
-import { CliKernel } from '@mantiq/cli'
+import { Kernel } from '@mantiq/cli'
 
-const cli = new CliKernel(app)
+const cli = new Kernel(app)
 await cli.handle(process.argv.slice(2))</code></pre>
 
 <h3>.env</h3>
@@ -318,9 +318,6 @@ export default function (router: Router) {
   <li><code>storage/app/</code> &mdash; Application-generated files</li>
 </ul>
 
-<div class="note">
-  <strong>Tip:</strong> Add <code>storage/</code> to your <code>.gitignore</code> to keep
-  runtime data out of version control.
-</div>
+<p>Add <code>storage/</code> to your <code>.gitignore</code> to keep runtime data out of version control.</p>
 `
 }

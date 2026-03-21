@@ -192,9 +192,7 @@ const rules = {
 }
 </code></pre>
 
-<div class="note">
 <p>For cleaner controllers, consider using <a href="/docs/form-requests">Form Requests</a> to extract validation logic into dedicated classes.</p>
-</div>
 
 <h2>The ValidationError</h2>
 <p>When validation fails, a <code>ValidationError</code> is thrown. This is an <code>HttpError</code> with a 422 status code. The framework's exception handler automatically renders it as a JSON response for API requests:</p>

@@ -83,11 +83,11 @@ override register(): void {
   const db = this.app.make(DatabaseManager)  // Risky!
 }</code></pre>
 
-<div class="note">
-  <strong>Exception:</strong> It is safe to resolve <code>ConfigRepository</code> in
+<p>
+  The one exception is <code>ConfigRepository</code> &mdash; it is safe to resolve in
   <code>register()</code> because config is loaded by <code>Application.create()</code> before
-  any provider runs. The framework guarantees config is always available.
-</div>
+  any provider runs.
+</p>
 
 <h2>The boot() Method</h2>
 
@@ -197,16 +197,16 @@ export class QueueServiceProvider extends ServiceProvider {
   normally.
 </p>
 
-<div class="note">
-  <strong>Performance benefit:</strong> Deferred providers reduce startup time by only loading
-  services that are actually used during a given request.
-</div>
+<p>
+  Deferred providers reduce startup time by only loading services that are actually used during
+  a given request.
+</p>
 
-<div class="warning">
-  <strong>Constraint:</strong> Deferred providers must have synchronous <code>register()</code>
-  and <code>boot()</code> methods. Because deferred loading happens during a synchronous
-  <code>make()</code> call, async initialization is not supported in deferred providers.
-</div>
+<p>
+  Deferred providers must have synchronous <code>register()</code> and <code>boot()</code> methods.
+  Because deferred loading happens during a synchronous <code>make()</code> call, async initialization
+  is not supported.
+</p>
 
 <h2>Framework Providers</h2>
 

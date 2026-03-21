@@ -16,9 +16,7 @@ APP_KEY=base64:K7gNU3sdo+OL0wNhqoVWhr3g6s1xYv72ol/pe/Unols=
 <pre><code class="language-bash">bun mantiq key:generate
 </code></pre>
 
-<div class="warning">
-<p>If <code>APP_KEY</code> is missing or invalid, the framework will throw a <code>MissingAppKeyError</code> when any encryption operation is attempted. Never commit your <code>APP_KEY</code> to version control.</p>
-</div>
+<p>If <code>APP_KEY</code> is missing or invalid, the framework throws a <code>MissingAppKeyError</code> when any encryption operation is attempted. Never commit your <code>APP_KEY</code> to version control.</p>
 
 <h2>The encrypt() and decrypt() Helpers</h2>
 <p>The simplest way to encrypt and decrypt data is with the global helpers:</p>
@@ -116,9 +114,7 @@ const prefs = request.cookie('preferences')
 <h2>Encrypted Sessions</h2>
 <p>When using the cookie session driver, session data is encrypted before being stored in the cookie. This prevents users from reading or tampering with their session data, even though it lives on the client.</p>
 
-<div class="note">
-<p>The file and memory session drivers store data server-side and do not require encryption of the session payload itself. However, the session ID cookie is always encrypted by the <code>EncryptCookies</code> middleware.</p>
-</div>
+<p>The file and memory session drivers store data server-side and do not encrypt the session payload itself. The session ID cookie, however, is always encrypted by the <code>EncryptCookies</code> middleware.</p>
 
 <h2>Key Rotation</h2>
 <p>If you need to rotate your <code>APP_KEY</code>, be aware that any data encrypted with the old key will become unreadable. This includes:</p>
@@ -128,9 +124,7 @@ const prefs = request.cookie('preferences')
   <li>Any values you have encrypted and stored in the database</li>
 </ul>
 
-<div class="warning">
 <p>Plan key rotations carefully. For database-stored encrypted values, you will need to decrypt with the old key and re-encrypt with the new key during a migration.</p>
-</div>
 
 <h2>Security Details</h2>
 <p>The encryption implementation uses AES-256 (via the Web Crypto API) with the following properties:</p>

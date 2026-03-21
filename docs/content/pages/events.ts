@@ -199,9 +199,7 @@ forceDelete():
 restore():
   restoring &rarr; [UPDATE] &rarr; restored</code></pre>
 
-<div class="note">
-  <strong>Tip:</strong> The <code>saving</code> / <code>saved</code> events fire on both insert and update operations, making them ideal for logic that should run regardless of whether the model is new or existing.
-</div>
+<p>The <code>saving</code> / <code>saved</code> events fire on both insert and update operations, making them ideal for logic that should run regardless of whether the model is new or existing.</p>
 
 <h2>Model Observers</h2>
 
@@ -231,9 +229,7 @@ User.observe(UserObserver)
 // Or pass an instance
 User.observe(new UserObserver())</code></pre>
 
-<div class="note">
-  <strong>Tip:</strong> You only need to define methods for the events you care about. Any event method not present on the observer is simply ignored.
-</div>
+<p>You only need to define methods for the events you care about. Any event method not present on the observer is simply ignored.</p>
 
 <h2>Broadcasting</h2>
 
@@ -342,9 +338,7 @@ await emit(new UserRegistered(user))
 // Other events pass through to the real dispatcher
 await emit(new OrderShipped(order))</code></pre>
 
-<div class="note">
-  <strong>Tip:</strong> Selective faking is useful when you want to prevent side effects for specific events (like sending emails) while allowing the rest of your event-driven logic to run normally during integration tests.
-</div>
+<p>Selective faking is useful when you want to prevent side effects for specific events (like sending emails) while allowing the rest of your event-driven logic to run normally during integration tests.</p>
 
 <h3>BroadcastFake</h3>
 
@@ -368,9 +362,7 @@ fake.assertNotBroadcast('OrderShipped')
 // Assert nothing was broadcast at all
 fake.assertNothingBroadcast()</code></pre>
 
-<div class="warning">
-  <strong>Important:</strong> Always replace the real dispatcher or broadcaster in the IoC container with the fake at the start of your test, and restore it afterward. This ensures your application code dispatches through the fake during the test.
-</div>
+<p>Always replace the real dispatcher or broadcaster in the IoC container with the fake at the start of your test, and restore it afterward. This ensures your application code dispatches through the fake during the test.</p>
 
 <h2>Framework Events</h2>
 
@@ -431,9 +423,7 @@ events().on(QueryExecuted, async (event) =&gt; {
   }
 })</code></pre>
 
-<div class="note">
-  <strong>Tip:</strong> The <code>QueryExecuted</code> event includes precise timing via <code>performance.now()</code>. This makes it easy to build query logging, detect N+1 problems, or feed metrics into monitoring systems.
-</div>
+<p>The <code>QueryExecuted</code> event includes precise timing via <code>performance.now()</code>, making it straightforward to build query logging, detect N+1 problems, or feed metrics into monitoring systems.</p>
 
 <h3>Cache Events</h3>
 
@@ -458,8 +448,6 @@ let hits = 0, misses = 0
 events().on(CacheHit, () =&gt; { hits++ })
 events().on(CacheMissed, () =&gt; { misses++ })</code></pre>
 
-<div class="note">
-  <strong>Note:</strong> Framework events are automatically wired up when <code>EventServiceProvider</code> boots. If a package is not installed (e.g., no <code>@mantiq/auth</code>), its events are silently skipped &mdash; no configuration needed.
-</div>
+<p>Framework events are automatically wired up when <code>EventServiceProvider</code> boots. If a package is not installed (e.g., no <code>@mantiq/auth</code>), its events are silently skipped &mdash; no configuration needed.</p>
 `
 }

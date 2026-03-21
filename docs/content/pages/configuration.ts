@@ -144,10 +144,10 @@ configRepo.set('app.name', 'New Name')
 // Get all configuration
 const all = configRepo.all()   // { app: { ... }, database: { ... }, ... }</code></pre>
 
-<div class="warning">
-  <strong>Warning:</strong> Setting configuration values at runtime affects the current process
-  only. The changes are not persisted to disk. This is useful for testing or temporary overrides.
-</div>
+<p>
+  Setting configuration values at runtime affects the current process only &mdash; the changes are
+  not persisted to disk. This is useful for testing or temporary overrides.
+</p>
 
 <h2>Environment Variables</h2>
 
@@ -171,11 +171,11 @@ DB_DATABASE=database/database.sqlite
 # Comments start with #
 # Blank lines are ignored</code></pre>
 
-<div class="warning">
-  <strong>Warning:</strong> Never commit your <code>.env</code> file to version control. It
-  contains sensitive values like your <code>APP_KEY</code> and database credentials. Commit a
-  <code>.env.example</code> file instead, with placeholder values.
-</div>
+<p>
+  Never commit your <code>.env</code> file to version control. It contains sensitive values
+  like your <code>APP_KEY</code> and database credentials. Commit a <code>.env.example</code>
+  file instead, with placeholder values.
+</p>
 
 <h3>The env() Helper</h3>
 
@@ -229,11 +229,11 @@ if (config('app.debug')) {         // Read from config everywhere else
   console.log('Debug mode is on')
 }</code></pre>
 
-<div class="note">
-  <strong>Best practice:</strong> Avoid calling <code>env()</code> directly in application code.
-  Config files are the bridge between environment variables and your application. This makes it
-  easy to see all configuration in one place and to provide sensible defaults.
-</div>
+<p>
+  Avoid calling <code>env()</code> directly in application code. Config files are the bridge
+  between environment variables and your application &mdash; keeping all configuration in one
+  place makes it easy to provide sensible defaults and see what your app depends on.
+</p>
 
 <h2>How Config Loading Works</h2>
 
@@ -289,11 +289,11 @@ if (config('app.debug')) {         // Read from config everywhere else
 
 <pre><code class="language-bash">bun mantiq config:clear</code></pre>
 
-<div class="warning">
-  <strong>Warning:</strong> When config is cached, changes to your <code>.env</code> or
-  <code>config/*.ts</code> files will not take effect until you clear and rebuild the cache.
-  Do not use config caching during development.
-</div>
+<p>
+  When config is cached, changes to your <code>.env</code> or <code>config/*.ts</code> files
+  will not take effect until you clear and rebuild the cache. Do not use config caching during
+  development.
+</p>
 
 <h2>Creating Custom Config Files</h2>
 

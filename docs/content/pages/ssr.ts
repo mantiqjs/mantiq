@@ -98,9 +98,7 @@ interface SSRResult {
 &lt;div id="app"&gt;&lt;div class="dashboard"&gt;&lt;h1&gt;Welcome, Alice&lt;/h1&gt;...&lt;/div&gt;&lt;/div&gt;
 &lt;script&gt;window.__MANTIQ_DATA__ = {"_page":"Dashboard","user":{"name":"Alice"}}&lt;/script&gt;</code></pre>
 
-<div class="note">
-  <strong>Graceful fallback:</strong> If SSR rendering throws an error, MantiqJS falls back to a client-side-only shell (an empty root div). The page still works; it just renders on the client instead. This prevents SSR errors from causing full page failures.
-</div>
+<p>If SSR rendering throws an error, MantiqJS falls back to a client-side-only shell (an empty root div). The page still works &mdash; it just renders on the client instead. This prevents SSR errors from causing full page failures.</p>
 
 <h2>The <code>render()</code> Method</h2>
 
@@ -153,9 +151,7 @@ const viteServer = await createServer({
 // Loads your SSR entry with full HMR support
 const mod = await viteServer.ssrLoadModule('src/ssr.tsx')</code></pre>
 
-<div class="note">
-  <strong>Note:</strong> In dev mode, the SSR module is loaded fresh on every request (not cached). This ensures you always get the latest version of your code during development.
-</div>
+<p>In dev mode, the SSR module is loaded fresh on every request (not cached), so you always get the latest version of your code during development.</p>
 
 <h2>Production Build</h2>
 
@@ -169,9 +165,7 @@ npx vite build --ssr src/ssr.tsx --outDir bootstrap/ssr</code></pre>
 
 <p>The SSR build produces a single JavaScript file at <code>bootstrap/ssr/ssr.js</code> (or wherever <code>ssr.bundle</code> points). In production, MantiqJS imports this file directly instead of using Vite's dev server.</p>
 
-<div class="warning">
-  <strong>Warning:</strong> If the SSR bundle file does not exist at the configured path in production, MantiqJS will throw a <code>ViteSSRBundleNotFoundError</code>. Make sure your deployment pipeline includes both build steps.
-</div>
+<p>If the SSR bundle file does not exist at the configured path in production, MantiqJS will throw a <code>ViteSSRBundleNotFoundError</code>. Make sure your deployment pipeline includes both build steps.</p>
 
 <h3>Build Script Example</h3>
 

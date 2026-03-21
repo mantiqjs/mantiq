@@ -79,10 +79,10 @@ router.post('/users', [UserController, 'store'])</code></pre>
   return MantiqResponse.json({ status: 'ok', timestamp: new Date().toISOString() })
 })</code></pre>
 
-<div class="note">
+<p>
   Both controller methods and closures can return a <code>Response</code> object, a plain object (automatically
   serialized as JSON), a string (sent as HTML), or <code>null</code>/<code>undefined</code> (204 No Content).
-</div>
+</p>
 
 <h2>Route Parameters</h2>
 <p>
@@ -221,10 +221,10 @@ route('users.show', { id: 42 }, true)     // 'http://localhost:3000/users/42'</c
 <pre><code class="language-typescript">router.apiResource('posts', PostController)
 // Generates: index, store, show, update, destroy (no create or edit)</code></pre>
 
-<div class="note">
-  The route parameter name is automatically singularized from the resource name. For example,
+<p>
+  The route parameter name is automatically singularized from the resource name &mdash;
   <code>'photos'</code> becomes <code>:photo</code>, and <code>'categories'</code> becomes <code>:category</code>.
-</div>
+</p>
 
 <h2>Route Middleware</h2>
 <p>
@@ -279,9 +279,9 @@ for (const r of allRoutes) {
   If no route matches at all, a <code>404 Not Found</code> error is thrown.
 </p>
 
-<div class="warning">
+<p>
   Routes are matched in registration order. If two routes could match the same path, the one
-  registered first wins. Place more specific routes before catch-all patterns.
-</div>
+  registered first wins, so place more specific routes before catch-all patterns.
+</p>
 `
 }

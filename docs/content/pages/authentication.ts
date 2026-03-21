@@ -133,9 +133,7 @@ await auth().login(user, true)  // with remember me
 const user = await auth().loginUsingId(1)
 </code></pre>
 
-<div class="note">
-<p>The <code>attempt()</code> method automatically retrieves the user by the non-password credentials, then verifies the password using the configured hasher. If the password hash needs rehashing (e.g., bcrypt cost changed), it is automatically updated.</p>
-</div>
+<p>The <code>attempt()</code> method retrieves the user by the non-password credentials, verifies the password using the configured hasher, and automatically re-hashes it if the hash parameters have changed.</p>
 
 <h3>Logging Out</h3>
 

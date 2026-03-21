@@ -89,9 +89,7 @@ const removed = await cache().forget('key')  // true if the key existed
 await cache().flush()
 </code></pre>
 
-<div class="warning">
-<p><code>flush()</code> removes <strong>every</strong> item in the cache store, not just items from your application. Use it carefully, especially with shared cache stores.</p>
-</div>
+<p><code>flush()</code> removes every item in the cache store, not just items from your application. Use it carefully, especially with shared cache stores.</p>
 
 <h2>TTL (Time-to-Live)</h2>
 <p>The TTL parameter specifies how long a cached item should be stored, in <strong>seconds</strong>:</p>

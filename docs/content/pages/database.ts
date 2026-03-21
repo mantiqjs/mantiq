@@ -173,9 +173,7 @@ const id = await connection.insertGetId(
   ['Alice', 'alice@example.com']
 )</code></pre>
 
-<div class="note">
-  <strong>Tip:</strong> Always use parameterised bindings (<code>?</code> placeholders) instead of string interpolation. The database driver handles escaping, preventing SQL injection.
-</div>
+<p>Always use parameterised bindings (<code>?</code> placeholders) instead of string interpolation. The database driver handles escaping, preventing SQL injection.</p>
 
 <h2>Transactions</h2>
 
@@ -257,8 +255,6 @@ try {
   }
 }</code></pre>
 
-<div class="warning">
-  <strong>Warning:</strong> Never log raw SQL queries containing user data in production. The <code>QueryError</code> includes bindings for debugging, but these may contain sensitive information.
-</div>
+<p>Never log raw SQL queries containing user data in production. The <code>QueryError</code> includes bindings for debugging, but these may contain sensitive information.</p>
 `
 }

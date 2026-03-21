@@ -95,12 +95,12 @@ if (await request.filled('name', 'email')) {
   // Both values are present and not empty strings/null/undefined
 }</code></pre>
 
-<div class="note">
-  <code>has()</code> checks for key existence, while <code>filled()</code> additionally verifies
-  that the values are not empty strings, <code>null</code>, or <code>undefined</code>.
-  <code>has()</code> is synchronous and only checks query params and already-parsed body data;
-  <code>filled()</code> is async and will parse the body if needed.
-</div>
+<p>
+  <code>has()</code> checks for key existence and is synchronous (it only checks query params and
+  already-parsed body data). <code>filled()</code> additionally verifies that the values are not
+  empty strings, <code>null</code>, or <code>undefined</code>, and is async because it will parse
+  the body if needed.
+</p>
 
 <h2>Headers</h2>
 <p>
@@ -161,11 +161,11 @@ const fallback = request.param('missing', 'default')
 const params = request.params()
 // { postId: '42', commentId: '7' }</code></pre>
 
-<div class="warning">
-  Route parameters are always strings. Remember to convert them to the appropriate type
+<p>
+  Route parameters are always strings, so convert them to the appropriate type
   (e.g., <code>Number(request.param('id'))</code>) when using them in database queries or
   arithmetic operations.
-</div>
+</p>
 
 <h2>Uploaded Files</h2>
 <p>
@@ -268,11 +268,11 @@ const type = request.accepts('text/html', 'application/json', 'text/plain')
 const body = await bunRequest.arrayBuffer()
 const signal = bunRequest.signal</code></pre>
 
-<div class="note">
+<p>
   In most cases you should use the <code>MantiqRequest</code> API rather than the raw Bun request.
-  The MantiqRequest provides caching, lazy parsing, and a consistent interface that works correctly
-  with middleware like <code>EncryptCookies</code>.
-</div>
+  It provides caching, lazy parsing, and a consistent interface that works correctly with middleware
+  like <code>EncryptCookies</code>.
+</p>
 
 <h2>Method Reference</h2>
 <table>

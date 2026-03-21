@@ -60,9 +60,7 @@ export default {
 }
 </code></pre>
 
-<div class="note">
 <p>Relative log paths (those not starting with <code>/</code>) are automatically resolved to absolute paths by the <code>LoggingServiceProvider</code> using your application&rsquo;s base path.</p>
-</div>
 
 <h3 id="channel-config-options">Channel Config Options</h3>
 <p>Each channel entry supports the following options:</p>
@@ -99,9 +97,7 @@ channels: {
 }
 </code></pre>
 
-<div class="tip">
 <p>The console channel can be resolved even without explicit configuration. If no channel config exists for <code>console</code>, the <code>LogManager</code> creates a <code>ConsoleDriver</code> with <code>debug</code> level by default.</p>
-</div>
 
 <h3 id="file-channel">File</h3>
 <p>Appends formatted log lines to a single file at the configured path. Parent directories are created lazily on first write. File I/O is fire-and-forget, so logging never blocks the request.</p>

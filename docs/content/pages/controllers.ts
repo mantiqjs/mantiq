@@ -63,10 +63,7 @@ export default function (router: Router) {
   router.delete('/users/:id', [UserController, 'destroy'])
 }</code></pre>
 
-<div class="note">
-  You must import the controller class directly. MantiqJS does not use string-based controller
-  resolution -- this gives you full type safety and ensures dead code can be tree-shaken.
-</div>
+<p>Controllers are imported by class reference, not by string name. This gives you full type safety and ensures dead code can be tree-shaken.</p>
 
 <h2>Dependency Injection</h2>
 <p>
@@ -259,10 +256,6 @@ export class GenerateReportController {
 // In routes:
 router.post('/reports/generate', [GenerateReportController, 'handle'])</code></pre>
 
-<div class="warning">
-  Controller methods are called with a fresh controller instance on every request (resolved from
-  the container). Do not store request-specific state as class properties -- each request gets
-  its own instance, but it's better practice to keep controllers stateless.
-</div>
+<p>Controller methods are called with a fresh instance on every request, resolved from the container. Keep controllers stateless &mdash; do not store request-specific data as class properties.</p>
 `
 }

@@ -186,11 +186,7 @@ if (import.meta.main) {
   await kernel.start()
 }</code></pre>
 
-<div class="note">
-  <strong>Note:</strong> The <code>import.meta.main</code> guard ensures the server only starts
-  when the file is executed directly. This allows the CLI to import your application bootstrap
-  without starting the HTTP server.
-</div>
+<p>The <code>import.meta.main</code> guard ensures the server only starts when the file is executed directly, so the CLI can import the application bootstrap without starting the HTTP server.</p>
 
 <h2>Requirements</h2>
 

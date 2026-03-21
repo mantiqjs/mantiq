@@ -197,9 +197,7 @@ fetch('/dashboard', {
 
 <p>This gives you SPA-like navigation with server-driven page rendering. No client-side router is needed &mdash; the server decides which page to show.</p>
 
-<div class="note">
-  <strong>Tip:</strong> Standard <code>&lt;a href="/path"&gt;</code> links work automatically. You do not need a special Link component. The <code>MantiqApp</code> intercepts clicks at the document level. Ctrl+click and links with <code>target="_blank"</code> still open normally.
-</div>
+<p>Standard <code>&lt;a href="/path"&gt;</code> links work automatically &mdash; no special Link component is needed. The <code>MantiqApp</code> intercepts clicks at the document level. Ctrl+click and links with <code>target="_blank"</code> still open normally.</p>
 
 <h2>Client Entry &amp; Hydration</h2>
 
@@ -266,9 +264,7 @@ router.get('/settings', async (request) =&gt; {
   })
 })</code></pre>
 
-<div class="warning">
-  <strong>Important:</strong> The page name in <code>vite().render()</code> must exactly match the key in your <code>pages</code> registry. If they do not match, the client will not be able to find the component to render.
-</div>
+<p>The page name in <code>vite().render()</code> must exactly match the key in your <code>pages</code> registry. If they do not match, the client will not find the component to render.</p>
 
 <h2>Building for Production</h2>
 

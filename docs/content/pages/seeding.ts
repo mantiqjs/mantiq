@@ -63,9 +63,7 @@ export class DatabaseSeeder extends Seeder {
   }
 }</code></pre>
 
-<div class="note">
-  <strong>Tip:</strong> Order matters when seeding. If <code>PostSeeder</code> creates rows that reference <code>users</code>, make sure <code>UserSeeder</code> runs first.
-</div>
+<p>Order matters when seeding. If <code>PostSeeder</code> creates rows that reference <code>users</code>, make sure <code>UserSeeder</code> runs first.</p>
 
 <h3>Running Seeders</h3>
 
@@ -150,9 +148,7 @@ const superAdmin = await new UserFactory()
   .count(3)
   .create()</code></pre>
 
-<div class="note">
-  <strong>Note:</strong> Factory methods like <code>state()</code>, <code>count()</code>, and <code>afterCreate()</code> are immutable &mdash; they return a new factory instance. The original factory is never modified, so you can safely reuse a base factory in multiple places.
-</div>
+<p>Factory methods like <code>state()</code>, <code>count()</code>, and <code>afterCreate()</code> are immutable &mdash; they return a new factory instance. The original is never modified, so you can safely reuse a base factory in multiple places.</p>
 
 <h3>After Create Hooks</h3>
 

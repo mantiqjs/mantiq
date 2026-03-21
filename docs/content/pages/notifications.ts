@@ -47,9 +47,7 @@ export default {
 }
 </code></pre>
 
-<div class="note">
-<p>Only include configuration blocks for channels you actually use. Channels without config entries are simply not registered, keeping startup fast.</p>
-</div>
+<p>You only need to configure the channels you actually use &mdash; unconfigured channels are never registered.</p>
 
 <h2 id="registering-the-service-provider">Registering the Service Provider</h2>
 <p>Register <code>NotificationServiceProvider</code> in your application bootstrap (<code>index.ts</code>):</p>
@@ -73,6 +71,15 @@ await app.bootProviders()
 import type { Notifiable } from '@mantiq/notify'
 import { Mailable } from '@mantiq/mail'
 
+class OrderShippedMail extends Mailable {
+  constructor(private order: any) { super() }
+
+  override build() {
+    this.setSubject('Your order has shipped!')
+    this.html(\`&lt;p&gt;Order #\${this.order.id} is on its way.&lt;/p&gt;\`)
+  }
+}
+
 class OrderShipped extends Notification {
   constructor(private order: any) {
     super()
@@ -83,9 +90,7 @@ class OrderShipped extends Notification {
   }
 
   toMail(notifiable: Notifiable): Mailable {
-    return new Mailable()
-      .subject('Your order has shipped!')
-      .html(\`&lt;p&gt;Order #\${this.order.id} is on its way.&lt;/p&gt;\`)
+    return new OrderShippedMail(this.order)
   }
 
   toDatabase(notifiable: Notifiable): Record&lt;string, any&gt; {
@@ -142,26 +147,27 @@ await notify().sendNow(user, new OrderShipped(order))
 await notify().sendNow(user, new OrderShipped(order), ['mail'])
 </code></pre>
 
-<div class="note">
-<p>Errors are isolated per-channel. If one channel fails, the remaining channels still attempt delivery. Failed channels are logged via <code>console.error</code>.</p>
-</div>
+<p>Channel errors are isolated &mdash; if Slack fails, the mail and database channels still fire. Failures are logged to <code>console.error</code>.</p>
 
 <h2 id="channels">Channels</h2>
 
 <h3 id="mail-channel">Mail Channel</h3>
 <p>Delivers notifications via email using <code>@mantiq/mail</code>. The <code>toMail()</code> method must return a <code>Mailable</code> instance. If the mailable has no recipients set, the channel falls back to <code>notifiable.routeNotificationFor('mail')</code>:</p>
 
-<pre><code class="language-typescript">toMail(notifiable: Notifiable): Mailable {
-  return new Mailable()
-    .to(notifiable.routeNotificationFor('mail')!)
-    .subject('Welcome!')
-    .html('&lt;h1&gt;Welcome aboard!&lt;/h1&gt;')
+<pre><code class="language-typescript">class WelcomeMail extends Mailable {
+  override build() {
+    this.setSubject('Welcome!')
+    this.html('&lt;h1&gt;Welcome aboard!&lt;/h1&gt;')
+  }
+}
+
+// In your notification:
+toMail(notifiable: Notifiable): Mailable {
+  return new WelcomeMail()
 }
 </code></pre>
 
-<div class="note">
-<p>The mail channel requires <code>@mantiq/mail</code> to be installed. A <code>NotifyError</code> is thrown if the peer dependency is missing.</p>
-</div>
+<p>Requires <code>@mantiq/mail</code> as a peer &mdash; throws <code>NotifyError</code> if missing.</p>
 
 <h3 id="database-channel">Database Channel</h3>
 <p>Persists notifications to the <code>notifications</code> table. The <code>toDatabase()</code> method returns a plain object that is JSON-stringified and stored in the <code>data</code> column:</p>
@@ -400,9 +406,7 @@ toFirebase(notifiable: Notifiable): FirebasePayload {
 
 <p>You can target by device token (<code>token</code> field or <code>routeNotificationFor('firebase')</code>) or by topic (<code>topic</code> field). Messages are sent to <code>https://fcm.googleapis.com/v1/projects/{projectId}/messages:send</code>.</p>
 
-<div class="note">
-<p>Authentication uses either a static <code>accessToken</code> or a <code>serviceAccountKey</code> file path. When using the service account key, the channel mints OAuth2 tokens via JWT assertion (RS256) and caches them automatically.</p>
-</div>
+<p>Authenticate with either a static <code>accessToken</code> or a <code>serviceAccountKey</code> file path. Service account keys are exchanged for OAuth2 tokens via RS256 JWT assertion, cached automatically.</p>
 
 <h2 id="notification-manager">NotificationManager</h2>
 <p>The <code>NotificationManager</code> is the central hub that routes notifications through channels. It is registered as a singleton by the service provider and accessed via the <code>notify()</code> helper:</p>

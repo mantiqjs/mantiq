@@ -166,9 +166,7 @@ await session.regenerate(true)
 await session.invalidate()
 </code></pre>
 
-<div class="note">
-<p>Session regeneration happens automatically when a user logs in via <code>auth().login()</code>. This prevents session fixation attacks where an attacker sets a known session ID before the victim authenticates.</p>
-</div>
+<p>Session regeneration happens automatically when a user logs in via <code>auth().login()</code>, preventing session fixation attacks.</p>
 
 <h2>CSRF Protection</h2>
 <p>The session store manages the CSRF token used for protecting against cross-site request forgery:</p>
@@ -198,8 +196,6 @@ session.regenerateToken()
 <h2>Cookie Session Driver</h2>
 <p>The cookie driver stores all session data in an encrypted cookie on the client. This is useful for stateless deployments where you cannot share server-side session storage across multiple instances.</p>
 
-<div class="warning">
-<p>Cookie sessions have a size limit (typically 4 KB). Store only essential data in the session when using the cookie driver. The data is encrypted using your <code>APP_KEY</code>, so users cannot read or tamper with it.</p>
-</div>
+<p>Cookie sessions have a size limit of roughly 4 KB, so store only essential data when using this driver. The data is encrypted with your <code>APP_KEY</code> &mdash; users cannot read or tamper with it.</p>
 `
 }

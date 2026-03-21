@@ -45,9 +45,7 @@ class User extends Model {
 <p>The <code>fillable</code> array defines which attributes can be set through mass assignment methods like <code>fill()</code> and <code>create()</code>. The <code>guarded</code> array defines attributes that are never mass-assignable. By default, <code>id</code> is guarded.</p>
 <p>If <code>fillable</code> is non-empty, only listed attributes are assignable. If <code>fillable</code> is empty, all attributes except those in <code>guarded</code> are assignable.</p>
 
-<div class="warning">
-<p>Never leave both <code>fillable</code> empty and <code>guarded</code> empty in a production model. This would allow mass assignment of every column, including sensitive fields like <code>is_admin</code>.</p>
-</div>
+<p>Never leave both <code>fillable</code> and <code>guarded</code> empty in a production model &mdash; this would allow mass assignment of every column, including sensitive fields like <code>is_admin</code>.</p>
 
 <h2>Creating Records</h2>
 <p>Create a new record using the static <code>create()</code> method or by instantiating, filling, and saving:</p>
@@ -231,9 +229,7 @@ const obj = user.toObject()
 const json = user.toJSON()
 </code></pre>
 
-<div class="note">
 <p>The <code>toObject()</code> method also includes any eagerly loaded relationships as nested objects or arrays on the returned object.</p>
-</div>
 
 <h2>Force Fill</h2>
 <p>When you need to bypass mass assignment protection (e.g., in seeders or admin operations), use <code>forceFill()</code>:</p>

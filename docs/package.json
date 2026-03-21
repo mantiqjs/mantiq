@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "bun run --watch index.ts",
     "start": "bun run index.ts",
+    "dev:frontend": "vite",
     "build": "vite build && vite build --ssr src/ssr.tsx --outDir bootstrap/ssr"
   },
   "dependencies": {

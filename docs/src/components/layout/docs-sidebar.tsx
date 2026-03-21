@@ -1,4 +1,4 @@
-import { Book, Github, ExternalLink } from 'lucide-react'
+import { Command, Github, ExternalLink } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import {
   Sidebar,
@@ -40,8 +40,10 @@ export function DocsSidebar({ navigation, activeSlug, navigate }: DocsSidebarPro
             navigate('/')
           }}
         >
-          <Book className="h-5 w-5 text-primary" />
-          <span className="font-mono text-lg font-bold tracking-tight">mantiq</span>
+          <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+            <Command className="size-4" />
+          </div>
+          <span className="text-lg font-semibold tracking-tight">mantiq</span>
           <Badge variant="secondary" className="ml-1 text-[0.625rem] px-1.5 py-0">
             docs
           </Badge>

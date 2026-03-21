@@ -65,9 +65,7 @@ export default {
 }
 </code></pre>
 
-<div class="note">
-<p>If no mail configuration is provided, MantiqJS defaults to the <code>log</code> driver, which prints messages to the console. This is ideal for local development.</p>
-</div>
+<p>If no mail configuration is provided, MantiqJS defaults to the <code>log</code> driver, which prints messages to the console &mdash; handy for local development.</p>
 
 <h3 id="mail-config-type">MailConfig Type</h3>
 <p>The configuration follows the <code>MailConfig</code> interface:</p>
@@ -367,9 +365,7 @@ mail().extend('webhook', () =&gt; new WebhookTransport())
 const transport = mail().driver('webhook')
 </code></pre>
 
-<div class="note">
 <p>Calling <code>extend()</code> clears any cached instance for that driver name, so the next call to <code>driver()</code> will use the new factory.</p>
-</div>
 
 <h2 id="pending-mail">PendingMail</h2>
 <p><code>PendingMail</code> provides a fluent API for building and sending emails. You get a <code>PendingMail</code> instance by calling <code>mail().to()</code> or <code>mail('user@example.com')</code>:</p>
@@ -475,9 +471,7 @@ const fullEmail = wrapInLayout(bodyHtml, { appName: 'My App' })
 
 <p>This dispatches a <code>SendMailJob</code> that retries up to 3 times on failure. If <code>@mantiq/queue</code> is not installed, <code>queue()</code> falls back to synchronous sending automatically.</p>
 
-<div class="note">
-<p>The <code>@mantiq/queue</code> package is an optional peer dependency. Queueing works seamlessly when installed, and degrades gracefully to synchronous sending when it is not.</p>
-</div>
+<p><code>@mantiq/queue</code> is an optional peer dependency. Queueing works seamlessly when installed and degrades gracefully to synchronous sending when it is not.</p>
 
 <h2 id="helpers">Helpers</h2>
 <p>The <code>mail()</code> helper function is the primary way to interact with the mail system. It is overloaded for convenience:</p>

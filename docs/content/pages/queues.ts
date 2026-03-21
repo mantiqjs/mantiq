@@ -167,9 +167,7 @@ registerJob(ProcessPayment)
 registerJobs([ProcessPayment, SendEmail, GenerateReport])
 </code></pre>
 
-<div class="note">
-<p>Register all your job classes before starting the worker. If a worker encounters a job whose class is not in the registry, it will immediately fail that job.</p>
-</div>
+<p>Register all your job classes before starting the worker. If a worker encounters an unregistered job class, it will immediately fail that job.</p>
 
 <h2 id="retry-and-backoff">Retry and Backoff</h2>
 <p>When a job throws an exception and has remaining attempts, the Worker releases it back to the queue with a delay calculated from the job's <code>backoff</code> property. The <code>backoff</code> string supports four strategies:</p>
@@ -260,9 +258,7 @@ sqs: {
 }
 </code></pre>
 
-<div class="note">
-<p>SQS has a maximum delay of 900 seconds (15 minutes). Delays larger than 900 are capped automatically. Failed jobs and batches are tracked in-memory since SQS has no native storage for these.</p>
-</div>
+<p>SQS caps delays at 900 seconds (15 minutes); larger values are clamped automatically. Failed jobs and batches are tracked in-memory since SQS has no native storage for these.</p>
 
 <h3 id="kafka-driver">Kafka Driver</h3>
 <p>A Kafka driver using <code>kafkajs</code> (optional peer dependency). Maps queue names to Kafka topics with a configurable prefix.</p>

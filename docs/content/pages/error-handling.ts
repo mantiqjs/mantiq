@@ -196,11 +196,11 @@ abort(503, 'Service temporarily unavailable')</code></pre>
   return MantiqResponse.json({ data: post })
 }</code></pre>
 
-<div class="note">
+<p>
   <code>abort()</code> has a return type of <code>never</code>, so TypeScript knows that code
   after an <code>abort()</code> call is unreachable. You do not need an <code>else</code> branch
   or a <code>return</code> after calling it.
-</div>
+</p>
 
 <h2>Debug Mode</h2>
 <p>
@@ -215,11 +215,11 @@ abort(503, 'Service temporarily unavailable')</code></pre>
   <li>Any additional context attached to the error</li>
 </ul>
 
-<div class="warning">
+<p>
   Never enable <code>APP_DEBUG=true</code> in production. The debug page exposes sensitive
   information including file paths, environment details, and request data. Always set
   <code>APP_DEBUG=false</code> in your production <code>.env</code> file.
-</div>
+</p>
 
 <p>In production (with debug mode off), errors render as clean, minimal pages:</p>
 <ul>
@@ -351,10 +351,10 @@ export class ServiceUnavailableError extends HttpError {
   <li>A <code>Response</code> is returned to the client.</li>
 </ol>
 
-<div class="note">
+<p>
   The <code>render()</code> method is synchronous and returns a <code>Response</code> directly.
-  The <code>report()</code> method is asynchronous but is called with <code>void</code> (fire-and-forget)
-  so it doesn't block the response.
-</div>
+  The <code>report()</code> method is asynchronous but is fire-and-forget, so it does not block
+  the response.
+</p>
 `
 }

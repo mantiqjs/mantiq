@@ -59,9 +59,7 @@ hasher.needsRehash(hashed) // false (still at 12 rounds)
 <h3>Configuring Rounds</h3>
 <p>The <code>rounds</code> (cost) parameter controls how computationally expensive the hash is. Higher values make brute-force attacks slower but increase login time. The default is <strong>10</strong>. For most applications, 10-12 is a good balance.</p>
 
-<div class="note">
-<p>The <code>needsRehash()</code> method checks whether a stored hash was generated with different parameters than the current configuration. This is useful for gradually upgrading hash strength: re-hash on each successful login if needed.</p>
-</div>
+<p>The <code>needsRehash()</code> method checks whether a stored hash was generated with different parameters than the current configuration. This is useful for gradually upgrading hash strength &mdash; re-hash on each successful login if needed.</p>
 
 <h2>Argon2id Driver</h2>
 <p>Argon2id is the winner of the Password Hashing Competition and provides stronger resistance against GPU-based attacks and side-channel attacks compared to bcrypt.</p>
@@ -150,9 +148,7 @@ if (user &amp;&amp; await hashCheck(password, user.get('password'))) {
 }
 </code></pre>
 
-<div class="note">
-<p>In practice, you should use <code>auth().attempt()</code> instead of manual hash checking. The attempt method handles credential retrieval, password verification, and automatic re-hashing if the hash parameters have changed.</p>
-</div>
+<p>In practice, use <code>auth().attempt()</code> instead of manual hash checking. It handles credential retrieval, password verification, and automatic re-hashing if the hash parameters have changed.</p>
 
 <h2>Switching Drivers</h2>
 <p>To switch from bcrypt to argon2id, update your config:</p>

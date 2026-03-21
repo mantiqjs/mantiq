@@ -164,9 +164,7 @@ realtime().channels.authorize('orders.*', async (userId, channelName) =&gt; {
 })
 </code></pre>
 
-<div class="note">
-<p>Patterns are matched against the <strong>base name</strong> (without the <code>private:</code> or <code>presence:</code> prefix). Exact matches take priority over wildcard patterns. Wildcards use <code>*</code> which matches one or more characters.</p>
-</div>
+<p>Patterns are matched against the base name (without the <code>private:</code> or <code>presence:</code> prefix). Exact matches take priority over wildcard patterns, and <code>*</code> matches one or more characters.</p>
 
 <h3 id="presence-authorization">Presence Authorization</h3>
 <p>For presence channels, the authorizer can return an object to provide member info that is shared with other subscribers:</p>
@@ -335,9 +333,7 @@ realtime().channels.getPresenceMembers('presence:chat.1')
 { "event": "client:typing", "channel": "presence:chat.1", "data": { "user": "Alice" } }
 </code></pre>
 
-<div class="note">
-<p>Whisper is blocked on public channels (sends an error). The sender must be subscribed to the channel.</p>
-</div>
+<p>Whisper is blocked on public channels and the sender must be subscribed to the channel.</p>
 
 <h3 id="server-broadcasting">Server Broadcasting</h3>
 <p>Broadcast events from server code to all subscribers of a channel:</p>
@@ -391,9 +387,7 @@ data: {"channel":"news","data":{"title":"..."}}
 
 <p>Keep-alive comments (<code>: keep-alive</code>) are sent at the configured interval to prevent proxy timeouts.</p>
 
-<div class="note">
-<p>SSE only supports <strong>public channels</strong>. There is no authentication handshake in the SSE transport. For private or presence channels, use the WebSocket transport.</p>
-</div>
+<p>SSE only supports public channels since there is no authentication handshake in the SSE transport. For private or presence channels, use WebSockets.</p>
 
 <h3 id="sse-broadcasting">Broadcasting to SSE Clients</h3>
 

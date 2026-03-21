@@ -200,9 +200,7 @@ export default defineConfig({
   },
 })</code></pre>
 
-<div class="note">
-  <strong>Important:</strong> Set <code>publicDir: false</code> to prevent Vite from copying files from the public directory during build. MantiqJS serves static files through its own middleware. Also ensure <code>manifest: true</code> is set so the production manifest is generated.
-</div>
+<p>Set <code>publicDir: false</code> to prevent Vite from copying files from the public directory during build &mdash; MantiqJS serves static files through its own middleware. Also ensure <code>manifest: true</code> is set so the production manifest is generated.</p>
 
 <h3>Key Settings</h3>
 
@@ -224,8 +222,6 @@ npx vite build --ssr src/ssr.tsx --outDir bootstrap/ssr</code></pre>
 
 <p>After building, the manifest at <code>public/build/.vite/manifest.json</code> maps your source entrypoints to their hashed output files. MantiqJS reads this manifest automatically in production.</p>
 
-<div class="warning">
-  <strong>Warning:</strong> If you deploy without running <code>vite build</code>, asset tag generation will throw a <code>ViteManifestNotFoundError</code> in production mode. Always build before deploying.
-</div>
+<p>If you deploy without running <code>vite build</code>, asset tag generation will throw a <code>ViteManifestNotFoundError</code> in production mode.</p>
 `
 }

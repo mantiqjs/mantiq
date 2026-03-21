@@ -114,11 +114,11 @@ kernel.registerMiddleware('throttle', ThrottleMiddleware)</code></pre>
   'trim-strings',
 ])</code></pre>
 
-<div class="note">
+<p>
   Global middleware aliases must also be registered with <code>registerMiddleware()</code>.
-  The order in the array determines execution order -- the first middleware in the list
+  The order in the array determines execution order &mdash; the first middleware in the list
   runs first on the way in and last on the way out.
-</div>
+</p>
 
 <h3>Middleware Groups</h3>
 <p>
@@ -202,11 +202,11 @@ router.get('/api/data', handler).middleware('throttle:60,1')</code></pre>
   }
 }</code></pre>
 
-<div class="note">
+<p>
   The <code>terminate()</code> method runs after the response body has been streamed to the client.
   It receives the original request and the final response, making it ideal for non-blocking
   post-request work.
-</div>
+</p>
 
 <h2>Writing Custom Middleware</h2>
 <p>
@@ -279,10 +279,10 @@ router.get('/profile', [ProfileController, 'show']).middleware('auth')</code></p
   runs globally so your controllers always receive clean input.
 </p>
 
-<div class="warning">
+<p>
   The order of global middleware matters. Cookie encryption should run before session handling,
   and session handling before CSRF verification. A typical order is:
   CorsMiddleware, EncryptCookies, StartSession, VerifyCsrfToken, TrimStrings.
-</div>
+</p>
 `
 }

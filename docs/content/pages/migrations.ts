@@ -46,9 +46,7 @@ export default class CreatePostsTable extends Migration {
   }
 }</code></pre>
 
-<div class="note">
-  <strong>Tip:</strong> The <code>down()</code> method should reverse what <code>up()</code> does. For a <code>create</code> migration, the down method should <code>drop</code> the table. This allows clean rollbacks.
-</div>
+<p>The <code>down()</code> method should reverse what <code>up()</code> does. For a <code>create</code> migration, the down method should <code>drop</code> the table so rollbacks work cleanly.</p>
 
 <h2>SchemaBuilder Methods</h2>
 
@@ -274,9 +272,7 @@ bun mantiq migrate:reset</code></pre>
 <pre><code class="language-bash"># Drop all tables and re-run all migrations from scratch
 bun mantiq migrate:fresh</code></pre>
 
-<div class="warning">
-  <strong>Warning:</strong> <code>migrate:fresh</code> drops <em>all</em> tables in the database, not just those managed by migrations. Use it only in development. Never run it in production.
-</div>
+<p><code>migrate:fresh</code> drops <em>all</em> tables in the database, not just those managed by migrations. Use it only in development &mdash; never run it in production.</p>
 
 <h3>Migration Status</h3>
 
@@ -332,8 +328,6 @@ await migrator.fresh()</code></pre>
   <li><strong>Use foreign key constraints</strong> to maintain data integrity, but disable them during <code>fresh</code> operations.</li>
 </ul>
 
-<div class="note">
-  <strong>Tip:</strong> For SQLite in development, <code>migrate:fresh</code> is the fastest way to reset your database. It drops everything and replays all migrations, which is much faster than rolling back one by one.
-</div>
+<p>For SQLite in development, <code>migrate:fresh</code> is the fastest way to reset your database &mdash; it drops everything and replays all migrations, which is much faster than rolling back one by one.</p>
 `
 }
