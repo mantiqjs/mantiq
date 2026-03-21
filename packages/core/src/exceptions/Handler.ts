@@ -54,10 +54,7 @@ export class DefaultExceptionHandler implements ExceptionHandler {
       return MantiqResponse.redirect((err as any).redirectTo)
     }
 
-    if (debug) {
-      return MantiqResponse.html(renderDevErrorPage(request, err), err.statusCode)
-    }
-
+    // API routes always get JSON — even in debug mode
     if (request.expectsJson()) {
       const body: Record<string, any> = {
         error: { message: err.message, status: err.statusCode },
@@ -65,7 +62,14 @@ export class DefaultExceptionHandler implements ExceptionHandler {
       if (err instanceof ValidationError) {
         body['error']['errors'] = err.errors
       }
+      if (debug && err.stack) {
+        body['error']['trace'] = err.stack.split('\n').map((l: string) => l.trim())
+      }
       return MantiqResponse.json(body, err.statusCode, err.headers)
+    }
+
+    if (debug) {
+      return MantiqResponse.html(renderDevErrorPage(request, err), err.statusCode)
     }
 
     return MantiqResponse.html(
@@ -79,15 +83,18 @@ export class DefaultExceptionHandler implements ExceptionHandler {
     err: Error,
     debug: boolean,
   ): Response {
-    if (debug) {
-      return MantiqResponse.html(renderDevErrorPage(request, err), 500)
+    // API routes always get JSON — even in debug mode
+    if (request.expectsJson()) {
+      const body: Record<string, any> = { error: { message: 'Internal Server Error', status: 500 } }
+      if (debug && err.stack) {
+        body['error']['message'] = err.message
+        body['error']['trace'] = err.stack.split('\n').map((l: string) => l.trim())
+      }
+      return MantiqResponse.json(body, 500)
     }
 
-    if (request.expectsJson()) {
-      return MantiqResponse.json(
-        { error: { message: 'Internal Server Error', status: 500 } },
-        500,
-      )
+    if (debug) {
+      return MantiqResponse.html(renderDevErrorPage(request, err), 500)
     }
 
     return MantiqResponse.html(this.genericHtmlPage(500, 'Internal Server Error'), 500)

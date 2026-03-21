@@ -133,6 +133,8 @@ export class MantiqRequest implements MantiqRequestContract {
   }
 
   expectsJson(): boolean {
+    // Routes under /api/ always expect JSON responses
+    if (this.path().startsWith('/api/') || this.path() === '/api') return true
     const accept = this.header('accept') ?? ''
     return accept.includes('application/json') || accept.includes('text/json')
   }
