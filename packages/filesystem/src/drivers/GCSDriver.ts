@@ -5,12 +5,12 @@ import { guessMimeType } from '../helpers/mime.ts'
 
 export interface GCSConfig {
   bucket: string
-  projectId?: string
-  keyFilename?: string
-  credentials?: Record<string, any>
-  root?: string
-  url?: string
-  visibility?: 'public' | 'private'
+  projectId?: string | undefined
+  keyFilename?: string | undefined
+  credentials?: Record<string, any> | undefined
+  root?: string | undefined
+  url?: string | undefined
+  visibility?: 'public' | 'private' | undefined
 }
 
 /**

@@ -3,7 +3,7 @@ import type { MailAddress } from './contracts/MailConfig.ts'
 export interface Attachment {
   filename: string
   content: Uint8Array | string
-  contentType?: string
+  contentType?: string | undefined
 }
 
 export class Message {

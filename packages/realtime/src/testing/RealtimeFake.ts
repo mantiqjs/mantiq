@@ -24,7 +24,7 @@ interface BroadcastRecord {
 
 interface SubscriptionRecord {
   channel: string
-  userId?: string | number
+  userId?: string | number | undefined
 }
 
 export class RealtimeFake {

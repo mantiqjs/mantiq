@@ -9,7 +9,7 @@ export interface IMessageConfig {
 }
 
 export interface IMessagePayload {
-  to?: string
+  to?: string | undefined
   text: string
   interactiveData?: any
 }

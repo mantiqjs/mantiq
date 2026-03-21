@@ -4,7 +4,7 @@ import type { HeartbeatStore } from '../../storage/HeartbeatStore.ts'
 import type { MailEntryContent } from '../../contracts/Entry.ts'
 
 export async function renderMailPage(store: HeartbeatStore, basePath: string): Promise<string> {
-  const entries = await store.getEntries('mail', 50)
+  const entries = await store.getEntries({ type: 'mail', limit: 50 })
 
   const rows = entries.map((e) => {
     let c: MailEntryContent

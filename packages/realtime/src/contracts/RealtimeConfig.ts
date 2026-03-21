@@ -41,7 +41,7 @@ export interface RealtimeConfig {
   redis: {
     host: string
     port: number
-    password?: string
+    password?: string | undefined
     prefix: string
   }
 }

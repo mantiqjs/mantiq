@@ -1,7 +1,7 @@
 export interface TemplateContext {
   name: string
   appKey: string
-  kit?: 'react' | 'vue' | 'svelte'
+  kit?: 'react' | 'vue' | 'svelte' | undefined
   ui?: 'shadcn' | 'none'
 }
 

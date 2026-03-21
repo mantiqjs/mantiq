@@ -4,24 +4,24 @@ import type { Notification } from '../Notification.ts'
 import { NotifyError } from '../errors/NotifyError.ts'
 
 export interface DiscordEmbed {
-  title?: string
-  description?: string
-  url?: string
-  color?: number
-  fields?: Array<{ name: string; value: string; inline?: boolean }>
-  footer?: { text: string; icon_url?: string }
-  thumbnail?: { url: string }
-  image?: { url: string }
-  author?: { name: string; url?: string; icon_url?: string }
-  timestamp?: string
+  title?: string | undefined
+  description?: string | undefined
+  url?: string | undefined
+  color?: number | undefined
+  fields?: Array<{ name: string; value: string; inline?: boolean | undefined }> | undefined
+  footer?: { text: string; icon_url?: string | undefined } | undefined
+  thumbnail?: { url: string } | undefined
+  image?: { url: string } | undefined
+  author?: { name: string; url?: string | undefined; icon_url?: string | undefined } | undefined
+  timestamp?: string | undefined
 }
 
 export interface DiscordPayload {
   webhookUrl: string
-  content?: string
-  embeds?: DiscordEmbed[]
-  username?: string
-  avatarUrl?: string
+  content?: string | undefined
+  embeds?: DiscordEmbed[] | undefined
+  username?: string | undefined
+  avatarUrl?: string | undefined
 }
 
 /**

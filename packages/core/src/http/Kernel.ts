@@ -2,6 +2,7 @@ import type { Container, Constructor } from '../contracts/Container.ts'
 import type { ExceptionHandler } from '../contracts/ExceptionHandler.ts'
 import type { Middleware } from '../contracts/Middleware.ts'
 import type { Router, RouteMatch } from '../contracts/Router.ts'
+import type { MantiqRequest as MantiqRequestContract } from '../contracts/Request.ts'
 import { MantiqRequest } from './Request.ts'
 import { MantiqResponse } from './Response.ts'
 import { Pipeline } from '../middleware/Pipeline.ts'
@@ -90,7 +91,7 @@ export class HttpKernel {
   /**
    * Main entry point. Passed to Bun.serve() as the fetch handler.
    */
-  async handle(bunRequest: Request, server: Server): Promise<Response> {
+  async handle(bunRequest: Request, server: Bun.Server<any>): Promise<Response> {
     // WebSocket upgrade
     if (bunRequest.headers.get('upgrade')?.toLowerCase() === 'websocket') {
       return this.wsKernel.handleUpgrade(bunRequest, server)
@@ -145,7 +146,7 @@ export class HttpKernel {
           port,
           hostname,
           fetch: (req, server) => this.handle(req, server),
-          websocket: this.wsKernel.getBunHandlers(),
+          websocket: this.wsKernel.getBunHandlers() as Bun.WebSocketHandler<any>,
         })
 
         const display = hostname === '0.0.0.0' ? 'localhost' : hostname
@@ -172,7 +173,7 @@ export class HttpKernel {
    * Call the route action (controller method or closure).
    * Converts the return value to a Response.
    */
-  private async callAction(match: RouteMatch, request: MantiqRequest): Promise<Response> {
+  private async callAction(match: RouteMatch, request: MantiqRequestContract): Promise<Response> {
     const action = match.action
 
     let result: any

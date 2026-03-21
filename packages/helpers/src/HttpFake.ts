@@ -169,8 +169,8 @@ export class HttpFake {
    */
   install(): this {
     this.originalFetch = globalThis.fetch
-    globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-      const request = input instanceof Request ? input : new Request(input, init)
+    const fakeFetch = async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      const request = input instanceof Request ? input : (init ? new Request(input as string, init) : new Request(input as string))
       await this.recordRequest(request)
       const stub = this.findStub(request)
 
@@ -184,6 +184,7 @@ export class HttpFake {
 
       return this.originalFetch!(input, init)
     }
+    globalThis.fetch = fakeFetch as typeof fetch
     return this
   }
 

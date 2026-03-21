@@ -6,16 +6,16 @@ export class ColumnDefinition {
   private _index = false
   private _unsigned = false
   private _primary = false
-  private _references: { table: string; column: string; onDelete?: string; onUpdate?: string } | null = null
+  private _references: { table: string; column: string; onDelete?: string | undefined; onUpdate?: string | undefined } | null = null
   private _comment: string | null = null
   private _after: string | null = null
 
   constructor(
     public readonly name: string,
     public readonly type: string,
-    public readonly length?: number,
-    public readonly precision?: number,
-    public readonly scale?: number,
+    public readonly length?: number | undefined,
+    public readonly precision?: number | undefined,
+    public readonly scale?: number | undefined,
   ) {}
 
   nullable(): this {
@@ -49,7 +49,7 @@ export class ColumnDefinition {
     return this
   }
 
-  references(column: string): this & { on(table: string): this } {
+  references(column: string): ColumnDefinition & { on(table: string): ColumnDefinition } {
     this._references = { table: '', column }
     const self = this as any
     self.on = (table: string) => {

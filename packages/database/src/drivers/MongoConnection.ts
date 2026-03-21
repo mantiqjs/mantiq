@@ -21,7 +21,7 @@ import { DriverNotSupportedError } from '../errors/DriverNotSupportedError.ts'
 export interface MongoConfig {
   uri: string
   database: string
-  options?: Record<string, any>
+  options?: Record<string, any> | undefined
 }
 
 // ── Operator translation map ──────────────────────────────────────────────────
@@ -50,7 +50,8 @@ export class MongoConnection implements DatabaseConnection {
   private async getDb(): Promise<any> {
     if (!this.db) {
       try {
-        const { MongoClient } = await import('mongodb')
+        const mongoModule = 'mongodb'
+        const { MongoClient } = await import(/* webpackIgnore: true */ mongoModule)
         this.client = new MongoClient(this.config.uri, this.config.options ?? {})
         await this.client.connect()
         this.db = this.client.db(this.config.database)
@@ -249,10 +250,10 @@ export class MongoConnection implements DatabaseConnection {
     // Final group
     if (orGroups.length > 0) {
       orGroups.push(currentAnd)
-      return { $or: orGroups.map((group) => group.length === 1 ? group[0] : { $and: group }) }
+      return { $or: orGroups.map((group) => group.length === 1 ? group[0]! : { $and: group }) }
     }
 
-    if (currentAnd.length === 1) return currentAnd[0]
+    if (currentAnd.length === 1) return currentAnd[0]!
     return { $and: currentAnd }
   }
 
@@ -405,7 +406,8 @@ class LazyMongoCollection implements MongoCollectionContract {
   }
 
   async findById(id: any): Promise<Record<string, any> | null> {
-    const { ObjectId } = await import('mongodb')
+    const mongoModule = 'mongodb'
+    const { ObjectId } = await import(/* webpackIgnore: true */ mongoModule)
     return (await this.col()).findOne({ _id: typeof id === 'string' ? new ObjectId(id) : id })
   }
 

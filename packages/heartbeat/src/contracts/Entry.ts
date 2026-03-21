@@ -19,7 +19,7 @@ export type EntryType =
 export interface PendingEntry {
   type: EntryType
   content: Record<string, any>
-  tags?: string[]
+  tags?: string[] | undefined
   requestId: string | null
   createdAt: number
 }

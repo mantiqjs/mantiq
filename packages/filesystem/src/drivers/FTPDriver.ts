@@ -6,14 +6,14 @@ import { guessMimeType } from '../helpers/mime.ts'
 
 export interface FTPConfig {
   host: string
-  port?: number
-  username?: string
-  password?: string
-  secure?: boolean | 'implicit'
-  root?: string
-  url?: string
-  visibility?: 'public' | 'private'
-  timeout?: number
+  port?: number | undefined
+  username?: string | undefined
+  password?: string | undefined
+  secure?: boolean | 'implicit' | undefined
+  root?: string | undefined
+  url?: string | undefined
+  visibility?: 'public' | 'private' | undefined
+  timeout?: number | undefined
 }
 
 /**

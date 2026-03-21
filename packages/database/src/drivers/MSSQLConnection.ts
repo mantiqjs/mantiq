@@ -31,7 +31,8 @@ export class MSSQLConnection extends BaseSQLConnection {
   private async getPool(): Promise<any> {
     if (!this.pool) {
       try {
-        const mssql = await import('mssql')
+        const mssqlModule = 'mssql'
+        const mssql: any = await import(mssqlModule)
         const sql = mssql.default ?? mssql
         this.pool = await sql.connect({
           server: this.config.host ?? 'localhost',
@@ -97,7 +98,8 @@ export class MSSQLConnection extends BaseSQLConnection {
 
   async transaction<T>(callback: (connection: DatabaseConnection) => Promise<T>): Promise<T> {
     const pool = await this.getPool()
-    const mssql = await import('mssql')
+    const mssqlModule = 'mssql'
+    const mssql: any = await import(mssqlModule)
     const sql = mssql.default ?? mssql
     const transaction = new sql.Transaction(pool)
     await transaction.begin()

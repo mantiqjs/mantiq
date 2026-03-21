@@ -1,7 +1,7 @@
 import type { MantiqRequest } from '../contracts/Request.ts'
 
 export interface WebSocketContext {
-  userId?: string | number
+  userId?: string | number | undefined
   channels: Set<string>
   metadata: Record<string, any>
 }

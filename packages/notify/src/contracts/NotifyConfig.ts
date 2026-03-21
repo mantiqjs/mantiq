@@ -1,12 +1,12 @@
 export interface SmsConfig {
   driver: 'twilio' | 'vonage'
-  twilio?: { sid: string; token: string; from: string }
-  vonage?: { apiKey: string; apiSecret: string; from: string }
+  twilio?: { sid: string; token: string; from: string } | undefined
+  vonage?: { apiKey: string; apiSecret: string; from: string } | undefined
 }
 
 export interface SlackConfig {
-  webhookUrl?: string
-  token?: string
+  webhookUrl?: string | undefined
+  token?: string | undefined
 }
 
 export interface TelegramConfig {
@@ -30,20 +30,20 @@ export interface RcsConfig {
 
 export interface FirebaseConfig {
   projectId: string
-  accessToken?: string
-  serviceAccountKey?: string
+  accessToken?: string | undefined
+  serviceAccountKey?: string | undefined
 }
 
 export interface NotifyConfig {
   channels?: {
-    sms?: SmsConfig
-    slack?: SlackConfig
-    telegram?: TelegramConfig
-    whatsapp?: WhatsAppConfig
-    imessage?: IMessageConfig
-    rcs?: RcsConfig
-    firebase?: FirebaseConfig
-  }
+    sms?: SmsConfig | undefined
+    slack?: SlackConfig | undefined
+    telegram?: TelegramConfig | undefined
+    whatsapp?: WhatsAppConfig | undefined
+    imessage?: IMessageConfig | undefined
+    rcs?: RcsConfig | undefined
+    firebase?: FirebaseConfig | undefined
+  } | undefined
 }
 
 export const DEFAULT_CONFIG: NotifyConfig = {

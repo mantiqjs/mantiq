@@ -14,7 +14,7 @@ export class FilesystemServiceProvider extends ServiceProvider {
   override register(): void {
     this.app.singleton(FilesystemManager, (c) => {
       const config = c.make(ConfigRepository).get<FilesystemConfig>('filesystem', DEFAULT_CONFIG)
-      const app = c.make(Application)
+      const app = c.make(Application as any) as Application
 
       // Normalize relative root paths to absolute using the app base path
       for (const disk of Object.values(config.disks)) {

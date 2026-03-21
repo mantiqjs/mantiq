@@ -3,6 +3,7 @@ import type { Constructor } from '@mantiq/core'
 export interface GuardConfig {
   driver: string    // 'session' | custom driver name
   provider: string  // Name referencing a provider in config.providers
+  trackLastUsed?: boolean | undefined
 }
 
 export interface ProviderConfig {

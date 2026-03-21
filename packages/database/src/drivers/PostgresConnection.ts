@@ -8,13 +8,13 @@ import { ConnectionError } from '../errors/ConnectionError.ts'
 import { QueryError } from '../errors/QueryError.ts'
 
 export interface PostgresConfig {
-  host?: string
-  port?: number
+  host?: string | undefined
+  port?: number | undefined
   database: string
-  user?: string
-  password?: string
-  ssl?: boolean
-  pool?: { min?: number; max?: number }
+  user?: string | undefined
+  password?: string | undefined
+  ssl?: boolean | undefined
+  pool?: { min?: number | undefined; max?: number | undefined } | undefined
 }
 
 export class PostgresConnection extends BaseSQLConnection {

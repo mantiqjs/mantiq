@@ -26,7 +26,7 @@ export class CacheWatcher extends Watcher {
       duration: null,
     }
 
-    const tags = [operation]
+    const tags: string[] = [operation]
     if (operation === 'miss') tags.push('cache-miss')
 
     this.record('cache', content, tags)

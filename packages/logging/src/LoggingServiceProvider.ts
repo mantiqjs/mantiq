@@ -1,4 +1,4 @@
-import { ServiceProvider, ConfigRepository } from '@mantiq/core'
+import { ServiceProvider, ConfigRepository, Application } from '@mantiq/core'
 import type { LogConfig } from './contracts/Logger.ts'
 import { LogManager } from './LogManager.ts'
 import { LOGGING_MANAGER } from './helpers/log.ts'
@@ -37,7 +37,7 @@ export class LoggingServiceProvider extends ServiceProvider {
       const config = c.make(ConfigRepository).get<LogConfig>('logging', DEFAULT_CONFIG)
 
       // Resolve relative log paths to absolute from app base path
-      const basePath = this.app.basePath_()
+      const basePath = (this.app.make(Application as any) as Application).basePath_()
       if (config.channels) {
         for (const ch of Object.values(config.channels)) {
           if (typeof ch.path === 'string' && !ch.path.startsWith('/')) {

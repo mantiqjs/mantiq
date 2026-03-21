@@ -4,8 +4,8 @@ export interface OAuthTokenResponse {
   token_type: 'Bearer'
   expires_in: number
   access_token: string
-  refresh_token?: string
-  scope?: string
+  refresh_token?: string | undefined
+  scope?: string | undefined
 }
 
 export interface GrantHandler {

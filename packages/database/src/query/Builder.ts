@@ -9,15 +9,15 @@ export type Operator = '=' | '!=' | '<>' | '<' | '>' | '<=' | '>=' | 'like' | 'n
 export interface WhereClause {
   type: 'basic' | 'in' | 'notIn' | 'null' | 'notNull' | 'between' | 'raw' | 'nested' | 'column'
   boolean: 'and' | 'or'
-  column?: string
-  operator?: string
+  column?: string | undefined
+  operator?: string | undefined
   value?: any
-  values?: any[]
-  range?: [any, any]
-  sql?: string
-  bindings?: any[]
-  nested?: WhereClause[]
-  secondColumn?: string
+  values?: any[] | undefined
+  range?: [any, any] | undefined
+  sql?: string | undefined
+  bindings?: any[] | undefined
+  nested?: WhereClause[] | undefined
+  secondColumn?: string | undefined
 }
 
 export interface JoinClause {
