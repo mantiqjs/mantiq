@@ -158,12 +158,17 @@ jobs:
           # Start the server in background
           timeout 15 bun run dev &
           sleep 5
-          # Check if it responds
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/ || curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/ || echo "000")
-          echo "HTTP response: $HTTP_CODE"
-          # Kill background processes
+          # Determine port
+          PORT=3000
+          curl -s -o /dev/null http://localhost:3000/ 2>/dev/null || PORT=3001
+          # Check root
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:$PORT/ || echo "000")
+          echo "Root HTTP: $HTTP_CODE"
+          # Check /api/ping
+          PING_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:$PORT/api/ping || echo "000")
+          echo "Ping HTTP: $PING_CODE"
+          # Kill background
           kill %1 2>/dev/null || true
-          # Verify we got a response
           if [ "$HTTP_CODE" = "000" ]; then
             echo "Server failed to start"
             exit 1
