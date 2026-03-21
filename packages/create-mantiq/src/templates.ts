@@ -108,7 +108,7 @@ storage/heartbeat/
 
     // ── Entry points ────────────────────────────────────────────────────────
 
-    'index.ts': `import { Application, CoreServiceProvider, HttpKernel, RouterImpl, CorsMiddleware, StartSession, EncryptCookies, VerifyCsrfToken, RateLimiter, ThrottleRequests } from '@mantiq/core'
+    'index.ts': `import { Application, CoreServiceProvider, HttpKernel, RouterImpl, CorsMiddleware, StartSession, EncryptCookies, VerifyCsrfToken } from '@mantiq/core'
 import { AuthServiceProvider, Authenticate, RedirectIfAuthenticated, CheckAbilities, CheckForAnyAbility } from '@mantiq/auth'
 import { FilesystemServiceProvider } from '@mantiq/filesystem'
 import { LoggingServiceProvider } from '@mantiq/logging'
@@ -171,7 +171,6 @@ kernel.registerMiddleware('guest', RedirectIfAuthenticated)
 kernel.registerMiddleware('heartbeat', HeartbeatMiddleware)
 kernel.registerMiddleware('abilities', CheckAbilities)
 kernel.registerMiddleware('ability', CheckForAnyAbility)
-kernel.registerMiddleware('throttle', new ThrottleRequests(new RateLimiter()))
 
 // Global middleware
 kernel.setGlobalMiddleware(['cors', 'encrypt.cookies', 'session', 'heartbeat'])
@@ -890,7 +889,7 @@ bootstrap/
 `
 
   // ── index.ts ────────────────────────────────────────────────────────────
-  templates['index.ts'] = `import { Application, CoreServiceProvider, HttpKernel, RouterImpl, CorsMiddleware, StartSession, EncryptCookies, VerifyCsrfToken, RateLimiter, ThrottleRequests } from '@mantiq/core'
+  templates['index.ts'] = `import { Application, CoreServiceProvider, HttpKernel, RouterImpl, CorsMiddleware, StartSession, EncryptCookies, VerifyCsrfToken } from '@mantiq/core'
 import { ViteServiceProvider, ServeStaticFiles } from '@mantiq/vite'
 import { AuthServiceProvider, Authenticate, RedirectIfAuthenticated, CheckAbilities, CheckForAnyAbility } from '@mantiq/auth'
 import { FilesystemServiceProvider } from '@mantiq/filesystem'
@@ -966,7 +965,6 @@ kernel.registerMiddleware('guest', RedirectIfAuthenticated)
 kernel.registerMiddleware('heartbeat', HeartbeatMiddleware)
 kernel.registerMiddleware('abilities', CheckAbilities)
 kernel.registerMiddleware('ability', CheckForAnyAbility)
-kernel.registerMiddleware('throttle', new ThrottleRequests(new RateLimiter()))
 
 // Global middleware
 kernel.setGlobalMiddleware(['static', 'cors', 'encrypt.cookies', 'session', 'heartbeat'])

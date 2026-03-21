@@ -1,6 +1,17 @@
 import type { MantiqRequest } from '../contracts/Request.ts'
 import { HttpError } from '../errors/HttpError.ts'
-import type { RateLimiter, RateLimitConfig } from './RateLimiter.ts'
+import { RateLimiter } from './RateLimiter.ts'
+import type { RateLimitConfig } from './RateLimiter.ts'
+
+/** Shared default RateLimiter instance. */
+let _defaultLimiter: RateLimiter | null = null
+export function getDefaultRateLimiter(): RateLimiter {
+  if (!_defaultLimiter) _defaultLimiter = new RateLimiter()
+  return _defaultLimiter
+}
+export function setDefaultRateLimiter(limiter: RateLimiter): void {
+  _defaultLimiter = limiter
+}
 
 /**
  * Middleware that throttles requests using the RateLimiter.
@@ -19,8 +30,15 @@ import type { RateLimiter, RateLimitConfig } from './RateLimiter.ts'
  */
 export class ThrottleRequests {
   private params: string[] = []
+  private rateLimiter: RateLimiter = getDefaultRateLimiter()
 
-  constructor(private readonly rateLimiter: RateLimiter) {}
+  constructor() {}
+
+  /** Use a custom RateLimiter instead of the default shared instance. */
+  useRateLimiter(limiter: RateLimiter): this {
+    this.rateLimiter = limiter
+    return this
+  }
 
   setParameters(...params: string[]): void {
     this.params = params

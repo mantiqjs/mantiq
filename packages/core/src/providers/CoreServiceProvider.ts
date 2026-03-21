@@ -9,6 +9,7 @@ import { TrimStringsMiddleware } from '../middleware/TrimStrings.ts'
 import { StartSession } from '../middleware/StartSession.ts'
 import { EncryptCookies } from '../middleware/EncryptCookies.ts'
 import { VerifyCsrfToken } from '../middleware/VerifyCsrfToken.ts'
+import { ThrottleRequests } from '../rateLimit/ThrottleRequests.ts'
 import { ROUTER } from '../helpers/route.ts'
 import { ENCRYPTER } from '../helpers/encrypt.ts'
 import { AesEncrypter } from '../encryption/Encrypter.ts'
@@ -77,6 +78,9 @@ export class CoreServiceProvider extends ServiceProvider {
     this.app.bind(EncryptCookies, (c) => new EncryptCookies(c.make<AesEncrypter>(ENCRYPTER)))
     this.app.bind(VerifyCsrfToken, (c) => new VerifyCsrfToken(c.make<AesEncrypter>(ENCRYPTER)))
 
+    // Rate limiting — zero-config, uses shared in-memory store
+    this.app.singleton(ThrottleRequests, () => new ThrottleRequests())
+
     // HTTP kernel — singleton, depends on Router + ExceptionHandler + WsKernel
     this.app.singleton(HttpKernel, (c) => {
       const router = c.make(RouterImpl)
@@ -93,5 +97,9 @@ export class CoreServiceProvider extends ServiceProvider {
       const encrypter = await AesEncrypter.fromAppKey(appKey)
       this.app.instance(ENCRYPTER, encrypter)
     }
+
+    // ── Auto-register middleware aliases on HttpKernel ─────────────────────
+    const kernel = this.app.make(HttpKernel)
+    kernel.registerMiddleware('throttle', ThrottleRequests)
   }
 }

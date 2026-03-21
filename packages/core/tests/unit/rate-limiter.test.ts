@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from 'bun:test'
 import { RateLimiter, MemoryStore } from '../../src/rateLimit/RateLimiter.ts'
-import { ThrottleRequests } from '../../src/rateLimit/ThrottleRequests.ts'
+import { ThrottleRequests, setDefaultRateLimiter } from '../../src/rateLimit/ThrottleRequests.ts'
 
 // ── Mock request ─────────────────────────────────────────────────────────────
 
@@ -121,7 +121,8 @@ describe('ThrottleRequests', () => {
 
   beforeEach(() => {
     limiter = new RateLimiter()
-    middleware = new ThrottleRequests(limiter)
+    setDefaultRateLimiter(limiter)
+    middleware = new ThrottleRequests()
   })
 
   const successResponse = async () => new Response('OK', { status: 200 })
