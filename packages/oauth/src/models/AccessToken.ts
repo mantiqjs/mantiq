@@ -4,7 +4,9 @@ export class AccessToken extends Model {
   static override table = 'oauth_access_tokens'
   static override keyType = 'string' as const
   static override incrementing = false
+  static override guarded = [] as string[]
   static override fillable = [
+    'id',
     'user_id',
     'client_id',
     'name',

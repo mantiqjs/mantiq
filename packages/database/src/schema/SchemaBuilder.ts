@@ -210,9 +210,12 @@ export class SchemaBuilderImpl implements SchemaBuilder {
 
     let def = `${this.quoteCol(col.name)} ${typeSql}`
 
+    const isIntegerType = ['integer', 'bigInteger', 'tinyInteger', 'smallInteger', 'mediumInteger'].includes(col.type)
     if (isAutoIncrement || col.isPrimary()) {
-      if (driver === 'sqlite') {
+      if (driver === 'sqlite' && (isAutoIncrement || isIntegerType)) {
         def += ' PRIMARY KEY AUTOINCREMENT'
+      } else if (driver === 'sqlite') {
+        def += ' PRIMARY KEY'
       } else if (driver === 'postgres') {
         // SERIAL/BIGSERIAL already implies sequence; just mark PRIMARY KEY
         def += ' PRIMARY KEY'

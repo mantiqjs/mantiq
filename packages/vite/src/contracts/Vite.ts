@@ -19,8 +19,8 @@ export interface ViteConfig {
     /** SSR entry module path (e.g. 'src/ssr.tsx') */
     entry: string
     /** Production SSR bundle path. Default: 'bootstrap/ssr/ssr.js' */
-    bundle?: string
-  }
+    bundle?: string | undefined
+  } | undefined
 }
 
 /** A single chunk entry in the Vite 5+ manifest. */
@@ -67,12 +67,12 @@ export interface PageOptions {
 /** Result returned by an SSR module's render() function. */
 export interface SSRResult {
   html: string
-  head?: string
+  head?: string | undefined
 }
 
 /** The SSR module must export a render() function matching this shape. */
 export interface SSRModule {
-  render(url: string, data?: Record<string, unknown>): Promise<SSRResult> | SSRResult
+  render(url: string, data?: Record<string, unknown> | undefined): Promise<SSRResult> | SSRResult
 }
 
 /** Options passed to `vite.render()` for universal (Inertia-like) page responses. */
