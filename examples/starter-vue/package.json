@@ -7,10 +7,9 @@
     "dev": "bun run --watch index.ts",
     "start": "bun run index.ts",
     "mantiq": "bun run mantiq.ts",
-    "dev:frontend": "vite",
-    "build:frontend": "vite build && vite build --ssr src/ssr.ts --outDir bootstrap/ssr",
     "postinstall": "rm -rf node_modules/@mantiq/*/node_modules/@mantiq 2>/dev/null; true",
-    "setup": "bun install && bun mantiq migrate && bun mantiq seed && bun run build:frontend"
+    "setup": "bun install && bun mantiq migrate && bun mantiq seed && bun run build",
+    "build": "vite build && vite build --ssr src/ssr.ts --outDir bootstrap/ssr"
   },
   "dependencies": {
     "@mantiq/auth": "^0.1.2",
