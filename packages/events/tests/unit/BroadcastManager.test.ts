@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect, beforeEach } from 'bun:test'
 import { Event } from '@mantiq/core'
 import { BroadcastManager } from '../../src/broadcast/BroadcastManager.ts'

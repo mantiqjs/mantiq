@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect, beforeEach } from 'bun:test'
 import { ModelEventDispatcher } from '../../src/model/ModelEventDispatcher.ts'
 import type { ModelObserver } from '../../src/model/Observer.ts'

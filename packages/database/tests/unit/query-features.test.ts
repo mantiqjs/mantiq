@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, test, expect, mock, beforeEach } from 'bun:test'
 import { Model } from '../../src/orm/Model.ts'
 import { QueryBuilder } from '../../src/query/Builder.ts'

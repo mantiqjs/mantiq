@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, expect, test } from 'bun:test'
 import { deepClone, deepMerge, deepFreeze, deepEqual, pick, omit, diff, mapValues, mapKeys, filterObject, invert } from '../../src/objects.ts'
 

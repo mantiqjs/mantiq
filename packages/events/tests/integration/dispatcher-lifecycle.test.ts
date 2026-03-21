@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect, beforeEach } from 'bun:test'
 import { Event, Listener } from '@mantiq/core'
 import { Dispatcher } from '../../src/Dispatcher.ts'

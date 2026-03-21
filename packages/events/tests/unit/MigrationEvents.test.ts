@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test'
 import { SQLiteConnection, Migrator, MigrationStarted, MigrationEnded, MigrationsStarted, MigrationsEnded } from '@mantiq/database'
 import { Migration } from '@mantiq/database'

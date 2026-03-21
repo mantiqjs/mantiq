@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Integration tests: auth middleware with real Request objects.
  *

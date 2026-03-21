@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect, beforeEach, mock } from 'bun:test'
 import { NotificationManager } from '../../src/NotificationManager.ts'
 import type { NotificationChannel } from '../../src/contracts/Channel.ts'

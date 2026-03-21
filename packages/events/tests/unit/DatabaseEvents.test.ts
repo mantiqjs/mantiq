@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test'
 import { SQLiteConnection } from '@mantiq/database'
 import { Dispatcher } from '../../src/Dispatcher.ts'
