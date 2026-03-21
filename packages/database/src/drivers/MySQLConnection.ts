@@ -1,5 +1,6 @@
 import type { DatabaseConnection } from '../contracts/Connection.ts'
 import type { SchemaBuilder } from '../schema/SchemaBuilder.ts'
+import { BaseSQLConnection } from './BaseSQLConnection.ts'
 import { QueryBuilder } from '../query/Builder.ts'
 import { MySQLGrammar } from './MySQLGrammar.ts'
 import { SchemaBuilderImpl } from '../schema/SchemaBuilder.ts'
@@ -15,12 +16,13 @@ export interface MySQLConfig {
   pool?: { min?: number; max?: number }
 }
 
-export class MySQLConnection implements DatabaseConnection {
+export class MySQLConnection extends BaseSQLConnection {
   readonly _grammar = new MySQLGrammar()
   private pool: any = null
   private config: MySQLConfig
 
   constructor(config: MySQLConfig) {
+    super()
     this.config = config
   }
 
@@ -79,18 +81,18 @@ export class MySQLConnection implements DatabaseConnection {
     const conn = await pool.getConnection()
     try {
       await conn.beginTransaction()
-      const txConn: DatabaseConnection = {
-        select: async (sql, b) => { const [rows] = await conn.query(sql, b); return rows as Record<string, any>[] },
-        statement: async (sql, b) => { const [r] = await conn.query(sql, b); return (r as any).affectedRows ?? 0 },
-        insertGetId: async (sql, b) => { const [r] = await conn.query(sql, b); return (r as any).insertId ?? 0 },
-        transaction: (cb) => cb(txConn),
-        table: (name) => new QueryBuilder(txConn, name),
+      const txConn: any = {
+        _grammar: this._grammar,
+        select: async (sql: string, b?: any[]) => { const [rows] = await conn.query(sql, b); return rows as Record<string, any>[] },
+        statement: async (sql: string, b?: any[]) => { const [r] = await conn.query(sql, b); return (r as any).affectedRows ?? 0 },
+        insertGetId: async (sql: string, b?: any[]) => { const [r] = await conn.query(sql, b); return (r as any).insertId ?? 0 },
+        transaction: (cb: any) => cb(txConn),
+        table: (name: string) => new QueryBuilder(txConn, name),
         schema: () => new SchemaBuilderImpl(txConn),
         getDriverName: () => 'mysql',
         getTablePrefix: () => '',
       }
-      // @ts-ignore — attach grammar
-      txConn._grammar = this._grammar
+      this.applyExecuteMethods(txConn)
       const result = await callback(txConn)
       await conn.commit()
       return result
@@ -102,19 +104,11 @@ export class MySQLConnection implements DatabaseConnection {
     }
   }
 
-  table(name: string): QueryBuilder {
-    return new QueryBuilder(this, name)
-  }
-
   schema(): SchemaBuilder {
     return new SchemaBuilderImpl(this)
   }
 
   getDriverName(): string {
     return 'mysql'
-  }
-
-  getTablePrefix(): string {
-    return ''
   }
 }

@@ -2,14 +2,16 @@ import { describe, test, expect, mock, beforeEach } from 'bun:test'
 import { Model } from '../../src/orm/Model.ts'
 import { QueryBuilder } from '../../src/query/Builder.ts'
 import { SQLiteGrammar } from '../../src/drivers/SQLiteGrammar.ts'
+import { Expression } from '../../src/query/Expression.ts'
 import type { DatabaseConnection } from '../../src/contracts/Connection.ts'
 
 // ── Mock connection ──────────────────────────────────────────────────────────
 
 function makeConn(rows: any[] = [], insertId = 1): DatabaseConnection {
+  const grammar = new SQLiteGrammar()
   const selectMock = mock(async () => rows)
   const conn: any = {
-    _grammar: new SQLiteGrammar(),
+    _grammar: grammar,
     select: selectMock,
     statement: mock(async () => 1),
     insertGetId: mock(async () => insertId),
@@ -18,6 +20,43 @@ function makeConn(rows: any[] = [], insertId = 1): DatabaseConnection {
     schema: () => { throw new Error() },
     getDriverName: () => 'sqlite',
     getTablePrefix: () => '',
+    // Universal executeXxx methods (delegate via Grammar)
+    executeSelect: async (state: any) => {
+      const { sql, bindings } = grammar.compileSelect(state)
+      return conn.select(sql, bindings)
+    },
+    executeInsert: async (table: string, data: any) => {
+      const { sql, bindings } = grammar.compileInsert(table, data)
+      return conn.statement(sql, bindings)
+    },
+    executeInsertGetId: async (table: string, data: any) => {
+      const { sql, bindings } = grammar.compileInsertGetId(table, data)
+      return conn.insertGetId(sql, bindings)
+    },
+    executeUpdate: async (table: string, state: any, data: any) => {
+      const { sql, bindings } = grammar.compileUpdate(table, state, data)
+      return conn.statement(sql, bindings)
+    },
+    executeDelete: async (table: string, state: any) => {
+      const { sql, bindings } = grammar.compileDelete(table, state)
+      return conn.statement(sql, bindings)
+    },
+    executeTruncate: async (table: string) => {
+      const sql = grammar.compileTruncate(table)
+      return conn.statement(sql, [])
+    },
+    executeAggregate: async (state: any, fn: string, column: string) => {
+      const aggState = { ...state, columns: [new Expression(`${fn.toUpperCase()}(${column}) as aggregate`)], orders: [] }
+      const { sql, bindings } = grammar.compileSelect(aggState)
+      const r = await conn.select(sql, bindings)
+      return Number(r[0]?.['aggregate'] ?? 0)
+    },
+    executeExists: async (state: any) => {
+      const existsState = { ...state, columns: [new Expression('1 as exists_check')], limitValue: 1, orders: [] }
+      const { sql, bindings } = grammar.compileSelect(existsState)
+      const r = await conn.select(sql, bindings)
+      return r.length > 0
+    },
   }
   return conn
 }
@@ -179,6 +218,7 @@ describe('ModelQueryBuilder.chunk', () => {
       { id: 3, name: 'C' },
     ]
 
+    const grammar = new SQLiteGrammar()
     const selectMock = mock(async () => {
       callCount++
       if (callCount === 1) return [allRows[0], allRows[1]]
@@ -186,7 +226,7 @@ describe('ModelQueryBuilder.chunk', () => {
       return []
     })
     const conn: any = {
-      _grammar: new SQLiteGrammar(),
+      _grammar: grammar,
       select: selectMock,
       statement: mock(async () => 1),
       insertGetId: mock(async () => 1),
@@ -195,6 +235,42 @@ describe('ModelQueryBuilder.chunk', () => {
       schema: () => { throw new Error() },
       getDriverName: () => 'sqlite',
       getTablePrefix: () => '',
+      executeSelect: async (state: any) => {
+        const { sql, bindings } = grammar.compileSelect(state)
+        return conn.select(sql, bindings)
+      },
+      executeInsert: async (table: string, data: any) => {
+        const { sql, bindings } = grammar.compileInsert(table, data)
+        return conn.statement(sql, bindings)
+      },
+      executeInsertGetId: async (table: string, data: any) => {
+        const { sql, bindings } = grammar.compileInsertGetId(table, data)
+        return conn.insertGetId(sql, bindings)
+      },
+      executeUpdate: async (table: string, state: any, data: any) => {
+        const { sql, bindings } = grammar.compileUpdate(table, state, data)
+        return conn.statement(sql, bindings)
+      },
+      executeDelete: async (table: string, state: any) => {
+        const { sql, bindings } = grammar.compileDelete(table, state)
+        return conn.statement(sql, bindings)
+      },
+      executeTruncate: async (table: string) => {
+        const sql = grammar.compileTruncate(table)
+        return conn.statement(sql, [])
+      },
+      executeAggregate: async (state: any, fn: string, column: string) => {
+        const aggState = { ...state, columns: [new Expression(`${fn.toUpperCase()}(${column}) as aggregate`)], orders: [] }
+        const { sql, bindings } = grammar.compileSelect(aggState)
+        const r = await conn.select(sql, bindings)
+        return Number(r[0]?.['aggregate'] ?? 0)
+      },
+      executeExists: async (state: any) => {
+        const existsState = { ...state, columns: [new Expression('1 as exists_check')], limitValue: 1, orders: [] }
+        const { sql, bindings } = grammar.compileSelect(existsState)
+        const r = await conn.select(sql, bindings)
+        return r.length > 0
+      },
     }
     User.setConnection(conn)
 
@@ -209,12 +285,13 @@ describe('ModelQueryBuilder.chunk', () => {
 
   test('stops when callback returns false', async () => {
     let callCount = 0
+    const grammar = new SQLiteGrammar()
     const selectMock = mock(async () => {
       callCount++
       return [{ id: callCount, name: `User ${callCount}` }]
     })
     const conn: any = {
-      _grammar: new SQLiteGrammar(),
+      _grammar: grammar,
       select: selectMock,
       statement: mock(async () => 1),
       insertGetId: mock(async () => 1),
@@ -223,6 +300,42 @@ describe('ModelQueryBuilder.chunk', () => {
       schema: () => { throw new Error() },
       getDriverName: () => 'sqlite',
       getTablePrefix: () => '',
+      executeSelect: async (state: any) => {
+        const { sql, bindings } = grammar.compileSelect(state)
+        return conn.select(sql, bindings)
+      },
+      executeInsert: async (table: string, data: any) => {
+        const { sql, bindings } = grammar.compileInsert(table, data)
+        return conn.statement(sql, bindings)
+      },
+      executeInsertGetId: async (table: string, data: any) => {
+        const { sql, bindings } = grammar.compileInsertGetId(table, data)
+        return conn.insertGetId(sql, bindings)
+      },
+      executeUpdate: async (table: string, state: any, data: any) => {
+        const { sql, bindings } = grammar.compileUpdate(table, state, data)
+        return conn.statement(sql, bindings)
+      },
+      executeDelete: async (table: string, state: any) => {
+        const { sql, bindings } = grammar.compileDelete(table, state)
+        return conn.statement(sql, bindings)
+      },
+      executeTruncate: async (table: string) => {
+        const sql = grammar.compileTruncate(table)
+        return conn.statement(sql, [])
+      },
+      executeAggregate: async (state: any, fn: string, column: string) => {
+        const aggState = { ...state, columns: [new Expression(`${fn.toUpperCase()}(${column}) as aggregate`)], orders: [] }
+        const { sql, bindings } = grammar.compileSelect(aggState)
+        const r = await conn.select(sql, bindings)
+        return Number(r[0]?.['aggregate'] ?? 0)
+      },
+      executeExists: async (state: any) => {
+        const existsState = { ...state, columns: [new Expression('1 as exists_check')], limitValue: 1, orders: [] }
+        const { sql, bindings } = grammar.compileSelect(existsState)
+        const r = await conn.select(sql, bindings)
+        return r.length > 0
+      },
     }
     User.setConnection(conn)
 
@@ -256,6 +369,7 @@ describe('ModelQueryBuilder.chunkById', () => {
 
   test('uses WHERE id > lastId pattern', async () => {
     let callCount = 0
+    const grammar = new SQLiteGrammar()
     const selectMock = mock(async () => {
       callCount++
       if (callCount === 1) return [{ id: 10, name: 'A' }, { id: 20, name: 'B' }]
@@ -263,7 +377,7 @@ describe('ModelQueryBuilder.chunkById', () => {
       return []
     })
     const conn: any = {
-      _grammar: new SQLiteGrammar(),
+      _grammar: grammar,
       select: selectMock,
       statement: mock(async () => 1),
       insertGetId: mock(async () => 1),
@@ -272,6 +386,42 @@ describe('ModelQueryBuilder.chunkById', () => {
       schema: () => { throw new Error() },
       getDriverName: () => 'sqlite',
       getTablePrefix: () => '',
+      executeSelect: async (state: any) => {
+        const { sql, bindings } = grammar.compileSelect(state)
+        return conn.select(sql, bindings)
+      },
+      executeInsert: async (table: string, data: any) => {
+        const { sql, bindings } = grammar.compileInsert(table, data)
+        return conn.statement(sql, bindings)
+      },
+      executeInsertGetId: async (table: string, data: any) => {
+        const { sql, bindings } = grammar.compileInsertGetId(table, data)
+        return conn.insertGetId(sql, bindings)
+      },
+      executeUpdate: async (table: string, state: any, data: any) => {
+        const { sql, bindings } = grammar.compileUpdate(table, state, data)
+        return conn.statement(sql, bindings)
+      },
+      executeDelete: async (table: string, state: any) => {
+        const { sql, bindings } = grammar.compileDelete(table, state)
+        return conn.statement(sql, bindings)
+      },
+      executeTruncate: async (table: string) => {
+        const sql = grammar.compileTruncate(table)
+        return conn.statement(sql, [])
+      },
+      executeAggregate: async (state: any, fn: string, column: string) => {
+        const aggState = { ...state, columns: [new Expression(`${fn.toUpperCase()}(${column}) as aggregate`)], orders: [] }
+        const { sql, bindings } = grammar.compileSelect(aggState)
+        const r = await conn.select(sql, bindings)
+        return Number(r[0]?.['aggregate'] ?? 0)
+      },
+      executeExists: async (state: any) => {
+        const existsState = { ...state, columns: [new Expression('1 as exists_check')], limitValue: 1, orders: [] }
+        const { sql, bindings } = grammar.compileSelect(existsState)
+        const r = await conn.select(sql, bindings)
+        return r.length > 0
+      },
     }
     User.setConnection(conn)
 
@@ -298,13 +448,14 @@ describe('ModelQueryBuilder.cursor', () => {
 
   test('yields items one at a time', async () => {
     let callCount = 0
+    const grammar = new SQLiteGrammar()
     const selectMock = mock(async () => {
       callCount++
       if (callCount === 1) return [{ id: 1, name: 'A' }, { id: 2, name: 'B' }]
       return []
     })
     const conn: any = {
-      _grammar: new SQLiteGrammar(),
+      _grammar: grammar,
       select: selectMock,
       statement: mock(async () => 1),
       insertGetId: mock(async () => 1),
@@ -313,6 +464,42 @@ describe('ModelQueryBuilder.cursor', () => {
       schema: () => { throw new Error() },
       getDriverName: () => 'sqlite',
       getTablePrefix: () => '',
+      executeSelect: async (state: any) => {
+        const { sql, bindings } = grammar.compileSelect(state)
+        return conn.select(sql, bindings)
+      },
+      executeInsert: async (table: string, data: any) => {
+        const { sql, bindings } = grammar.compileInsert(table, data)
+        return conn.statement(sql, bindings)
+      },
+      executeInsertGetId: async (table: string, data: any) => {
+        const { sql, bindings } = grammar.compileInsertGetId(table, data)
+        return conn.insertGetId(sql, bindings)
+      },
+      executeUpdate: async (table: string, state: any, data: any) => {
+        const { sql, bindings } = grammar.compileUpdate(table, state, data)
+        return conn.statement(sql, bindings)
+      },
+      executeDelete: async (table: string, state: any) => {
+        const { sql, bindings } = grammar.compileDelete(table, state)
+        return conn.statement(sql, bindings)
+      },
+      executeTruncate: async (table: string) => {
+        const sql = grammar.compileTruncate(table)
+        return conn.statement(sql, [])
+      },
+      executeAggregate: async (state: any, fn: string, column: string) => {
+        const aggState = { ...state, columns: [new Expression(`${fn.toUpperCase()}(${column}) as aggregate`)], orders: [] }
+        const { sql, bindings } = grammar.compileSelect(aggState)
+        const r = await conn.select(sql, bindings)
+        return Number(r[0]?.['aggregate'] ?? 0)
+      },
+      executeExists: async (state: any) => {
+        const existsState = { ...state, columns: [new Expression('1 as exists_check')], limitValue: 1, orders: [] }
+        const { sql, bindings } = grammar.compileSelect(existsState)
+        const r = await conn.select(sql, bindings)
+        return r.length > 0
+      },
     }
     User.setConnection(conn)
 
@@ -328,6 +515,7 @@ describe('ModelQueryBuilder.cursor', () => {
 
   test('fetches multiple batches transparently', async () => {
     let callCount = 0
+    const grammar = new SQLiteGrammar()
     const selectMock = mock(async () => {
       callCount++
       if (callCount === 1) return [{ id: 1 }, { id: 2 }]
@@ -335,7 +523,7 @@ describe('ModelQueryBuilder.cursor', () => {
       return []
     })
     const conn: any = {
-      _grammar: new SQLiteGrammar(),
+      _grammar: grammar,
       select: selectMock,
       statement: mock(async () => 1),
       insertGetId: mock(async () => 1),
@@ -344,6 +532,42 @@ describe('ModelQueryBuilder.cursor', () => {
       schema: () => { throw new Error() },
       getDriverName: () => 'sqlite',
       getTablePrefix: () => '',
+      executeSelect: async (state: any) => {
+        const { sql, bindings } = grammar.compileSelect(state)
+        return conn.select(sql, bindings)
+      },
+      executeInsert: async (table: string, data: any) => {
+        const { sql, bindings } = grammar.compileInsert(table, data)
+        return conn.statement(sql, bindings)
+      },
+      executeInsertGetId: async (table: string, data: any) => {
+        const { sql, bindings } = grammar.compileInsertGetId(table, data)
+        return conn.insertGetId(sql, bindings)
+      },
+      executeUpdate: async (table: string, state: any, data: any) => {
+        const { sql, bindings } = grammar.compileUpdate(table, state, data)
+        return conn.statement(sql, bindings)
+      },
+      executeDelete: async (table: string, state: any) => {
+        const { sql, bindings } = grammar.compileDelete(table, state)
+        return conn.statement(sql, bindings)
+      },
+      executeTruncate: async (table: string) => {
+        const sql = grammar.compileTruncate(table)
+        return conn.statement(sql, [])
+      },
+      executeAggregate: async (state: any, fn: string, column: string) => {
+        const aggState = { ...state, columns: [new Expression(`${fn.toUpperCase()}(${column}) as aggregate`)], orders: [] }
+        const { sql, bindings } = grammar.compileSelect(aggState)
+        const r = await conn.select(sql, bindings)
+        return Number(r[0]?.['aggregate'] ?? 0)
+      },
+      executeExists: async (state: any) => {
+        const existsState = { ...state, columns: [new Expression('1 as exists_check')], limitValue: 1, orders: [] }
+        const { sql, bindings } = grammar.compileSelect(existsState)
+        const r = await conn.select(sql, bindings)
+        return r.length > 0
+      },
     }
     User.setConnection(conn)
 

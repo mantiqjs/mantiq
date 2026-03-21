@@ -1,5 +1,6 @@
 import type { DatabaseConnection } from '../contracts/Connection.ts'
 import type { SchemaBuilder } from '../schema/SchemaBuilder.ts'
+import { BaseSQLConnection } from './BaseSQLConnection.ts'
 import { QueryBuilder } from '../query/Builder.ts'
 import { MSSQLGrammar } from './MSSQLGrammar.ts'
 import { SchemaBuilderImpl } from '../schema/SchemaBuilder.ts'
@@ -17,12 +18,13 @@ export interface MSSQLConfig {
   pool?: { min?: number; max?: number }
 }
 
-export class MSSQLConnection implements DatabaseConnection {
+export class MSSQLConnection extends BaseSQLConnection {
   readonly _grammar = new MSSQLGrammar()
   private pool: any = null
   private config: MSSQLConfig
 
   constructor(config: MSSQLConfig) {
+    super()
     this.config = config
   }
 
@@ -100,33 +102,33 @@ export class MSSQLConnection implements DatabaseConnection {
     const transaction = new sql.Transaction(pool)
     await transaction.begin()
     try {
-      const txConn: DatabaseConnection = {
-        select: async (s, b = []) => {
+      const txConn: any = {
+        _grammar: this._grammar,
+        select: async (s: string, b: any[] = []) => {
           const req = transaction.request()
           b.forEach((val: any, i: number) => req.input(`p${i + 1}`, val))
           const r = await req.query(s)
           return r.recordset ?? []
         },
-        statement: async (s, b = []) => {
+        statement: async (s: string, b: any[] = []) => {
           const req = transaction.request()
           b.forEach((val: any, i: number) => req.input(`p${i + 1}`, val))
           const r = await req.query(s)
           return r.rowsAffected?.[0] ?? 0
         },
-        insertGetId: async (s, b = []) => {
+        insertGetId: async (s: string, b: any[] = []) => {
           const req = transaction.request()
           b.forEach((val: any, i: number) => req.input(`p${i + 1}`, val))
           const r = await req.query(s)
           return r.recordset?.[0]?.id ?? 0
         },
-        transaction: (cb) => cb(txConn),
-        table: (name) => new QueryBuilder(txConn, name),
+        transaction: (cb: any) => cb(txConn),
+        table: (name: string) => new QueryBuilder(txConn, name),
         schema: () => new SchemaBuilderImpl(txConn),
         getDriverName: () => 'mssql',
         getTablePrefix: () => '',
       }
-      // @ts-ignore — attach grammar
-      txConn._grammar = this._grammar
+      this.applyExecuteMethods(txConn)
       const result = await callback(txConn)
       await transaction.commit()
       return result
@@ -136,19 +138,11 @@ export class MSSQLConnection implements DatabaseConnection {
     }
   }
 
-  table(name: string): QueryBuilder {
-    return new QueryBuilder(this, name)
-  }
-
   schema(): SchemaBuilder {
     return new SchemaBuilderImpl(this)
   }
 
   getDriverName(): string {
     return 'mssql'
-  }
-
-  getTablePrefix(): string {
-    return ''
   }
 }

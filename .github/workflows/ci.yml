@@ -126,3 +126,81 @@ jobs:
 
       - name: Build all packages
         run: bun run build
+
+  scaffold:
+    name: Starter Kit Sanity
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        kit: [none, react, vue, svelte]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install monorepo deps
+        run: bun install --frozen-lockfile
+
+      - name: Scaffold ${{ matrix.kit }} app
+        run: |
+          KIT_FLAG=""
+          if [ "${{ matrix.kit }}" != "none" ]; then
+            KIT_FLAG="--kit=${{ matrix.kit }}"
+          fi
+          cd /tmp
+          bun ${{ github.workspace }}/packages/create-mantiq/src/index.ts test-app $KIT_FLAG --yes --no-git
+
+      - name: Verify app boots and endpoints respond
+        run: |
+          cd /tmp/test-app
+          timeout 15 bun run dev &
+          sleep 5
+
+          # Determine port
+          PORT=3000
+          curl -s -o /dev/null http://localhost:3000/ 2>/dev/null || PORT=3001
+
+          PASS=0
+          FAIL=0
+
+          check() {
+            local name=$1 url=$2 expect_code=$3 expect_body=$4
+            local code body
+            code=$(curl -s -o /tmp/resp.txt -w "%{http_code}" "$url" 2>/dev/null || echo "000")
+            body=$(cat /tmp/resp.txt 2>/dev/null || echo "")
+            if [ "$code" = "$expect_code" ]; then
+              if [ -n "$expect_body" ] && ! echo "$body" | grep -q "$expect_body"; then
+                echo "  ✗ $name — HTTP $code but body missing '$expect_body'"
+                FAIL=$((FAIL+1))
+              else
+                echo "  ✓ $name — HTTP $code"
+                PASS=$((PASS+1))
+              fi
+            else
+              echo "  ✗ $name — expected HTTP $expect_code, got $code"
+              FAIL=$((FAIL+1))
+            fi
+          }
+
+          echo "── ${{ matrix.kit }} starter kit health checks ──"
+          check "Welcome page"   "http://localhost:$PORT/"         200 "mantiq"
+          check "API ping"       "http://localhost:$PORT/api/ping" 200 '"status":"ok"'
+          check "Heartbeat header" "http://localhost:$PORT/"       200 ""
+
+          # Verify X-Heartbeat header exists
+          HB=$(curl -s -D - http://localhost:$PORT/ 2>/dev/null | grep -i "X-Heartbeat" || echo "")
+          if [ -n "$HB" ]; then
+            echo "  ✓ X-Heartbeat header present"
+            PASS=$((PASS+1))
+          else
+            echo "  ✗ X-Heartbeat header missing"
+            FAIL=$((FAIL+1))
+          fi
+
+          kill %1 2>/dev/null || true
+
+          echo ""
+          echo "Results: $PASS passed, $FAIL failed"
+          if [ "$FAIL" -gt 0 ]; then exit 1; fi

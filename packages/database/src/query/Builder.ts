@@ -92,11 +92,10 @@ export class QueryBuilder {
     return this
   }
 
-  // ── Where conditions ─────────────────────────────────────────────────────
+  // ── Where conditions ───────────────────────────────────────────────────────
 
   where(column: string | ((q: QueryBuilder) => void), operatorOrValue?: any, value?: any): this {
     if (typeof column === 'function') {
-      const nested: WhereClause[] = []
       const sub = new QueryBuilder(this._connection, this.state.table)
       column(sub)
       this.state.wheres.push({ type: 'nested', boolean: 'and', nested: sub.state.wheres })
@@ -224,7 +223,7 @@ export class QueryBuilder {
     return this.whereRaw(`strftime('%H:%M:%S', ${column}) ${op} ?`, [val])
   }
 
-  // ── Joins ─────────────────────────────────────────────────────────────────
+  // ── Joins ───────────────────────────────────────────────────────────────────
 
   join(table: string, first: string, operator: string, second: string): this {
     this.state.joins.push({ type: 'inner', table, first, operator, second })
@@ -241,7 +240,7 @@ export class QueryBuilder {
     return this
   }
 
-  // ── Ordering / Grouping ───────────────────────────────────────────────────
+  // ── Ordering / Grouping ─────────────────────────────────────────────────────
 
   orderBy(column: string | Expression, direction: 'asc' | 'desc' = 'asc'): this {
     this.state.orders.push({ column, direction })
@@ -267,7 +266,7 @@ export class QueryBuilder {
     return this
   }
 
-  // ── Pagination ────────────────────────────────────────────────────────────
+  // ── Pagination ──────────────────────────────────────────────────────────────
 
   limit(value: number): this {
     this.state.limitValue = value
@@ -282,11 +281,10 @@ export class QueryBuilder {
   take = this.limit
   skip = this.offset
 
-  // ── Execution ─────────────────────────────────────────────────────────────
+  // ── Execution ───────────────────────────────────────────────────────────────
 
   async get(): Promise<Record<string, any>[]> {
-    const { sql, bindings } = this.grammar().compileSelect(this.state)
-    return this._connection.select(sql, bindings)
+    return this._connection.executeSelect(this.state)
   }
 
   async first(): Promise<Record<string, any> | null> {
@@ -315,8 +313,7 @@ export class QueryBuilder {
   }
 
   async exists(): Promise<boolean> {
-    const row = await this.selectRaw('1 as exists_check').limit(1).first()
-    return row !== null
+    return this._connection.executeExists(this.state)
   }
 
   async doesntExist(): Promise<boolean> {
@@ -333,52 +330,43 @@ export class QueryBuilder {
     return results[0]!
   }
 
-  // ── Aggregates ────────────────────────────────────────────────────────────
+  // ── Aggregates ──────────────────────────────────────────────────────────────
 
   async count(column = '*'): Promise<number> {
-    const row = await this.selectRaw(`COUNT(${column}) as aggregate`).first()
-    return Number(row?.['aggregate'] ?? 0)
+    return this._connection.executeAggregate(this.state, 'count', column)
   }
 
   async sum(column: string): Promise<number> {
-    const row = await this.selectRaw(`SUM(${column}) as aggregate`).first()
-    return Number(row?.['aggregate'] ?? 0)
+    return this._connection.executeAggregate(this.state, 'sum', column)
   }
 
   async avg(column: string): Promise<number> {
-    const row = await this.selectRaw(`AVG(${column}) as aggregate`).first()
-    return Number(row?.['aggregate'] ?? 0)
+    return this._connection.executeAggregate(this.state, 'avg', column)
   }
 
   async min(column: string): Promise<any> {
-    const row = await this.selectRaw(`MIN(${column}) as aggregate`).first()
-    return row?.['aggregate']
+    return this._connection.executeAggregate(this.state, 'min', column)
   }
 
   async max(column: string): Promise<any> {
-    const row = await this.selectRaw(`MAX(${column}) as aggregate`).first()
-    return row?.['aggregate']
+    return this._connection.executeAggregate(this.state, 'max', column)
   }
 
-  // ── Writes ────────────────────────────────────────────────────────────────
+  // ── Writes ──────────────────────────────────────────────────────────────────
 
   async insert(data: Record<string, any> | Record<string, any>[]): Promise<void> {
     const rows = Array.isArray(data) ? data : [data]
     for (const row of rows) {
-      const { sql, bindings } = this.grammar().compileInsert(this.state.table, row)
-      await this._connection.statement(sql, bindings)
+      await this._connection.executeInsert(this.state.table, row)
     }
   }
 
-  async insertGetId(data: Record<string, any>): Promise<number> {
-    const { sql, bindings } = this.grammar().compileInsertGetId(this.state.table, data)
-    const id = await this._connection.insertGetId(sql, bindings)
-    return Number(id)
+  async insertGetId(data: Record<string, any>): Promise<number | string> {
+    return this._connection.executeInsertGetId(this.state.table, data)
   }
 
   async update(data: Record<string, any>): Promise<number> {
-    const { sql, bindings } = this.grammar().compileUpdate(this.state.table, this.state, data)
-    return this._connection.statement(sql, bindings)
+    return this._connection.executeUpdate(this.state.table, this.state, data)
   }
 
   async updateOrInsert(
@@ -396,16 +384,14 @@ export class QueryBuilder {
   }
 
   async delete(): Promise<number> {
-    const { sql, bindings } = this.grammar().compileDelete(this.state.table, this.state)
-    return this._connection.statement(sql, bindings)
+    return this._connection.executeDelete(this.state.table, this.state)
   }
 
   async truncate(): Promise<void> {
-    const sql = this.grammar().compileTruncate(this.state.table)
-    await this._connection.statement(sql, [])
+    return this._connection.executeTruncate(this.state.table)
   }
 
-  // ── Pagination ────────────────────────────────────────────────────────────
+  // ── Pagination ──────────────────────────────────────────────────────────────
 
   async paginate(page = 1, perPage = 15): Promise<PaginationResult> {
     const countQuery = this.clone()
@@ -419,14 +405,20 @@ export class QueryBuilder {
     return { data, total, perPage, currentPage, lastPage, from, to, hasMore: currentPage < lastPage }
   }
 
-  // ── Utilities ─────────────────────────────────────────────────────────────
+  // ── Utilities ───────────────────────────────────────────────────────────────
 
+  /** Returns the SQL for this query. Only works on SQL connections. */
   toSql(): string {
-    return this.grammar().compileSelect(this.state).sql
+    const grammar = this.getGrammar()
+    if (!grammar) throw new Error('toSql() is only available on SQL connections')
+    return grammar.compileSelect(this.state).sql
   }
 
+  /** Returns the bindings for this query. Only works on SQL connections. */
   getBindings(): any[] {
-    return this.grammar().compileSelect(this.state).bindings
+    const grammar = this.getGrammar()
+    if (!grammar) throw new Error('getBindings() is only available on SQL connections')
+    return grammar.compileSelect(this.state).bindings
   }
 
   clone(): QueryBuilder {
@@ -447,10 +439,9 @@ export class QueryBuilder {
     return this.state
   }
 
-  // ── Grammar (driver-specific SQL) ─────────────────────────────────────────
-
-  protected grammar() {
-    return (this._connection as any)._grammar as import('../contracts/Grammar.ts').Grammar
+  /** Returns the Grammar if this is a SQL connection, null otherwise. */
+  protected getGrammar(): import('../contracts/Grammar.ts').Grammar | null {
+    return (this._connection as any)._grammar ?? null
   }
 }
 

@@ -1,5 +1,6 @@
 import type { DatabaseConnection } from '../contracts/Connection.ts'
 import type { SchemaBuilder } from '../schema/SchemaBuilder.ts'
+import { BaseSQLConnection } from './BaseSQLConnection.ts'
 import { QueryBuilder } from '../query/Builder.ts'
 import { PostgresGrammar } from './PostgresGrammar.ts'
 import { SchemaBuilderImpl } from '../schema/SchemaBuilder.ts'
@@ -16,12 +17,13 @@ export interface PostgresConfig {
   pool?: { min?: number; max?: number }
 }
 
-export class PostgresConnection implements DatabaseConnection {
+export class PostgresConnection extends BaseSQLConnection {
   readonly _grammar = new PostgresGrammar()
   private client: any = null
   private config: PostgresConfig
 
   constructor(config: PostgresConfig) {
+    super()
     this.config = config
   }
 
@@ -83,19 +85,18 @@ export class PostgresConnection implements DatabaseConnection {
     const client = await pool.connect()
     try {
       await client.query('BEGIN')
-      // Create a transactional connection wrapper
-      const txConn: DatabaseConnection = {
-        select: async (sql, b) => { const r = await client.query(sql, b); return r.rows },
-        statement: async (sql, b) => { const r = await client.query(sql, b); return r.rowCount ?? 0 },
-        insertGetId: async (sql, b) => { const r = await client.query(sql, b); return r.rows[0]?.id ?? 0 },
-        transaction: (cb) => cb(txConn),
-        table: (name) => new QueryBuilder(txConn, name),
+      const txConn: any = {
+        _grammar: this._grammar,
+        select: async (sql: string, b?: any[]) => { const r = await client.query(sql, b); return r.rows },
+        statement: async (sql: string, b?: any[]) => { const r = await client.query(sql, b); return r.rowCount ?? 0 },
+        insertGetId: async (sql: string, b?: any[]) => { const r = await client.query(sql, b); return r.rows[0]?.id ?? 0 },
+        transaction: (cb: any) => cb(txConn),
+        table: (name: string) => new QueryBuilder(txConn, name),
         schema: () => new SchemaBuilderImpl(txConn),
         getDriverName: () => 'postgres',
         getTablePrefix: () => '',
       }
-      // @ts-ignore — attach grammar for the builder
-      txConn._grammar = this._grammar
+      this.applyExecuteMethods(txConn)
       const result = await callback(txConn)
       await client.query('COMMIT')
       return result
@@ -107,19 +108,11 @@ export class PostgresConnection implements DatabaseConnection {
     }
   }
 
-  table(name: string): QueryBuilder {
-    return new QueryBuilder(this, name)
-  }
-
   schema(): SchemaBuilder {
     return new SchemaBuilderImpl(this)
   }
 
   getDriverName(): string {
     return 'postgres'
-  }
-
-  getTablePrefix(): string {
-    return ''
   }
 }
