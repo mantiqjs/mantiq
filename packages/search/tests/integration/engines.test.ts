@@ -242,6 +242,19 @@ describe('TypesenseEngine', () => {
   let engine: TypesenseEngine
   let available = false
 
+  // Typesense needs fillable for query_by — no searchableColumns override
+  const tsModel = {
+    searchableAs: () => INDEX_NAME,
+    fillable: ['name', 'category', 'price', 'description'],
+    primaryKey: 'id',
+    table: 'products',
+    query: () => ({ whereIn: () => ({ get: async () => products }) }),
+  }
+
+  function tsBuilder(query: string): SearchBuilder {
+    return new SearchBuilder(tsModel, query, engine)
+  }
+
   beforeAll(async () => {
     available = await isReachable(`http://${typesenseHost}:${typesensePort}/health`)
     if (!available) return
@@ -293,19 +306,19 @@ describe('TypesenseEngine', () => {
 
   test('search "Apple" returns products 1, 3, 5', async () => {
     if (!available) return
-    const result = await engine.search(builder(engine, 'Apple'))
+    const result = await engine.search(tsBuilder('Apple'))
     expectIdsToMatch(result.keys, [1, 3, 5])
   })
 
   test('search "laptop" returns products 1, 2', async () => {
     if (!available) return
-    const result = await engine.search(builder(engine, 'laptop'))
+    const result = await engine.search(tsBuilder('laptop'))
     expectIdsToMatch(result.keys, [1, 2])
   })
 
   test('search with where filter category = phones', async () => {
     if (!available) return
-    const b = builder(engine, '')
+    const b = tsBuilder('')
     b.where('category', 'phones')
     const result = await engine.search(b)
     expectIdsToMatch(result.keys, [3, 4])
@@ -313,7 +326,7 @@ describe('TypesenseEngine', () => {
 
   test('search with whereIn filter category IN [laptops, audio]', async () => {
     if (!available) return
-    const b = builder(engine, '')
+    const b = tsBuilder('')
     b.whereIn('category', ['laptops', 'audio'])
     const result = await engine.search(b)
     expectIdsToMatch(result.keys, [1, 2, 5])
@@ -321,7 +334,7 @@ describe('TypesenseEngine', () => {
 
   test('paginate — page 1, perPage 2', async () => {
     if (!available) return
-    const b = builder(engine, '')
+    const b = tsBuilder('')
     const result = await engine.paginate(b, 2, 1)
     expect(result.keys.length).toBe(2)
     expect(result.total).toBeGreaterThanOrEqual(5)
@@ -332,19 +345,25 @@ describe('TypesenseEngine', () => {
     const product5 = toModels(products.filter((p) => p.id === 5))
     await engine.delete(product5)
 
-    const result = await engine.search(builder(engine, 'Apple'))
+    const result = await engine.search(tsBuilder('Apple'))
     expectIdsToMatch(result.keys, [1, 3])
   })
 
   test('flush — clear all, search returns 0', async () => {
     if (!available) return
-    // Typesense flush deletes the collection, so re-create after
     await engine.flush(INDEX_NAME)
+    // Re-create with explicit schema after flush (flush deletes collection)
     await engine.createIndex(INDEX_NAME, {
-      fields: [{ name: '.*', type: 'auto' }],
+      fields: [
+        { name: 'id', type: 'string' },
+        { name: 'name', type: 'string' },
+        { name: 'category', type: 'string', facet: true },
+        { name: 'price', type: 'float' },
+        { name: 'description', type: 'string' },
+      ],
     })
 
-    const b = builder(engine, '')
+    const b = tsBuilder('')
     const result = await engine.search(b)
     expect(result.keys.length).toBe(0)
     expect(result.total).toBe(0)
