@@ -44,7 +44,8 @@ export abstract class BaseSQLConnection implements DatabaseConnection {
   async executeInsertGetId(table: string, data: Record<string, any>): Promise<number | string> {
     const { sql, bindings } = this._grammar.compileInsertGetId(table, data)
     const id = await this.insertGetId(sql, bindings)
-    return typeof id === 'bigint' ? Number(id) : (id as number | string)
+    // SQL drivers always return numeric IDs (bigint from SQLite, string from pg for BIGSERIAL)
+    return Number(id)
   }
 
   async executeUpdate(table: string, state: QueryState, data: Record<string, any>): Promise<number> {
