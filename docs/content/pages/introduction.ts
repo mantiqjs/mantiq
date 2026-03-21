@@ -6,7 +6,7 @@ export default {
 <p>
   MantiqJS is a batteries-included TypeScript web framework built on the
   <a href="https://bun.sh">Bun</a> runtime. Inspired by the elegance and developer experience of
-  Laravel, MantiqJS brings convention-over-configuration to the TypeScript ecosystem &mdash;
+  <a href="https://laravel.com">Laravel</a>, MantiqJS brings convention-over-configuration to the TypeScript ecosystem &mdash;
   giving you a structured, full-stack framework with routing, an ORM, authentication,
   validation, CLI tooling, and frontend integration out of the box.
 </p>
