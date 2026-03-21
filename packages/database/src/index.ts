@@ -21,6 +21,7 @@ export type {
 export { QueryError } from './errors/QueryError.ts'
 export { ModelNotFoundError } from './errors/ModelNotFoundError.ts'
 export { ConnectionError } from './errors/ConnectionError.ts'
+export { DriverNotSupportedError } from './errors/DriverNotSupportedError.ts'
 
 // ── Query Builder ─────────────────────────────────────────────────────────────
 export { QueryBuilder } from './query/Builder.ts'
@@ -33,6 +34,9 @@ export { SQLiteGrammar } from './drivers/SQLiteGrammar.ts'
 export { PostgresGrammar } from './drivers/PostgresGrammar.ts'
 export { MySQLGrammar } from './drivers/MySQLGrammar.ts'
 export { MSSQLGrammar } from './drivers/MSSQLGrammar.ts'
+
+// ── Base Connection ──────────────────────────────────────────────────────────
+export { BaseSQLConnection } from './drivers/BaseSQLConnection.ts'
 
 // ── SQL Connections ───────────────────────────────────────────────────────────
 export { SQLiteConnection } from './drivers/SQLiteConnection.ts'
@@ -76,7 +80,8 @@ export type { ModelStatic } from './orm/Model.ts'
 export { ModelQueryBuilder } from './orm/ModelQueryBuilder.ts'
 export { Collection } from './orm/Collection.ts'
 
-// ── MongoDB Document ORM ──────────────────────────────────────────────────────
+// ── MongoDB Document ORM (deprecated — use Model with MongoDB connection) ────
+/** @deprecated Use Model with a MongoDB connection instead */
 export { Document } from './orm/Document.ts'
 
 // ── Seeders & Factories ───────────────────────────────────────────────────────

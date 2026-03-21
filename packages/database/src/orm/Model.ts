@@ -12,6 +12,8 @@ export interface ModelStatic<T extends Model> {
   connection: DatabaseConnection | null
   table: string
   primaryKey: string
+  incrementing: boolean
+  keyType: 'int' | 'string'
   fillable: string[]
   guarded: string[]
   hidden: string[]
@@ -56,6 +58,8 @@ export abstract class Model {
   static connection: DatabaseConnection | null = null
   static table: string = ''
   static primaryKey: string = 'id'
+  static incrementing = true
+  static keyType: 'int' | 'string' = 'int'
   static fillable: string[] = []
   static guarded: string[] = ['id']
   static hidden: string[] = []
@@ -470,7 +474,7 @@ export abstract class Model {
       }
 
       const id = await ctor.connection.table(table).insertGetId(this._attributes)
-      this._attributes[ctor.primaryKey] = Number(id)
+      this._attributes[ctor.primaryKey] = ctor.incrementing ? Number(id) : id
       this._original = { ...this._attributes }
       this._exists = true
 
