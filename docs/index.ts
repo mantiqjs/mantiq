@@ -7,6 +7,8 @@ import { QueueServiceProvider } from '@mantiq/queue'
 import { ValidationServiceProvider } from '@mantiq/validation'
 import { HeartbeatServiceProvider, HeartbeatMiddleware } from '@mantiq/heartbeat'
 import { RealtimeServiceProvider } from '@mantiq/realtime'
+import { MailServiceProvider } from '@mantiq/mail'
+import { NotificationServiceProvider } from '@mantiq/notify'
 
 // ── Load .env ─────────────────────────────────────────────────────────────────
 const envFile = Bun.file(import.meta.dir + '/.env')
@@ -36,6 +38,8 @@ await app.registerProviders([
   ValidationServiceProvider,
   HeartbeatServiceProvider,
   RealtimeServiceProvider,
+  MailServiceProvider,
+  NotificationServiceProvider,
 ])
 await app.bootProviders()
 
