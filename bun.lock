@@ -98,7 +98,7 @@
     },
     "packages/create-mantiq": {
       "name": "create-mantiq",
-      "version": "0.4.0",
+      "version": "0.5.1",
       "bin": {
         "create-mantiq": "./src/index.ts",
       },
@@ -176,6 +176,17 @@
         "basic-ftp",
         "ssh2-sftp-client",
       ],
+    },
+    "packages/health": {
+      "name": "@mantiq/health",
+      "version": "0.1.0",
+      "devDependencies": {
+        "bun-types": "latest",
+        "typescript": "^5.7.0",
+      },
+      "peerDependencies": {
+        "@mantiq/core": "^0.1.0",
+      },
     },
     "packages/heartbeat": {
       "name": "@mantiq/heartbeat",
@@ -479,6 +490,8 @@
     "@mantiq/events": ["@mantiq/events@workspace:packages/events"],
 
     "@mantiq/filesystem": ["@mantiq/filesystem@workspace:packages/filesystem"],
+
+    "@mantiq/health": ["@mantiq/health@workspace:packages/health"],
 
     "@mantiq/heartbeat": ["@mantiq/heartbeat@workspace:packages/heartbeat"],
 
