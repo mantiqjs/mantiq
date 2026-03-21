@@ -4,9 +4,6 @@
   "private": true,
   "workspaces": [
     "packages/*",
-    "addons/*",
-    "starters/*",
-    "examples/*",
     "docs"
   ],
   "scripts": {
@@ -19,6 +16,21 @@
     "publish:all": "for dir in packages/*/; do (cd \"$dir\" && npm publish --access public); done"
   },
   "devDependencies": {
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "@mantiq/core": "workspace:*",
+    "@mantiq/database": "workspace:*",
+    "@mantiq/auth": "workspace:*",
+    "@mantiq/cli": "workspace:*",
+    "@mantiq/validation": "workspace:*",
+    "@mantiq/helpers": "workspace:*",
+    "@mantiq/filesystem": "workspace:*",
+    "@mantiq/logging": "workspace:*",
+    "@mantiq/events": "workspace:*",
+    "@mantiq/queue": "workspace:*",
+    "@mantiq/realtime": "workspace:*",
+    "@mantiq/heartbeat": "workspace:*",
+    "@mantiq/vite": "workspace:*",
+    "@mantiq/mail": "workspace:*",
+    "@mantiq/notify": "workspace:*"
   }
 }

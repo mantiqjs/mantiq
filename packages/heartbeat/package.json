@@ -47,7 +47,13 @@
   },
   "devDependencies": {
     "bun-types": "latest",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "@mantiq/core": "workspace:*",
+    "@mantiq/cli": "workspace:*",
+    "@mantiq/queue": "workspace:*",
+    "@mantiq/events": "workspace:*",
+    "@mantiq/database": "workspace:*",
+    "@mantiq/logging": "workspace:*"
   },
   "peerDependencies": {
     "@mantiq/core": "^0.1.0",

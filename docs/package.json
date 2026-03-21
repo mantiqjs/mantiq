@@ -6,25 +6,11 @@
   "scripts": {
     "dev": "bun run --watch index.ts",
     "start": "bun run index.ts",
-    "build": "vite build && vite build --ssr src/ssr.tsx --outDir bootstrap/ssr",
-    "postinstall": "rm -rf node_modules/@mantiq/*/node_modules/@mantiq 2>/dev/null; true"
+    "build": "vite build && vite build --ssr src/ssr.tsx --outDir bootstrap/ssr"
   },
   "dependencies": {
-    "@mantiq/auth": "^0.1.0",
-    "@mantiq/cli": "^0.1.0",
-    "@mantiq/core": "^0.1.0",
-    "@mantiq/database": "^0.1.0",
-    "@mantiq/events": "^0.1.0",
-    "@mantiq/filesystem": "^0.1.0",
-    "@mantiq/heartbeat": "^0.3.0",
-    "@mantiq/helpers": "^0.1.0",
-    "@mantiq/logging": "^0.1.0",
-    "@mantiq/mail": "^0.2.0",
-    "@mantiq/notify": "^0.1.0",
-    "@mantiq/queue": "^0.1.0",
-    "@mantiq/realtime": "^0.1.0",
-    "@mantiq/validation": "^0.1.0",
-    "@mantiq/vite": "^0.1.0",
+    "@mantiq/core": "workspace:*",
+    "@mantiq/vite": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.0",
     "lucide-react": "^0.460.0",

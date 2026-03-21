@@ -47,7 +47,8 @@
   },
   "devDependencies": {
     "bun-types": "latest",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "@mantiq/core": "workspace:*"
   },
   "optionalDependencies": {
     "@mantiq/queue": "^0.1.0"

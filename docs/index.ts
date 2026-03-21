@@ -1,14 +1,5 @@
-import { Application, CoreServiceProvider, HttpKernel, RouterImpl, CorsMiddleware, StartSession, EncryptCookies } from '@mantiq/core'
+import { Application, CoreServiceProvider, HttpKernel, RouterImpl, CorsMiddleware } from '@mantiq/core'
 import { ViteServiceProvider, ServeStaticFiles } from '@mantiq/vite'
-import { FilesystemServiceProvider } from '@mantiq/filesystem'
-import { LoggingServiceProvider } from '@mantiq/logging'
-import { EventServiceProvider } from '@mantiq/events'
-import { QueueServiceProvider } from '@mantiq/queue'
-import { ValidationServiceProvider } from '@mantiq/validation'
-import { HeartbeatServiceProvider, HeartbeatMiddleware } from '@mantiq/heartbeat'
-import { RealtimeServiceProvider } from '@mantiq/realtime'
-import { MailServiceProvider } from '@mantiq/mail'
-import { NotificationServiceProvider } from '@mantiq/notify'
 
 // ── Load .env ─────────────────────────────────────────────────────────────────
 const envFile = Bun.file(import.meta.dir + '/.env')
@@ -31,15 +22,6 @@ const app = await Application.create(import.meta.dir, 'config')
 await app.registerProviders([
   CoreServiceProvider,
   ViteServiceProvider,
-  FilesystemServiceProvider,
-  LoggingServiceProvider,
-  EventServiceProvider,
-  QueueServiceProvider,
-  ValidationServiceProvider,
-  HeartbeatServiceProvider,
-  RealtimeServiceProvider,
-  MailServiceProvider,
-  NotificationServiceProvider,
 ])
 await app.bootProviders()
 
@@ -48,12 +30,9 @@ const kernel = app.make(HttpKernel)
 const router = app.make(RouterImpl)
 
 kernel.registerMiddleware('cors', CorsMiddleware)
-kernel.registerMiddleware('encrypt.cookies', EncryptCookies)
-kernel.registerMiddleware('session', StartSession)
 kernel.registerMiddleware('static', ServeStaticFiles)
-kernel.registerMiddleware('heartbeat', HeartbeatMiddleware)
 
-kernel.setGlobalMiddleware(['cors', 'static', 'heartbeat'])
+kernel.setGlobalMiddleware(['cors', 'static'])
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 import webRoutes from './routes/web.ts'

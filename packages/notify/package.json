@@ -50,7 +50,14 @@
   },
   "devDependencies": {
     "bun-types": "latest",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "@mantiq/core": "workspace:*",
+    "@mantiq/database": "workspace:*",
+    "@mantiq/mail": "workspace:*",
+    "@mantiq/events": "workspace:*",
+    "@mantiq/realtime": "workspace:*",
+    "@mantiq/queue": "workspace:*",
+    "@mantiq/cli": "workspace:*"
   },
   "peerDependencies": {
     "@mantiq/core": "^0.1.0",

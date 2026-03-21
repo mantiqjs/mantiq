@@ -46,10 +46,11 @@
     "clean": "rm -rf dist"
   },
   "devDependencies": {
-    "@mantiq/database": "^0.1.0",
-    "@mantiq/auth": "^0.1.0",
+    "@mantiq/database": "workspace:*",
+    "@mantiq/auth": "workspace:*",
     "bun-types": "latest",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "@mantiq/core": "workspace:*"
   },
   "peerDependencies": {
     "@mantiq/core": "^0.1.0",
