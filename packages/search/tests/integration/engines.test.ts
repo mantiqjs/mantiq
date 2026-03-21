@@ -242,9 +242,10 @@ describe('TypesenseEngine', () => {
   let engine: TypesenseEngine
   let available = false
 
-  // Typesense needs fillable for query_by — no searchableColumns override
+  // Typesense query_by only accepts string fields — exclude price (float)
   const tsModel = {
     searchableAs: () => INDEX_NAME,
+    searchableColumns: () => ['name', 'category', 'description'],
     fillable: ['name', 'category', 'price', 'description'],
     primaryKey: 'id',
     table: 'products',
