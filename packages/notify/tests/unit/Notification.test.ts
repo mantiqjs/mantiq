@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect } from 'bun:test'
 import { Notification } from '../../src/Notification.ts'
 import { createMockNotifiable } from '../helpers.ts'

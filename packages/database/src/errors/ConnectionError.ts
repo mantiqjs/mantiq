@@ -1,10 +1,10 @@
-import { MantiqError } from '@mantiq/core'
-
-export class ConnectionError extends MantiqError {
+export class ConnectionError extends Error {
   constructor(
+    message: string,
     public readonly driver: string,
-    originalError: Error,
+    originalError?: Error,
   ) {
-    super(`Failed to connect to ${driver} database: ${originalError.message}`)
+    super(originalError ? `${message}: ${originalError.message}` : message)
+    this.name = 'ConnectionError'
   }
 }

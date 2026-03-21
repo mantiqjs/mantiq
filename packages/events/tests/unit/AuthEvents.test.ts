@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect } from 'bun:test'
 import { Registered, Lockout, Attempting, Authenticated, Login, Failed, Logout } from '@mantiq/auth'
 

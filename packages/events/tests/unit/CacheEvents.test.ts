@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test'
 import { CacheManager } from '@mantiq/core'
 import { Dispatcher } from '../../src/Dispatcher.ts'

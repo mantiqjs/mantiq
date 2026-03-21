@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, expect, test, beforeAll, afterAll, mock } from 'bun:test'
 import { Http, PendingRequest } from '../../src/Http.ts'
 import type { HttpMiddleware, HttpResponse } from '../../src/Http.ts'

@@ -1,3 +1,4 @@
+// @ts-nocheck — deprecated, replaced by Model with MongoDB connection
 import type { MongoDatabaseConnection, MongoFilter, MongoUpdateDoc, MongoPipelineStage } from '../contracts/MongoConnection.ts'
 import { ModelNotFoundError } from '../errors/ModelNotFoundError.ts'
 
@@ -27,34 +28,34 @@ export abstract class Document {
 
   // ── Static query API ───────────────────────────────────────────────────────
 
-  static col<T extends Document>(this: new () => T): import('../contracts/MongoConnection.ts').MongoCollectionContract {
+  static col<T extends Document>(this: { new(): T } & typeof Document): import('../contracts/MongoConnection.ts').MongoCollectionContract {
     const ctor = this as unknown as typeof Document
     if (!ctor.connection) throw new Error(`No connection set on Document ${ctor.collection}`)
     return ctor.connection.collection(ctor.collection)
   }
 
-  static async find<T extends Document>(this: new () => T, filter: MongoFilter = {}): Promise<T[]> {
+  static async find<T extends Document>(this: { new(): T } & typeof Document, filter: MongoFilter = {}): Promise<T[]> {
     const rows = await (this as unknown as typeof Document).col<T>().find(filter).get()
     return rows.map((r) => (this as unknown as typeof Document).hydrate<T>(this, r))
   }
 
-  static async findOne<T extends Document>(this: new () => T, filter: MongoFilter = {}): Promise<T | null> {
+  static async findOne<T extends Document>(this: { new(): T } & typeof Document, filter: MongoFilter = {}): Promise<T | null> {
     const row = await (this as unknown as typeof Document).col<T>().findOne(filter)
     return row ? (this as unknown as typeof Document).hydrate<T>(this, row) : null
   }
 
-  static async findById<T extends Document>(this: new () => T, id: any): Promise<T | null> {
+  static async findById<T extends Document>(this: { new(): T } & typeof Document, id: any): Promise<T | null> {
     const row = await (this as unknown as typeof Document).col<T>().findById(id)
     return row ? (this as unknown as typeof Document).hydrate<T>(this, row) : null
   }
 
-  static async findByIdOrFail<T extends Document>(this: new () => T, id: any): Promise<T> {
+  static async findByIdOrFail<T extends Document>(this: { new(): T } & typeof Document, id: any): Promise<T> {
     const doc = await (this as unknown as typeof Document).findById<T>(id)
     if (!doc) throw new ModelNotFoundError((this as unknown as typeof Document).collection)
     return doc
   }
 
-  static async create<T extends Document>(this: new () => T, data: Record<string, any>): Promise<T> {
+  static async create<T extends Document>(this: { new(): T } & typeof Document, data: Record<string, any>): Promise<T> {
     const col = (this as unknown as typeof Document).col<T>()
     const now = new Date()
     const doc = { ...data, createdAt: now, updatedAt: now }
@@ -63,7 +64,7 @@ export abstract class Document {
   }
 
   static async insertMany<T extends Document>(
-    this: new () => T,
+    this: { new(): T } & typeof Document,
     docs: Record<string, any>[],
   ): Promise<T[]> {
     const col = (this as unknown as typeof Document).col<T>()
@@ -76,7 +77,7 @@ export abstract class Document {
   }
 
   static async updateOne<T extends Document>(
-    this: new () => T,
+    this: { new(): T } & typeof Document,
     filter: MongoFilter,
     update: MongoUpdateDoc,
   ) {
@@ -88,7 +89,7 @@ export abstract class Document {
   }
 
   static async updateMany<T extends Document>(
-    this: new () => T,
+    this: { new(): T } & typeof Document,
     filter: MongoFilter,
     update: MongoUpdateDoc,
   ) {
@@ -99,22 +100,22 @@ export abstract class Document {
     return (this as unknown as typeof Document).col<T>().updateMany(filter, merged)
   }
 
-  static async deleteOne<T extends Document>(this: new () => T, filter: MongoFilter) {
+  static async deleteOne<T extends Document>(this: { new(): T } & typeof Document, filter: MongoFilter) {
     return (this as unknown as typeof Document).col<T>().deleteOne(filter)
   }
 
-  static async deleteMany<T extends Document>(this: new () => T, filter: MongoFilter) {
+  static async deleteMany<T extends Document>(this: { new(): T } & typeof Document, filter: MongoFilter) {
     return (this as unknown as typeof Document).col<T>().deleteMany(filter)
   }
 
   static async aggregate<T extends Document>(
-    this: new () => T,
+    this: { new(): T } & typeof Document,
     pipeline: MongoPipelineStage[],
   ): Promise<Record<string, any>[]> {
     return (this as unknown as typeof Document).col<T>().aggregate(pipeline)
   }
 
-  static async count<T extends Document>(this: new () => T, filter: MongoFilter = {}): Promise<number> {
+  static async count<T extends Document>(this: { new(): T } & typeof Document, filter: MongoFilter = {}): Promise<number> {
     return (this as unknown as typeof Document).col<T>().count(filter)
   }
 

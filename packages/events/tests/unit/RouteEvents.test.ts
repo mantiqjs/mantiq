@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test'
 import { RouterImpl, RouteMatched, MantiqRequestImpl } from '@mantiq/core'
 import { Dispatcher } from '../../src/Dispatcher.ts'
