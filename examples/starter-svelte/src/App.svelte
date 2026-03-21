@@ -10,7 +10,7 @@
   } = $props()
 
   const windowData = typeof window !== 'undefined' ? (window as any).__MANTIQ_DATA__ : {}
-  const bootstrapData = initialData ?? windowData
+  const bootstrapData = (() => initialData ?? windowData)()
 
   let currentPage = $state<string>(bootstrapData._page ?? 'Login')
   let pageData = $state<Record<string, any>>(bootstrapData)

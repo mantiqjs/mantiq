@@ -15,8 +15,8 @@
     [key: string]: any
   } = $props()
 
-  let name = $state(currentUser?.name ?? '')
-  let email = $state(currentUser?.email ?? '')
+  let name = $state((() => currentUser?.name ?? '')())
+  let email = $state((() => currentUser?.email ?? '')())
   let saving = $state(false)
   let saved = $state(false)
 

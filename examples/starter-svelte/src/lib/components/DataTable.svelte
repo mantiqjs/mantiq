@@ -82,7 +82,7 @@
   let internalSelectedIds = $state(new Set<number | string>())
   let sortKey = $state<string | null>(null)
   let sortDir = $state<'asc' | 'desc'>('asc')
-  let visibleColumns = $state(new Set(columns.map(c => c.id)))
+  let visibleColumns = $state((() => new Set(columns.map(c => c.id)))())
 
   // Resolve controlled vs uncontrolled
   const page = $derived(controlledPage ?? internalPage)

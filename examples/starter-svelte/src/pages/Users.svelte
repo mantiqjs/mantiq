@@ -71,11 +71,13 @@
     { id: 25, name: 'Ella Young', email: 'ella@example.com', status: 'active', created_at: '2024-10-05' },
   ]
 
-  let users = $state<UserType[]>(
-    initialUsers && initialUsers.length > 0
-      ? initialUsers.map(u => ({ ...u, status: (u as any).status ?? 'active', created_at: u.created_at ?? '' }))
-      : mockUsers
-  )
+  const getInitialUsers = (): UserType[] => {
+    if (initialUsers && initialUsers.length > 0) {
+      return initialUsers.map(u => ({ ...u, status: (u as any).status ?? 'active', created_at: u.created_at ?? '' }))
+    }
+    return mockUsers
+  }
+  let users = $state<UserType[]>(getInitialUsers())
   let loading = $state(false)
   let search = $state('')
   let debouncedSearch = $state('')
