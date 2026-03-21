@@ -34,6 +34,8 @@ export function getTemplates(ctx: TemplateContext): Record<string, string> {
         '@mantiq/validation': '^0.1.2',
         '@mantiq/mail': '^0.2.0',
         '@mantiq/notify': '^0.1.0',
+        '@mantiq/search': '^0.1.0',
+        '@mantiq/health': '^0.1.0',
       },
       devDependencies: {
         'bun-types': 'latest',
@@ -117,6 +119,7 @@ import { HeartbeatServiceProvider, HeartbeatMiddleware } from '@mantiq/heartbeat
 import { RealtimeServiceProvider } from '@mantiq/realtime'
 import { MailServiceProvider } from '@mantiq/mail'
 import { NotificationServiceProvider } from '@mantiq/notify'
+import { SearchServiceProvider } from '@mantiq/search'
 import { DatabaseServiceProvider } from './app/Providers/DatabaseServiceProvider.ts'
 
 // ── Load .env ─────────────────────────────────────────────────────────────────
@@ -150,6 +153,7 @@ await app.registerProviders([
   RealtimeServiceProvider,
   MailServiceProvider,
   NotificationServiceProvider,
+  SearchServiceProvider,
 ])
 await app.bootProviders()
 
@@ -458,6 +462,33 @@ export default {
 }
 `,
 
+    'config/search.ts': `export default {
+  default: 'collection',
+  prefix: '',
+  queue: false,
+  softDelete: false,
+
+  engines: {
+    collection: {
+      driver: 'collection' as const,
+    },
+    database: {
+      driver: 'database' as const,
+    },
+    // algolia: {
+    //   driver: 'algolia' as const,
+    //   applicationId: env('ALGOLIA_APP_ID', ''),
+    //   apiKey: env('ALGOLIA_SECRET', ''),
+    // },
+    // meilisearch: {
+    //   driver: 'meilisearch' as const,
+    //   host: env('MEILISEARCH_HOST', 'http://127.0.0.1:7700'),
+    //   apiKey: env('MEILISEARCH_KEY', ''),
+    // },
+  },
+}
+`,
+
     'config/heartbeat.ts': `export default {
   enabled: true,
 
@@ -749,6 +780,8 @@ function applyKitOverrides(templates: Record<string, string>, ctx: TemplateConte
       '@mantiq/validation': '^0.1.2',
       '@mantiq/mail': '^0.2.0',
       '@mantiq/notify': '^0.1.0',
+      '@mantiq/search': '^0.1.0',
+      '@mantiq/health': '^0.1.0',
       '@mantiq/vite': '^0.1.3',
       ...uiDeps,
     },
@@ -826,6 +859,7 @@ import { HeartbeatServiceProvider, HeartbeatMiddleware } from '@mantiq/heartbeat
 import { RealtimeServiceProvider } from '@mantiq/realtime'
 import { MailServiceProvider } from '@mantiq/mail'
 import { NotificationServiceProvider } from '@mantiq/notify'
+import { SearchServiceProvider } from '@mantiq/search'
 import { DatabaseServiceProvider } from './app/Providers/DatabaseServiceProvider.ts'
 
 // ── Load .env ─────────────────────────────────────────────────────────────────
@@ -860,6 +894,7 @@ await app.registerProviders([
   RealtimeServiceProvider,
   MailServiceProvider,
   NotificationServiceProvider,
+  SearchServiceProvider,
 ])
 await app.bootProviders()
 
