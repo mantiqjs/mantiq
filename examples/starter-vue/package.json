@@ -8,7 +8,9 @@
     "start": "bun run index.ts",
     "mantiq": "bun run mantiq.ts",
     "dev:frontend": "vite",
-    "build:frontend": "vite build && vite build --ssr src/ssr.ts --outDir bootstrap/ssr"
+    "build:frontend": "vite build && vite build --ssr src/ssr.ts --outDir bootstrap/ssr",
+    "postinstall": "rm -rf node_modules/@mantiq/*/node_modules/@mantiq 2>/dev/null; true",
+    "setup": "bun install && bun mantiq migrate && bun mantiq seed && bun run build:frontend"
   },
   "dependencies": {
     "@mantiq/auth": "^0.1.2",
@@ -43,5 +45,13 @@
     "typescript": "^5.7.0",
     "vite": "^6.0.0",
     "vue": "^3.5.0"
+  },
+  "overrides": {
+    "@mantiq/core": "$@mantiq/core",
+    "@mantiq/database": "$@mantiq/database",
+    "@mantiq/cli": "$@mantiq/cli",
+    "@mantiq/events": "$@mantiq/events",
+    "@mantiq/queue": "$@mantiq/queue",
+    "@mantiq/mail": "$@mantiq/mail"
   }
 }
