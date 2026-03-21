@@ -5,30 +5,44 @@ interface MantiqAppProps {
   initialData?: Record<string, any>
 }
 
+function initTheme() {
+  if (typeof window === 'undefined') return
+  const theme =
+    localStorage.getItem('theme') ||
+    (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+  document.documentElement.classList.toggle('dark', theme === 'dark')
+}
+
+initTheme()
+
 export function MantiqApp({ pages, initialData }: MantiqAppProps) {
   const windowData = typeof window !== 'undefined' ? (window as any).__MANTIQ_DATA__ : {}
   const initial = initialData ?? windowData
   const [page, setPage] = useState<string>(initial._page ?? 'Home')
   const [data, setData] = useState<Record<string, any>>(initial)
+  const [loading, setLoading] = useState(false)
 
   const navigate = useCallback(async (href: string) => {
-    const res = await fetch(href, {
-      headers: { 'X-Mantiq': 'true', Accept: 'application/json' },
-    })
-    const newData = await res.json()
-    setPage(newData._page)
-    setData(newData)
-    history.pushState(null, '', newData._url)
+    setLoading(true)
+    try {
+      const res = await fetch(href, {
+        headers: { 'X-Mantiq': 'true', Accept: 'application/json' },
+      })
+      const newData = await res.json()
+      setPage(newData._page)
+      setData(newData)
+      history.pushState(null, '', newData._url)
+      window.scrollTo(0, 0)
 
-    // Scroll to top on navigation
-    window.scrollTo(0, 0)
-
-    // Re-run Prism syntax highlighting after navigation
-    requestAnimationFrame(() => {
-      if (typeof (window as any).Prism !== 'undefined') {
-        ;(window as any).Prism.highlightAll()
-      }
-    })
+      // Handle hash scrolling
+      requestAnimationFrame(() => {
+        if (location.hash) {
+          document.querySelector(location.hash)?.scrollIntoView({ behavior: 'smooth' })
+        }
+      })
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   useEffect(() => {
@@ -48,13 +62,6 @@ export function MantiqApp({ pages, initialData }: MantiqAppProps) {
     }
   }, [navigate])
 
-  // Run Prism on initial mount
-  useEffect(() => {
-    if (typeof (window as any).Prism !== 'undefined') {
-      ;(window as any).Prism.highlightAll()
-    }
-  }, [])
-
   const Page = pages[page]
-  return Page ? <Page {...data} navigate={navigate} /> : null
+  return Page ? <Page {...data} navigate={navigate} loading={loading} /> : null
 }

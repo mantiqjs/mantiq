@@ -74,6 +74,20 @@ export class TinkerCommand extends Command {
       }
     }
 
+    // ── Auto-import factories ─────────────────────────────────────────────
+    const factoriesDir = `${process.cwd()}/database/factories`
+    if (existsSync(factoriesDir)) {
+      const files = readdirSync(factoriesDir).filter((f) => f.endsWith('.ts'))
+      for (const file of files) {
+        try {
+          const mod = await import(`${factoriesDir}/${file}`)
+          const name = file.replace(/\.ts$/, '')
+          const cls = mod[name] ?? mod.default ?? Object.values(mod)[0]
+          if (cls) context[name] = cls
+        } catch {}
+      }
+    }
+
     // ── Assign to globalThis ─────────────────────────────────────────────
     for (const [key, value] of Object.entries(context)) {
       ;(globalThis as any)[key] = value

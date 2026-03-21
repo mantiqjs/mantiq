@@ -227,8 +227,8 @@ export function cn(...inputs: ClassValue[]) {
 `,
 
       // Components (button, input, label, card, badge, table, avatar,
-      // separator, sidebar, etc.) are installed by the shadcn CLI during
-      // scaffold — no hand-rolled templates needed.
+      // separator, dropdown-menu, sheet, tooltip, sidebar) are installed
+      // by the shadcn CLI during scaffold — no hand-rolled templates needed.
 
       // ── Login page (shadcn) ─────────────────────────────────────────────────
       'src/pages/Login.tsx': `import { useState } from 'react'
@@ -236,7 +236,8 @@ import { post } from '../lib/api.ts'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { LogIn } from 'lucide-react'
 
 interface LoginProps {
   appName?: string
@@ -267,52 +268,61 @@ export default function Login({ appName = '${ctx.name}', navigate }: LoginProps)
           <h2 className="text-lg font-semibold text-foreground">{appName}</h2>
         </div>
         <Card>
-          <CardHeader>
+          <CardHeader className="text-center">
             <CardTitle className="text-xl">Welcome back</CardTitle>
-            <CardDescription>Sign in to your account</CardDescription>
+            <CardDescription>Sign in to your account to continue</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {error && (
-                <div className="bg-destructive/10 border border-destructive/30 text-destructive rounded-lg px-3.5 py-2.5 text-sm">
-                  {error}
-                </div>
-              )}
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    placeholder="admin@example.com"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    placeholder="Enter your password"
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Signing in...' : 'Sign in'}
-                </Button>
-              </form>
-              <p className="text-sm text-muted-foreground text-center">
-                Don't have an account?{' '}
-                <a href="/register" className="text-primary hover:text-primary/80 font-medium">
-                  Register
-                </a>
-              </p>
-            </div>
+            {error && (
+              <div className="mb-4 rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                {error}
+              </div>
+            )}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  placeholder="admin@example.com"
+                  autoComplete="email"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="Enter your password"
+                  autoComplete="current-password"
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? (
+                  'Signing in\u2026'
+                ) : (
+                  <>
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Sign in
+                  </>
+                )}
+              </Button>
+            </form>
           </CardContent>
+          <CardFooter className="justify-center">
+            <p className="text-sm text-muted-foreground">
+              Don't have an account?{' '}
+              <Button variant="link" className="h-auto p-0 text-sm" onClick={() => navigate('/register')}>
+                Register
+              </Button>
+            </p>
+          </CardFooter>
         </Card>
       </div>
     </div>
@@ -326,7 +336,8 @@ import { post } from '../lib/api.ts'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { UserPlus } from 'lucide-react'
 
 interface RegisterProps {
   appName?: string
@@ -358,62 +369,72 @@ export default function Register({ appName = '${ctx.name}', navigate }: Register
           <h2 className="text-lg font-semibold text-foreground">{appName}</h2>
         </div>
         <Card>
-          <CardHeader>
+          <CardHeader className="text-center">
             <CardTitle className="text-xl">Create an account</CardTitle>
             <CardDescription>Get started with {appName}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {error && (
-                <div className="bg-destructive/10 border border-destructive/30 text-destructive rounded-lg px-3.5 py-2.5 text-sm">
-                  {error}
-                </div>
-              )}
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    placeholder="Your name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    placeholder="you@example.com"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    placeholder="Create a password"
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Creating account...' : 'Create account'}
-                </Button>
-              </form>
-              <p className="text-sm text-muted-foreground text-center">
-                Already have an account?{' '}
-                <a href="/login" className="text-primary hover:text-primary/80 font-medium">
-                  Sign in
-                </a>
-              </p>
-            </div>
+            {error && (
+              <div className="mb-4 rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                {error}
+              </div>
+            )}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  placeholder="Your name"
+                  autoComplete="name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  placeholder="you@example.com"
+                  autoComplete="email"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="Create a password"
+                  autoComplete="new-password"
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? (
+                  'Creating account\u2026'
+                ) : (
+                  <>
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Create account
+                  </>
+                )}
+              </Button>
+            </form>
           </CardContent>
+          <CardFooter className="justify-center">
+            <p className="text-sm text-muted-foreground">
+              Already have an account?{' '}
+              <Button variant="link" className="h-auto p-0 text-sm" onClick={() => navigate('/login')}>
+                Sign in
+              </Button>
+            </p>
+          </CardFooter>
         </Card>
       </div>
     </div>
@@ -437,13 +458,53 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import {
+  Home,
+  Users,
+  PanelLeftClose,
+  PanelLeft,
+  Sun,
+  Moon,
+  Menu,
+  Github,
+  ChevronDown,
+  LogOut,
+  Settings,
+  User,
+  Activity,
+  Zap,
+  TrendingUp,
+  UserCheck,
+  UserPlus,
+  Shield,
+} from 'lucide-react'
 
-interface User { id: number; name: string; email: string; role: string }
+interface UserRecord {
+  id: number
+  name: string
+  email: string
+  role: string
+}
 
 interface DashboardProps {
   appName?: string
-  currentUser?: User | null
-  users?: User[]
+  currentUser?: UserRecord | null
+  users?: UserRecord[]
   navigate: (href: string) => void
   [key: string]: any
 }
@@ -457,12 +518,166 @@ function getInitials(name: string) {
     .slice(0, 2)
 }
 
-export default function Dashboard({ appName = '${ctx.name}', currentUser, users: initialUsers, navigate }: DashboardProps) {
-  const [users, setUsers] = useState<User[]>(initialUsers ?? [])
+/* ── Sidebar nav items ────────────────────────────────────────────────────── */
+const mainNav = [
+  { label: 'Dashboard', icon: Home, href: '/dashboard', active: true },
+  { label: 'Users', icon: Users, href: '#users-section', scroll: true },
+]
+const secondaryNav = [
+  { label: 'Heartbeat', icon: Activity, href: '/_heartbeat' },
+  { label: 'API Ping', icon: Zap, href: '/api/ping' },
+]
+
+/* ── Sidebar content (shared between desktop aside & mobile Sheet) ──────── */
+function SidebarNav({
+  appName,
+  collapsed,
+  onToggle,
+  onNavigate,
+}: {
+  appName: string
+  collapsed: boolean
+  onToggle: () => void
+  onNavigate?: () => void
+}) {
+  return (
+    <TooltipProvider delayDuration={0}>
+      <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
+        {/* Brand */}
+        <div className="flex h-14 items-center border-b border-sidebar-border px-3">
+          {!collapsed && (
+            <span className="flex-1 truncate pl-2 text-sm font-semibold">{appName}</span>
+          )}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="ml-auto h-8 w-8 text-sidebar-foreground/60 hover:text-sidebar-foreground"
+                onClick={onToggle}
+              >
+                {collapsed ? <PanelLeft className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">{collapsed ? 'Expand sidebar' : 'Collapse sidebar'}</TooltipContent>
+          </Tooltip>
+        </div>
+
+        {/* Main nav */}
+        <nav className="flex-1 space-y-1 px-2 py-3">
+          {mainNav.map((item) => {
+            const Icon = item.icon
+            const btn = (
+              <Button
+                key={item.label}
+                variant="ghost"
+                className={\`w-full \${collapsed ? 'justify-center px-0' : 'justify-start gap-3'} \${
+                  item.active
+                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                    : 'text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
+                }\`}
+                asChild
+              >
+                <a
+                  href={item.href}
+                  onClick={
+                    item.scroll
+                      ? (e: React.MouseEvent) => {
+                          e.preventDefault()
+                          document.getElementById('users-section')?.scrollIntoView({ behavior: 'smooth' })
+                          onNavigate?.()
+                        }
+                      : onNavigate
+                        ? (e: React.MouseEvent) => { onNavigate() }
+                        : undefined
+                  }
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  {!collapsed && item.label}
+                </a>
+              </Button>
+            )
+            if (collapsed) {
+              return (
+                <Tooltip key={item.label}>
+                  <TooltipTrigger asChild>{btn}</TooltipTrigger>
+                  <TooltipContent side="right">{item.label}</TooltipContent>
+                </Tooltip>
+              )
+            }
+            return btn
+          })}
+        </nav>
+
+        <Separator className="bg-sidebar-border" />
+
+        {/* Secondary nav */}
+        <div className="space-y-1 px-2 py-3">
+          {secondaryNav.map((item) => {
+            const Icon = item.icon
+            const btn = (
+              <Button
+                key={item.label}
+                variant="ghost"
+                className={\`w-full \${collapsed ? 'justify-center px-0' : 'justify-start gap-3'} text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground\`}
+                asChild
+              >
+                <a href={item.href} onClick={onNavigate ? () => onNavigate() : undefined}>
+                  <Icon className="h-4 w-4 shrink-0" />
+                  {!collapsed && item.label}
+                </a>
+              </Button>
+            )
+            if (collapsed) {
+              return (
+                <Tooltip key={item.label}>
+                  <TooltipTrigger asChild>{btn}</TooltipTrigger>
+                  <TooltipContent side="right">{item.label}</TooltipContent>
+                </Tooltip>
+              )
+            }
+            return btn
+          })}
+        </div>
+
+        {/* GitHub link */}
+        <div className="border-t border-sidebar-border px-2 py-3">
+          {collapsed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className="w-full text-sidebar-foreground/60 hover:text-sidebar-foreground" asChild>
+                  <a href="https://github.com" target="_blank" rel="noreferrer">
+                    <Github className="h-4 w-4" />
+                  </a>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">GitHub</TooltipContent>
+            </Tooltip>
+          ) : (
+            <Button variant="ghost" className="w-full justify-start gap-3 text-sidebar-foreground/60 hover:text-sidebar-foreground" asChild>
+              <a href="https://github.com" target="_blank" rel="noreferrer">
+                <Github className="h-4 w-4 shrink-0" />
+                GitHub
+              </a>
+            </Button>
+          )}
+        </div>
+      </div>
+    </TooltipProvider>
+  )
+}
+
+export default function Dashboard({
+  appName = '${ctx.name}',
+  currentUser,
+  users: initialUsers,
+  navigate,
+}: DashboardProps) {
+  const [users, setUsers] = useState<UserRecord[]>(initialUsers ?? [])
   const [loading, setLoading] = useState(!initialUsers?.length)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
   const [isDark, setIsDark] = useState(() =>
-    typeof document !== 'undefined' ? document.documentElement.classList.contains('dark') : true
+    typeof document !== 'undefined' ? document.documentElement.classList.contains('dark') : true,
   )
 
   const toggleTheme = () => {
@@ -487,117 +702,160 @@ export default function Dashboard({ appName = '${ctx.name}', currentUser, users:
     navigate('/login')
   }
 
-  return (
-    <div className="min-h-screen flex bg-background">
-      {/* Mobile overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+  /* Stats — derived from real user data + mock extras */
+  const stats = [
+    { label: 'Total Users', value: users.length, icon: Users, change: '+12%' },
+    { label: 'Active Now', value: Math.max(1, Math.ceil(users.length * 0.6)), icon: UserCheck, change: '+3%' },
+    { label: 'New Today', value: Math.min(users.length, 2), icon: UserPlus, change: '+18%' },
+    { label: 'Admin Users', value: users.filter((u) => u.role === 'admin').length, icon: Shield, change: '0%' },
+  ]
 
-      {/* Sidebar */}
-      <aside className={\`fixed inset-y-0 left-0 z-50 w-60 bg-sidebar border-r border-sidebar-border flex flex-col transition-transform lg:translate-x-0 \${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}\`}>
-        <div className="h-14 flex items-center px-5 border-b border-sidebar-border">
-          <span className="text-sm font-semibold text-sidebar-foreground">{appName}</span>
-        </div>
-        <nav className="flex-1 px-3 py-3 space-y-1">
-          <Button variant="ghost" className="w-full justify-start gap-2.5 bg-sidebar-accent text-sidebar-accent-foreground" asChild>
-            <a href="/dashboard">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
-              Dashboard
-            </a>
-          </Button>
-          <Button variant="ghost" className="w-full justify-start gap-2.5 text-sidebar-foreground/60 hover:text-sidebar-foreground" asChild>
-            <a href="#users-section" onClick={(e) => { e.preventDefault(); document.getElementById('users-section')?.scrollIntoView({ behavior: 'smooth' }); setSidebarOpen(false) }}>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-              Users
-            </a>
-          </Button>
-        </nav>
-        <Separator />
-        <div className="px-3 py-3 space-y-1">
-          <Button variant="ghost" className="w-full justify-start gap-2.5 text-sidebar-foreground/60 hover:text-sidebar-foreground" asChild>
-            <a href="/_heartbeat">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" /></svg>
-              Heartbeat
-            </a>
-          </Button>
-          <Button variant="ghost" className="w-full justify-start gap-2.5 text-sidebar-foreground/60 hover:text-sidebar-foreground" asChild>
-            <a href="/api/ping">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-              API Ping
-            </a>
-          </Button>
-        </div>
+  const sidebarWidth = collapsed ? 'w-16' : 'w-60'
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* ── Desktop sidebar ──────────────────────────────────────────────── */}
+      <aside
+        className={\`fixed inset-y-0 left-0 z-30 hidden border-r border-sidebar-border transition-all duration-200 lg:block \${sidebarWidth}\`}
+      >
+        <SidebarNav
+          appName={appName}
+          collapsed={collapsed}
+          onToggle={() => setCollapsed((c) => !c)}
+        />
       </aside>
 
-      {/* Main */}
-      <div className="flex-1 lg:ml-60">
+      {/* ── Main area ────────────────────────────────────────────────────── */}
+      <div className={\`transition-all duration-200 \${collapsed ? 'lg:ml-16' : 'lg:ml-60'}\`}>
         {/* Top bar */}
-        <header className="h-14 border-b border-border bg-background/90 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between px-4 lg:px-6">
+        <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-border bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 lg:px-6">
           <div className="flex items-center gap-3">
-            {/* Mobile hamburger */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-              </svg>
-            </Button>
+            {/* Mobile hamburger via Sheet */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="lg:hidden">
+                  <Menu className="h-5 w-5" />
+                  <span className="sr-only">Toggle sidebar</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-60 p-0">
+                <SidebarNav
+                  appName={appName}
+                  collapsed={false}
+                  onToggle={() => {}}
+                />
+              </SheetContent>
+            </Sheet>
             <h1 className="text-sm font-medium text-foreground">Dashboard</h1>
           </div>
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={toggleTheme} title="Toggle theme">
-              {isDark ? (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-              ) : (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                </svg>
-              )}
-            </Button>
-            <div className="flex items-center gap-2">
-              <Avatar className="h-7 w-7">
-                <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
-                  {currentUser?.name ? getInitials(currentUser.name) : '?'}
-                </AvatarFallback>
-              </Avatar>
-              <span className="text-xs text-muted-foreground hidden sm:inline">{currentUser?.name}</span>
-            </div>
-            <Button variant="outline" size="sm" onClick={handleLogout}>
-              Logout
-            </Button>
+
+          <div className="flex items-center gap-2">
+            {/* Theme toggle */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" onClick={toggleTheme}>
+                    {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                    <span className="sr-only">Toggle theme</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{isDark ? 'Light mode' : 'Dark mode'}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            {/* Account dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="gap-2 px-2">
+                  <Avatar className="h-7 w-7">
+                    <AvatarFallback className="bg-primary/10 text-[10px] text-primary">
+                      {currentUser?.name ? getInitials(currentUser.name) : '?'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="hidden text-sm font-medium sm:inline-block">
+                    {currentUser?.name}
+                  </span>
+                  <ChevronDown className="hidden h-4 w-4 text-muted-foreground sm:inline-block" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{currentUser?.name}</p>
+                    <p className="text-xs leading-none text-muted-foreground">{currentUser?.email}</p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <User className="mr-2 h-4 w-4" />
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
 
         {/* Content */}
-        <main className="p-4 lg:p-6 space-y-6 animate-fade-up">
+        <main className="animate-fade-up space-y-6 p-4 lg:p-6">
+          {/* Welcome card */}
           <Card>
             <CardHeader>
               <CardTitle>Welcome back, {currentUser?.name}</CardTitle>
-              <CardDescription>Here's what's happening with your application.</CardDescription>
+              <CardDescription>
+                Here's what's happening with your application today.
+              </CardDescription>
             </CardHeader>
           </Card>
 
+          {/* Stats row */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {stats.map((stat) => {
+              const Icon = stat.icon
+              return (
+                <Card key={stat.label}>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardDescription className="text-sm font-medium">{stat.label}</CardDescription>
+                    <Icon className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stat.value}</div>
+                    <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <TrendingUp className="h-3 w-3" />
+                      {stat.change} from last month
+                    </p>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+
+          {/* Users table */}
           <Card id="users-section">
             <CardHeader className="flex flex-row items-center justify-between">
               <div className="space-y-1">
                 <CardTitle className="text-base">Users</CardTitle>
-                <CardDescription>{loading ? 'Loading...' : \`\${users.length} total\`}</CardDescription>
+                <CardDescription>
+                  {loading ? 'Loading\u2026' : \`\${users.length} registered user\${users.length === 1 ? '' : 's'}\`}
+                </CardDescription>
               </div>
+              <Button variant="outline" size="sm" onClick={fetchUsers} disabled={loading}>
+                Refresh
+              </Button>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[200px]">Name</TableHead>
+                    <TableHead className="w-[240px]">Name</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead className="w-[100px]">Role</TableHead>
                   </TableRow>
@@ -606,9 +864,9 @@ export default function Dashboard({ appName = '${ctx.name}', currentUser, users:
                   {users.map((u) => (
                     <TableRow key={u.id}>
                       <TableCell>
-                        <div className="flex items-center gap-2.5">
-                          <Avatar className="h-7 w-7">
-                            <AvatarFallback className="text-[10px] bg-muted">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback className="bg-muted text-xs">
                               {getInitials(u.name)}
                             </AvatarFallback>
                           </Avatar>
@@ -626,7 +884,7 @@ export default function Dashboard({ appName = '${ctx.name}', currentUser, users:
                   {users.length === 0 && !loading && (
                     <TableRow>
                       <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
-                        No users found
+                        No users found.
                       </TableCell>
                     </TableRow>
                   )}

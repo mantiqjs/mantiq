@@ -1,0 +1,47 @@
+{
+  "name": "@mantiq/example-starter-react",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch index.ts",
+    "start": "bun run index.ts",
+    "mantiq": "bun run mantiq.ts",
+    "dev:frontend": "vite",
+    "build:frontend": "vite build && vite build --ssr src/ssr.tsx --outDir bootstrap/ssr"
+  },
+  "dependencies": {
+    "@mantiq/auth": "^0.1.2",
+    "@mantiq/cli": "^0.1.2",
+    "@mantiq/core": "^0.1.2",
+    "@mantiq/database": "^0.1.2",
+    "@mantiq/events": "^0.1.2",
+    "@mantiq/filesystem": "^0.1.2",
+    "@mantiq/heartbeat": "^0.1.2",
+    "@mantiq/helpers": "^0.1.2",
+    "@mantiq/logging": "^0.1.2",
+    "@mantiq/mail": "^0.2.0",
+    "@mantiq/notify": "^0.1.0",
+    "@mantiq/queue": "^0.1.2",
+    "@mantiq/realtime": "^0.1.2",
+    "@mantiq/validation": "^0.1.2",
+    "@mantiq/vite": "^0.1.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.0",
+    "lucide-react": "^0.577.0",
+    "radix-ui": "^1.4.3",
+    "tailwind-merge": "^2.6.0"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0",
+    "tailwindcss": "^4.0.0",
+    "@tailwindcss/vite": "^4.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0"
+  }
+}

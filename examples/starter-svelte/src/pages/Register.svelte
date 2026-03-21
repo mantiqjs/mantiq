@@ -1,0 +1,130 @@
+<script lang="ts">
+  import { post } from '$lib/api'
+  import { Button } from '$lib/components/ui/button'
+  import { Input } from '$lib/components/ui/input'
+  import { Label } from '$lib/components/ui/label'
+
+  let {
+    appName = 'Mantiq',
+    navigate,
+  }: {
+    appName?: string
+    navigate: (href: string) => void
+    [key: string]: any
+  } = $props()
+
+  let name = $state('')
+  let email = $state('')
+  let password = $state('')
+  let error = $state('')
+  let loading = $state(false)
+
+  async function handleSubmit(e: SubmitEvent) {
+    e.preventDefault()
+    error = ''
+    loading = true
+    const { ok, data } = await post('/register', { name, email, password })
+    if (ok) navigate('/dashboard')
+    else error = data?.error?.message ?? data?.error ?? 'Registration failed. Please try again.'
+    loading = false
+  }
+</script>
+
+<div class="min-h-screen flex bg-background">
+  <!-- Left brand panel -->
+  <div class="hidden lg:flex lg:w-[45%] bg-foreground text-background flex-col justify-between p-10">
+    <div class="flex items-center gap-3">
+      <div class="flex h-8 w-8 items-center justify-center rounded bg-background text-foreground text-xs font-bold">
+        M
+      </div>
+      <span class="text-lg font-semibold tracking-tight">{appName}</span>
+    </div>
+
+    <div>
+      <blockquote class="text-2xl font-medium leading-snug tracking-tight">
+        "The framework that gets out of your way."
+      </blockquote>
+    </div>
+
+    <p class="text-sm text-background/50">
+      &copy; {new Date().getFullYear()} {appName}. All rights reserved.
+    </p>
+  </div>
+
+  <!-- Right form panel -->
+  <div class="flex flex-1 flex-col items-center justify-center px-6 py-12">
+    <!-- Mobile-only logo -->
+    <div class="mb-10 flex items-center gap-3 lg:hidden">
+      <div class="flex h-8 w-8 items-center justify-center rounded bg-foreground text-background text-xs font-bold">
+        M
+      </div>
+      <span class="text-lg font-semibold tracking-tight">{appName}</span>
+    </div>
+
+    <div class="w-full max-w-sm">
+      <div class="mb-8">
+        <h1 class="text-2xl font-semibold tracking-tight">Create an account</h1>
+        <p class="mt-2 text-sm text-muted-foreground">
+          Get started with {appName} today
+        </p>
+      </div>
+
+      {#if error}
+        <div class="mb-6 rounded-md border border-destructive px-4 py-3 text-sm text-destructive">
+          {error}
+        </div>
+      {/if}
+
+      <form onsubmit={handleSubmit} class="space-y-4">
+        <div class="space-y-2">
+          <Label for="name">Name</Label>
+          <Input
+            id="name"
+            bind:value={name}
+            required
+            placeholder="John Doe"
+            autocomplete="name"
+          />
+        </div>
+        <div class="space-y-2">
+          <Label for="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            bind:value={email}
+            required
+            placeholder="you@example.com"
+            autocomplete="email"
+          />
+        </div>
+        <div class="space-y-2">
+          <Label for="password">Password</Label>
+          <Input
+            id="password"
+            type="password"
+            bind:value={password}
+            required
+            placeholder="Create a strong password"
+            autocomplete="new-password"
+            minlength={8}
+          />
+          <p class="text-xs text-muted-foreground">Must be at least 8 characters</p>
+        </div>
+        <Button type="submit" class="w-full" disabled={loading}>
+          {loading ? 'Creating account...' : 'Create account'}
+        </Button>
+      </form>
+
+      <p class="mt-6 text-center text-sm text-muted-foreground">
+        Already have an account?{' '}
+        <button
+          type="button"
+          class="font-medium text-foreground underline underline-offset-4"
+          onclick={() => navigate('/login')}
+        >
+          Sign in
+        </button>
+      </p>
+    </div>
+  </div>
+</div>
