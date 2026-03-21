@@ -10,8 +10,8 @@
     "build": "vite build && vite build --ssr src/ssr.tsx --outDir bootstrap/ssr"
   },
   "dependencies": {
-    "@mantiq/core": "workspace:*",
-    "@mantiq/vite": "workspace:*",
+    "@mantiq/core": "^0.1.4",
+    "@mantiq/vite": "^0.1.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.0",
     "lucide-react": "^0.460.0",
