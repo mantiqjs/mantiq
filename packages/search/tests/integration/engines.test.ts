@@ -275,7 +275,13 @@ describe('TypesenseEngine', () => {
   test('createIndex', async () => {
     if (!available) return
     await engine.createIndex(INDEX_NAME, {
-      fields: [{ name: '.*', type: 'auto' }],
+      fields: [
+        { name: 'id', type: 'string' },
+        { name: 'name', type: 'string' },
+        { name: 'category', type: 'string', facet: true },
+        { name: 'price', type: 'float' },
+        { name: 'description', type: 'string' },
+      ],
     })
   })
 
