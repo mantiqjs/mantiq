@@ -714,12 +714,12 @@ function applyKitOverrides(templates: Record<string, string>, ctx: TemplateConte
     ? { 'vue': '^3.5.0', '@vitejs/plugin-vue': '^5.0.0' }
     : { 'svelte': '^5.0.0', '@sveltejs/vite-plugin-svelte': '^5.0.0' }
 
-  // UI library deps (shadcn + icons)
+  // UI library deps (shadcn + icons) — must match what the stubs actually import
   const uiDeps: Record<string, string> = kit === 'react'
-    ? { 'clsx': '^2.1.0', 'tailwind-merge': '^2.6.0', 'class-variance-authority': '^0.7.1', 'lucide-react': '^0.460.0', 'radix-ui': '^1.4.0' }
+    ? { 'clsx': '^2.1.0', 'tailwind-merge': '^2.6.0', 'class-variance-authority': '^0.7.1', 'lucide-react': '^0.577.0', 'radix-ui': '^1.4.0' }
     : kit === 'vue'
-    ? { 'clsx': '^2.1.0', 'tailwind-merge': '^2.6.0', 'class-variance-authority': '^0.7.1', 'lucide-vue-next': '^0.460.0', 'radix-vue': '^1.9.0', 'tw-animate-css': '^1.0.0' }
-    : { 'clsx': '^2.1.0', 'tailwind-merge': '^2.6.0', 'tailwind-variants': '^3.2.0', 'lucide-svelte': '^0.460.0', '@lucide/svelte': '^0.460.0', 'bits-ui': '^1.0.0' }
+    ? { 'clsx': '^2.1.0', 'tailwind-merge': '^3.5.0', 'class-variance-authority': '^0.7.1', 'lucide-vue-next': '^0.577.0', 'reka-ui': '^2.9.0', 'tw-animate-css': '^1.4.0', '@tanstack/vue-table': '^8.0.0' }
+    : { 'clsx': '^2.1.0', 'tailwind-merge': '^2.6.0', 'tailwind-variants': '^3.2.0', 'lucide-svelte': '^0.577.0', '@lucide/svelte': '^0.577.0', 'bits-ui': '^2.16.0' }
 
   templates['package.json'] = JSON.stringify({
     name: ctx.name,
