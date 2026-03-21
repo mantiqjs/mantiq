@@ -265,8 +265,15 @@ html {
   margin: 0 0 1.25rem;
   border-radius: var(--radius);
   border: 1px solid var(--border);
-  background: var(--muted) !important;
   overflow-x: auto;
+}
+
+:root .doc-content pre {
+  background: oklch(0.97 0.001 286) !important;
+}
+
+.dark .doc-content pre {
+  background: oklch(0.17 0.006 286) !important;
 }
 
 .doc-content pre code {
@@ -276,6 +283,56 @@ html {
   line-height: 1.7;
   padding: 1.25rem 1.5rem;
   background: transparent !important;
+}
+
+/* Prism overrides */
+.doc-content pre[class*="language-"],
+.doc-content code[class*="language-"] {
+  text-shadow: none !important;
+}
+
+:root .doc-content pre[class*="language-"],
+:root .doc-content code[class*="language-"] {
+  background: oklch(0.97 0.001 286) !important;
+  color: oklch(0.3 0.01 286) !important;
+}
+
+:root .doc-content .token.comment { color: oklch(0.55 0.01 286) !important; }
+:root .doc-content .token.keyword { color: oklch(0.45 0.18 300) !important; }
+:root .doc-content .token.string { color: oklch(0.45 0.15 160) !important; }
+:root .doc-content .token.function { color: oklch(0.45 0.18 260) !important; }
+:root .doc-content .token.number { color: oklch(0.5 0.18 30) !important; }
+:root .doc-content .token.operator { color: oklch(0.45 0.12 50) !important; }
+:root .doc-content .token.class-name { color: oklch(0.5 0.15 200) !important; }
+:root .doc-content .token.punctuation { color: oklch(0.45 0.01 286) !important; }
+:root .doc-content .token.builtin { color: oklch(0.45 0.18 260) !important; }
+
+.dark .doc-content pre[class*="language-"],
+.dark .doc-content code[class*="language-"],
+.dark pre[class*="language-"],
+.dark code[class*="language-"] {
+  background: oklch(0.17 0.006 286) !important;
+  color: oklch(0.82 0.01 286) !important;
+}
+
+.dark .token.comment { color: oklch(0.55 0.01 286) !important; }
+.dark .token.keyword { color: oklch(0.72 0.17 300) !important; }
+.dark .token.string { color: oklch(0.72 0.15 160) !important; }
+.dark .token.function { color: oklch(0.75 0.15 260) !important; }
+.dark .token.number { color: oklch(0.75 0.15 60) !important; }
+.dark .token.operator { color: oklch(0.7 0.12 50) !important; }
+.dark .token.class-name { color: oklch(0.75 0.12 200) !important; }
+.dark .token.punctuation { color: oklch(0.6 0.01 286) !important; }
+.dark .token.builtin { color: oklch(0.75 0.15 260) !important; }
+
+/* ── Global pre blocks (home page etc.) ───────────────────────────── */
+
+:root pre:not(.doc-content pre) {
+  background: oklch(0.97 0.001 286) !important;
+}
+
+.dark pre:not(.doc-content pre) {
+  background: oklch(0.17 0.006 286) !important;
 }
 
 /* ── Copy Button ──────────────────────────────────────────────────── */

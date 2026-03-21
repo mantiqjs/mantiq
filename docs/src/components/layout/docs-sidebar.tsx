@@ -73,7 +73,7 @@ export function DocsSidebar({ navigation, activeSlug, navigate }: DocsSidebarPro
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <Badge variant="outline" className="text-[0.625rem]">v0.1.0</Badge>
           <a
-            href="https://github.com/nicksona/mantiq"
+            href="https://github.com/mantiqjs/mantiq"
             target="_blank"
             rel="noopener"
             className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors no-underline"

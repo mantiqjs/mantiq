@@ -33,6 +33,15 @@ export default function Doc({ navigation, slug, title, content, prev, next, sear
   const contentRef = useRef<HTMLDivElement>(null)
   useCodeCopy(contentRef, [slug])
 
+  // Syntax highlighting
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      if (typeof (window as any).Prism !== 'undefined') {
+        ;(window as any).Prism.highlightAll()
+      }
+    })
+  }, [slug])
+
   // Keyboard navigation: j/k for next/prev
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -85,7 +94,7 @@ export default function Doc({ navigation, slug, title, content, prev, next, sear
               <Tooltip>
                 <TooltipTrigger asChild>
                   <a
-                    href={`https://github.com/nicksona/mantiq/edit/master/docs/content/pages/${slug}.ts`}
+                    href={`https://github.com/mantiqjs/mantiq/edit/master/docs/content/pages/${slug}.ts`}
                     target="_blank"
                     rel="noopener"
                   >
