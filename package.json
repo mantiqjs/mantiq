@@ -9,7 +9,7 @@
   "scripts": {
     "build": "bun run --filter '*' build",
     "test": "bun test packages/",
-    "test:ci": "bun test packages/ --exclude '**/mssql*'",
+    "test:ci": "bun test packages/ --path-ignore-patterns '**/mssql*'",
     "lint": "bun run --filter '*' lint",
     "typecheck": "bun run --filter '*' typecheck",
     "clean": "bun run --filter '*' clean",

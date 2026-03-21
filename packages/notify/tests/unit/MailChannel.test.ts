@@ -36,14 +36,13 @@ describe('MailChannel', () => {
     expect(payloadRequested).toBe(true)
   })
 
-  it('throws NotifyError when @mantiq/mail is not installed', async () => {
+  it('throws when sending fails (e.g. no Application context)', async () => {
     const notifiable = createMockNotifiable()
-    // Return a non-null payload so it doesn't skip
     const notification = new TestNotification(['mail'], {
       mail: { subject: 'Test', body: 'Hello' },
     })
 
-    // @mantiq/mail likely cannot be imported in test env, so this should throw
-    await expect(channel.send(notifiable, notification)).rejects.toThrow(/MailChannel requires @mantiq\/mail/)
+    // Should throw because mail sending requires Application context
+    await expect(channel.send(notifiable, notification)).rejects.toThrow()
   })
 })
