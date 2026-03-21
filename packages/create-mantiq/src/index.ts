@@ -86,22 +86,10 @@ if (!isCI && !kit) {
 
   kit = framework === 'none' ? undefined : framework as Kit
 
-  // UI kit selection (React only)
-  if (kit === 'react' && !flags['ui']) {
-    const uiChoice = await term.select('Which UI kit?', [
-      { value: 'none', label: 'Plain Tailwind' },
-      { value: 'shadcn', label: 'shadcn/ui', hint: 'Radix + Tailwind' },
-    ])
-    ui = uiChoice as 'shadcn' | 'none'
-  }
 } else {
   // Validate flags
   if (kit && !validKits.includes(kit as Kit)) {
     console.error(`\n  ${red('ERROR')}  Invalid kit "${kit}". Valid options: ${validKits.join(', ')}\n`)
-    process.exit(1)
-  }
-  if (ui === 'shadcn' && kit !== 'react') {
-    console.error(`\n  ${red('ERROR')}  shadcn/ui is only available with --kit=react\n`)
     process.exit(1)
   }
   term.header()
@@ -113,14 +101,52 @@ term.step('Scaffolding project')
 const appKey = `base64:${randomBytes(32).toString('base64')}`
 const templates = getTemplates({ name: projectName, appKey, kit, ui })
 
-// Write all files
-const files = Object.keys(templates).sort()
-for (const relativePath of files) {
+// Write base skeleton (dynamic templates)
+const templateFiles = Object.keys(templates).sort()
+for (const relativePath of templateFiles) {
   const fullPath = `${projectDir}/${relativePath}`
   mkdirSync(dirname(fullPath), { recursive: true })
   await Bun.write(fullPath, templates[relativePath]!)
 }
-console.log(`  ${dim(`${files.length} files created`)}`)
+
+// Copy starter kit stubs (static files)
+let stubCount = 0
+if (kit) {
+  const stubsDir = resolve(import.meta.dir, '..', 'stubs')
+  const manifestPath = resolve(stubsDir, 'manifest.json')
+
+  if (existsSync(manifestPath)) {
+    const manifest = JSON.parse(await Bun.file(manifestPath).text())
+    const kitManifest = manifest[kit]
+    const sharedManifest = manifest.shared
+
+    // Copy kit-specific stubs (src/, vite.config.ts, tsconfig.json, etc.)
+    if (kitManifest?.files) {
+      for (const { stub, target } of kitManifest.files) {
+        const src = resolve(stubsDir, kit, stub)
+        const dest = resolve(projectDir, target)
+        mkdirSync(dirname(dest), { recursive: true })
+        await Bun.write(dest, Bun.file(src))
+        stubCount++
+      }
+    }
+
+    // Copy shared stubs (routes, controllers, seeder) with placeholder replacement
+    if (sharedManifest?.files) {
+      const mainEntry = kitManifest?.mainEntry ?? 'src/main.ts'
+      for (const { stub, target } of sharedManifest.files) {
+        const src = resolve(stubsDir, 'shared', stub)
+        const dest = resolve(projectDir, target)
+        mkdirSync(dirname(dest), { recursive: true })
+        let content = await Bun.file(src).text()
+        content = content.replace(/\{\{MAIN_ENTRY\}\}/g, mainEntry)
+        await Bun.write(dest, content)
+        stubCount++
+      }
+    }
+  }
+}
+console.log(`  ${dim(`${templateFiles.length + stubCount} files created`)}`)
 
 // ── Install dependencies ─────────────────────────────────────────────────────
 const spin = term.spinner('Installing dependencies')
@@ -133,8 +159,8 @@ const install = Bun.spawn(['bun', 'install'], {
 await install.exited
 spin.stop('Dependencies installed')
 
-// ── Install shadcn components (if selected) ─────────────────────────────────
-if (ui === 'shadcn' && kit === 'react') {
+// ── Install shadcn components (React always uses shadcn) ─────────────────────
+if (kit === 'react') {
   const shadcnSpin = term.spinner('Installing shadcn/ui components')
 
   const run = async (args: string[]) => {

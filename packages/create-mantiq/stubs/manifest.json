@@ -1,0 +1,1415 @@
+{
+  "react": {
+    "files": [
+      {
+        "stub": "tsconfig.json.stub",
+        "target": "tsconfig.json"
+      },
+      {
+        "stub": "components.json.stub",
+        "target": "components.json"
+      },
+      {
+        "stub": "vite.config.ts.stub",
+        "target": "vite.config.ts"
+      },
+      {
+        "stub": "src/pages.ts.stub",
+        "target": "src/pages.ts"
+      },
+      {
+        "stub": "src/ssr.tsx.stub",
+        "target": "src/ssr.tsx"
+      },
+      {
+        "stub": "src/style.css.stub",
+        "target": "src/style.css"
+      },
+      {
+        "stub": "src/components/ui/table.tsx.stub",
+        "target": "src/components/ui/table.tsx"
+      },
+      {
+        "stub": "src/components/ui/label.tsx.stub",
+        "target": "src/components/ui/label.tsx"
+      },
+      {
+        "stub": "src/components/ui/tooltip.tsx.stub",
+        "target": "src/components/ui/tooltip.tsx"
+      },
+      {
+        "stub": "src/components/ui/skeleton.tsx.stub",
+        "target": "src/components/ui/skeleton.tsx"
+      },
+      {
+        "stub": "src/components/ui/avatar.tsx.stub",
+        "target": "src/components/ui/avatar.tsx"
+      },
+      {
+        "stub": "src/components/ui/sheet.tsx.stub",
+        "target": "src/components/ui/sheet.tsx"
+      },
+      {
+        "stub": "src/components/ui/badge.tsx.stub",
+        "target": "src/components/ui/badge.tsx"
+      },
+      {
+        "stub": "src/components/ui/tabs.tsx.stub",
+        "target": "src/components/ui/tabs.tsx"
+      },
+      {
+        "stub": "src/components/ui/separator.tsx.stub",
+        "target": "src/components/ui/separator.tsx"
+      },
+      {
+        "stub": "src/components/ui/card.tsx.stub",
+        "target": "src/components/ui/card.tsx"
+      },
+      {
+        "stub": "src/components/ui/dropdown-menu.tsx.stub",
+        "target": "src/components/ui/dropdown-menu.tsx"
+      },
+      {
+        "stub": "src/components/ui/input.tsx.stub",
+        "target": "src/components/ui/input.tsx"
+      },
+      {
+        "stub": "src/components/ui/button.tsx.stub",
+        "target": "src/components/ui/button.tsx"
+      },
+      {
+        "stub": "src/components/ui/sidebar.tsx.stub",
+        "target": "src/components/ui/sidebar.tsx"
+      },
+      {
+        "stub": "src/components/ui/dialog.tsx.stub",
+        "target": "src/components/ui/dialog.tsx"
+      },
+      {
+        "stub": "src/components/layout/top-nav.tsx.stub",
+        "target": "src/components/layout/top-nav.tsx"
+      },
+      {
+        "stub": "src/components/layout/header.tsx.stub",
+        "target": "src/components/layout/header.tsx"
+      },
+      {
+        "stub": "src/components/layout/main.tsx.stub",
+        "target": "src/components/layout/main.tsx"
+      },
+      {
+        "stub": "src/components/layout/app-sidebar.tsx.stub",
+        "target": "src/components/layout/app-sidebar.tsx"
+      },
+      {
+        "stub": "src/components/layout/index.ts.stub",
+        "target": "src/components/layout/index.ts"
+      },
+      {
+        "stub": "src/components/layout/nav-user.tsx.stub",
+        "target": "src/components/layout/nav-user.tsx"
+      },
+      {
+        "stub": "src/components/layout/authenticated-layout.tsx.stub",
+        "target": "src/components/layout/authenticated-layout.tsx"
+      },
+      {
+        "stub": "src/components/layout/search-dialog.tsx.stub",
+        "target": "src/components/layout/search-dialog.tsx"
+      },
+      {
+        "stub": "src/components/layout/nav-group.tsx.stub",
+        "target": "src/components/layout/nav-group.tsx"
+      },
+      {
+        "stub": "src/components/layout/theme-toggle.tsx.stub",
+        "target": "src/components/layout/theme-toggle.tsx"
+      },
+      {
+        "stub": "src/components/layout/sidebar-data.ts.stub",
+        "target": "src/components/layout/sidebar-data.ts"
+      },
+      {
+        "stub": "src/components/data-table.tsx.stub",
+        "target": "src/components/data-table.tsx"
+      },
+      {
+        "stub": "src/App.tsx.stub",
+        "target": "src/App.tsx"
+      },
+      {
+        "stub": "src/main.tsx.stub",
+        "target": "src/main.tsx"
+      },
+      {
+        "stub": "src/hooks/use-mobile.ts.stub",
+        "target": "src/hooks/use-mobile.ts"
+      },
+      {
+        "stub": "src/lib/api.ts.stub",
+        "target": "src/lib/api.ts"
+      },
+      {
+        "stub": "src/lib/utils.ts.stub",
+        "target": "src/lib/utils.ts"
+      },
+      {
+        "stub": "src/pages/Login.tsx.stub",
+        "target": "src/pages/Login.tsx"
+      },
+      {
+        "stub": "src/pages/Users.tsx.stub",
+        "target": "src/pages/Users.tsx"
+      },
+      {
+        "stub": "src/pages/users/dialogs.tsx.stub",
+        "target": "src/pages/users/dialogs.tsx"
+      },
+      {
+        "stub": "src/pages/Register.tsx.stub",
+        "target": "src/pages/Register.tsx"
+      },
+      {
+        "stub": "src/pages/Dashboard.tsx.stub",
+        "target": "src/pages/Dashboard.tsx"
+      },
+      {
+        "stub": "src/pages/account/layout.tsx.stub",
+        "target": "src/pages/account/layout.tsx"
+      },
+      {
+        "stub": "src/pages/account/preferences.tsx.stub",
+        "target": "src/pages/account/preferences.tsx"
+      },
+      {
+        "stub": "src/pages/account/profile.tsx.stub",
+        "target": "src/pages/account/profile.tsx"
+      },
+      {
+        "stub": "src/pages/account/security.tsx.stub",
+        "target": "src/pages/account/security.tsx"
+      }
+    ],
+    "ssrEntry": "src/ssr.tsx",
+    "mainEntry": "src/main.tsx",
+    "shadcn": true,
+    "shadcnComponents": [
+      "button",
+      "input",
+      "label",
+      "card",
+      "badge",
+      "table",
+      "avatar",
+      "separator",
+      "dropdown-menu",
+      "sheet",
+      "tooltip",
+      "sidebar",
+      "dialog",
+      "tabs",
+      "skeleton"
+    ]
+  },
+  "vue": {
+    "files": [
+      {
+        "stub": "tsconfig.json.stub",
+        "target": "tsconfig.json"
+      },
+      {
+        "stub": "components.json.stub",
+        "target": "components.json"
+      },
+      {
+        "stub": "vite.config.ts.stub",
+        "target": "vite.config.ts"
+      },
+      {
+        "stub": "src/pages.ts.stub",
+        "target": "src/pages.ts"
+      },
+      {
+        "stub": "src/ssr.ts.stub",
+        "target": "src/ssr.ts"
+      },
+      {
+        "stub": "src/App.vue.stub",
+        "target": "src/App.vue"
+      },
+      {
+        "stub": "src/main.ts.stub",
+        "target": "src/main.ts"
+      },
+      {
+        "stub": "src/style.css.stub",
+        "target": "src/style.css"
+      },
+      {
+        "stub": "src/components/ui/tabs/TabsContent.vue.stub",
+        "target": "src/components/ui/tabs/TabsContent.vue"
+      },
+      {
+        "stub": "src/components/ui/tabs/TabsTrigger.vue.stub",
+        "target": "src/components/ui/tabs/TabsTrigger.vue"
+      },
+      {
+        "stub": "src/components/ui/tabs/TabsList.vue.stub",
+        "target": "src/components/ui/tabs/TabsList.vue"
+      },
+      {
+        "stub": "src/components/ui/tabs/index.ts.stub",
+        "target": "src/components/ui/tabs/index.ts"
+      },
+      {
+        "stub": "src/components/ui/tabs/Tabs.vue.stub",
+        "target": "src/components/ui/tabs/Tabs.vue"
+      },
+      {
+        "stub": "src/components/ui/sidebar/SidebarMenuSub.vue.stub",
+        "target": "src/components/ui/sidebar/SidebarMenuSub.vue"
+      },
+      {
+        "stub": "src/components/ui/sidebar/SidebarRail.vue.stub",
+        "target": "src/components/ui/sidebar/SidebarRail.vue"
+      },
+      {
+        "stub": "src/components/ui/sidebar/SidebarGroupContent.vue.stub",
+        "target": "src/components/ui/sidebar/SidebarGroupContent.vue"
+      },
+      {
+        "stub": "src/components/ui/sidebar/SidebarMenuButtonChild.vue.stub",
+        "target": "src/components/ui/sidebar/SidebarMenuButtonChild.vue"
+      },
+      {
+        "stub": "src/components/ui/sidebar/SidebarGroup.vue.stub",
+        "target": "src/components/ui/sidebar/SidebarGroup.vue"
+      },
+      {
+        "stub": "src/components/ui/sidebar/SidebarGroupLabel.vue.stub",
+        "target": "src/components/ui/sidebar/SidebarGroupLabel.vue"
+      },
+      {
+        "stub": "src/components/ui/sidebar/SidebarMenuSkeleton.vue.stub",
+        "target": "src/components/ui/sidebar/SidebarMenuSkeleton.vue"
+      },
+      {
+        "stub": "src/components/ui/sidebar/Sidebar.vue.stub",
+        "target": "src/components/ui/sidebar/Sidebar.vue"
+      },
+      {
+        "stub": "src/components/ui/sidebar/utils.ts.stub",
+        "target": "src/components/ui/sidebar/utils.ts"
+      },
+      {
+        "stub": "src/components/ui/sidebar/SidebarMenu.vue.stub",
+        "target": "src/components/ui/sidebar/SidebarMenu.vue"
+      },
+      {
+        "stub": "src/components/ui/sidebar/SidebarContent.vue.stub",
+        "target": "src/components/ui/sidebar/SidebarContent.vue"
+      },
+      {
+        "stub": "src/components/ui/sidebar/SidebarMenuAction.vue.stub",
+        "target": "src/components/ui/sidebar/SidebarMenuAction.vue"
+      },
+      {
+        "stub": "src/components/ui/sidebar/SidebarMenuBadge.vue.stub",
+        "target": "src/components/ui/sidebar/SidebarMenuBadge.vue"
+      },
+      {
+        "stub": "src/components/ui/sidebar/SidebarGroupAction.vue.stub",
+        "target": "src/components/ui/sidebar/SidebarGroupAction.vue"
+      },
+      {
+        "stub": "src/components/ui/sidebar/SidebarTrigger.vue.stub",
+        "target": "src/components/ui/sidebar/SidebarTrigger.vue"
+      },
+      {
+        "stub": "src/components/ui/sidebar/index.ts.stub",
+        "target": "src/components/ui/sidebar/index.ts"
+      },
+      {
+        "stub": "src/components/ui/sidebar/SidebarSeparator.vue.stub",
+        "target": "src/components/ui/sidebar/SidebarSeparator.vue"
+      },
+      {
+        "stub": "src/components/ui/sidebar/SidebarMenuItem.vue.stub",
+        "target": "src/components/ui/sidebar/SidebarMenuItem.vue"
+      },
+      {
+        "stub": "src/components/ui/sidebar/SidebarHeader.vue.stub",
+        "target": "src/components/ui/sidebar/SidebarHeader.vue"
+      },
+      {
+        "stub": "src/components/ui/sidebar/SidebarFooter.vue.stub",
+        "target": "src/components/ui/sidebar/SidebarFooter.vue"
+      },
+      {
+        "stub": "src/components/ui/sidebar/SidebarMenuSubButton.vue.stub",
+        "target": "src/components/ui/sidebar/SidebarMenuSubButton.vue"
+      },
+      {
+        "stub": "src/components/ui/sidebar/SidebarProvider.vue.stub",
+        "target": "src/components/ui/sidebar/SidebarProvider.vue"
+      },
+      {
+        "stub": "src/components/ui/sidebar/SidebarMenuButton.vue.stub",
+        "target": "src/components/ui/sidebar/SidebarMenuButton.vue"
+      },
+      {
+        "stub": "src/components/ui/sidebar/SidebarInset.vue.stub",
+        "target": "src/components/ui/sidebar/SidebarInset.vue"
+      },
+      {
+        "stub": "src/components/ui/sidebar/SidebarInput.vue.stub",
+        "target": "src/components/ui/sidebar/SidebarInput.vue"
+      },
+      {
+        "stub": "src/components/ui/sidebar/SidebarMenuSubItem.vue.stub",
+        "target": "src/components/ui/sidebar/SidebarMenuSubItem.vue"
+      },
+      {
+        "stub": "src/components/ui/tooltip/TooltipProvider.vue.stub",
+        "target": "src/components/ui/tooltip/TooltipProvider.vue"
+      },
+      {
+        "stub": "src/components/ui/tooltip/TooltipTrigger.vue.stub",
+        "target": "src/components/ui/tooltip/TooltipTrigger.vue"
+      },
+      {
+        "stub": "src/components/ui/tooltip/Tooltip.vue.stub",
+        "target": "src/components/ui/tooltip/Tooltip.vue"
+      },
+      {
+        "stub": "src/components/ui/tooltip/index.ts.stub",
+        "target": "src/components/ui/tooltip/index.ts"
+      },
+      {
+        "stub": "src/components/ui/tooltip/TooltipContent.vue.stub",
+        "target": "src/components/ui/tooltip/TooltipContent.vue"
+      },
+      {
+        "stub": "src/components/ui/card/Card.vue.stub",
+        "target": "src/components/ui/card/Card.vue"
+      },
+      {
+        "stub": "src/components/ui/card/CardTitle.vue.stub",
+        "target": "src/components/ui/card/CardTitle.vue"
+      },
+      {
+        "stub": "src/components/ui/card/CardAction.vue.stub",
+        "target": "src/components/ui/card/CardAction.vue"
+      },
+      {
+        "stub": "src/components/ui/card/CardDescription.vue.stub",
+        "target": "src/components/ui/card/CardDescription.vue"
+      },
+      {
+        "stub": "src/components/ui/card/CardFooter.vue.stub",
+        "target": "src/components/ui/card/CardFooter.vue"
+      },
+      {
+        "stub": "src/components/ui/card/index.ts.stub",
+        "target": "src/components/ui/card/index.ts"
+      },
+      {
+        "stub": "src/components/ui/card/CardHeader.vue.stub",
+        "target": "src/components/ui/card/CardHeader.vue"
+      },
+      {
+        "stub": "src/components/ui/card/CardContent.vue.stub",
+        "target": "src/components/ui/card/CardContent.vue"
+      },
+      {
+        "stub": "src/components/ui/input/Input.vue.stub",
+        "target": "src/components/ui/input/Input.vue"
+      },
+      {
+        "stub": "src/components/ui/input/index.ts.stub",
+        "target": "src/components/ui/input/index.ts"
+      },
+      {
+        "stub": "src/components/ui/skeleton/index.ts.stub",
+        "target": "src/components/ui/skeleton/index.ts"
+      },
+      {
+        "stub": "src/components/ui/skeleton/Skeleton.vue.stub",
+        "target": "src/components/ui/skeleton/Skeleton.vue"
+      },
+      {
+        "stub": "src/components/ui/separator/index.ts.stub",
+        "target": "src/components/ui/separator/index.ts"
+      },
+      {
+        "stub": "src/components/ui/separator/Separator.vue.stub",
+        "target": "src/components/ui/separator/Separator.vue"
+      },
+      {
+        "stub": "src/components/ui/label/Label.vue.stub",
+        "target": "src/components/ui/label/Label.vue"
+      },
+      {
+        "stub": "src/components/ui/label/index.ts.stub",
+        "target": "src/components/ui/label/index.ts"
+      },
+      {
+        "stub": "src/components/ui/dropdown-menu/DropdownMenuSub.vue.stub",
+        "target": "src/components/ui/dropdown-menu/DropdownMenuSub.vue"
+      },
+      {
+        "stub": "src/components/ui/dropdown-menu/DropdownMenuRadioGroup.vue.stub",
+        "target": "src/components/ui/dropdown-menu/DropdownMenuRadioGroup.vue"
+      },
+      {
+        "stub": "src/components/ui/dropdown-menu/DropdownMenu.vue.stub",
+        "target": "src/components/ui/dropdown-menu/DropdownMenu.vue"
+      },
+      {
+        "stub": "src/components/ui/dropdown-menu/DropdownMenuCheckboxItem.vue.stub",
+        "target": "src/components/ui/dropdown-menu/DropdownMenuCheckboxItem.vue"
+      },
+      {
+        "stub": "src/components/ui/dropdown-menu/DropdownMenuItem.vue.stub",
+        "target": "src/components/ui/dropdown-menu/DropdownMenuItem.vue"
+      },
+      {
+        "stub": "src/components/ui/dropdown-menu/DropdownMenuRadioItem.vue.stub",
+        "target": "src/components/ui/dropdown-menu/DropdownMenuRadioItem.vue"
+      },
+      {
+        "stub": "src/components/ui/dropdown-menu/DropdownMenuSubTrigger.vue.stub",
+        "target": "src/components/ui/dropdown-menu/DropdownMenuSubTrigger.vue"
+      },
+      {
+        "stub": "src/components/ui/dropdown-menu/index.ts.stub",
+        "target": "src/components/ui/dropdown-menu/index.ts"
+      },
+      {
+        "stub": "src/components/ui/dropdown-menu/DropdownMenuGroup.vue.stub",
+        "target": "src/components/ui/dropdown-menu/DropdownMenuGroup.vue"
+      },
+      {
+        "stub": "src/components/ui/dropdown-menu/DropdownMenuSubContent.vue.stub",
+        "target": "src/components/ui/dropdown-menu/DropdownMenuSubContent.vue"
+      },
+      {
+        "stub": "src/components/ui/dropdown-menu/DropdownMenuLabel.vue.stub",
+        "target": "src/components/ui/dropdown-menu/DropdownMenuLabel.vue"
+      },
+      {
+        "stub": "src/components/ui/dropdown-menu/DropdownMenuShortcut.vue.stub",
+        "target": "src/components/ui/dropdown-menu/DropdownMenuShortcut.vue"
+      },
+      {
+        "stub": "src/components/ui/dropdown-menu/DropdownMenuTrigger.vue.stub",
+        "target": "src/components/ui/dropdown-menu/DropdownMenuTrigger.vue"
+      },
+      {
+        "stub": "src/components/ui/dropdown-menu/DropdownMenuSeparator.vue.stub",
+        "target": "src/components/ui/dropdown-menu/DropdownMenuSeparator.vue"
+      },
+      {
+        "stub": "src/components/ui/dropdown-menu/DropdownMenuContent.vue.stub",
+        "target": "src/components/ui/dropdown-menu/DropdownMenuContent.vue"
+      },
+      {
+        "stub": "src/components/ui/dialog/DialogContent.vue.stub",
+        "target": "src/components/ui/dialog/DialogContent.vue"
+      },
+      {
+        "stub": "src/components/ui/dialog/DialogScrollContent.vue.stub",
+        "target": "src/components/ui/dialog/DialogScrollContent.vue"
+      },
+      {
+        "stub": "src/components/ui/dialog/Dialog.vue.stub",
+        "target": "src/components/ui/dialog/Dialog.vue"
+      },
+      {
+        "stub": "src/components/ui/dialog/DialogClose.vue.stub",
+        "target": "src/components/ui/dialog/DialogClose.vue"
+      },
+      {
+        "stub": "src/components/ui/dialog/DialogTrigger.vue.stub",
+        "target": "src/components/ui/dialog/DialogTrigger.vue"
+      },
+      {
+        "stub": "src/components/ui/dialog/DialogTitle.vue.stub",
+        "target": "src/components/ui/dialog/DialogTitle.vue"
+      },
+      {
+        "stub": "src/components/ui/dialog/index.ts.stub",
+        "target": "src/components/ui/dialog/index.ts"
+      },
+      {
+        "stub": "src/components/ui/dialog/DialogFooter.vue.stub",
+        "target": "src/components/ui/dialog/DialogFooter.vue"
+      },
+      {
+        "stub": "src/components/ui/dialog/DialogDescription.vue.stub",
+        "target": "src/components/ui/dialog/DialogDescription.vue"
+      },
+      {
+        "stub": "src/components/ui/dialog/DialogOverlay.vue.stub",
+        "target": "src/components/ui/dialog/DialogOverlay.vue"
+      },
+      {
+        "stub": "src/components/ui/dialog/DialogHeader.vue.stub",
+        "target": "src/components/ui/dialog/DialogHeader.vue"
+      },
+      {
+        "stub": "src/components/ui/button/Button.vue.stub",
+        "target": "src/components/ui/button/Button.vue"
+      },
+      {
+        "stub": "src/components/ui/button/index.ts.stub",
+        "target": "src/components/ui/button/index.ts"
+      },
+      {
+        "stub": "src/components/ui/table/TableEmpty.vue.stub",
+        "target": "src/components/ui/table/TableEmpty.vue"
+      },
+      {
+        "stub": "src/components/ui/table/TableHeader.vue.stub",
+        "target": "src/components/ui/table/TableHeader.vue"
+      },
+      {
+        "stub": "src/components/ui/table/TableFooter.vue.stub",
+        "target": "src/components/ui/table/TableFooter.vue"
+      },
+      {
+        "stub": "src/components/ui/table/TableRow.vue.stub",
+        "target": "src/components/ui/table/TableRow.vue"
+      },
+      {
+        "stub": "src/components/ui/table/utils.ts.stub",
+        "target": "src/components/ui/table/utils.ts"
+      },
+      {
+        "stub": "src/components/ui/table/Table.vue.stub",
+        "target": "src/components/ui/table/Table.vue"
+      },
+      {
+        "stub": "src/components/ui/table/TableHead.vue.stub",
+        "target": "src/components/ui/table/TableHead.vue"
+      },
+      {
+        "stub": "src/components/ui/table/index.ts.stub",
+        "target": "src/components/ui/table/index.ts"
+      },
+      {
+        "stub": "src/components/ui/table/TableCell.vue.stub",
+        "target": "src/components/ui/table/TableCell.vue"
+      },
+      {
+        "stub": "src/components/ui/table/TableBody.vue.stub",
+        "target": "src/components/ui/table/TableBody.vue"
+      },
+      {
+        "stub": "src/components/ui/table/TableCaption.vue.stub",
+        "target": "src/components/ui/table/TableCaption.vue"
+      },
+      {
+        "stub": "src/components/ui/avatar/AvatarImage.vue.stub",
+        "target": "src/components/ui/avatar/AvatarImage.vue"
+      },
+      {
+        "stub": "src/components/ui/avatar/index.ts.stub",
+        "target": "src/components/ui/avatar/index.ts"
+      },
+      {
+        "stub": "src/components/ui/avatar/Avatar.vue.stub",
+        "target": "src/components/ui/avatar/Avatar.vue"
+      },
+      {
+        "stub": "src/components/ui/avatar/AvatarFallback.vue.stub",
+        "target": "src/components/ui/avatar/AvatarFallback.vue"
+      },
+      {
+        "stub": "src/components/ui/sheet/SheetClose.vue.stub",
+        "target": "src/components/ui/sheet/SheetClose.vue"
+      },
+      {
+        "stub": "src/components/ui/sheet/SheetTrigger.vue.stub",
+        "target": "src/components/ui/sheet/SheetTrigger.vue"
+      },
+      {
+        "stub": "src/components/ui/sheet/SheetFooter.vue.stub",
+        "target": "src/components/ui/sheet/SheetFooter.vue"
+      },
+      {
+        "stub": "src/components/ui/sheet/SheetContent.vue.stub",
+        "target": "src/components/ui/sheet/SheetContent.vue"
+      },
+      {
+        "stub": "src/components/ui/sheet/SheetHeader.vue.stub",
+        "target": "src/components/ui/sheet/SheetHeader.vue"
+      },
+      {
+        "stub": "src/components/ui/sheet/index.ts.stub",
+        "target": "src/components/ui/sheet/index.ts"
+      },
+      {
+        "stub": "src/components/ui/sheet/SheetDescription.vue.stub",
+        "target": "src/components/ui/sheet/SheetDescription.vue"
+      },
+      {
+        "stub": "src/components/ui/sheet/Sheet.vue.stub",
+        "target": "src/components/ui/sheet/Sheet.vue"
+      },
+      {
+        "stub": "src/components/ui/sheet/SheetTitle.vue.stub",
+        "target": "src/components/ui/sheet/SheetTitle.vue"
+      },
+      {
+        "stub": "src/components/ui/sheet/SheetOverlay.vue.stub",
+        "target": "src/components/ui/sheet/SheetOverlay.vue"
+      },
+      {
+        "stub": "src/components/ui/badge/index.ts.stub",
+        "target": "src/components/ui/badge/index.ts"
+      },
+      {
+        "stub": "src/components/ui/badge/Badge.vue.stub",
+        "target": "src/components/ui/badge/Badge.vue"
+      },
+      {
+        "stub": "src/components/layout/Main.vue.stub",
+        "target": "src/components/layout/Main.vue"
+      },
+      {
+        "stub": "src/components/layout/TopNav.vue.stub",
+        "target": "src/components/layout/TopNav.vue"
+      },
+      {
+        "stub": "src/components/layout/NavGroup.vue.stub",
+        "target": "src/components/layout/NavGroup.vue"
+      },
+      {
+        "stub": "src/components/layout/AuthenticatedLayout.vue.stub",
+        "target": "src/components/layout/AuthenticatedLayout.vue"
+      },
+      {
+        "stub": "src/components/layout/SearchDialog.vue.stub",
+        "target": "src/components/layout/SearchDialog.vue"
+      },
+      {
+        "stub": "src/components/layout/index.ts.stub",
+        "target": "src/components/layout/index.ts"
+      },
+      {
+        "stub": "src/components/layout/NavUser.vue.stub",
+        "target": "src/components/layout/NavUser.vue"
+      },
+      {
+        "stub": "src/components/layout/AppSidebar.vue.stub",
+        "target": "src/components/layout/AppSidebar.vue"
+      },
+      {
+        "stub": "src/components/layout/Header.vue.stub",
+        "target": "src/components/layout/Header.vue"
+      },
+      {
+        "stub": "src/components/layout/sidebar-data.ts.stub",
+        "target": "src/components/layout/sidebar-data.ts"
+      },
+      {
+        "stub": "src/components/layout/ThemeToggle.vue.stub",
+        "target": "src/components/layout/ThemeToggle.vue"
+      },
+      {
+        "stub": "src/components/DataTable.vue.stub",
+        "target": "src/components/DataTable.vue"
+      },
+      {
+        "stub": "src/lib/api.ts.stub",
+        "target": "src/lib/api.ts"
+      },
+      {
+        "stub": "src/lib/utils.ts.stub",
+        "target": "src/lib/utils.ts"
+      },
+      {
+        "stub": "src/pages/Register.vue.stub",
+        "target": "src/pages/Register.vue"
+      },
+      {
+        "stub": "src/pages/Dashboard.vue.stub",
+        "target": "src/pages/Dashboard.vue"
+      },
+      {
+        "stub": "src/pages/users/dialogs/DeleteUserDialog.vue.stub",
+        "target": "src/pages/users/dialogs/DeleteUserDialog.vue"
+      },
+      {
+        "stub": "src/pages/users/dialogs/EditUserDialog.vue.stub",
+        "target": "src/pages/users/dialogs/EditUserDialog.vue"
+      },
+      {
+        "stub": "src/pages/users/dialogs/AddUserDialog.vue.stub",
+        "target": "src/pages/users/dialogs/AddUserDialog.vue"
+      },
+      {
+        "stub": "src/pages/Login.vue.stub",
+        "target": "src/pages/Login.vue"
+      },
+      {
+        "stub": "src/pages/account/profile.vue.stub",
+        "target": "src/pages/account/profile.vue"
+      },
+      {
+        "stub": "src/pages/account/security.vue.stub",
+        "target": "src/pages/account/security.vue"
+      },
+      {
+        "stub": "src/pages/account/layout.vue.stub",
+        "target": "src/pages/account/layout.vue"
+      },
+      {
+        "stub": "src/pages/account/preferences.vue.stub",
+        "target": "src/pages/account/preferences.vue"
+      },
+      {
+        "stub": "src/pages/Users.vue.stub",
+        "target": "src/pages/Users.vue"
+      }
+    ],
+    "ssrEntry": "src/ssr.ts",
+    "mainEntry": "src/main.ts",
+    "shadcn": false
+  },
+  "svelte": {
+    "files": [
+      {
+        "stub": "tsconfig.json.stub",
+        "target": "tsconfig.json"
+      },
+      {
+        "stub": "components.json.stub",
+        "target": "components.json"
+      },
+      {
+        "stub": "vite.config.ts.stub",
+        "target": "vite.config.ts"
+      },
+      {
+        "stub": "svelte.config.js.stub",
+        "target": "svelte.config.js"
+      },
+      {
+        "stub": "src/pages.ts.stub",
+        "target": "src/pages.ts"
+      },
+      {
+        "stub": "src/ssr.ts.stub",
+        "target": "src/ssr.ts"
+      },
+      {
+        "stub": "src/main.ts.stub",
+        "target": "src/main.ts"
+      },
+      {
+        "stub": "src/style.css.stub",
+        "target": "src/style.css"
+      },
+      {
+        "stub": "src/App.svelte.stub",
+        "target": "src/App.svelte"
+      },
+      {
+        "stub": "src/lib/api.ts.stub",
+        "target": "src/lib/api.ts"
+      },
+      {
+        "stub": "src/lib/utils.ts.stub",
+        "target": "src/lib/utils.ts"
+      },
+      {
+        "stub": "src/lib/components/ui/tabs/tabs.svelte.stub",
+        "target": "src/lib/components/ui/tabs/tabs.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/tabs/tabs-content.svelte.stub",
+        "target": "src/lib/components/ui/tabs/tabs-content.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/tabs/index.ts.stub",
+        "target": "src/lib/components/ui/tabs/index.ts"
+      },
+      {
+        "stub": "src/lib/components/ui/tabs/tabs-list.svelte.stub",
+        "target": "src/lib/components/ui/tabs/tabs-list.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/tabs/tabs-trigger.svelte.stub",
+        "target": "src/lib/components/ui/tabs/tabs-trigger.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/sidebar/sidebar-rail.svelte.stub",
+        "target": "src/lib/components/ui/sidebar/sidebar-rail.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/sidebar/context.svelte.ts.stub",
+        "target": "src/lib/components/ui/sidebar/context.svelte.ts"
+      },
+      {
+        "stub": "src/lib/components/ui/sidebar/sidebar-menu-badge.svelte.stub",
+        "target": "src/lib/components/ui/sidebar/sidebar-menu-badge.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/sidebar/sidebar-menu-action.svelte.stub",
+        "target": "src/lib/components/ui/sidebar/sidebar-menu-action.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/sidebar/sidebar-menu-sub-button.svelte.stub",
+        "target": "src/lib/components/ui/sidebar/sidebar-menu-sub-button.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/sidebar/constants.ts.stub",
+        "target": "src/lib/components/ui/sidebar/constants.ts"
+      },
+      {
+        "stub": "src/lib/components/ui/sidebar/sidebar-menu-skeleton.svelte.stub",
+        "target": "src/lib/components/ui/sidebar/sidebar-menu-skeleton.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/sidebar/sidebar-input.svelte.stub",
+        "target": "src/lib/components/ui/sidebar/sidebar-input.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/sidebar/sidebar-separator.svelte.stub",
+        "target": "src/lib/components/ui/sidebar/sidebar-separator.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/sidebar/sidebar.svelte.stub",
+        "target": "src/lib/components/ui/sidebar/sidebar.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/sidebar/sidebar-group.svelte.stub",
+        "target": "src/lib/components/ui/sidebar/sidebar-group.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/sidebar/sidebar-group-content.svelte.stub",
+        "target": "src/lib/components/ui/sidebar/sidebar-group-content.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/sidebar/sidebar-group-label.svelte.stub",
+        "target": "src/lib/components/ui/sidebar/sidebar-group-label.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/sidebar/sidebar-menu-sub.svelte.stub",
+        "target": "src/lib/components/ui/sidebar/sidebar-menu-sub.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/sidebar/sidebar-group-action.svelte.stub",
+        "target": "src/lib/components/ui/sidebar/sidebar-group-action.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/sidebar/sidebar-footer.svelte.stub",
+        "target": "src/lib/components/ui/sidebar/sidebar-footer.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/sidebar/sidebar-inset.svelte.stub",
+        "target": "src/lib/components/ui/sidebar/sidebar-inset.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/sidebar/sidebar-content.svelte.stub",
+        "target": "src/lib/components/ui/sidebar/sidebar-content.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/sidebar/index.ts.stub",
+        "target": "src/lib/components/ui/sidebar/index.ts"
+      },
+      {
+        "stub": "src/lib/components/ui/sidebar/sidebar-provider.svelte.stub",
+        "target": "src/lib/components/ui/sidebar/sidebar-provider.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/sidebar/sidebar-menu-sub-item.svelte.stub",
+        "target": "src/lib/components/ui/sidebar/sidebar-menu-sub-item.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/sidebar/sidebar-header.svelte.stub",
+        "target": "src/lib/components/ui/sidebar/sidebar-header.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/sidebar/sidebar-menu-button.svelte.stub",
+        "target": "src/lib/components/ui/sidebar/sidebar-menu-button.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/sidebar/sidebar-trigger.svelte.stub",
+        "target": "src/lib/components/ui/sidebar/sidebar-trigger.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/sidebar/sidebar-menu-item.svelte.stub",
+        "target": "src/lib/components/ui/sidebar/sidebar-menu-item.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/sidebar/sidebar-menu.svelte.stub",
+        "target": "src/lib/components/ui/sidebar/sidebar-menu.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/tooltip/tooltip-portal.svelte.stub",
+        "target": "src/lib/components/ui/tooltip/tooltip-portal.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/tooltip/tooltip-content.svelte.stub",
+        "target": "src/lib/components/ui/tooltip/tooltip-content.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/tooltip/tooltip-trigger.svelte.stub",
+        "target": "src/lib/components/ui/tooltip/tooltip-trigger.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/tooltip/tooltip-provider.svelte.stub",
+        "target": "src/lib/components/ui/tooltip/tooltip-provider.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/tooltip/tooltip.svelte.stub",
+        "target": "src/lib/components/ui/tooltip/tooltip.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/tooltip/index.ts.stub",
+        "target": "src/lib/components/ui/tooltip/index.ts"
+      },
+      {
+        "stub": "src/lib/components/ui/card/card-action.svelte.stub",
+        "target": "src/lib/components/ui/card/card-action.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/card/card-footer.svelte.stub",
+        "target": "src/lib/components/ui/card/card-footer.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/card/card-description.svelte.stub",
+        "target": "src/lib/components/ui/card/card-description.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/card/card-header.svelte.stub",
+        "target": "src/lib/components/ui/card/card-header.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/card/card-content.svelte.stub",
+        "target": "src/lib/components/ui/card/card-content.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/card/card.svelte.stub",
+        "target": "src/lib/components/ui/card/card.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/card/index.ts.stub",
+        "target": "src/lib/components/ui/card/index.ts"
+      },
+      {
+        "stub": "src/lib/components/ui/card/card-title.svelte.stub",
+        "target": "src/lib/components/ui/card/card-title.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/input/input.svelte.stub",
+        "target": "src/lib/components/ui/input/input.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/input/index.ts.stub",
+        "target": "src/lib/components/ui/input/index.ts"
+      },
+      {
+        "stub": "src/lib/components/ui/skeleton/skeleton.svelte.stub",
+        "target": "src/lib/components/ui/skeleton/skeleton.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/skeleton/index.ts.stub",
+        "target": "src/lib/components/ui/skeleton/index.ts"
+      },
+      {
+        "stub": "src/lib/components/ui/separator/separator.svelte.stub",
+        "target": "src/lib/components/ui/separator/separator.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/separator/index.ts.stub",
+        "target": "src/lib/components/ui/separator/index.ts"
+      },
+      {
+        "stub": "src/lib/components/ui/label/label.svelte.stub",
+        "target": "src/lib/components/ui/label/label.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/label/index.ts.stub",
+        "target": "src/lib/components/ui/label/index.ts"
+      },
+      {
+        "stub": "src/lib/components/ui/dropdown-menu/dropdown-menu-portal.svelte.stub",
+        "target": "src/lib/components/ui/dropdown-menu/dropdown-menu-portal.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/dropdown-menu/dropdown-menu-sub-content.svelte.stub",
+        "target": "src/lib/components/ui/dropdown-menu/dropdown-menu-sub-content.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/dropdown-menu/dropdown-menu-item.svelte.stub",
+        "target": "src/lib/components/ui/dropdown-menu/dropdown-menu-item.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/dropdown-menu/dropdown-menu.svelte.stub",
+        "target": "src/lib/components/ui/dropdown-menu/dropdown-menu.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/dropdown-menu/dropdown-menu-shortcut.svelte.stub",
+        "target": "src/lib/components/ui/dropdown-menu/dropdown-menu-shortcut.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/dropdown-menu/dropdown-menu-label.svelte.stub",
+        "target": "src/lib/components/ui/dropdown-menu/dropdown-menu-label.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/dropdown-menu/dropdown-menu-sub-trigger.svelte.stub",
+        "target": "src/lib/components/ui/dropdown-menu/dropdown-menu-sub-trigger.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/dropdown-menu/dropdown-menu-checkbox-group.svelte.stub",
+        "target": "src/lib/components/ui/dropdown-menu/dropdown-menu-checkbox-group.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/dropdown-menu/dropdown-menu-group.svelte.stub",
+        "target": "src/lib/components/ui/dropdown-menu/dropdown-menu-group.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/dropdown-menu/dropdown-menu-trigger.svelte.stub",
+        "target": "src/lib/components/ui/dropdown-menu/dropdown-menu-trigger.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/dropdown-menu/dropdown-menu-group-heading.svelte.stub",
+        "target": "src/lib/components/ui/dropdown-menu/dropdown-menu-group-heading.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/dropdown-menu/dropdown-menu-radio-group.svelte.stub",
+        "target": "src/lib/components/ui/dropdown-menu/dropdown-menu-radio-group.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/dropdown-menu/index.ts.stub",
+        "target": "src/lib/components/ui/dropdown-menu/index.ts"
+      },
+      {
+        "stub": "src/lib/components/ui/dropdown-menu/dropdown-menu-separator.svelte.stub",
+        "target": "src/lib/components/ui/dropdown-menu/dropdown-menu-separator.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/dropdown-menu/dropdown-menu-checkbox-item.svelte.stub",
+        "target": "src/lib/components/ui/dropdown-menu/dropdown-menu-checkbox-item.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/dropdown-menu/dropdown-menu-sub.svelte.stub",
+        "target": "src/lib/components/ui/dropdown-menu/dropdown-menu-sub.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/dropdown-menu/dropdown-menu-radio-item.svelte.stub",
+        "target": "src/lib/components/ui/dropdown-menu/dropdown-menu-radio-item.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/dropdown-menu/dropdown-menu-content.svelte.stub",
+        "target": "src/lib/components/ui/dropdown-menu/dropdown-menu-content.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/dialog/dialog-overlay.svelte.stub",
+        "target": "src/lib/components/ui/dialog/dialog-overlay.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/dialog/dialog-close.svelte.stub",
+        "target": "src/lib/components/ui/dialog/dialog-close.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/dialog/dialog-footer.svelte.stub",
+        "target": "src/lib/components/ui/dialog/dialog-footer.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/dialog/dialog-title.svelte.stub",
+        "target": "src/lib/components/ui/dialog/dialog-title.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/dialog/index.ts.stub",
+        "target": "src/lib/components/ui/dialog/index.ts"
+      },
+      {
+        "stub": "src/lib/components/ui/dialog/dialog-description.svelte.stub",
+        "target": "src/lib/components/ui/dialog/dialog-description.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/dialog/dialog-trigger.svelte.stub",
+        "target": "src/lib/components/ui/dialog/dialog-trigger.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/dialog/dialog-portal.svelte.stub",
+        "target": "src/lib/components/ui/dialog/dialog-portal.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/dialog/dialog-header.svelte.stub",
+        "target": "src/lib/components/ui/dialog/dialog-header.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/dialog/dialog.svelte.stub",
+        "target": "src/lib/components/ui/dialog/dialog.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/dialog/dialog-content.svelte.stub",
+        "target": "src/lib/components/ui/dialog/dialog-content.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/button/index.ts.stub",
+        "target": "src/lib/components/ui/button/index.ts"
+      },
+      {
+        "stub": "src/lib/components/ui/button/button.svelte.stub",
+        "target": "src/lib/components/ui/button/button.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/table/table-row.svelte.stub",
+        "target": "src/lib/components/ui/table/table-row.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/table/table-header.svelte.stub",
+        "target": "src/lib/components/ui/table/table-header.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/table/table-head.svelte.stub",
+        "target": "src/lib/components/ui/table/table-head.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/table/table.svelte.stub",
+        "target": "src/lib/components/ui/table/table.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/table/table-body.svelte.stub",
+        "target": "src/lib/components/ui/table/table-body.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/table/table-footer.svelte.stub",
+        "target": "src/lib/components/ui/table/table-footer.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/table/table-caption.svelte.stub",
+        "target": "src/lib/components/ui/table/table-caption.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/table/index.ts.stub",
+        "target": "src/lib/components/ui/table/index.ts"
+      },
+      {
+        "stub": "src/lib/components/ui/table/table-cell.svelte.stub",
+        "target": "src/lib/components/ui/table/table-cell.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/avatar/avatar-badge.svelte.stub",
+        "target": "src/lib/components/ui/avatar/avatar-badge.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/avatar/avatar-image.svelte.stub",
+        "target": "src/lib/components/ui/avatar/avatar-image.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/avatar/index.ts.stub",
+        "target": "src/lib/components/ui/avatar/index.ts"
+      },
+      {
+        "stub": "src/lib/components/ui/avatar/avatar-fallback.svelte.stub",
+        "target": "src/lib/components/ui/avatar/avatar-fallback.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/avatar/avatar.svelte.stub",
+        "target": "src/lib/components/ui/avatar/avatar.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/avatar/avatar-group.svelte.stub",
+        "target": "src/lib/components/ui/avatar/avatar-group.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/avatar/avatar-group-count.svelte.stub",
+        "target": "src/lib/components/ui/avatar/avatar-group-count.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/sheet/sheet-overlay.svelte.stub",
+        "target": "src/lib/components/ui/sheet/sheet-overlay.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/sheet/sheet-header.svelte.stub",
+        "target": "src/lib/components/ui/sheet/sheet-header.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/sheet/sheet.svelte.stub",
+        "target": "src/lib/components/ui/sheet/sheet.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/sheet/sheet-description.svelte.stub",
+        "target": "src/lib/components/ui/sheet/sheet-description.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/sheet/sheet-portal.svelte.stub",
+        "target": "src/lib/components/ui/sheet/sheet-portal.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/sheet/sheet-title.svelte.stub",
+        "target": "src/lib/components/ui/sheet/sheet-title.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/sheet/sheet-footer.svelte.stub",
+        "target": "src/lib/components/ui/sheet/sheet-footer.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/sheet/sheet-close.svelte.stub",
+        "target": "src/lib/components/ui/sheet/sheet-close.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/sheet/sheet-content.svelte.stub",
+        "target": "src/lib/components/ui/sheet/sheet-content.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/sheet/index.ts.stub",
+        "target": "src/lib/components/ui/sheet/index.ts"
+      },
+      {
+        "stub": "src/lib/components/ui/sheet/sheet-trigger.svelte.stub",
+        "target": "src/lib/components/ui/sheet/sheet-trigger.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/badge/badge.svelte.stub",
+        "target": "src/lib/components/ui/badge/badge.svelte"
+      },
+      {
+        "stub": "src/lib/components/ui/badge/index.ts.stub",
+        "target": "src/lib/components/ui/badge/index.ts"
+      },
+      {
+        "stub": "src/lib/components/DataTable.svelte.stub",
+        "target": "src/lib/components/DataTable.svelte"
+      },
+      {
+        "stub": "src/lib/components/layout/SearchDialog.svelte.stub",
+        "target": "src/lib/components/layout/SearchDialog.svelte"
+      },
+      {
+        "stub": "src/lib/components/layout/Main.svelte.stub",
+        "target": "src/lib/components/layout/Main.svelte"
+      },
+      {
+        "stub": "src/lib/components/layout/Header.svelte.stub",
+        "target": "src/lib/components/layout/Header.svelte"
+      },
+      {
+        "stub": "src/lib/components/layout/AuthenticatedLayout.svelte.stub",
+        "target": "src/lib/components/layout/AuthenticatedLayout.svelte"
+      },
+      {
+        "stub": "src/lib/components/layout/AppSidebar.svelte.stub",
+        "target": "src/lib/components/layout/AppSidebar.svelte"
+      },
+      {
+        "stub": "src/lib/components/layout/NavUser.svelte.stub",
+        "target": "src/lib/components/layout/NavUser.svelte"
+      },
+      {
+        "stub": "src/lib/components/layout/TopNav.svelte.stub",
+        "target": "src/lib/components/layout/TopNav.svelte"
+      },
+      {
+        "stub": "src/lib/components/layout/ThemeToggle.svelte.stub",
+        "target": "src/lib/components/layout/ThemeToggle.svelte"
+      },
+      {
+        "stub": "src/lib/components/layout/NavGroup.svelte.stub",
+        "target": "src/lib/components/layout/NavGroup.svelte"
+      },
+      {
+        "stub": "src/lib/components/layout/sidebar-data.ts.stub",
+        "target": "src/lib/components/layout/sidebar-data.ts"
+      },
+      {
+        "stub": "src/lib/hooks/is-mobile.svelte.ts.stub",
+        "target": "src/lib/hooks/is-mobile.svelte.ts"
+      },
+      {
+        "stub": "src/pages/Login.svelte.stub",
+        "target": "src/pages/Login.svelte"
+      },
+      {
+        "stub": "src/pages/Register.svelte.stub",
+        "target": "src/pages/Register.svelte"
+      },
+      {
+        "stub": "src/pages/users/DeleteUserDialog.svelte.stub",
+        "target": "src/pages/users/DeleteUserDialog.svelte"
+      },
+      {
+        "stub": "src/pages/users/AddUserDialog.svelte.stub",
+        "target": "src/pages/users/AddUserDialog.svelte"
+      },
+      {
+        "stub": "src/pages/users/EditUserDialog.svelte.stub",
+        "target": "src/pages/users/EditUserDialog.svelte"
+      },
+      {
+        "stub": "src/pages/account/preferences.svelte.stub",
+        "target": "src/pages/account/preferences.svelte"
+      },
+      {
+        "stub": "src/pages/account/layout.svelte.stub",
+        "target": "src/pages/account/layout.svelte"
+      },
+      {
+        "stub": "src/pages/account/profile.svelte.stub",
+        "target": "src/pages/account/profile.svelte"
+      },
+      {
+        "stub": "src/pages/account/security.svelte.stub",
+        "target": "src/pages/account/security.svelte"
+      },
+      {
+        "stub": "src/pages/Dashboard.svelte.stub",
+        "target": "src/pages/Dashboard.svelte"
+      },
+      {
+        "stub": "src/pages/Users.svelte.stub",
+        "target": "src/pages/Users.svelte"
+      }
+    ],
+    "ssrEntry": "src/ssr.ts",
+    "mainEntry": "src/main.ts",
+    "shadcn": false
+  },
+  "shared": {
+    "files": [
+      {
+        "stub": "database/seeders/DatabaseSeeder.ts.stub",
+        "target": "database/seeders/DatabaseSeeder.ts"
+      },
+      {
+        "stub": "database/factories/UserFactory.ts.stub",
+        "target": "database/factories/UserFactory.ts"
+      },
+      {
+        "stub": "app/Http/Controllers/AuthController.ts.stub",
+        "target": "app/Http/Controllers/AuthController.ts"
+      },
+      {
+        "stub": "app/Http/Controllers/PageController.ts.stub",
+        "target": "app/Http/Controllers/PageController.ts"
+      },
+      {
+        "stub": "app/Http/Controllers/HomeController.ts.stub",
+        "target": "app/Http/Controllers/HomeController.ts"
+      },
+      {
+        "stub": "routes/api.ts.stub",
+        "target": "routes/api.ts"
+      },
+      {
+        "stub": "routes/web.ts.stub",
+        "target": "routes/web.ts"
+      }
+    ],
+    "placeholders": {
+      "{{MAIN_ENTRY}}": {
+        "react": "src/main.tsx",
+        "vue": "src/main.ts",
+        "svelte": "src/main.ts"
+      }
+    }
+  }
+}
