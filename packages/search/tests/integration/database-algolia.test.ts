@@ -140,7 +140,7 @@ function createAlgoliaModel(id: number, attrs: Record<string, any>): AlgoliaProd
 }
 
 describe.skipIf(!algoliaAvailable)('AlgoliaEngine (live API)', () => {
-  const INDEX_NAME = 'test_products'
+  const INDEX_NAME = `test_products_${Date.now()}`
   let engine: AlgoliaEngine
 
   const models = productData.map((p, i) => createAlgoliaModel(i + 1, p))
