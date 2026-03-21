@@ -1,8 +1,7 @@
-import { useRef, useEffect, useCallback } from 'react'
-import { FileText, Pencil, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useRef, useEffect, useCallback, useState } from 'react'
+import { FileText, Check, Pencil, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { Skeleton } from '@/components/ui/skeleton'
 import { DocsLayout } from '@/components/layout/docs-layout'
 import { useCodeCopy } from '@/hooks/use-code-copy'
 import { htmlToMarkdown } from '@/lib/html-to-markdown'
@@ -26,10 +25,9 @@ interface DocProps {
   next: NavPage | null
   searchEntries?: any[]
   navigate: (href: string) => void
-  loading?: boolean
 }
 
-export default function Doc({ navigation, slug, title, content, prev, next, searchEntries, navigate, loading }: DocProps) {
+export default function Doc({ navigation, slug, title, content, prev, next, searchEntries, navigate }: DocProps) {
   const contentRef = useRef<HTMLDivElement>(null)
   useCodeCopy(contentRef, [slug])
 
@@ -53,27 +51,15 @@ export default function Doc({ navigation, slug, title, content, prev, next, sear
     return () => document.removeEventListener('keydown', handler)
   }, [prev, next, navigate])
 
+  const [mdCopied, setMdCopied] = useState(false)
+
   const copyAsMarkdown = useCallback(() => {
     if (!contentRef.current) return
     const md = htmlToMarkdown(contentRef.current, title)
     navigator.clipboard.writeText(md)
+    setMdCopied(true)
+    setTimeout(() => setMdCopied(false), 2000)
   }, [title])
-
-  if (loading) {
-    return (
-      <DocsLayout navigation={navigation} slug={slug} title={title} navigate={navigate} searchEntries={searchEntries}>
-        <div className="px-8 lg:px-16 py-10 max-w-3xl">
-          <Skeleton className="h-9 w-64 mb-8" />
-          <Skeleton className="h-4 w-full mb-3" />
-          <Skeleton className="h-4 w-5/6 mb-3" />
-          <Skeleton className="h-4 w-4/6 mb-6" />
-          <Skeleton className="h-32 w-full mb-6" />
-          <Skeleton className="h-4 w-full mb-3" />
-          <Skeleton className="h-4 w-3/4 mb-3" />
-        </div>
-      </DocsLayout>
-    )
-  }
 
   return (
     <DocsLayout navigation={navigation} slug={slug} title={title} navigate={navigate} searchEntries={searchEntries}>
@@ -83,14 +69,19 @@ export default function Doc({ navigation, slug, title, content, prev, next, sear
           <div className="flex items-start justify-between mb-8">
             <h1 className="text-3xl font-bold text-foreground tracking-tight">{title}</h1>
             <div className="flex items-center gap-1 shrink-0 ml-4">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={copyAsMarkdown}>
-                    <FileText className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Copy as Markdown</TooltipContent>
-              </Tooltip>
+              <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs" onClick={copyAsMarkdown}>
+                {mdCopied ? (
+                  <>
+                    <Check className="h-3.5 w-3.5 text-primary" />
+                    Copied
+                  </>
+                ) : (
+                  <>
+                    <FileText className="h-3.5 w-3.5" />
+                    Copy as Markdown
+                  </>
+                )}
+              </Button>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <a
