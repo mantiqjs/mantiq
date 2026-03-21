@@ -14,6 +14,50 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: mantiq_test
+          POSTGRES_DB: mantiq_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U mantiq_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: mantiq_test
+          MYSQL_USER: mantiq_test
+          MYSQL_PASSWORD: mantiq_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: Y
+          MSSQL_SA_PASSWORD: YourStrong@Passw0rd
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'YourStrong@Passw0rd' -C -Q 'SELECT 1' || /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P 'YourStrong@Passw0rd' -Q 'SELECT 1'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
     steps:
       - uses: actions/checkout@v4
 
@@ -24,7 +68,30 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Create MSSQL test database
+        run: |
+          for tool in /opt/mssql-tools18/bin/sqlcmd /opt/mssql-tools/bin/sqlcmd; do
+            if command -v $tool &>/dev/null || [ -f "$tool" ]; then
+              $tool -S 127.0.0.1 -U sa -P 'YourStrong@Passw0rd' -C -Q "IF DB_ID('mantiq_test') IS NULL CREATE DATABASE mantiq_test" 2>/dev/null && break
+            fi
+          done
+          # Fallback: try with docker exec
+          docker exec $(docker ps -q --filter ancestor=mcr.microsoft.com/mssql/server:2022-latest) /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'YourStrong@Passw0rd' -C -Q "IF DB_ID('mantiq_test') IS NULL CREATE DATABASE mantiq_test" 2>/dev/null || true
+
       - name: Run tests
+        env:
+          PG_HOST: 127.0.0.1
+          PG_PORT: 5432
+          PG_USER: mantiq_test
+          PG_DB: mantiq_test
+          DB_HOST: 127.0.0.1
+          DB_USER: mantiq_test
+          DB_PASSWORD: mantiq_test
+          MSSQL_HOST: 127.0.0.1
+          MSSQL_PORT: 1433
+          MSSQL_DB: mantiq_test
+          MSSQL_USER: sa
+          MSSQL_PASSWORD: YourStrong@Passw0rd
         run: bun run test:ci
 
   typecheck:

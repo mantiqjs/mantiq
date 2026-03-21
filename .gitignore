@@ -14,7 +14,7 @@ storage/logs/
 .turbo/
 .devdbrc
 bun.lockb
-*.lock
+!bun.lock
 specs/
 addons/
 starters/
