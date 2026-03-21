@@ -10,6 +10,7 @@ import { Model } from '../../src/orm/Model.ts'
 import { Factory } from '../../src/factories/Factory.ts'
 import { Migration } from '../../src/migrations/Migration.ts'
 import { Migrator } from '../../src/migrations/Migrator.ts'
+import { raw } from '../../src/query/Expression.ts'
 import type { SchemaBuilder } from '../../src/schema/SchemaBuilder.ts'
 import type { DatabaseConnection } from '../../src/contracts/Connection.ts'
 
@@ -26,340 +27,1054 @@ const conn = new MySQLConnection({
   password: DB_PASSWORD,
 })
 
-// ── Test Model ─────────────────────────────────────────────────────────────────
+// ── Test Models ──────────────────────────────────────────────────────────────
 
-class TestUser extends Model {
-  static override table = 'test_users'
-  static override fillable = ['name', 'email', 'age', 'is_active']
+class MyUser extends Model {
+  static override table = 'my_users'
+  static override fillable = ['name', 'email', 'age', 'score', 'is_active', 'meta']
   static override guarded = ['id']
-  static override casts = { age: 'int' as const, is_active: 'boolean' as const }
+  static override casts = {
+    age: 'int' as const,
+    score: 'float' as const,
+    is_active: 'boolean' as const,
+    meta: 'json' as const,
+  }
   static override timestamps = true
 }
 
-class TestPost extends Model {
-  static override table = 'test_posts'
-  static override fillable = ['title', 'body', 'user_id']
+class MyPost extends Model {
+  static override table = 'my_posts'
+  static override fillable = ['title', 'body', 'user_id', 'tags']
   static override softDelete = true
   static override timestamps = true
+
+  author() {
+    return this.belongsTo(MyUser as any, 'user_id')
+  }
 }
 
-// ── Test Factory ────────────────────────────────────────────────────────────────
+class MyComment extends Model {
+  static override table = 'my_comments'
+  static override fillable = ['body', 'post_id']
+  static override timestamps = false
+}
 
-class UserFactory extends Factory<TestUser> {
-  protected model = TestUser
+class MyTag extends Model {
+  static override table = 'my_tags'
+  static override fillable = ['name']
+  static override timestamps = false
+}
+
+// Add relations to MyUser after all classes are defined
+Object.defineProperty(MyUser.prototype, 'posts', {
+  value: function () { return this.hasMany(MyPost as any, 'user_id') },
+})
+Object.defineProperty(MyUser.prototype, 'tags', {
+  value: function () { return this.belongsToMany(MyTag as any, 'my_user_tags', 'user_id', 'tag_id') },
+})
+Object.defineProperty(MyPost.prototype, 'comments', {
+  value: function () { return this.hasMany(MyComment as any, 'post_id') },
+})
+
+// ── Factory ──────────────────────────────────────────────────────────────────
+
+class UserFactory extends Factory<MyUser> {
+  protected model = MyUser
   definition(i: number) {
     return {
       name: `User ${i}`,
-      email: `user${i}@example.com`,
+      email: `user${i}_${Date.now()}@example.com`,
       age: 20 + (i % 40),
+      score: parseFloat((Math.random() * 100).toFixed(2)),
       is_active: 1,
+      meta: JSON.stringify({ index: i }),
     }
   }
 }
 
-// ── Setup/Teardown ─────────────────────────────────────────────────────────────
+// ── Setup ────────────────────────────────────────────────────────────────────
 
 beforeAll(async () => {
-  TestUser.setConnection(conn)
-  TestPost.setConnection(conn)
-
-  const schema = conn.schema()
-  await schema.dropIfExists('test_posts')
-  await schema.dropIfExists('test_users')
-
-  await schema.create('test_users', (t) => {
-    t.id()
-    t.string('name', 100)
-    t.string('email', 150).unique()
-    t.integer('age').nullable()
-    t.boolean('is_active').default(1)
-    t.timestamp('created_at').nullable()
-    t.timestamp('updated_at').nullable()
-  })
-
-  await schema.create('test_posts', (t) => {
-    t.id()
-    t.string('title', 200)
-    t.text('body').nullable()
-    t.unsignedBigInteger('user_id').nullable()
-    t.timestamp('created_at').nullable()
-    t.timestamp('updated_at').nullable()
-    t.timestamp('deleted_at').nullable()
-  })
+  MyUser.setConnection(conn)
+  MyPost.setConnection(conn)
+  MyComment.setConnection(conn)
+  MyTag.setConnection(conn)
 })
 
 afterAll(async () => {
   const schema = conn.schema()
-  await schema.dropIfExists('test_posts')
-  await schema.dropIfExists('test_users')
+  await schema.dropIfExists('my_comments')
+  await schema.dropIfExists('my_user_tags')
+  await schema.dropIfExists('my_tags')
+  await schema.dropIfExists('my_posts')
+  await schema.dropIfExists('my_users')
 })
 
-beforeEach(async () => {
-  await conn.table('test_posts').delete()
-  await conn.table('test_users').delete()
+// ═══════════════════════════════════════════════════════════════════════════════
+// 1. MIGRATION DDL — every column type
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe('MySQL Migration DDL — all column types', () => {
+
+  class CreateAllColumnsTable extends Migration {
+    async up(schema: SchemaBuilder) {
+      await schema.create('my_ddl_all_columns', (t) => {
+        // Primary key
+        t.id()
+
+        // Strings
+        t.string('name', 100)
+        t.string('email', 200).unique()
+        t.text('bio').nullable()
+        t.longText('content').nullable()
+        t.mediumText('summary').nullable()
+
+        // Numbers
+        t.integer('age')
+        t.bigInteger('big_count').nullable()
+        t.tinyInteger('priority').nullable()
+        t.smallInteger('rank_val').nullable()
+        t.unsignedInteger('views').default(0)
+        t.unsignedBigInteger('total_bytes').nullable()
+        t.float('latitude', 10, 6).nullable()
+        t.double('longitude', 12, 8).nullable()
+        t.decimal('price', 10, 2).default(0)
+
+        // Boolean
+        t.boolean('is_active').default(true)
+
+        // Date/Time
+        t.date('birth_date').nullable()
+        t.dateTime('published_at').nullable()
+        t.timestamp('verified_at').nullable()
+
+        // Timestamps helper
+        t.timestamps()
+
+        // Soft deletes
+        t.softDeletes()
+
+        // JSON
+        t.json('metadata').nullable()
+        t.jsonb('settings').nullable()
+
+        // UUID (VARCHAR(36) in MySQL)
+        t.uuid('external_id').nullable()
+
+        // Binary (BLOB in MySQL)
+        t.binary('avatar_data').nullable()
+
+        // Index
+        t.index('age')
+        t.index(['is_active', 'age'], 'idx_my_active_age')
+      })
+    }
+    async down(schema: SchemaBuilder) {
+      await schema.dropIfExists('my_ddl_all_columns')
+    }
+  }
+
+  class CreateForeignKeyTable extends Migration {
+    async up(schema: SchemaBuilder) {
+      await schema.create('my_ddl_posts', (t) => {
+        t.id()
+        t.string('title', 200)
+        t.unsignedBigInteger('author_id')
+        t.timestamps()
+      })
+    }
+    async down(schema: SchemaBuilder) {
+      await schema.dropIfExists('my_ddl_posts')
+    }
+  }
+
+  class CreateEnumTable extends Migration {
+    async up(schema: SchemaBuilder) {
+      await schema.create('my_ddl_statuses', (t) => {
+        t.id()
+        t.enum('status', ['draft', 'published', 'archived'])
+        t.timestamps()
+      })
+    }
+    async down(schema: SchemaBuilder) {
+      await schema.dropIfExists('my_ddl_statuses')
+    }
+  }
+
+  beforeAll(async () => {
+    // Clean up any prior DDL tables
+    await conn.schema().dropIfExists('my_ddl_posts')
+    await conn.schema().dropIfExists('my_ddl_statuses')
+    await conn.schema().dropIfExists('my_ddl_all_columns')
+    await conn.schema().dropIfExists('migrations')
+  })
+
+  afterAll(async () => {
+    await conn.schema().dropIfExists('my_ddl_posts')
+    await conn.schema().dropIfExists('my_ddl_statuses')
+    await conn.schema().dropIfExists('my_ddl_all_columns')
+    await conn.schema().dropIfExists('my_alter_test')
+    await conn.schema().dropIfExists('my_rename_dst')
+    await conn.schema().dropIfExists('my_rename_src')
+    await conn.schema().dropIfExists('migrations')
+  })
+
+  test('creates table with all column types via Migrator.run()', async () => {
+    const migrator = new Migrator(conn)
+    const ran = await migrator.run([
+      { name: '001_create_all_columns', migration: new CreateAllColumnsTable() },
+    ])
+    expect(ran).toContain('001_create_all_columns')
+    expect(await conn.schema().hasTable('my_ddl_all_columns')).toBe(true)
+  })
+
+  test('all columns exist after migration', async () => {
+    const schema = conn.schema()
+    const columns = [
+      'id', 'name', 'email', 'bio', 'content', 'summary',
+      'age', 'big_count', 'priority', 'rank_val', 'views', 'total_bytes',
+      'latitude', 'longitude', 'price',
+      'is_active',
+      'birth_date', 'published_at', 'verified_at',
+      'created_at', 'updated_at', 'deleted_at',
+      'metadata', 'settings',
+      'external_id',
+      'avatar_data',
+    ]
+    for (const col of columns) {
+      expect(await schema.hasColumn('my_ddl_all_columns', col)).toBe(true)
+    }
+  })
+
+  test('insert and read back every column type', async () => {
+    const now = '2026-03-18 12:00:00'
+    await conn.table('my_ddl_all_columns').insert({
+      name: 'Test User',
+      email: 'ddl@test.com',
+      bio: 'A bio.',
+      content: 'Long content.',
+      summary: 'Medium summary.',
+      age: 30,
+      big_count: 9999999999,
+      priority: 1,
+      rank_val: 100,
+      views: 42,
+      total_bytes: 1234567890123,
+      latitude: 37.7749,
+      longitude: -122.4194,
+      price: 99.99,
+      is_active: 1,
+      birth_date: '2000-01-15',
+      published_at: now,
+      verified_at: now,
+      created_at: now,
+      updated_at: now,
+      metadata: JSON.stringify({ key: 'value' }),
+      settings: JSON.stringify({ theme: 'dark' }),
+      external_id: '550e8400-e29b-41d4-a716-446655440000',
+    })
+
+    const row = await conn.table('my_ddl_all_columns').where('email', 'ddl@test.com').first()
+    expect(row).not.toBeNull()
+
+    expect(row!['name']).toBe('Test User')
+    expect(row!['bio']).toBe('A bio.')
+    expect(Number(row!['age'])).toBe(30)
+    expect(Number(row!['big_count'])).toBe(9999999999)
+    expect(Number(row!['views'])).toBe(42)
+    expect(Number(row!['price'])).toBeCloseTo(99.99)
+    // MySQL returns Date objects for date columns
+    const bd = row!['birth_date']
+    const dateStr = bd instanceof Date ? bd.toISOString().slice(0, 10) : String(bd).slice(0, 10)
+    expect(dateStr).toBe('2000-01-15')
+    expect(row!['external_id']).toBe('550e8400-e29b-41d4-a716-446655440000')
+
+    // MySQL may return JSON columns as parsed objects or strings
+    const meta = typeof row!['metadata'] === 'string'
+      ? JSON.parse(row!['metadata'] as string)
+      : row!['metadata']
+    expect(meta).toEqual({ key: 'value' })
+  })
+
+  test('unique constraint prevents duplicate emails', async () => {
+    await conn.table('my_ddl_all_columns').insert({
+      name: 'A', email: 'dup@test.com', age: 25, price: 0,
+    })
+    await expect(
+      conn.table('my_ddl_all_columns').insert({
+        name: 'B', email: 'dup@test.com', age: 30, price: 0,
+      }),
+    ).rejects.toThrow()
+  })
+
+  test('default values apply when not specified', async () => {
+    const id = await conn.table('my_ddl_all_columns').insertGetId({
+      name: 'Defaults', email: 'defs@test.com', age: 20,
+    })
+    const row = await conn.table('my_ddl_all_columns').where('id', id).first()
+    expect(Number(row!['views'])).toBe(0)
+    expect(Number(row!['price'])).toBeCloseTo(0)
+  })
+
+  test('nullable columns accept NULL', async () => {
+    const id = await conn.table('my_ddl_all_columns').insertGetId({
+      name: 'Nulls', email: 'nulls@test.com', age: 25,
+    })
+    const row = await conn.table('my_ddl_all_columns').where('id', id).first()
+    expect(row!['bio']).toBeNull()
+    expect(row!['big_count']).toBeNull()
+    expect(row!['latitude']).toBeNull()
+    expect(row!['metadata']).toBeNull()
+    expect(row!['external_id']).toBeNull()
+  })
+
+  test('enum column accepts valid values (native ENUM in MySQL)', async () => {
+    const migrator = new Migrator(conn)
+    await migrator.run([
+      { name: '001_create_all_columns', migration: new CreateAllColumnsTable() },
+      { name: '003_create_statuses', migration: new CreateEnumTable() },
+    ])
+    await conn.table('my_ddl_statuses').insert({ status: 'draft' })
+    await conn.table('my_ddl_statuses').insert({ status: 'published' })
+    const rows = await conn.table('my_ddl_statuses').get()
+    expect(rows).toHaveLength(2)
+    expect(rows.map((r) => r['status'])).toContain('draft')
+  })
+
+  test('Migrator idempotent — second run is no-op', async () => {
+    const migrator = new Migrator(conn)
+    const ran = await migrator.run([
+      { name: '001_create_all_columns', migration: new CreateAllColumnsTable() },
+    ])
+    expect(ran).toHaveLength(0)
+  })
+
+  test('Migrator.rollback() reverses the last batch', async () => {
+    const migrator = new Migrator(conn)
+    const rolled = await migrator.rollback([
+      { name: '001_create_all_columns', migration: new CreateAllColumnsTable() },
+      { name: '003_create_statuses', migration: new CreateEnumTable() },
+    ])
+    expect(rolled).toContain('003_create_statuses')
+    expect(await conn.schema().hasTable('my_ddl_statuses')).toBe(false)
+    // all_columns was batch 1, statuses batch 2 — rollback only touches last batch
+    expect(await conn.schema().hasTable('my_ddl_all_columns')).toBe(true)
+  })
+
+  test('Migrator.fresh() drops all and re-runs', async () => {
+    const migrator = new Migrator(conn)
+    const ran = await migrator.fresh([
+      { name: '001_create_all_columns', migration: new CreateAllColumnsTable() },
+    ])
+    expect(ran).toContain('001_create_all_columns')
+    expect(await conn.schema().hasTable('my_ddl_all_columns')).toBe(true)
+    expect(await conn.schema().hasTable('my_ddl_statuses')).toBe(false)
+  })
+
+  test('Migrator.reset() rolls back all', async () => {
+    const migrator = new Migrator(conn)
+    await migrator.reset([
+      { name: '001_create_all_columns', migration: new CreateAllColumnsTable() },
+    ])
+    expect(await conn.schema().hasTable('my_ddl_all_columns')).toBe(false)
+  })
+
+  test('schema.table() can add columns', async () => {
+    await conn.schema().create('my_alter_test', (t) => {
+      t.id()
+      t.string('name', 100)
+    })
+    await conn.schema().table('my_alter_test', (t) => {
+      t.integer('score').nullable()
+      t.text('notes').nullable()
+    })
+    expect(await conn.schema().hasColumn('my_alter_test', 'score')).toBe(true)
+    expect(await conn.schema().hasColumn('my_alter_test', 'notes')).toBe(true)
+
+    await conn.table('my_alter_test').insert({ name: 'Test', score: 95, notes: 'Great' })
+    const row = await conn.table('my_alter_test').first()
+    expect(Number(row!['score'])).toBe(95)
+    await conn.schema().dropIfExists('my_alter_test')
+  })
+
+  test('schema.rename() renames table', async () => {
+    await conn.schema().create('my_rename_src', (t) => { t.id(); t.string('label', 50) })
+    await conn.schema().rename('my_rename_src', 'my_rename_dst')
+    expect(await conn.schema().hasTable('my_rename_dst')).toBe(true)
+    expect(await conn.schema().hasTable('my_rename_src')).toBe(false)
+    await conn.schema().dropIfExists('my_rename_dst')
+  })
 })
 
-// ── Tests ─────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// 2. SCHEMA & QUERY BUILDER — full CRUD
+// ═══════════════════════════════════════════════════════════════════════════════
 
-describe('MySQLConnection schema', () => {
-  test('hasTable() returns true for existing table', async () => {
-    expect(await conn.schema().hasTable('test_users')).toBe(true)
+describe('MySQL Schema & QueryBuilder', () => {
+
+  beforeAll(async () => {
+    const schema = conn.schema()
+    await schema.dropIfExists('my_comments')
+    await schema.dropIfExists('my_user_tags')
+    await schema.dropIfExists('my_tags')
+    await schema.dropIfExists('my_posts')
+    await schema.dropIfExists('my_users')
+
+    await schema.create('my_users', (t) => {
+      t.id()
+      t.string('name', 100)
+      t.string('email', 150).unique()
+      t.integer('age').nullable()
+      t.decimal('score', 8, 2).nullable()
+      t.boolean('is_active').default(1)
+      t.json('meta').nullable()
+      t.timestamps()
+    })
+
+    await schema.create('my_posts', (t) => {
+      t.id()
+      t.string('title', 200)
+      t.text('body').nullable()
+      t.unsignedBigInteger('user_id').nullable()
+      t.json('tags').nullable()
+      t.timestamps()
+      t.softDeletes()
+    })
+
+    await schema.create('my_comments', (t) => {
+      t.id()
+      t.text('body')
+      t.unsignedBigInteger('post_id')
+    })
+
+    await schema.create('my_tags', (t) => {
+      t.id()
+      t.string('name', 50)
+    })
+
+    await schema.create('my_user_tags', (t) => {
+      t.unsignedBigInteger('user_id')
+      t.unsignedBigInteger('tag_id')
+    })
   })
 
-  test('hasTable() returns false for nonexistent table', async () => {
-    expect(await conn.schema().hasTable('definitely_not_a_table_xyz')).toBe(false)
+  beforeEach(async () => {
+    await conn.table('my_comments').delete()
+    await conn.table('my_user_tags').delete()
+    await conn.table('my_tags').delete()
+    // Need to delete posts including soft-deleted via raw
+    await conn.statement('DELETE FROM my_posts')
+    await conn.table('my_users').delete()
   })
 
-  test('hasColumn() returns true for existing column', async () => {
-    expect(await conn.schema().hasColumn('test_users', 'email')).toBe(true)
+  // ── Schema introspection ─────────────────────────────────────────────────
+
+  test('hasTable() true/false', async () => {
+    expect(await conn.schema().hasTable('my_users')).toBe(true)
+    expect(await conn.schema().hasTable('nonexistent_xyz')).toBe(false)
   })
 
-  test('hasColumn() returns false for missing column', async () => {
-    expect(await conn.schema().hasColumn('test_users', 'nonexistent_col')).toBe(false)
+  test('hasColumn() true/false', async () => {
+    expect(await conn.schema().hasColumn('my_users', 'email')).toBe(true)
+    expect(await conn.schema().hasColumn('my_users', 'no_col')).toBe(false)
   })
-})
 
-describe('QueryBuilder against MariaDB', () => {
+  // ── Basic CRUD ───────────────────────────────────────────────────────────
+
   test('insert and select', async () => {
-    await conn.table('test_users').insert({ name: 'Alice', email: 'alice@test.com', age: 30 })
-    const rows = await conn.table('test_users').where('email', 'alice@test.com').get()
+    await conn.table('my_users').insert({ name: 'Alice', email: 'alice@test.com', age: 30 })
+    const rows = await conn.table('my_users').where('email', 'alice@test.com').get()
     expect(rows).toHaveLength(1)
     expect(rows[0]!['name']).toBe('Alice')
   })
 
-  test('insertGetId returns inserted id', async () => {
-    const id = await conn.table('test_users').insertGetId({ name: 'Bob', email: 'bob@test.com', age: 25 })
+  test('insertGetId returns AUTO_INCREMENT id', async () => {
+    const id = await conn.table('my_users').insertGetId({ name: 'Bob', email: 'bob@test.com', age: 25 })
     expect(typeof id).toBe('number')
     expect(id).toBeGreaterThan(0)
   })
 
+  test('batch insert', async () => {
+    await conn.table('my_users').insert([
+      { name: 'A', email: 'a@test.com', age: 10 },
+      { name: 'B', email: 'b@test.com', age: 20 },
+      { name: 'C', email: 'c@test.com', age: 30 },
+    ])
+    expect(await conn.table('my_users').count()).toBe(3)
+  })
+
   test('update modifies rows', async () => {
-    await conn.table('test_users').insert({ name: 'Carol', email: 'carol@test.com', age: 22 })
-    const affected = await conn.table('test_users').where('email', 'carol@test.com').update({ name: 'Carol Updated' })
+    await conn.table('my_users').insert({ name: 'Old', email: 'old@test.com' })
+    const affected = await conn.table('my_users').where('email', 'old@test.com').update({ name: 'New' })
     expect(affected).toBe(1)
-    const row = await conn.table('test_users').where('email', 'carol@test.com').first()
-    expect(row!['name']).toBe('Carol Updated')
+    const row = await conn.table('my_users').where('email', 'old@test.com').first()
+    expect(row!['name']).toBe('New')
   })
 
   test('delete removes rows', async () => {
-    await conn.table('test_users').insert({ name: 'Dave', email: 'dave@test.com' })
-    await conn.table('test_users').where('email', 'dave@test.com').delete()
-    const row = await conn.table('test_users').where('email', 'dave@test.com').first()
-    expect(row).toBeNull()
+    await conn.table('my_users').insert({ name: 'Del', email: 'del@test.com' })
+    await conn.table('my_users').where('email', 'del@test.com').delete()
+    expect(await conn.table('my_users').where('email', 'del@test.com').first()).toBeNull()
   })
 
-  test('count() returns number of rows', async () => {
-    await conn.table('test_users').insert([
-      { name: 'A', email: 'a@t.com' },
-      { name: 'B', email: 'b@t.com' },
-      { name: 'C', email: 'c@t.com' },
-    ])
-    const count = await conn.table('test_users').count()
-    expect(count).toBe(3)
+  test('truncate', async () => {
+    await conn.table('my_users').insert({ name: 'Trunc', email: 'trunc@test.com' })
+    await conn.table('my_users').truncate()
+    expect(await conn.table('my_users').count()).toBe(0)
   })
 
-  test('whereIn filters correctly', async () => {
-    await conn.table('test_users').insert([
-      { name: 'A', email: 'a2@t.com', age: 20 },
-      { name: 'B', email: 'b2@t.com', age: 30 },
-      { name: 'C', email: 'c2@t.com', age: 40 },
+  // ── Where clauses ─────────────────────────────────────────────────────────
+
+  test('where with operator', async () => {
+    await conn.table('my_users').insert([
+      { name: 'A', email: 'wa@t.com', age: 10 },
+      { name: 'B', email: 'wb@t.com', age: 20 },
+      { name: 'C', email: 'wc@t.com', age: 30 },
     ])
-    const rows = await conn.table('test_users').whereIn('age', [20, 40]).get()
+    const rows = await conn.table('my_users').where('age', '>', 10).where('age', '<', 30).get()
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!['name']).toBe('B')
+  })
+
+  test('whereIn', async () => {
+    await conn.table('my_users').insert([
+      { name: 'A', email: 'wi1@t.com', age: 1 },
+      { name: 'B', email: 'wi2@t.com', age: 2 },
+      { name: 'C', email: 'wi3@t.com', age: 3 },
+    ])
+    const rows = await conn.table('my_users').whereIn('age', [1, 3]).get()
     expect(rows).toHaveLength(2)
-    const ages = rows.map((r) => Number(r['age'])).sort()
-    expect(ages).toEqual([20, 40])
   })
 
-  test('whereBetween filters correctly', async () => {
-    await conn.table('test_users').insert([
-      { name: 'A', email: 'ax@t.com', age: 15 },
-      { name: 'B', email: 'bx@t.com', age: 25 },
-      { name: 'C', email: 'cx@t.com', age: 35 },
+  test('whereNotIn', async () => {
+    await conn.table('my_users').insert([
+      { name: 'A', email: 'wni1@t.com', age: 1 },
+      { name: 'B', email: 'wni2@t.com', age: 2 },
+      { name: 'C', email: 'wni3@t.com', age: 3 },
     ])
-    const rows = await conn.table('test_users').whereBetween('age', [20, 30]).get()
+    const rows = await conn.table('my_users').whereNotIn('age', [1, 3]).get()
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!['name']).toBe('B')
+  })
+
+  test('whereBetween', async () => {
+    await conn.table('my_users').insert([
+      { name: 'A', email: 'wbt1@t.com', age: 15 },
+      { name: 'B', email: 'wbt2@t.com', age: 25 },
+      { name: 'C', email: 'wbt3@t.com', age: 35 },
+    ])
+    const rows = await conn.table('my_users').whereBetween('age', [20, 30]).get()
     expect(rows).toHaveLength(1)
     expect(Number(rows[0]!['age'])).toBe(25)
   })
 
-  test('orderBy sorts results', async () => {
-    await conn.table('test_users').insert([
-      { name: 'Zara', email: 'zara@t.com' },
-      { name: 'Aaron', email: 'aaron@t.com' },
+  test('whereNull / whereNotNull', async () => {
+    await conn.table('my_users').insert([
+      { name: 'WithAge', email: 'wn1@t.com', age: 30 },
+      { name: 'NoAge', email: 'wn2@t.com' },
     ])
-    const rows = await conn.table('test_users').orderBy('name').get()
-    expect(rows[0]!['name']).toBe('Aaron')
-    expect(rows[rows.length - 1]!['name']).toBe('Zara')
+    expect(await conn.table('my_users').whereNull('age').count()).toBe(1)
+    expect(await conn.table('my_users').whereNotNull('age').count()).toBe(1)
   })
 
-  test('limit and offset paginate results', async () => {
-    await conn.table('test_users').insert([
-      { name: 'A', email: 'pa@t.com' },
-      { name: 'B', email: 'pb@t.com' },
-      { name: 'C', email: 'pc@t.com' },
+  test('orWhere', async () => {
+    await conn.table('my_users').insert([
+      { name: 'A', email: 'ow1@t.com', age: 1 },
+      { name: 'B', email: 'ow2@t.com', age: 2 },
+      { name: 'C', email: 'ow3@t.com', age: 3 },
     ])
-    const rows = await conn.table('test_users').orderBy('name').limit(2).offset(1).get()
+    const rows = await conn.table('my_users').where('age', 1).orWhere('age', 3).get()
     expect(rows).toHaveLength(2)
+  })
+
+  test('nested where group', async () => {
+    await conn.table('my_users').insert([
+      { name: 'A', email: 'nw1@t.com', age: 10 },
+      { name: 'B', email: 'nw2@t.com', age: 20 },
+      { name: 'C', email: 'nw3@t.com', age: 30 },
+    ])
+    const rows = await conn.table('my_users')
+      .where((q) => { q.where('age', 10).orWhere('age', 30) })
+      .get()
+    expect(rows).toHaveLength(2)
+  })
+
+  test('whereRaw', async () => {
+    await conn.table('my_users').insert([
+      { name: 'Short', email: 'wr1@t.com' },
+      { name: 'A Long Name', email: 'wr2@t.com' },
+    ])
+    const rows = await conn.table('my_users').whereRaw('CHAR_LENGTH(name) > ?', [6]).get()
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!['name']).toBe('A Long Name')
+  })
+
+  // ── Ordering / Grouping / Pagination ──────────────────────────────────────
+
+  test('orderBy, limit, offset', async () => {
+    await conn.table('my_users').insert([
+      { name: 'Zara', email: 'ol1@t.com', age: 1 },
+      { name: 'Aaron', email: 'ol2@t.com', age: 2 },
+      { name: 'Mike', email: 'ol3@t.com', age: 3 },
+    ])
+    const rows = await conn.table('my_users').orderBy('name').limit(2).offset(1).get()
+    expect(rows).toHaveLength(2)
+    expect(rows[0]!['name']).toBe('Mike')
+  })
+
+  test('orderByDesc', async () => {
+    await conn.table('my_users').insert([
+      { name: 'A', email: 'od1@t.com', age: 10 },
+      { name: 'B', email: 'od2@t.com', age: 20 },
+    ])
+    const rows = await conn.table('my_users').orderByDesc('age').get()
     expect(rows[0]!['name']).toBe('B')
   })
 
-  test('pluck returns single column values', async () => {
-    await conn.table('test_users').insert([
-      { name: 'Alpha', email: 'alpha@t.com' },
-      { name: 'Beta', email: 'beta@t.com' },
+  test('groupBy + having', async () => {
+    await conn.table('my_users').insert([
+      { name: 'A', email: 'gh1@t.com', age: 10 },
+      { name: 'B', email: 'gh2@t.com', age: 10 },
+      { name: 'C', email: 'gh3@t.com', age: 20 },
     ])
-    const names = await conn.table('test_users').orderBy('name').pluck('name')
-    expect(names).toContain('Alpha')
-    expect(names).toContain('Beta')
+    const rows = await conn.table('my_users')
+      .select(raw('`age`'), raw('COUNT(*) AS cnt'))
+      .groupBy('age')
+      .having('cnt', '>', 1)
+      .get()
+    expect(rows).toHaveLength(1)
+    expect(Number(rows[0]!['age'])).toBe(10)
+    expect(Number(rows[0]!['cnt'])).toBe(2)
   })
 
-  test('sum() aggregates correctly', async () => {
-    await conn.table('test_users').insert([
-      { name: 'A', email: 'sa@t.com', age: 10 },
-      { name: 'B', email: 'sb@t.com', age: 20 },
-    ])
-    const total = await conn.table('test_users').sum('age')
-    expect(total).toBe(30)
-  })
-
-  test('paginate() returns correct metadata', async () => {
-    await conn.table('test_users').insert([
-      { name: 'A', email: 'pag_a@t.com' },
-      { name: 'B', email: 'pag_b@t.com' },
-      { name: 'C', email: 'pag_c@t.com' },
-      { name: 'D', email: 'pag_d@t.com' },
-      { name: 'E', email: 'pag_e@t.com' },
-    ])
-    const result = await conn.table('test_users').paginate(1, 2)
+  test('paginate returns correct metadata', async () => {
+    for (let i = 1; i <= 5; i++) {
+      await conn.table('my_users').insert({ name: `P${i}`, email: `pag${i}@t.com` })
+    }
+    const result = await conn.table('my_users').paginate(2, 2)
     expect(result.total).toBe(5)
     expect(result.perPage).toBe(2)
+    expect(result.currentPage).toBe(2)
     expect(result.lastPage).toBe(3)
     expect(result.data).toHaveLength(2)
+    expect(result.hasMore).toBe(true)
   })
+
+  // ── Aggregates ────────────────────────────────────────────────────────────
+
+  test('count / sum / avg / min / max', async () => {
+    await conn.table('my_users').insert([
+      { name: 'A', email: 'agg1@t.com', age: 10 },
+      { name: 'B', email: 'agg2@t.com', age: 20 },
+      { name: 'C', email: 'agg3@t.com', age: 30 },
+    ])
+    expect(await conn.table('my_users').count()).toBe(3)
+    expect(await conn.table('my_users').sum('age')).toBe(60)
+    expect(await conn.table('my_users').avg('age')).toBeCloseTo(20)
+    expect(await conn.table('my_users').min('age')).toBe(10)
+    expect(await conn.table('my_users').max('age')).toBe(30)
+  })
+
+  // ── Selection ─────────────────────────────────────────────────────────────
+
+  test('select specific columns', async () => {
+    await conn.table('my_users').insert({ name: 'Sel', email: 'sel@t.com', age: 40 })
+    const row = await conn.table('my_users').select('name', 'age').first()
+    expect(row!['name']).toBe('Sel')
+    expect(row!['age']).toBe(40)
+    expect(row!['email']).toBeUndefined()
+  })
+
+  test('selectRaw', async () => {
+    await conn.table('my_users').insert([
+      { name: 'A', email: 'sr1@t.com', age: 5 },
+      { name: 'B', email: 'sr2@t.com', age: 15 },
+    ])
+    const rows = await conn.table('my_users')
+      .selectRaw('name, age * 2 AS doubled')
+      .orderBy('age')
+      .get()
+    expect(Number(rows[0]!['doubled'])).toBe(10)
+    expect(Number(rows[1]!['doubled'])).toBe(30)
+  })
+
+  test('distinct', async () => {
+    await conn.table('my_users').insert([
+      { name: 'A', email: 'ds1@t.com', age: 10 },
+      { name: 'B', email: 'ds2@t.com', age: 10 },
+      { name: 'C', email: 'ds3@t.com', age: 20 },
+    ])
+    const ages = await conn.table('my_users').distinct().select('age').get()
+    expect(ages).toHaveLength(2)
+  })
+
+  test('pluck', async () => {
+    await conn.table('my_users').insert([
+      { name: 'Alpha', email: 'pl1@t.com' },
+      { name: 'Beta', email: 'pl2@t.com' },
+    ])
+    const names = await conn.table('my_users').orderBy('name').pluck('name')
+    expect(names).toEqual(['Alpha', 'Beta'])
+  })
+
+  test('value', async () => {
+    await conn.table('my_users').insert({ name: 'Val', email: 'val@t.com' })
+    const name = await conn.table('my_users').where('email', 'val@t.com').value('name')
+    expect(name).toBe('Val')
+  })
+
+  test('exists / doesntExist', async () => {
+    await conn.table('my_users').insert({ name: 'Ex', email: 'ex@t.com' })
+    expect(await conn.table('my_users').where('email', 'ex@t.com').exists()).toBe(true)
+    expect(await conn.table('my_users').where('email', 'nobody@t.com').doesntExist()).toBe(true)
+  })
+
+  // ── updateOrInsert ────────────────────────────────────────────────────────
+
+  test('updateOrInsert inserts when not found', async () => {
+    await conn.table('my_users').updateOrInsert(
+      { email: 'uoi@t.com' },
+      { name: 'UOI', age: 42 },
+    )
+    const row = await conn.table('my_users').where('email', 'uoi@t.com').first()
+    expect(row!['name']).toBe('UOI')
+  })
+
+  test('updateOrInsert updates when found', async () => {
+    await conn.table('my_users').insert({ name: 'Old', email: 'uoi2@t.com' })
+    await conn.table('my_users').updateOrInsert(
+      { email: 'uoi2@t.com' },
+      { name: 'New' },
+    )
+    const row = await conn.table('my_users').where('email', 'uoi2@t.com').first()
+    expect(row!['name']).toBe('New')
+  })
+
+  // ── Raw expression ────────────────────────────────────────────────────────
+
+  test('raw() in select', async () => {
+    await conn.table('my_users').insert([
+      { name: 'A', email: 'raw1@t.com', age: 10 },
+      { name: 'B', email: 'raw2@t.com', age: 20 },
+    ])
+    const rows = await conn.table('my_users')
+      .select(raw('SUM(`age`) AS total'))
+      .get()
+    expect(Number(rows[0]!['total'])).toBe(30)
+  })
+
+  // ── Joins ─────────────────────────────────────────────────────────────────
+
+  test('inner join', async () => {
+    const uid = await conn.table('my_users').insertGetId({ name: 'Author', email: 'join@t.com' })
+    await conn.table('my_posts').insert({ title: 'Joined', user_id: uid })
+    const rows = await conn.table('my_posts')
+      .join('my_users', '`my_users`.`id`', '=', '`my_posts`.`user_id`')
+      .select(raw('`my_posts`.`title`'), raw('`my_users`.`name` AS author'))
+      .get()
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!['author']).toBe('Author')
+  })
+
+  test('leftJoin includes unmatched', async () => {
+    await conn.table('my_users').insert({ name: 'Lonely', email: 'lj@t.com' })
+    const rows = await conn.table('my_users')
+      .leftJoin('my_posts', '`my_posts`.`user_id`', '=', '`my_users`.`id`')
+      .select(raw('`my_users`.`name`'), raw('`my_posts`.`title`'))
+      .get()
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!['title']).toBeNull()
+  })
+
+  // ── Transactions ──────────────────────────────────────────────────────────
 
   test('transaction commits on success', async () => {
     await conn.transaction(async (tx) => {
-      await tx.table('test_users').insert({ name: 'TX User', email: 'tx@t.com' })
+      await tx.table('my_users').insert({ name: 'TX', email: 'tx@t.com' })
     })
-    const row = await conn.table('test_users').where('email', 'tx@t.com').first()
-    expect(row).not.toBeNull()
+    expect(await conn.table('my_users').where('email', 'tx@t.com').exists()).toBe(true)
   })
 
   test('transaction rolls back on error', async () => {
     try {
       await conn.transaction(async (tx) => {
-        await tx.table('test_users').insert({ name: 'Rollback', email: 'rb@t.com' })
-        throw new Error('Intentional rollback')
+        await tx.table('my_users').insert({ name: 'Rollback', email: 'rb@t.com' })
+        throw new Error('intentional')
       })
-    } catch (e) {
-      // expected
-    }
-    const row = await conn.table('test_users').where('email', 'rb@t.com').first()
-    expect(row).toBeNull()
+    } catch {}
+    expect(await conn.table('my_users').where('email', 'rb@t.com').exists()).toBe(false)
   })
 })
 
-describe('Model ORM against MariaDB', () => {
-  test('create() and find()', async () => {
-    const user = await TestUser.create({ name: 'Model Alice', email: 'modelice@test.com', age: 28 })
-    expect(user.getKey()).toBeGreaterThan(0)
+// ═══════════════════════════════════════════════════════════════════════════════
+// 3. ORM MODEL
+// ═══════════════════════════════════════════════════════════════════════════════
 
-    const found = await TestUser.find(user.getKey())
-    expect(found).not.toBeNull()
-    expect(found!.getAttribute('name')).toBe('Model Alice')
+describe('MySQL ORM Model', () => {
+
+  beforeEach(async () => {
+    await conn.statement('DELETE FROM my_comments')
+    await conn.statement('DELETE FROM my_user_tags')
+    await conn.statement('DELETE FROM my_tags')
+    await conn.statement('DELETE FROM my_posts')
+    await conn.table('my_users').delete()
   })
 
-  test('casts apply correctly', async () => {
-    await TestUser.create({ name: 'Cast User', email: 'cast@test.com', age: 42, is_active: 1 })
-    const user = await TestUser.where('email', 'cast@test.com').first()
-    expect(typeof user!.getAttribute('age')).toBe('number')
+  test('create() and find()', async () => {
+    const user = await MyUser.create({ name: 'Alice', email: 'alice@orm.com', age: 28 })
+    expect(user.getKey()).toBeGreaterThan(0)
+
+    const found = await MyUser.find(user.getKey())
+    expect(found).not.toBeNull()
+    expect(found!.getAttribute('name')).toBe('Alice')
+  })
+
+  test('casts: int, float, boolean, json', async () => {
+    await MyUser.create({
+      name: 'Casts', email: 'cast@orm.com', age: 42, score: 99.5,
+      is_active: 1, meta: JSON.stringify({ role: 'admin' }),
+    })
+    const user = await MyUser.where('email', 'cast@orm.com').first()
     expect(user!.getAttribute('age')).toBe(42)
+    expect(typeof user!.getAttribute('age')).toBe('number')
+    expect(user!.getAttribute('score')).toBeCloseTo(99.5)
     expect(user!.getAttribute('is_active')).toBe(true)
+    expect(user!.getAttribute('meta')).toEqual({ role: 'admin' })
   })
 
   test('save() updates existing model', async () => {
-    const user = await TestUser.create({ name: 'Update Me', email: 'update@test.com', age: 20 })
-    user.fill({ name: 'Updated Name' })
+    const user = await MyUser.create({ name: 'Old', email: 'upd@orm.com' })
+    user.fill({ name: 'Updated' })
     await user.save()
-    const found = await TestUser.find(user.getKey())
-    expect(found!.getAttribute('name')).toBe('Updated Name')
+    const found = await MyUser.find(user.getKey())
+    expect(found!.getAttribute('name')).toBe('Updated')
   })
 
   test('delete() removes record', async () => {
-    const user = await TestUser.create({ name: 'Delete Me', email: 'delete@test.com' })
+    const user = await MyUser.create({ name: 'Del', email: 'del@orm.com' })
     await user.delete()
-    const found = await TestUser.find(user.getKey())
-    expect(found).toBeNull()
+    expect(await MyUser.find(user.getKey())).toBeNull()
   })
 
   test('findOrFail() throws for missing record', async () => {
-    await expect(TestUser.findOrFail(999999)).rejects.toThrow()
+    await expect(MyUser.findOrFail(999999)).rejects.toThrow()
   })
 
-  test('count() returns correct number', async () => {
-    await TestUser.create({ name: 'C1', email: 'c1@test.com' })
-    await TestUser.create({ name: 'C2', email: 'c2@test.com' })
-    const count = await TestUser.count()
-    expect(count).toBeGreaterThanOrEqual(2)
+  test('where().count()', async () => {
+    await MyUser.create({ name: 'C1', email: 'c1@orm.com', age: 5 })
+    await MyUser.create({ name: 'C2', email: 'c2@orm.com', age: 5 })
+    await MyUser.create({ name: 'C3', email: 'c3@orm.com', age: 6 })
+    expect(await MyUser.where('age', 5).count()).toBe(2)
   })
+
+  test('all() returns all records', async () => {
+    await MyUser.create({ name: 'A', email: 'all1@orm.com' })
+    await MyUser.create({ name: 'B', email: 'all2@orm.com' })
+    const users = await MyUser.all()
+    expect(users).toHaveLength(2)
+  })
+
+  test('paginate()', async () => {
+    for (let i = 1; i <= 7; i++) {
+      await MyUser.create({ name: `P${i}`, email: `pag${i}@orm.com` })
+    }
+    const page = await MyUser.paginate(2, 3)
+    expect(page.total).toBe(7)
+    expect(page.data).toHaveLength(3)
+    expect(page.currentPage).toBe(2)
+  })
+
+  test('toObject() respects hidden', async () => {
+    class SecretUser extends Model {
+      static override table = 'my_users'
+      static override hidden = ['meta']
+      static override fillable = ['name', 'email', 'meta']
+    }
+    SecretUser.setConnection(conn)
+    const user = await SecretUser.create({ name: 'Secret', email: 'sec@orm.com', meta: JSON.stringify({ secret: true }) })
+    const found = await SecretUser.find(user.getKey())
+    const obj = found!.toObject()
+    expect(obj['name']).toBe('Secret')
+    expect(obj['meta']).toBeUndefined()
+  })
+
+  test('fillable guards mass assignment', async () => {
+    const user = await MyUser.create({ name: 'Guarded', email: 'guard@orm.com', id: 999 })
+    // id should be auto-assigned, not 999
+    expect(user.getKey()).not.toBe(999)
+  })
+
+  // ── Soft deletes ──────────────────────────────────────────────────────────
 
   test('soft delete: delete() sets deleted_at', async () => {
-    const user = await TestUser.create({ name: 'Post Author', email: 'author@test.com' })
-    const post = await TestPost.create({ title: 'Hello', user_id: user.getKey() })
+    const user = await MyUser.create({ name: 'Author', email: 'sd_auth@orm.com' })
+    const post = await MyPost.create({ title: 'Soft', user_id: user.getKey() })
     await post.delete()
 
-    // Should not appear in regular query
-    const found = await TestPost.find(post.getKey())
-    expect(found).toBeNull()
-
-    // Should appear with withTrashed
-    const withTrashed = await TestPost.query().withTrashed().where('id', post.getKey()).first()
-    expect(withTrashed).not.toBeNull()
-    expect(withTrashed!.isTrashed()).toBe(true)
+    expect(await MyPost.find(post.getKey())).toBeNull()
+    const trashed = await MyPost.query().withTrashed().where('id', post.getKey()).first()
+    expect(trashed).not.toBeNull()
+    expect(trashed!.isTrashed()).toBe(true)
   })
 
-  test('soft delete: restore() clears deleted_at', async () => {
-    const user = await TestUser.create({ name: 'Restore Author', email: 'rauthor@test.com' })
-    const post = await TestPost.create({ title: 'Restore Post', user_id: user.getKey() })
+  test('soft delete: onlyTrashed()', async () => {
+    const user = await MyUser.create({ name: 'OT', email: 'ot@orm.com' })
+    const p1 = await MyPost.create({ title: 'Active', user_id: user.getKey() })
+    const p2 = await MyPost.create({ title: 'Trashed', user_id: user.getKey() })
+    await p2.delete()
+
+    const trashed = await MyPost.query().onlyTrashed().get()
+    expect(trashed).toHaveLength(1)
+    expect(trashed[0]!.getAttribute('title')).toBe('Trashed')
+  })
+
+  test('soft delete: restore()', async () => {
+    const user = await MyUser.create({ name: 'Restore', email: 'res@orm.com' })
+    const post = await MyPost.create({ title: 'Restore Me', user_id: user.getKey() })
     await post.delete()
     await post.restore()
 
-    const found = await TestPost.find(post.getKey())
+    const found = await MyPost.find(post.getKey())
     expect(found).not.toBeNull()
     expect(found!.isTrashed()).toBe(false)
   })
+
+  test('soft delete: forceDelete()', async () => {
+    const user = await MyUser.create({ name: 'FD', email: 'fd@orm.com' })
+    const post = await MyPost.create({ title: 'Gone', user_id: user.getKey() })
+    await post.forceDelete()
+
+    const trashed = await MyPost.query().withTrashed().where('id', post.getKey()).first()
+    expect(trashed).toBeNull()
+  })
+
+  // ── Relations ─────────────────────────────────────────────────────────────
+
+  test('hasMany: user.posts()', async () => {
+    const user = await MyUser.create({ name: 'Rel', email: 'rel@orm.com' })
+    await MyPost.create({ title: 'P1', user_id: user.getKey() })
+    await MyPost.create({ title: 'P2', user_id: user.getKey() })
+
+    const posts = await (user as any).posts().get()
+    expect(posts).toHaveLength(2)
+  })
+
+  test('belongsTo: post.author()', async () => {
+    const user = await MyUser.create({ name: 'Owner', email: 'owner@orm.com' })
+    const post = await MyPost.create({ title: 'Owned', user_id: user.getKey() })
+
+    const author = await (post as any).author().get()
+    expect(author).not.toBeNull()
+    expect(author.getAttribute('name')).toBe('Owner')
+  })
+
+  test('belongsToMany: user.tags()', async () => {
+    const user = await MyUser.create({ name: 'Tagged', email: 'tagged@orm.com' })
+    const t1 = await conn.table('my_tags').insertGetId({ name: 'TypeScript' })
+    const t2 = await conn.table('my_tags').insertGetId({ name: 'Bun' })
+
+    await (user as any).tags().attach([t1, t2])
+    const tags = await (user as any).tags().get()
+    expect(tags).toHaveLength(2)
+
+    await (user as any).tags().detach([t1])
+    const remaining = await (user as any).tags().get()
+    expect(remaining).toHaveLength(1)
+
+    await (user as any).tags().sync([t1])
+    const synced = await (user as any).tags().get()
+    expect(synced).toHaveLength(1)
+    expect(synced[0].getAttribute('name')).toBe('TypeScript')
+  })
+
+  // ── Eager loading ─────────────────────────────────────────────────────────
+
+  test('with() eager loads hasMany', async () => {
+    const u1 = await MyUser.create({ name: 'EL1', email: 'el1@orm.com' })
+    const u2 = await MyUser.create({ name: 'EL2', email: 'el2@orm.com' })
+    await MyPost.create({ title: 'U1-P1', user_id: u1.getKey() })
+    await MyPost.create({ title: 'U1-P2', user_id: u1.getKey() })
+    await MyPost.create({ title: 'U2-P1', user_id: u2.getKey() })
+
+    const users = await (MyUser as any).with('posts').get()
+    expect(users).toHaveLength(2)
+
+    const user1 = users.find((u: any) => u.getAttribute('name') === 'EL1')
+    const user2 = users.find((u: any) => u.getAttribute('name') === 'EL2')
+    expect((user1 as any)._relations['posts']).toHaveLength(2)
+    expect((user2 as any)._relations['posts']).toHaveLength(1)
+  })
+
+  test('with() nested dot-notation: posts.comments', async () => {
+    const user = await MyUser.create({ name: 'Nested', email: 'nested@orm.com' })
+    const post = await MyPost.create({ title: 'NP', user_id: user.getKey() })
+    await conn.table('my_comments').insert({ body: 'C1', post_id: post.getKey() })
+    await conn.table('my_comments').insert({ body: 'C2', post_id: post.getKey() })
+
+    const users = await (MyUser as any).with('posts.comments').get()
+    const loaded = users[0]
+    const posts = (loaded as any)._relations['posts']
+    expect(posts).toHaveLength(1)
+    const comments = (posts[0] as any)._relations['comments']
+    expect(comments).toHaveLength(2)
+  })
 })
 
-describe('Factory against MariaDB', () => {
+// ═══════════════════════════════════════════════════════════════════════════════
+// 4. FACTORY
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe('MySQL Factory', () => {
+
+  beforeEach(async () => {
+    await conn.table('my_users').delete()
+  })
+
   test('create() persists and returns model', async () => {
-    const user = await new UserFactory().create() as TestUser
+    const user = await new UserFactory().create() as MyUser
     expect(user.getKey()).toBeGreaterThan(0)
-    const found = await TestUser.find(user.getKey())
-    expect(found).not.toBeNull()
   })
 
-  test('count(5).create() persists 5 models', async () => {
-    const users = await new UserFactory().count(5).create() as TestUser[]
+  test('count(5).create() persists 5 rows', async () => {
+    const users = await new UserFactory().count(5).create() as MyUser[]
     expect(users).toHaveLength(5)
-    const count = await TestUser.count()
-    expect(count).toBeGreaterThanOrEqual(5)
+    const ids = users.map((u) => u.getKey())
+    expect(new Set(ids).size).toBe(5)
+  })
+
+  test('state() override applies', async () => {
+    const user = await new UserFactory().state({ age: 99 }).create() as MyUser
+    const found = await MyUser.find(user.getKey())
+    expect(found!.getAttribute('age')).toBe(99)
+  })
+
+  test('make() does not persist', async () => {
+    const user = new UserFactory().make() as MyUser
+    expect(user.getAttribute('name')).toBeDefined()
+    expect(await MyUser.count()).toBe(0)
   })
 })
 
-describe('Migrations against MariaDB', () => {
+// ═══════════════════════════════════════════════════════════════════════════════
+// 5. MIGRATIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe('MySQL Migrations', () => {
+
   test('Migrator.run() executes up() and logs to migrations table', async () => {
-    await conn.schema().dropIfExists('migration_test_table')
+    await conn.schema().dropIfExists('my_migration_test_table')
     await conn.schema().dropIfExists('migrations')
 
     class CreateMigrationTestTable extends Migration {
       async up(schema: SchemaBuilder) {
-        await schema.create('migration_test_table', (t) => {
+        await schema.create('my_migration_test_table', (t) => {
           t.id()
           t.string('label', 100)
           t.timestamps()
         })
       }
       async down(schema: SchemaBuilder) {
-        await schema.dropIfExists('migration_test_table')
+        await schema.dropIfExists('my_migration_test_table')
       }
     }
 
@@ -369,9 +1084,9 @@ describe('Migrations against MariaDB', () => {
     ])
 
     expect(ran).toContain('2024_01_01_create_migration_test_table')
-    expect(await conn.schema().hasTable('migration_test_table')).toBe(true)
+    expect(await conn.schema().hasTable('my_migration_test_table')).toBe(true)
 
-    // Running again should be a no-op
+    // Running again should be a no-op (idempotent)
     const ran2 = await migrator.run([
       { name: '2024_01_01_create_migration_test_table', migration: new CreateMigrationTestTable() },
     ])
@@ -381,7 +1096,7 @@ describe('Migrations against MariaDB', () => {
     await migrator.rollback([
       { name: '2024_01_01_create_migration_test_table', migration: new CreateMigrationTestTable() },
     ])
-    expect(await conn.schema().hasTable('migration_test_table')).toBe(false)
+    expect(await conn.schema().hasTable('my_migration_test_table')).toBe(false)
 
     // Cleanup
     await conn.schema().dropIfExists('migrations')
