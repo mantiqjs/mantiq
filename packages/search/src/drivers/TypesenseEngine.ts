@@ -21,8 +21,8 @@ export class TypesenseEngine implements SearchEngine {
     if (models.length === 0) return
     const collection = this.resolveIndexName(models[0])
     const documents = models.map((m) => ({
-      id: String(this.resolveKey(m)),
       ...this.resolveData(m),
+      id: String(this.resolveKey(m)),
     }))
 
     // JSONL import
