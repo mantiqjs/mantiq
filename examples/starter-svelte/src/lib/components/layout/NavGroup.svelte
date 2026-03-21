@@ -16,8 +16,7 @@
     navigate: (href: string) => void
   } = $props()
 
-  let sidebar: ReturnType<typeof Sidebar.useSidebar> | undefined
-  try { sidebar = Sidebar.useSidebar() } catch { /* SSR — no context */ }
+  const sidebar = (() => { try { return Sidebar.useSidebar() } catch { return undefined } })()
 
   function isActive(itemUrl: string, active: string): boolean {
     if (itemUrl === active) return true
