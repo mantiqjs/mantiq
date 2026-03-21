@@ -14,7 +14,7 @@
     navigate,
   }: {
     appName?: string
-    currentUser?: { id: number; name: string; email: string; role: string } | null
+    currentUser?: { id: number; name: string; email: string } | null
     navigate: (href: string) => void
     [key: string]: any
   } = $props()

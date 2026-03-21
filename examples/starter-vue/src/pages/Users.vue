@@ -6,7 +6,6 @@ import { AuthenticatedLayout, Header, Main } from '@/components/layout'
 import DataTable from '@/components/DataTable.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,7 +19,7 @@ import DeleteUserDialog from './users/dialogs/DeleteUserDialog.vue'
 
 const props = withDefaults(defineProps<{
   appName?: string
-  currentUser?: { id: number; name: string; email: string; role?: string } | null
+  currentUser?: { id: number; name: string; email: string } | null
   navigate: (href: string) => void
 }>(), {
   appName: 'Mantiq',
@@ -30,7 +29,6 @@ interface UserRecord {
   id: number
   name: string
   email: string
-  role?: string
   created_at?: string
 }
 
@@ -111,14 +109,6 @@ const columns: ColumnDef<UserRecord, any>[] = [
       'Email',
       h(ArrowUpDown, { class: 'h-3 w-3' }),
     ]),
-  },
-  {
-    accessorKey: 'role',
-    header: 'Role',
-    cell: ({ row }) => {
-      const role = (row.getValue('role') as string) || 'user'
-      return h(Badge, { variant: role === 'admin' ? 'default' : 'secondary', class: 'text-[10px]' }, () => role)
-    },
   },
   {
     id: 'actions',
