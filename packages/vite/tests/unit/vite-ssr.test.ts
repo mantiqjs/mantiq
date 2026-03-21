@@ -21,7 +21,7 @@ function devVite(opts: { reactRefresh?: boolean; ssrEntry?: string } = {}): Vite
 function prodVite(manifest: ViteManifest, opts: { ssrEntry?: string; ssrBundle?: string } = {}): Vite {
   const v = new Vite({
     buildDir: 'build',
-    ...(opts.ssrEntry ? { ssr: { entry: opts.ssrEntry, bundle: opts.ssrBundle } } : {}),
+    ...(opts.ssrEntry ? { ssr: { entry: opts.ssrEntry, bundle: opts.ssrBundle ?? undefined } } : {}),
   })
   v.setDevMode(false)
   v.setManifest(manifest)
@@ -30,7 +30,7 @@ function prodVite(manifest: ViteManifest, opts: { ssrEntry?: string; ssrBundle?:
 
 function fakeSSRModule(html: string = '<div>SSR</div>', head: string = ''): SSRModule {
   return {
-    render: async (_url: string, _data?: Record<string, unknown>) => ({
+    render: async (_url: string, _data?: Record<string, unknown> | undefined) => ({
       html,
       head: head || undefined,
     }),
