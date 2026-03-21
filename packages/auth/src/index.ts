@@ -10,6 +10,12 @@ export type { NewAccessToken } from './contracts/NewAccessToken.ts'
 export { AuthManager } from './AuthManager.ts'
 export { AuthServiceProvider } from './AuthServiceProvider.ts'
 
+// ── Authorization (Gates & Policies) ─────────────────────────────────────────
+export { GateManager } from './authorization/GateManager.ts'
+export { AuthorizationResponse } from './authorization/AuthorizationResponse.ts'
+export { Policy } from './authorization/Policy.ts'
+export { UserGate } from './authorization/UserGate.ts'
+
 // ── Guards ────────────────────────────────────────────────────────────────────
 export { SessionGuard } from './guards/SessionGuard.ts'
 export { RequestGuard } from './guards/RequestGuard.ts'
@@ -25,6 +31,7 @@ export { EnsureEmailIsVerified } from './middleware/EnsureEmailIsVerified.ts'
 export { ConfirmPassword } from './middleware/ConfirmPassword.ts'
 export { CheckAbilities } from './middleware/CheckAbilities.ts'
 export { CheckForAnyAbility } from './middleware/CheckForAnyAbility.ts'
+export { Authorize } from './middleware/Authorize.ts'
 
 // ── Errors ────────────────────────────────────────────────────────────────────
 export { AuthenticationError } from './errors/AuthenticationError.ts'
@@ -37,6 +44,7 @@ export { PersonalAccessToken } from './models/PersonalAccessToken.ts'
 
 // ── Mixins ────────────────────────────────────────────────────────────────────
 export { applyHasApiTokens } from './HasApiTokens.ts'
+export { applyAuthorizable } from './Authorizable.ts'
 
 // ── Migrations ────────────────────────────────────────────────────────────────
 export { CreatePersonalAccessTokensTable } from './migrations/CreatePersonalAccessTokensTable.ts'
@@ -44,3 +52,4 @@ export { CreatePersonalAccessTokensTable } from './migrations/CreatePersonalAcce
 // ── Helpers ───────────────────────────────────────────────────────────────────
 export { sha256 } from './helpers/hash.ts'
 export { auth, AUTH_MANAGER } from './helpers/auth.ts'
+export { gate, setGateManager, GATE_MANAGER } from './helpers/gate.ts'
