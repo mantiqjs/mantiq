@@ -23,7 +23,7 @@ describe('Authorize middleware', () => {
 
     const response = await middleware.handle(request, async () => new Response('OK'))
     expect(response.status).toBe(401)
-    const body = await response.json()
+    const body: any = await response.json()
     expect(body.message).toBe('Unauthenticated.')
   })
 
