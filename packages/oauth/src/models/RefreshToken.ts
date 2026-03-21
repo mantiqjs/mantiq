@@ -4,7 +4,9 @@ export class RefreshToken extends Model {
   static override table = 'oauth_refresh_tokens'
   static override keyType = 'string' as const
   static override incrementing = false
+  static override guarded = [] as string[]
   static override fillable = [
+    'id',
     'access_token_id',
     'revoked',
     'expires_at',

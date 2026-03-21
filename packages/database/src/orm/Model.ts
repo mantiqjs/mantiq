@@ -473,8 +473,13 @@ export abstract class Model {
         if (!this._attributes['updated_at']) this._attributes['updated_at'] = now
       }
 
-      const id = await ctor.connection.table(table).insertGetId(this._attributes)
-      this._attributes[ctor.primaryKey] = ctor.incrementing ? Number(id) : id
+      if (ctor.incrementing) {
+        const id = await ctor.connection.table(table).insertGetId(this._attributes)
+        this._attributes[ctor.primaryKey] = Number(id)
+      } else {
+        // Non-incrementing (UUID) — id is already set in attributes
+        await ctor.connection.table(table).insert(this._attributes)
+      }
       this._original = { ...this._attributes }
       this._exists = true
 

@@ -4,7 +4,9 @@ export class AuthCode extends Model {
   static override table = 'oauth_auth_codes'
   static override keyType = 'string' as const
   static override incrementing = false
+  static override guarded = [] as string[]
   static override fillable = [
+    'id',
     'user_id',
     'client_id',
     'scopes',
