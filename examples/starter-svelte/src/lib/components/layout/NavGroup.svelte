@@ -104,7 +104,7 @@
         {/if}
       {:else if item.external}
         <Sidebar.MenuItem>
-          <Sidebar.MenuButton tooltipContent={item.title}>
+          <Sidebar.MenuButton tooltipContent={item.title} isActive={false}>
             {#snippet child({ props })}
               <a href={item.url} target="_blank" rel="noopener noreferrer" {...props}>
                 <item.icon />
