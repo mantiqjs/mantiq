@@ -193,6 +193,12 @@ export class MantiqRequest implements MantiqRequestContract {
 
   // ── Auth ─────────────────────────────────────────────────────────────────
 
+  bearerToken(): string | null {
+    const auth = this.header('authorization')
+    if (!auth || !auth.startsWith('Bearer ')) return null
+    return auth.slice(7).trim() || null
+  }
+
   user<T = any>(): T | null {
     return this.authenticatedUser as T | null
   }

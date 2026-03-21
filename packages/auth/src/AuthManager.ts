@@ -7,6 +7,7 @@ import type { Authenticatable } from './contracts/Authenticatable.ts'
 import type { AuthConfig } from './contracts/AuthConfig.ts'
 import { SessionGuard } from './guards/SessionGuard.ts'
 import { RequestGuard } from './guards/RequestGuard.ts'
+import { TokenGuard } from './guards/TokenGuard.ts'
 import { DatabaseUserProvider } from './providers/DatabaseUserProvider.ts'
 
 type RequestGuardCallback = (
@@ -207,6 +208,10 @@ export class AuthManager implements DriverManager<Guard> {
           // Encrypter not available — remember cookies won't be encrypted
         }
         return new SessionGuard(name, provider, encrypter)
+      }
+      case 'token': {
+        const provider = this.createUserProvider(guardConfig.provider)
+        return new TokenGuard(name, provider, guardConfig.trackLastUsed ?? false)
       }
       default: {
         throw new Error(
