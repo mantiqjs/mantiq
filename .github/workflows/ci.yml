@@ -71,21 +71,6 @@ jobs:
           --health-timeout 3s
           --health-retries 10
 
-      typesense:
-        image: typesense/typesense:26.0
-        volumes:
-          - /tmp/typesense-data:/data
-        env:
-          TYPESENSE_API_KEY: testkey
-          TYPESENSE_DATA_DIR: /data
-        ports:
-          - 8108:8108
-        options: >-
-          --health-cmd "curl -sf http://localhost:8108/health"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 15
-
       elasticsearch:
         image: elasticsearch:8.17.0
         env:
@@ -109,6 +94,20 @@ jobs:
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
+
+      - name: Start Typesense
+        run: |
+          mkdir -p /tmp/typesense-data
+          docker run -d --name typesense \
+            -p 8108:8108 \
+            -v /tmp/typesense-data:/data \
+            -e TYPESENSE_API_KEY=testkey \
+            -e TYPESENSE_DATA_DIR=/data \
+            typesense/typesense:26.0
+          # Wait for it to be ready
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8108/health && break || sleep 2
+          done
 
       - name: Create MSSQL test database
         run: |
