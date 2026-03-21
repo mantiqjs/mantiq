@@ -44,7 +44,7 @@ export const sidebarData: NavGroup[] = [
     items: [
       {
         title: 'Settings',
-        url: '/account',
+        url: '/account/profile',
         icon: Settings,
         items: [
           { title: 'Profile', url: '/account/profile', icon: User },
