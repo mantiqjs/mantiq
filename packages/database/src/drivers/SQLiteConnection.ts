@@ -1,6 +1,7 @@
-import type { DatabaseConnection } from '../contracts/Connection.ts'
 import type { SchemaBuilder } from '../schema/SchemaBuilder.ts'
 import type { EventDispatcher } from '@mantiq/core'
+import type { DatabaseConnection } from '../contracts/Connection.ts'
+import { BaseSQLConnection } from './BaseSQLConnection.ts'
 import { QueryBuilder } from '../query/Builder.ts'
 import { SQLiteGrammar } from './SQLiteGrammar.ts'
 import { SchemaBuilderImpl } from '../schema/SchemaBuilder.ts'
@@ -12,7 +13,7 @@ export interface SQLiteConfig {
   database: string  // ':memory:' or file path
 }
 
-export class SQLiteConnection implements DatabaseConnection {
+export class SQLiteConnection extends BaseSQLConnection {
   readonly _grammar = new SQLiteGrammar()
   private db: import('bun:sqlite').Database | null = null
   private config: SQLiteConfig
@@ -21,6 +22,7 @@ export class SQLiteConnection implements DatabaseConnection {
   static _dispatcher: EventDispatcher | null = null
 
   constructor(config: SQLiteConfig) {
+    super()
     this.config = config
   }
 
@@ -102,20 +104,12 @@ export class SQLiteConnection implements DatabaseConnection {
     await SQLiteConnection._dispatcher?.emit(new QueryExecuted(sql, bindings, time, 'sqlite'))
   }
 
-  table(name: string): QueryBuilder {
-    return new QueryBuilder(this, name)
-  }
-
   schema(): SchemaBuilder {
     return new SchemaBuilderImpl(this)
   }
 
   getDriverName(): string {
     return 'sqlite'
-  }
-
-  getTablePrefix(): string {
-    return ''
   }
 
   close(): void {
