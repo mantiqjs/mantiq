@@ -73,9 +73,6 @@ jobs:
 
       typesense:
         image: typesense/typesense:27.1
-        env:
-          TYPESENSE_API_KEY: testkey
-          TYPESENSE_DATA_DIR: /tmp/typesense-data
         ports:
           - 8108:8108
         options: >-
@@ -83,6 +80,9 @@ jobs:
           --health-interval 5s
           --health-timeout 3s
           --health-retries 10
+          --tmpfs /data
+          -e TYPESENSE_API_KEY=testkey
+          -e TYPESENSE_DATA_DIR=/data
 
       elasticsearch:
         image: elasticsearch:8.17.0
