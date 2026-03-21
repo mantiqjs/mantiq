@@ -22,7 +22,7 @@ export function getTemplates(ctx: TemplateContext): Record<string, string> {
       dependencies: {
         '@mantiq/auth': '^0.2.0',
         '@mantiq/cli': '^0.1.6',
-        '@mantiq/core': '^0.2.0',
+        '@mantiq/core': '^0.3.0',
         '@mantiq/database': '^0.1.4',
         '@mantiq/events': '^0.1.2',
         '@mantiq/filesystem': '^0.1.2',
@@ -811,7 +811,7 @@ function applyKitOverrides(templates: Record<string, string>, ctx: TemplateConte
     dependencies: {
       '@mantiq/auth': '^0.2.0',
       '@mantiq/cli': '^0.1.6',
-      '@mantiq/core': '^0.2.0',
+      '@mantiq/core': '^0.3.0',
       '@mantiq/database': '^0.1.4',
       '@mantiq/events': '^0.1.2',
       '@mantiq/filesystem': '^0.1.2',
