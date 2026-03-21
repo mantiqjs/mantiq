@@ -232,7 +232,7 @@
           <DropdownMenu.Content align="end" class="w-40">
             <DropdownMenu.Label>Toggle columns</DropdownMenu.Label>
             <DropdownMenu.Separator />
-            {#each hideableColumns as col (col.id)}
+            {#each hideableColumns as col}
               <DropdownMenu.CheckboxItem
                 checked={isColVisible(col.id)}
                 onCheckedChange={() => toggleColumn(col.id)}
@@ -268,7 +268,7 @@
               </button>
             </Table.Head>
           {/if}
-          {#each visibleCols as col (col.id)}
+          {#each visibleCols as col}
             <Table.Head class={col.className}>
               {#if col.sortKey}
                 <button
@@ -300,7 +300,7 @@
               {#if selectable}
                 <Table.Cell><Skeleton class="size-4 rounded" /></Table.Cell>
               {/if}
-              {#each visibleCols as col (col.id)}
+              {#each visibleCols as col}
                 <Table.Cell class={col.cellClassName}><Skeleton class="h-4 w-24" /></Table.Cell>
               {/each}
             </Table.Row>
@@ -324,7 +324,7 @@
                   </button>
                 </Table.Cell>
               {/if}
-              {#each visibleCols as col (col.id)}
+              {#each visibleCols as col}
                 <Table.Cell class={col.cellClassName}>
                   {#if renderCell}
                     {@render renderCell({ column: col, row, index: (page - 1) * perPage + rowIndex })}

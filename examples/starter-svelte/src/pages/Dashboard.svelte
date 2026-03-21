@@ -177,7 +177,7 @@
             </Card.Header>
             <Card.Content>
               <div class="space-y-8">
-                {#each recentSales as sale (sale.email)}
+                {#each recentSales as sale}
                   <div class="flex items-center">
                     <Avatar class="h-9 w-9">
                       <AvatarFallback class="text-xs">

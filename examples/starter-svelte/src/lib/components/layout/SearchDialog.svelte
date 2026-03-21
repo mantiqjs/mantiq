@@ -97,12 +97,12 @@
       {#if filtered.length === 0}
         <p class="py-6 text-center text-sm text-muted-foreground">No results found.</p>
       {/if}
-      {#each groups as group (group)}
+      {#each groups as group}
         {@const items = filtered.filter(p => p.group === group)}
         {#if items.length > 0}
           <div>
             <p class="px-2 py-1.5 text-xs font-medium text-muted-foreground">{group}</p>
-            {#each items as item (item.url)}
+            {#each items as item}
               {@const idx = filtered.indexOf(item)}
               {@const Icon = item.icon}
               <button

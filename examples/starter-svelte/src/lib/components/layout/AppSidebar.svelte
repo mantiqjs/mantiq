@@ -45,7 +45,7 @@
   </Sidebar.Header>
 
   <Sidebar.Content>
-    {#each sidebarData as group (group.title)}
+    {#each sidebarData as group}
       <NavGroup
         {group}
         {activePath}

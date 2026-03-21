@@ -34,7 +34,7 @@
 <Sidebar.Group>
   <Sidebar.GroupLabel>{group.title}</Sidebar.GroupLabel>
   <Sidebar.Menu>
-    {#each group.items as item (item.url)}
+    {#each group.items as item}
       {#if item.items && item.items.length > 0}
         {#if sidebar?.state === 'collapsed'}
           <!-- Collapsed: dropdown menu -->
@@ -56,7 +56,7 @@
               <DropdownMenu.Content side="right" align="start" sideOffset={4}>
                 <DropdownMenu.Label>{item.title}</DropdownMenu.Label>
                 <DropdownMenu.Separator />
-                {#each item.items as sub (sub.url)}
+                {#each item.items as sub}
                   <DropdownMenu.Item onclick={() => navigate(sub.url)}>
                     <span>{sub.title}</span>
                   </DropdownMenu.Item>
@@ -84,7 +84,7 @@
               </Collapsible.Trigger>
               <Collapsible.Content>
                 <Sidebar.MenuSub>
-                  {#each item.items as sub (sub.url)}
+                  {#each item.items as sub}
                     <Sidebar.MenuSubItem>
                       <Sidebar.MenuSubButton
                         isActive={isActive(sub.url, activePath)}

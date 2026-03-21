@@ -42,7 +42,7 @@
     <div class="flex flex-col space-y-8 lg:flex-row lg:space-x-12 lg:space-y-0">
       <aside class="lg:w-48">
         <nav class="flex space-x-2 lg:flex-col lg:space-x-0 lg:space-y-1 overflow-x-auto">
-          {#each sidebarNav as item (item.href)}
+          {#each sidebarNav as item}
             {@const Icon = item.icon}
             <a
               href={item.href}

@@ -36,7 +36,7 @@
     className,
   )}
 >
-  {#each links as link (link.href)}
+  {#each links as link}
     <a
       href={link.href}
       onclick={(e: MouseEvent) => handleClick(e, link.href)}
@@ -63,7 +63,7 @@
       {/snippet}
     </DropdownMenu.Trigger>
     <DropdownMenu.Content align="start">
-      {#each links as link (link.href)}
+      {#each links as link}
         <DropdownMenu.Item
           disabled={link.disabled}
           onclick={(e: MouseEvent) => {

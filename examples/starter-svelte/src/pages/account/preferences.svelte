@@ -53,7 +53,7 @@
       <Label>Theme</Label>
       <p class="text-sm text-muted-foreground">Select your preferred theme.</p>
       <div class="grid grid-cols-3 gap-3">
-        {#each themes as t (t.value)}
+        {#each themes as t}
           <button
             type="button"
             onclick={() => applyTheme(t.value)}
