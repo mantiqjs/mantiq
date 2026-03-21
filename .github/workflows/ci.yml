@@ -152,25 +152,55 @@ jobs:
           cd /tmp
           bun ${{ github.workspace }}/packages/create-mantiq/src/index.ts test-app $KIT_FLAG --yes --no-git
 
-      - name: Verify app boots
+      - name: Verify app boots and endpoints respond
         run: |
           cd /tmp/test-app
-          # Start the server in background
           timeout 15 bun run dev &
           sleep 5
+
           # Determine port
           PORT=3000
           curl -s -o /dev/null http://localhost:3000/ 2>/dev/null || PORT=3001
-          # Check root
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:$PORT/ || echo "000")
-          echo "Root HTTP: $HTTP_CODE"
-          # Check /api/ping
-          PING_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:$PORT/api/ping || echo "000")
-          echo "Ping HTTP: $PING_CODE"
-          # Kill background
-          kill %1 2>/dev/null || true
-          if [ "$HTTP_CODE" = "000" ]; then
-            echo "Server failed to start"
-            exit 1
+
+          PASS=0
+          FAIL=0
+
+          check() {
+            local name=$1 url=$2 expect_code=$3 expect_body=$4
+            local code body
+            code=$(curl -s -o /tmp/resp.txt -w "%{http_code}" "$url" 2>/dev/null || echo "000")
+            body=$(cat /tmp/resp.txt 2>/dev/null || echo "")
+            if [ "$code" = "$expect_code" ]; then
+              if [ -n "$expect_body" ] && ! echo "$body" | grep -q "$expect_body"; then
+                echo "  ✗ $name — HTTP $code but body missing '$expect_body'"
+                FAIL=$((FAIL+1))
+              else
+                echo "  ✓ $name — HTTP $code"
+                PASS=$((PASS+1))
+              fi
+            else
+              echo "  ✗ $name — expected HTTP $expect_code, got $code"
+              FAIL=$((FAIL+1))
+            fi
+          }
+
+          echo "── ${{ matrix.kit }} starter kit health checks ──"
+          check "Welcome page"   "http://localhost:$PORT/"         200 "mantiq"
+          check "API ping"       "http://localhost:$PORT/api/ping" 200 '"status":"ok"'
+          check "Heartbeat header" "http://localhost:$PORT/"       200 ""
+
+          # Verify X-Heartbeat header exists
+          HB=$(curl -s -D - http://localhost:$PORT/ 2>/dev/null | grep -i "X-Heartbeat" || echo "")
+          if [ -n "$HB" ]; then
+            echo "  ✓ X-Heartbeat header present"
+            PASS=$((PASS+1))
+          else
+            echo "  ✗ X-Heartbeat header missing"
+            FAIL=$((FAIL+1))
           fi
-          echo "✓ ${{ matrix.kit }} starter kit boots successfully"
+
+          kill %1 2>/dev/null || true
+
+          echo ""
+          echo "Results: $PASS passed, $FAIL failed"
+          if [ "$FAIL" -gt 0 ]; then exit 1; fi
