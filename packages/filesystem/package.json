@@ -40,7 +40,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "bun build ./src/index.ts --outdir ./dist --target bun --external @aws-sdk/client-s3 --external @aws-sdk/s3-request-presigner --external @google-cloud/storage --external @azure/storage-blob --external basic-ftp --external ssh2-sftp-client",
+    "build": "bun build ./src/index.ts --outdir ./dist --target bun --packages=external",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
