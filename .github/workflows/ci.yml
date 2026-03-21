@@ -58,6 +58,33 @@ jobs:
           --health-timeout 5s
           --health-retries 10
 
+      meilisearch:
+        image: getmeili/meilisearch:latest
+        env:
+          MEILI_MASTER_KEY: testkey
+          MEILI_NO_ANALYTICS: true
+        ports:
+          - 7700:7700
+        options: >-
+          --health-cmd "curl -sf http://localhost:7700/health"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+      elasticsearch:
+        image: elasticsearch:8.17.0
+        env:
+          discovery.type: single-node
+          xpack.security.enabled: "false"
+          ES_JAVA_OPTS: "-Xms256m -Xmx256m"
+        ports:
+          - 9200:9200
+        options: >-
+          --health-cmd "curl -sf http://localhost:9200/_cluster/health"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 15
+
     steps:
       - uses: actions/checkout@v4
 
@@ -67,6 +94,20 @@ jobs:
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
+
+      - name: Start Typesense
+        run: |
+          mkdir -p /tmp/typesense-data
+          docker run -d --name typesense \
+            -p 8108:8108 \
+            -v /tmp/typesense-data:/data \
+            -e TYPESENSE_API_KEY=testkey \
+            -e TYPESENSE_DATA_DIR=/data \
+            typesense/typesense:26.0
+          # Wait for it to be ready
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8108/health && break || sleep 2
+          done
 
       - name: Create MSSQL test database
         run: |
@@ -92,6 +133,14 @@ jobs:
           MSSQL_DB: mantiq_test
           MSSQL_USER: sa
           MSSQL_PASSWORD: YourStrong@Passw0rd
+          MEILI_HOST: http://127.0.0.1:7700
+          MEILI_KEY: testkey
+          TYPESENSE_HOST: 127.0.0.1
+          TYPESENSE_PORT: 8108
+          TYPESENSE_KEY: testkey
+          ES_HOST: http://127.0.0.1:9200
+          ALGOLIA_APP_ID: ${{ secrets.ALGOLIA_APP_ID }}
+          ALGOLIA_API_KEY: ${{ secrets.ALGOLIA_API_KEY }}
         run: bun run test:ci
 
   typecheck:

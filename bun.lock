@@ -109,7 +109,7 @@
     },
     "packages/database": {
       "name": "@mantiq/database",
-      "version": "0.1.4",
+      "version": "0.2.0",
       "devDependencies": {
         "@types/pg": "^8.18.0",
         "bun-types": "latest",
@@ -303,6 +303,20 @@
       "peerDependencies": {
         "@mantiq/core": "^0.1.0",
         "@mantiq/events": "^0.1.0",
+      },
+    },
+    "packages/search": {
+      "name": "@mantiq/search",
+      "version": "0.1.0",
+      "devDependencies": {
+        "@mantiq/core": "workspace:*",
+        "@mantiq/database": "workspace:*",
+        "bun-types": "latest",
+        "typescript": "^5.7.0",
+      },
+      "peerDependencies": {
+        "@mantiq/core": "^0.1.0",
+        "@mantiq/database": "^0.1.0",
       },
     },
     "packages/validation": {
@@ -506,6 +520,8 @@
     "@mantiq/queue": ["@mantiq/queue@workspace:packages/queue"],
 
     "@mantiq/realtime": ["@mantiq/realtime@workspace:packages/realtime"],
+
+    "@mantiq/search": ["@mantiq/search@workspace:packages/search"],
 
     "@mantiq/validation": ["@mantiq/validation@workspace:packages/validation"],
 

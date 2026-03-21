@@ -1,0 +1,60 @@
+{
+  "name": "@mantiq/search",
+  "version": "0.1.0",
+  "description": "Full-text search abstraction — Algolia, Meilisearch, Typesense, Elasticsearch, database, and collection drivers",
+  "type": "module",
+  "license": "MIT",
+  "author": "Abdullah Khan",
+  "homepage": "https://github.com/mantiqjs/mantiq/tree/main/packages/search",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mantiqjs/mantiq.git",
+    "directory": "packages/search"
+  },
+  "bugs": {
+    "url": "https://github.com/mantiqjs/mantiq/issues"
+  },
+  "keywords": [
+    "mantiq",
+    "mantiqjs",
+    "search",
+    "algolia",
+    "meilisearch",
+    "typesense",
+    "elasticsearch",
+    "full-text-search"
+  ],
+  "engines": {
+    "bun": ">=1.1.0"
+  },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "bun": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "files": [
+    "src/",
+    "package.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "bun build ./src/index.ts --outdir ./dist --target bun --packages=external",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "peerDependencies": {
+    "@mantiq/core": "^0.1.0",
+    "@mantiq/database": "^0.1.0"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "typescript": "^5.7.0",
+    "@mantiq/core": "workspace:*",
+    "@mantiq/database": "workspace:*"
+  }
+}
