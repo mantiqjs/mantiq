@@ -58,17 +58,26 @@ onUnmounted(() => {
   >
     <div class="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
       <SidebarTrigger class="-ml-1" />
-      <Separator orientation="vertical" class="mx-2 h-4" />
+      <Separator orientation="vertical" class="mx-1 hidden h-4 md:block" />
       <slot />
       <div class="ms-auto flex items-center gap-2">
         <Button
           variant="outline"
-          class="relative h-8 w-full justify-start rounded-md text-sm text-muted-foreground sm:w-40 lg:w-64"
+          size="icon"
+          class="h-8 w-8 sm:hidden"
+          @click="searchOpen = true"
+        >
+          <Search class="h-4 w-4" />
+          <span class="sr-only">Search</span>
+        </Button>
+        <Button
+          variant="outline"
+          class="relative hidden h-8 justify-start rounded-md text-sm text-muted-foreground sm:flex sm:w-40 lg:w-64"
           @click="searchOpen = true"
         >
           <Search class="mr-2 h-4 w-4" />
           Search...
-          <kbd class="pointer-events-none absolute right-1.5 top-1.5 hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium sm:flex">
+          <kbd class="pointer-events-none absolute right-1.5 top-1.5 hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium lg:flex">
             <span class="text-xs">&#x2318;</span>K
           </kbd>
         </Button>
