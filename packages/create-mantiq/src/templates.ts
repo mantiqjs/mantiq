@@ -798,7 +798,9 @@ function applyKitOverrides(templates: Record<string, string>, ctx: TemplateConte
     private: true,
     type: 'module',
     scripts: {
-      dev: 'bun run --watch index.ts',
+      dev: 'bun run dev:backend & bun run dev:frontend & wait',
+      'dev:backend': 'bun run --watch index.ts',
+      'dev:frontend': 'bunx vite --clearScreen false',
       start: 'bun run index.ts',
       mantiq: 'bun run mantiq.ts',
       build: `vite build && vite build --ssr ${kit === 'react' ? 'src/ssr.tsx' : 'src/ssr.ts'} --outDir bootstrap/ssr`,
