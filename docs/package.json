@@ -16,7 +16,7 @@
     "@mantiq/database": "^0.1.0",
     "@mantiq/events": "^0.1.0",
     "@mantiq/filesystem": "^0.1.0",
-    "@mantiq/heartbeat": "^0.1.0",
+    "@mantiq/heartbeat": "^0.1.5",
     "@mantiq/helpers": "^0.1.0",
     "@mantiq/logging": "^0.1.0",
     "@mantiq/queue": "^0.1.0",
@@ -27,18 +27,18 @@
     "clsx": "^2.1.1",
     "lucide-react": "^0.577.0",
     "radix-ui": "^1.4.3",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
     "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
     "bun-types": "latest",
-    "typescript": "^5.7.0",
-    "vite": "^6.0.0",
-    "tailwindcss": "^4.0.0",
-    "@tailwindcss/vite": "^4.0.0",
-    "@vitejs/plugin-react": "^4.0.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0"
+    "typescript": "^5.9.3",
+    "vite": "^6.4.1",
+    "tailwindcss": "^4.2.2",
+    "@tailwindcss/vite": "^4.2.2",
+    "@vitejs/plugin-react": "^4.7.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3"
   }
 }
