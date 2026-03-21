@@ -34,7 +34,10 @@ export {
 } from './rules/builtin.ts'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-export { validate } from './helpers/validate.ts'
+export { validate, setPresenceVerifier, getPresenceVerifier } from './helpers/validate.ts'
+
+// ── Presence Verifier ────────────────────────────────────────────────────────
+export { DatabasePresenceVerifier } from './DatabasePresenceVerifier.ts'
 
 // ── Service Provider ─────────────────────────────────────────────────────────
 export { ValidationServiceProvider, PRESENCE_VERIFIER } from './ValidationServiceProvider.ts'

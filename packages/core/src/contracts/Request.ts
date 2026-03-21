@@ -45,6 +45,7 @@ export interface MantiqRequest {
   hasSession(): boolean
 
   // ── Auth ─────────────────────────────────────────────────────────────────
+  bearerToken(): string | null
   user<T = any>(): T | null
   isAuthenticated(): boolean
   setUser(user: any): void

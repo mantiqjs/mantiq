@@ -1,0 +1,187 @@
+{
+  "info": {
+    "name": "MantiqJS Auth API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Sanctum-style API token authentication flow"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "token", "value": "" },
+    { "key": "adminToken", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Register + Get Token",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/register",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Alice\",\n  \"email\": \"alice@test.com\",\n  \"password\": \"secret123\",\n  \"abilities\": [\"read\", \"write\"]\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var json = pm.response.json();",
+              "pm.collectionVariables.set('token', json.token);",
+              "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+              "pm.test('Token returned', () => pm.expect(json.token).to.include('|'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Get Profile (with token)",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/me",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ]
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+              "pm.test('User returned', () => pm.expect(pm.response.json().user).to.have.property('name'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Get Profile (no token — should fail)",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/me"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Unauthenticated', () => pm.response.to.have.status(401) || pm.response.to.have.status(302));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Admin Route (no admin ability — should 403)",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/admin",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ]
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Forbidden', () => pm.response.to.have.status(403));",
+              "pm.test('Missing ability', () => pm.expect(pm.response.json().message).to.include('admin'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Register Admin + Get Admin Token",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/register",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Admin\",\n  \"email\": \"admin@test.com\",\n  \"password\": \"secret123\",\n  \"abilities\": [\"admin\", \"read\", \"write\"]\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var json = pm.response.json();",
+              "pm.collectionVariables.set('adminToken', json.token);",
+              "pm.test('Admin token returned', () => pm.expect(json.token).to.include('|'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Admin Route (with admin ability — should pass)",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/admin",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+        ]
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+              "pm.test('Access granted', () => pm.expect(pm.response.json().message).to.include('granted'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Revoke Token",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/logout",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ]
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Token revoked', () => pm.expect(pm.response.json().message).to.include('revoked'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Get Profile (revoked token — should fail)",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/me",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ]
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Unauthenticated after revoke', () => pm.response.to.have.status(401) || pm.response.to.have.status(302));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

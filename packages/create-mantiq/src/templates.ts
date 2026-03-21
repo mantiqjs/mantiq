@@ -20,9 +20,9 @@ export function getTemplates(ctx: TemplateContext): Record<string, string> {
         mantiq: 'bun run mantiq.ts',
       },
       dependencies: {
-        '@mantiq/auth': '^0.1.2',
+        '@mantiq/auth': '^0.2.0',
         '@mantiq/cli': '^0.1.6',
-        '@mantiq/core': '^0.1.4',
+        '@mantiq/core': '^0.2.0',
         '@mantiq/database': '^0.1.4',
         '@mantiq/events': '^0.1.2',
         '@mantiq/filesystem': '^0.1.2',
@@ -109,7 +109,7 @@ storage/heartbeat/
     // ── Entry points ────────────────────────────────────────────────────────
 
     'index.ts': `import { Application, CoreServiceProvider, HttpKernel, RouterImpl, CorsMiddleware, StartSession, EncryptCookies, VerifyCsrfToken } from '@mantiq/core'
-import { AuthServiceProvider, Authenticate, RedirectIfAuthenticated } from '@mantiq/auth'
+import { AuthServiceProvider, Authenticate, RedirectIfAuthenticated, CheckAbilities, CheckForAnyAbility } from '@mantiq/auth'
 import { FilesystemServiceProvider } from '@mantiq/filesystem'
 import { LoggingServiceProvider } from '@mantiq/logging'
 import { EventServiceProvider } from '@mantiq/events'
@@ -169,6 +169,8 @@ kernel.registerMiddleware('csrf', VerifyCsrfToken)
 kernel.registerMiddleware('auth', Authenticate)
 kernel.registerMiddleware('guest', RedirectIfAuthenticated)
 kernel.registerMiddleware('heartbeat', HeartbeatMiddleware)
+kernel.registerMiddleware('abilities', CheckAbilities)
+kernel.registerMiddleware('ability', CheckForAnyAbility)
 
 // Global middleware
 kernel.setGlobalMiddleware(['cors', 'encrypt.cookies', 'session', 'heartbeat'])
@@ -322,6 +324,7 @@ export default {
 
   guards: {
     web: { driver: 'session', provider: 'users' },
+    api: { driver: 'token', provider: 'users' },
   },
 
   providers: {
@@ -665,8 +668,17 @@ export class User extends Model implements Authenticatable {
 }
 `,
 
+    'app/Models/PersonalAccessToken.ts': `import { PersonalAccessToken as BaseToken } from '@mantiq/auth'
+
+// Re-export the built-in PersonalAccessToken.
+// Extend this class if you need to add custom logic.
+export class PersonalAccessToken extends BaseToken {}
+`,
+
     'app/Providers/DatabaseServiceProvider.ts': `import { ServiceProvider, config } from '@mantiq/core'
 import { DatabaseManager, setupModels, setManager, Migrator } from '@mantiq/database'
+import { applyHasApiTokens, PersonalAccessToken } from '@mantiq/auth'
+import { User } from '../Models/User.ts'
 
 export class DatabaseServiceProvider extends ServiceProvider {
   override register(): void {
@@ -683,7 +695,11 @@ export class DatabaseServiceProvider extends ServiceProvider {
 
   override async boot(): Promise<void> {
     // Resolve the manager (triggers creation via the singleton factory)
-    this.app.make(DatabaseManager)
+    const manager = this.app.make(DatabaseManager)
+
+    // Set up PersonalAccessToken connection and apply HasApiTokens mixin
+    PersonalAccessToken.setConnection(manager.connection())
+    applyHasApiTokens(User)
   }
 }
 `,
@@ -707,6 +723,30 @@ export default class CreateUsersTable extends Migration {
 
   override async down(schema: SchemaBuilder) {
     await schema.dropIfExists('users')
+  }
+}
+`,
+
+    'database/migrations/002_create_personal_access_tokens_table.ts': `import { Migration } from '@mantiq/database'
+import type { SchemaBuilder } from '@mantiq/database'
+
+export default class CreatePersonalAccessTokensTable extends Migration {
+  override async up(schema: SchemaBuilder) {
+    await schema.create('personal_access_tokens', (t) => {
+      t.id()
+      t.string('tokenable_type')
+      t.unsignedBigInteger('tokenable_id')
+      t.string('name')
+      t.string('token', 64).unique()
+      t.json('abilities').nullable()
+      t.timestamp('last_used_at').nullable()
+      t.timestamp('expires_at').nullable()
+      t.timestamps()
+    })
+  }
+
+  override async down(schema: SchemaBuilder) {
+    await schema.dropIfExists('personal_access_tokens')
   }
 }
 `,
@@ -766,9 +806,9 @@ function applyKitOverrides(templates: Record<string, string>, ctx: TemplateConte
       postinstall: 'rm -rf node_modules/@mantiq/*/node_modules/@mantiq 2>/dev/null; true',
     },
     dependencies: {
-      '@mantiq/auth': '^0.1.2',
+      '@mantiq/auth': '^0.2.0',
       '@mantiq/cli': '^0.1.6',
-      '@mantiq/core': '^0.1.4',
+      '@mantiq/core': '^0.2.0',
       '@mantiq/database': '^0.1.4',
       '@mantiq/events': '^0.1.2',
       '@mantiq/filesystem': '^0.1.2',
@@ -849,7 +889,7 @@ bootstrap/
   // ── index.ts ────────────────────────────────────────────────────────────
   templates['index.ts'] = `import { Application, CoreServiceProvider, HttpKernel, RouterImpl, CorsMiddleware, StartSession, EncryptCookies, VerifyCsrfToken } from '@mantiq/core'
 import { ViteServiceProvider, ServeStaticFiles } from '@mantiq/vite'
-import { AuthServiceProvider, Authenticate, RedirectIfAuthenticated } from '@mantiq/auth'
+import { AuthServiceProvider, Authenticate, RedirectIfAuthenticated, CheckAbilities, CheckForAnyAbility } from '@mantiq/auth'
 import { FilesystemServiceProvider } from '@mantiq/filesystem'
 import { LoggingServiceProvider } from '@mantiq/logging'
 import { EventServiceProvider } from '@mantiq/events'
@@ -921,6 +961,8 @@ kernel.registerMiddleware('csrf', VerifyCsrfToken)
 kernel.registerMiddleware('auth', Authenticate)
 kernel.registerMiddleware('guest', RedirectIfAuthenticated)
 kernel.registerMiddleware('heartbeat', HeartbeatMiddleware)
+kernel.registerMiddleware('abilities', CheckAbilities)
+kernel.registerMiddleware('ability', CheckForAnyAbility)
 
 // Global middleware
 kernel.setGlobalMiddleware(['static', 'cors', 'encrypt.cookies', 'session', 'heartbeat'])

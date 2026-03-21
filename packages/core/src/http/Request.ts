@@ -133,6 +133,8 @@ export class MantiqRequest implements MantiqRequestContract {
   }
 
   expectsJson(): boolean {
+    // Routes under /api/ always expect JSON responses
+    if (this.path().startsWith('/api/') || this.path() === '/api') return true
     const accept = this.header('accept') ?? ''
     return accept.includes('application/json') || accept.includes('text/json')
   }
@@ -192,6 +194,12 @@ export class MantiqRequest implements MantiqRequestContract {
   }
 
   // ── Auth ─────────────────────────────────────────────────────────────────
+
+  bearerToken(): string | null {
+    const auth = this.header('authorization')
+    if (!auth || !auth.startsWith('Bearer ')) return null
+    return auth.slice(7).trim() || null
+  }
 
   user<T = any>(): T | null {
     return this.authenticatedUser as T | null
