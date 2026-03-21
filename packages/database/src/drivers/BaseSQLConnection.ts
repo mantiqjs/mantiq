@@ -103,7 +103,7 @@ export abstract class BaseSQLConnection implements DatabaseConnection {
       BaseSQLConnection.prototype.executeDelete.call({ ...txConn, _grammar: this._grammar }, table, state)
     txConn.executeTruncate = (table: string) =>
       BaseSQLConnection.prototype.executeTruncate.call({ ...txConn, _grammar: this._grammar }, table)
-    txConn.executeAggregate = (state: QueryState, fn: string, column: string) =>
+    txConn.executeAggregate = (state: QueryState, fn: 'count' | 'sum' | 'avg' | 'min' | 'max', column: string) =>
       BaseSQLConnection.prototype.executeAggregate.call({ ...txConn, _grammar: this._grammar }, state, fn, column)
     txConn.executeExists = (state: QueryState) =>
       BaseSQLConnection.prototype.executeExists.call({ ...txConn, _grammar: this._grammar }, state)

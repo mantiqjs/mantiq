@@ -133,7 +133,7 @@ export class SmsChannel implements NotificationChannel {
     }
 
     // Vonage returns 200 even on failure — check the response body
-    const result = await response.json().catch(() => null)
+    const result: any = await response.json().catch(() => null)
     if (result?.messages?.[0]?.status !== '0') {
       const errorText = result?.messages?.[0]?.['error-text'] ?? 'Unknown Vonage error'
       throw new NotifyError(`Vonage delivery failed: ${errorText}`, {

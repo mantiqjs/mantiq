@@ -37,7 +37,7 @@ export class SearchObserver {
           const { MakeSearchableJob } = await import('./jobs/MakeSearchableJob.ts')
           const job = new MakeSearchableJob([model], 'update')
           const queueName = typeof config.queue === 'string' ? config.queue : undefined
-          const pending = dispatch(job)
+          const pending = dispatch(job as any)
           if (queueName) pending.onQueue(queueName)
         } catch {
           // Queue not available, fall back to sync

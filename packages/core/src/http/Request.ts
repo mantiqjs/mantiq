@@ -228,7 +228,7 @@ export class MantiqRequest implements MantiqRequestContract {
 
     try {
       if (contentType.includes('application/json')) {
-        this.parsedBody = await this.bunRequest.clone().json()
+        this.parsedBody = await this.bunRequest.clone().json() as Record<string, any>
       } else if (contentType.includes('application/x-www-form-urlencoded')) {
         const text = await this.bunRequest.clone().text()
         this.parsedBody = Object.fromEntries(new URLSearchParams(text).entries())

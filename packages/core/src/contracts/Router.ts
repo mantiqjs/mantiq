@@ -19,14 +19,14 @@ export interface RouteMatch {
   action: RouteAction
   params: Record<string, any>
   middleware: string[]
-  routeName?: string
+  routeName?: string | undefined
 }
 
 export interface RouteDefinition {
   method: HttpMethod | HttpMethod[]
   path: string
   action: RouteAction
-  name?: string
+  name?: string | undefined
   middleware: string[]
   wheres: Record<string, RegExp>
 }

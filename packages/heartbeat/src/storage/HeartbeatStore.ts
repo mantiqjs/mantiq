@@ -54,10 +54,10 @@ export class HeartbeatStore {
    * Query entries with optional type filter and pagination.
    */
   async getEntries(options: {
-    type?: EntryType
-    limit?: number
-    offset?: number
-    requestId?: string
+    type?: EntryType | undefined
+    limit?: number | undefined
+    offset?: number | undefined
+    requestId?: string | undefined
   } = {}): Promise<HeartbeatEntry[]> {
     const { type, limit = 50, offset = 0, requestId } = options
 

@@ -3,9 +3,9 @@ export type HealthStatus = 'ok' | 'degraded' | 'critical'
 export interface CheckResult {
   name: string
   status: HealthStatus
-  message?: string
+  message?: string | undefined
   duration: number  // ms
-  meta?: Record<string, any>
+  meta?: Record<string, any> | undefined
 }
 
 /**
@@ -23,7 +23,7 @@ export abstract class HealthCheck {
   abstract readonly name: string
 
   private _status: HealthStatus = 'ok'
-  private _message?: string
+  private _message?: string | undefined
   private _meta: Record<string, any> = {}
 
   /** Override to perform the actual check. Throw to fail. */

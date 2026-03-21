@@ -17,10 +17,10 @@ export class MongoQueryBuilderImpl implements MongoQueryBuilder {
     private readonly collectionName: string,
     private readonly executor: (opts: {
       filter: MongoFilter
-      projection?: MongoProjection
-      sort?: MongoSortDoc
-      limit?: number
-      skip?: number
+      projection?: MongoProjection | undefined
+      sort?: MongoSortDoc | undefined
+      limit?: number | undefined
+      skip?: number | undefined
     }) => Promise<Record<string, any>[]>,
     private readonly counter: (filter: MongoFilter) => Promise<number>,
   ) {}

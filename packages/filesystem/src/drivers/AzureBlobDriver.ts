@@ -5,13 +5,13 @@ import { guessMimeType } from '../helpers/mime.ts'
 
 export interface AzureConfig {
   container: string
-  connectionString?: string
-  accountName?: string
-  accountKey?: string
-  sasToken?: string
-  root?: string
-  url?: string
-  visibility?: 'public' | 'private'
+  connectionString?: string | undefined
+  accountName?: string | undefined
+  accountKey?: string | undefined
+  sasToken?: string | undefined
+  root?: string | undefined
+  url?: string | undefined
+  visibility?: 'public' | 'private' | undefined
 }
 
 /**

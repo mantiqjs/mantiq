@@ -3,7 +3,7 @@ import type { Notifiable } from '../contracts/Notifiable.ts'
 import type { Notification } from '../Notification.ts'
 
 export class SendNotificationJob extends Job {
-  override name = 'notify:send'
+  name = 'notify:send'
   override tries = 3
 
   constructor(

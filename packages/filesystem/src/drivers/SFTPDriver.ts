@@ -5,14 +5,14 @@ import { guessMimeType } from '../helpers/mime.ts'
 
 export interface SFTPConfig {
   host: string
-  port?: number
-  username?: string
-  password?: string
-  privateKey?: string | Buffer
-  passphrase?: string
-  root?: string
-  url?: string
-  visibility?: 'public' | 'private'
+  port?: number | undefined
+  username?: string | undefined
+  password?: string | undefined
+  privateKey?: string | Buffer | undefined
+  passphrase?: string | undefined
+  root?: string | undefined
+  url?: string | undefined
+  visibility?: 'public' | 'private' | undefined
 }
 
 /**

@@ -5,15 +5,15 @@ import { guessMimeType } from '../helpers/mime.ts'
 
 export interface S3Config {
   bucket: string
-  region?: string
-  key?: string
-  secret?: string
-  token?: string
-  endpoint?: string
-  forcePathStyle?: boolean
-  root?: string
-  url?: string
-  visibility?: 'public' | 'private'
+  region?: string | undefined
+  key?: string | undefined
+  secret?: string | undefined
+  token?: string | undefined
+  endpoint?: string | undefined
+  forcePathStyle?: boolean | undefined
+  root?: string | undefined
+  url?: string | undefined
+  visibility?: 'public' | 'private' | undefined
 }
 
 /**

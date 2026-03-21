@@ -9,10 +9,10 @@ export interface RcsConfig {
 }
 
 export interface RcsPayload {
-  to?: string
-  text?: string
+  to?: string | undefined
+  text?: string | undefined
   richCard?: any
-  suggestions?: any[]
+  suggestions?: any[] | undefined
 }
 
 /**

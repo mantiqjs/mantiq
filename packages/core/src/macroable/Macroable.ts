@@ -48,7 +48,7 @@ export interface MacroableInstance {
  */
 export function Macroable<T extends Constructor>(Base: T): T & MacroableStatic {
   class MacroableClass extends (Base as Constructor) {
-    private static _macros = new Map<string, Function>()
+    static _macros = new Map<string, Function>()
 
     static macro(name: string, fn: Function): void {
       this._ensureOwnMacros()

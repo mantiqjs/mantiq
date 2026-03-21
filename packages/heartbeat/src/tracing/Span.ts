@@ -14,7 +14,7 @@ export class Span {
   endTime: number | null = null
   status: SpanStatus = 'ok'
   attributes: Record<string, string | number | boolean> = {}
-  events: Array<{ name: string; timestamp: number; attributes?: Record<string, any> }> = []
+  events: Array<{ name: string; timestamp: number; attributes?: Record<string, any> | undefined }> = []
 
   constructor(
     traceId: string,

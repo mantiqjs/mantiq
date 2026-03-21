@@ -3,6 +3,7 @@ import { ModelNotFoundError } from '../errors/ModelNotFoundError.ts'
 import { eagerLoadRelations, type EagerLoadSpec, normalizeEagerLoads } from './eagerLoad.ts'
 import type { Model } from './Model.ts'
 import type { DatabaseConnection } from '../contracts/Connection.ts'
+import type { PaginationResult } from '../contracts/Paginator.ts'
 
 export class ModelQueryBuilder<T> extends QueryBuilder {
   private _eagerLoads: string[] = []
@@ -131,7 +132,7 @@ export class ModelQueryBuilder<T> extends QueryBuilder {
 
   // ── Hydrating read methods ─────────────────────────────────────────────────
 
-  override async get(): Promise<T[]> {
+  override async get(): Promise<any[]> {
     this.applyGlobalScopes()
     const rows = await this.raw().get()
     const models = rows.map(this._hydrate)
@@ -148,7 +149,7 @@ export class ModelQueryBuilder<T> extends QueryBuilder {
     return models
   }
 
-  override async first(): Promise<T | null> {
+  override async first(): Promise<any> {
     this.applyGlobalScopes()
     const row = await this.raw().first()
     if (!row) return null
@@ -166,13 +167,13 @@ export class ModelQueryBuilder<T> extends QueryBuilder {
     return model
   }
 
-  async firstOrFail(): Promise<T> {
+  override async firstOrFail(): Promise<any> {
     const result = await this.first()
     if (!result) throw new ModelNotFoundError(this.state.table)
     return result
   }
 
-  override async find(id: number | string): Promise<T | null> {
+  override async find(id: number | string): Promise<any> {
     this.applyGlobalScopes()
     const row = await this.raw().where('id', id).first()
     if (!row) return null
@@ -190,7 +191,7 @@ export class ModelQueryBuilder<T> extends QueryBuilder {
     return model
   }
 
-  async findOrFail(id: number | string): Promise<T> {
+  async findOrFail(id: number | string): Promise<any> {
     const result = await this.find(id)
     if (!result) throw new ModelNotFoundError(this.state.table)
     return result
@@ -198,7 +199,7 @@ export class ModelQueryBuilder<T> extends QueryBuilder {
 
   // ── Pagination (hydrated) ─────────────────────────────────────────────────
 
-  override async paginate(page = 1, perPage = 15) {
+  override async paginate(page = 1, perPage = 15): Promise<PaginationResult> {
     const total = await this.count()
     const lastPage = Math.max(1, Math.ceil(total / perPage))
     const currentPage = Math.min(page, lastPage)
@@ -381,7 +382,7 @@ export class ModelQueryBuilder<T> extends QueryBuilder {
    * @example
    *   const user = await User.where('email', 'admin@example.com').sole()
    */
-  async sole(): Promise<T> {
+  override async sole(): Promise<any> {
     this.applyGlobalScopes()
     const originalLimit = this.state.limitValue
     this.state.limitValue = 2

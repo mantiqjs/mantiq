@@ -6,7 +6,7 @@ import type { Mailable } from '../Mailable.ts'
  * Dispatched by PendingMail.queue().
  */
 export class SendMailJob extends Job {
-  override name = 'mail:send'
+  name = 'mail:send'
   override tries = 3
 
   constructor(

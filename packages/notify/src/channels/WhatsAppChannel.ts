@@ -9,13 +9,13 @@ export interface WhatsAppConfig {
 }
 
 export interface WhatsAppPayload {
-  to?: string
+  to?: string | undefined
   template?: {
     name: string
     languageCode: string
-    components?: any[]
-  }
-  text?: string
+    components?: any[] | undefined
+  } | undefined
+  text?: string | undefined
 }
 
 /**
@@ -91,7 +91,7 @@ export class WhatsAppChannel implements NotificationChannel {
       })
     }
 
-    const result = await response.json().catch(() => null)
+    const result: any = await response.json().catch(() => null)
     if (result?.error) {
       throw new NotifyError(`WhatsApp API error: ${result.error.message ?? 'unknown error'}`, {
         channel: this.name,

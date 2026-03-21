@@ -1,7 +1,7 @@
 import type { JwtPayload } from './JwtPayload.ts'
 import { base64UrlEncode, base64UrlDecode, base64UrlEncodeString } from './JwtEncoder.ts'
 
-const ALGORITHM: RsaHashedImportParams = {
+const ALGORITHM: { name: string; hash: string } = {
   name: 'RSASSA-PKCS1-v1_5',
   hash: 'SHA-256',
 }
@@ -74,7 +74,7 @@ export class JwtSigner {
       const valid = await crypto.subtle.verify(
         ALGORITHM.name,
         this.publicKey,
-        signature,
+        signature as any,
         data,
       )
 

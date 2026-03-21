@@ -54,8 +54,8 @@ export type HttpMiddleware = (
 
 export type RetryConfig = {
   times: number
-  delay?: string | number
-  when?: (response: HttpResponse) => boolean
+  delay?: string | number | undefined
+  when?: ((response: HttpResponse) => boolean) | undefined
 }
 
 // ── PendingRequest (fluent builder) ─────────────────────────────────
@@ -217,7 +217,7 @@ export class PendingRequest {
     const request = this.buildRequest(method, fullUrl, body)
 
     const execute = async (): Promise<HttpResponse<T>> => {
-      const response = await this.executeWithMiddleware(request.clone())
+      const response = await this.executeWithMiddleware(request.clone() as Request)
       return this.parseResponse<T>(response, fullUrl)
     }
 

@@ -115,7 +115,7 @@ export class SlackChannel implements NotificationChannel {
     }
 
     // Slack API returns 200 even on failure — check the `ok` field
-    const result = await response.json().catch(() => null)
+    const result: any = await response.json().catch(() => null)
     if (result && !result.ok) {
       throw new NotifyError(`Slack API error: ${result.error ?? 'unknown error'}`, {
         channel: this.name,

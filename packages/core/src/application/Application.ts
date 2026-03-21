@@ -30,7 +30,7 @@ export class Application extends ContainerImpl {
   private constructor(private readonly basePath: string = process.cwd()) {
     super()
     // Register the application itself so it can be resolved from the container
-    this.instance(Application, this)
+    this.instance(Application as any, this)
   }
 
   // ── Singleton access ──────────────────────────────────────────────────────
@@ -191,7 +191,7 @@ export class Application extends ContainerImpl {
    * Override make() to handle deferred provider loading.
    * If a binding isn't found in the container, check deferred providers.
    */
-  make<T>(abstract: Bindable<T>): T {
+  override make<T>(abstract: Bindable<T>): T {
     try {
       return super.make(abstract)
     } catch (err) {

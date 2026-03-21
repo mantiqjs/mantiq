@@ -8,12 +8,12 @@ import { ConnectionError } from '../errors/ConnectionError.ts'
 import { QueryError } from '../errors/QueryError.ts'
 
 export interface MySQLConfig {
-  host?: string
-  port?: number
+  host?: string | undefined
+  port?: number | undefined
   database: string
-  user?: string
-  password?: string
-  pool?: { min?: number; max?: number }
+  user?: string | undefined
+  password?: string | undefined
+  pool?: { min?: number | undefined; max?: number | undefined } | undefined
 }
 
 export class MySQLConnection extends BaseSQLConnection {
@@ -29,7 +29,7 @@ export class MySQLConnection extends BaseSQLConnection {
   private async getPool(): Promise<any> {
     if (!this.pool) {
       try {
-        const mysql = await import('mysql2/promise')
+        const mysql: any = await import('mysql2/promise')
         this.pool = await mysql.createPool({
           host: this.config.host ?? 'localhost',
           port: this.config.port ?? 3306,

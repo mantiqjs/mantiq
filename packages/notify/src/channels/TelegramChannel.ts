@@ -8,9 +8,9 @@ export interface TelegramConfig {
 }
 
 export interface TelegramPayload {
-  chatId?: string | number
+  chatId?: string | number | undefined
   text: string
-  parseMode?: 'HTML' | 'Markdown' | 'MarkdownV2'
+  parseMode?: 'HTML' | 'Markdown' | 'MarkdownV2' | undefined
   replyMarkup?: any
 }
 
@@ -64,7 +64,7 @@ export class TelegramChannel implements NotificationChannel {
       })
     }
 
-    const result = await response.json().catch(() => null)
+    const result: any = await response.json().catch(() => null)
     if (result && !result.ok) {
       throw new NotifyError(`Telegram API error: ${result.description ?? 'unknown error'}`, {
         channel: this.name,

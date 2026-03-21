@@ -3,15 +3,15 @@ import { ColumnDefinition } from './ColumnDefinition.ts'
 export interface IndexDefinition {
   type: 'index' | 'unique' | 'primary'
   columns: string[]
-  name?: string
+  name?: string | undefined
 }
 
 export interface ForeignKeyDefinition {
   column: string
   references: string
   on: string
-  onDelete?: string
-  onUpdate?: string
+  onDelete?: string | undefined
+  onUpdate?: string | undefined
 }
 
 export class Blueprint {

@@ -1,4 +1,5 @@
 import type { MantiqRequest } from '../contracts/Request.ts'
+import type { Middleware } from '../contracts/Middleware.ts'
 import { HttpError } from '../errors/HttpError.ts'
 import { RateLimiter } from './RateLimiter.ts'
 import type { RateLimitConfig } from './RateLimiter.ts'
@@ -28,7 +29,7 @@ export function setDefaultRateLimiter(limiter: RateLimiter): void {
  *   X-RateLimit-Remaining: 45
  *   Retry-After: 30 (only when rate limited)
  */
-export class ThrottleRequests {
+export class ThrottleRequests implements Middleware {
   private params: string[] = []
   private rateLimiter: RateLimiter = getDefaultRateLimiter()
 
@@ -40,7 +41,7 @@ export class ThrottleRequests {
     return this
   }
 
-  setParameters(...params: string[]): void {
+  setParameters(params: string[]): void {
     this.params = params
   }
 

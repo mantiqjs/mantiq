@@ -5,17 +5,17 @@ import { NotifyError } from '../errors/NotifyError.ts'
 
 export interface FirebaseConfig {
   projectId: string
-  accessToken?: string
-  serviceAccountKey?: string
+  accessToken?: string | undefined
+  serviceAccountKey?: string | undefined
 }
 
 export interface FirebasePayload {
-  token?: string
-  topic?: string
+  token?: string | undefined
+  topic?: string | undefined
   title: string
   body: string
-  data?: Record<string, string>
-  imageUrl?: string
+  data?: Record<string, string> | undefined
+  imageUrl?: string | undefined
 }
 
 /**
@@ -164,7 +164,7 @@ export class FirebaseChannel implements NotificationChannel {
       })
     }
 
-    const result = await response.json()
+    const result = (await response.json()) as any
     this.cachedAccessToken = result.access_token
     this.tokenExpiresAt = Date.now() + (result.expires_in ?? 3600) * 1000
 

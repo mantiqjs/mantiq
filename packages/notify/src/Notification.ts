@@ -2,30 +2,30 @@ import type { Notifiable } from './contracts/Notifiable.ts'
 import type { Mailable } from '@mantiq/mail'
 
 export interface SlackMessage {
-  text?: string
-  blocks?: any[]
-  channel?: string
-  username?: string
-  iconEmoji?: string
-  iconUrl?: string
+  text?: string | undefined
+  blocks?: any[] | undefined
+  channel?: string | undefined
+  username?: string | undefined
+  iconEmoji?: string | undefined
+  iconUrl?: string | undefined
 }
 
 export interface BroadcastPayload {
   event: string
   data: any
-  channel?: string
+  channel?: string | undefined
 }
 
 export interface SmsPayload {
-  to?: string
+  to?: string | undefined
   body: string
 }
 
 export interface WebhookPayload {
   url: string
   body: any
-  method?: 'POST' | 'PUT' | 'PATCH'
-  headers?: Record<string, string>
+  method?: 'POST' | 'PUT' | 'PATCH' | undefined
+  headers?: Record<string, string> | undefined
 }
 
 /**
@@ -72,10 +72,10 @@ export abstract class Notification {
   shouldQueue = false
 
   /** Queue name override */
-  queue?: string
+  queue?: string | undefined
 
   /** Queue connection override */
-  connection?: string
+  connection?: string | undefined
 
   /** Max retry attempts */
   tries = 3

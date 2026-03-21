@@ -27,7 +27,7 @@ export class ScheduleWatcher extends Watcher {
       status: data.status,
     }
 
-    const tags = [data.status]
+    const tags: string[] = [data.status]
     if (data.status === 'error') tags.push('failed')
 
     this.record('schedule', content, tags)

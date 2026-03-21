@@ -1,5 +1,4 @@
 import type { DatabaseConnection } from './contracts/Connection.ts'
-import type { MongoDatabaseConnection } from './contracts/MongoConnection.ts'
 import { SQLiteConnection } from './drivers/SQLiteConnection.ts'
 import { PostgresConnection } from './drivers/PostgresConnection.ts'
 import { MySQLConnection } from './drivers/MySQLConnection.ts'
@@ -9,31 +8,31 @@ import { ConnectionError } from './errors/ConnectionError.ts'
 export interface SQLConfig {
   driver: 'sqlite' | 'postgres' | 'mysql'
   database: string
-  host?: string
-  port?: number
-  user?: string
-  password?: string
-  ssl?: boolean
-  pool?: { min?: number; max?: number }
+  host?: string | undefined
+  port?: number | undefined
+  user?: string | undefined
+  password?: string | undefined
+  ssl?: boolean | undefined
+  pool?: { min?: number | undefined; max?: number | undefined } | undefined
 }
 
 export interface MongoConfig {
   driver: 'mongodb'
   uri: string
   database: string
-  options?: Record<string, any>
+  options?: Record<string, any> | undefined
 }
 
 export type ConnectionConfig = SQLConfig | MongoConfig
 
 export interface DatabaseConfig {
-  default?: string
+  default?: string | undefined
   connections: Record<string, ConnectionConfig>
 }
 
 export class DatabaseManager {
   private sqlConnections = new Map<string, DatabaseConnection>()
-  private mongoConnections = new Map<string, MongoDatabaseConnection>()
+  private mongoConnections = new Map<string, MongoConnection>()
 
   constructor(private readonly config: DatabaseConfig) {}
 
@@ -51,7 +50,7 @@ export class DatabaseManager {
   }
 
   /** Get a MongoDB connection by name */
-  mongo(name?: string): MongoDatabaseConnection {
+  mongo(name?: string): MongoConnection {
     const connName = name ?? this.config.default ?? 'default'
     if (this.mongoConnections.has(connName)) return this.mongoConnections.get(connName)!
 

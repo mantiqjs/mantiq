@@ -252,7 +252,7 @@ export class SchemaBuilderImpl implements SchemaBuilder {
     return def
   }
 
-  private compileIndex(table: string, idx: { type: 'index' | 'unique' | 'primary'; columns: string[]; name?: string }): string {
+  private compileIndex(table: string, idx: { type: 'index' | 'unique' | 'primary'; columns: string[]; name?: string | undefined }): string {
     const cols = idx.columns.map((c) => this.quoteCol(c)).join(', ')
     const idxName = idx.name ?? `${table}_${idx.columns.join('_')}_${idx.type}`
 

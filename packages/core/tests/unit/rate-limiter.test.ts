@@ -128,7 +128,7 @@ describe('ThrottleRequests', () => {
   const successResponse = async () => new Response('OK', { status: 200 })
 
   test('allows requests under the limit', async () => {
-    middleware.setParameters('3', '1') // 3 per minute
+    middleware.setParameters(['3', '1']) // 3 per minute
     const req = mockRequest()
 
     const res = await middleware.handle(req, successResponse)
@@ -138,7 +138,7 @@ describe('ThrottleRequests', () => {
   })
 
   test('returns 429 when limit exceeded', async () => {
-    middleware.setParameters('2', '1') // 2 per minute
+    middleware.setParameters(['2', '1']) // 2 per minute
     const req = mockRequest()
 
     await middleware.handle(req, successResponse) // 1
@@ -151,7 +151,7 @@ describe('ThrottleRequests', () => {
   })
 
   test('429 response is JSON for API requests', async () => {
-    middleware.setParameters('1', '1')
+    middleware.setParameters(['1', '1'])
     const req = mockRequest('127.0.0.1', '/api/test')
 
     await middleware.handle(req, successResponse)
@@ -164,7 +164,7 @@ describe('ThrottleRequests', () => {
   })
 
   test('429 response is text for non-API requests', async () => {
-    middleware.setParameters('1', '1')
+    middleware.setParameters(['1', '1'])
     const req = mockRequest('127.0.0.1', '/dashboard')
 
     await middleware.handle(req, successResponse)
@@ -175,7 +175,7 @@ describe('ThrottleRequests', () => {
   })
 
   test('different IPs have separate limits', async () => {
-    middleware.setParameters('1', '1')
+    middleware.setParameters(['1', '1'])
 
     const req1 = mockRequest('1.1.1.1')
     const req2 = mockRequest('2.2.2.2')
@@ -194,7 +194,7 @@ describe('ThrottleRequests', () => {
       maxAttempts: 1,
       decayMinutes: 1,
     }))
-    middleware.setParameters('strict')
+    middleware.setParameters(['strict'])
     const req = mockRequest()
 
     await middleware.handle(req, successResponse)
@@ -214,7 +214,7 @@ describe('ThrottleRequests', () => {
       { key: `ip:${req.ip()}`, maxAttempts: 2, decayMinutes: 1 },
       { key: `global`, maxAttempts: 5, decayMinutes: 1 },
     ])
-    middleware.setParameters('multi')
+    middleware.setParameters(['multi'])
     const req = mockRequest()
 
     await middleware.handle(req, successResponse) // ip:1, global:1
@@ -224,7 +224,7 @@ describe('ThrottleRequests', () => {
   })
 
   test('remaining header decreases with each request', async () => {
-    middleware.setParameters('5', '1')
+    middleware.setParameters(['5', '1'])
     const req = mockRequest()
 
     const r1 = await middleware.handle(req, successResponse)
@@ -248,7 +248,7 @@ describe('ThrottleRequests', () => {
         })
       },
     }))
-    middleware.setParameters('custom')
+    middleware.setParameters(['custom'])
     const req = mockRequest()
 
     await middleware.handle(req, successResponse)

@@ -5,7 +5,7 @@ import type { RealtimeConfig } from '../contracts/RealtimeConfig.ts'
  */
 export interface SSEConnection {
   id: string
-  userId?: string | number
+  userId?: string | number | undefined
   channels: Set<string>
   controller: ReadableStreamDefaultController
   lastEventId: number
