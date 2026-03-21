@@ -20,9 +20,9 @@ export function getTemplates(ctx: TemplateContext): Record<string, string> {
         mantiq: 'bun run mantiq.ts',
       },
       dependencies: {
-        '@mantiq/auth': '^0.1.2',
+        '@mantiq/auth': '^0.2.0',
         '@mantiq/cli': '^0.1.6',
-        '@mantiq/core': '^0.1.4',
+        '@mantiq/core': '^0.2.0',
         '@mantiq/database': '^0.1.4',
         '@mantiq/events': '^0.1.2',
         '@mantiq/filesystem': '^0.1.2',
@@ -806,9 +806,9 @@ function applyKitOverrides(templates: Record<string, string>, ctx: TemplateConte
       postinstall: 'rm -rf node_modules/@mantiq/*/node_modules/@mantiq 2>/dev/null; true',
     },
     dependencies: {
-      '@mantiq/auth': '^0.1.2',
+      '@mantiq/auth': '^0.2.0',
       '@mantiq/cli': '^0.1.6',
-      '@mantiq/core': '^0.1.4',
+      '@mantiq/core': '^0.2.0',
       '@mantiq/database': '^0.1.4',
       '@mantiq/events': '^0.1.2',
       '@mantiq/filesystem': '^0.1.2',
