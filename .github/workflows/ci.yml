@@ -126,3 +126,46 @@ jobs:
 
       - name: Build all packages
         run: bun run build
+
+  scaffold:
+    name: Starter Kit Sanity
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        kit: [none, react, vue, svelte]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install monorepo deps
+        run: bun install --frozen-lockfile
+
+      - name: Scaffold ${{ matrix.kit }} app
+        run: |
+          KIT_FLAG=""
+          if [ "${{ matrix.kit }}" != "none" ]; then
+            KIT_FLAG="--kit=${{ matrix.kit }}"
+          fi
+          cd /tmp
+          bun ${{ github.workspace }}/packages/create-mantiq/src/index.ts test-app $KIT_FLAG --yes --no-git
+
+      - name: Verify app boots
+        run: |
+          cd /tmp/test-app
+          # Start the server in background
+          timeout 15 bun run dev &
+          sleep 5
+          # Check if it responds
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/ || curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/ || echo "000")
+          echo "HTTP response: $HTTP_CODE"
+          # Kill background processes
+          kill %1 2>/dev/null || true
+          # Verify we got a response
+          if [ "$HTTP_CODE" = "000" ]; then
+            echo "Server failed to start"
+            exit 1
+          fi
+          echo "✓ ${{ matrix.kit }} starter kit boots successfully"
