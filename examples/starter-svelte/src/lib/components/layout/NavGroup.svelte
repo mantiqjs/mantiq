@@ -16,7 +16,8 @@
     navigate: (href: string) => void
   } = $props()
 
-  const sidebar = Sidebar.useSidebar()
+  let sidebar: ReturnType<typeof Sidebar.useSidebar> | undefined
+  try { sidebar = Sidebar.useSidebar() } catch { /* SSR — no context */ }
 
   function isActive(itemUrl: string, active: string): boolean {
     if (itemUrl === active) return true
@@ -36,7 +37,7 @@
   <Sidebar.Menu>
     {#each group.items as item (item.url)}
       {#if item.items && item.items.length > 0}
-        {#if sidebar.state === 'collapsed'}
+        {#if sidebar?.state === 'collapsed'}
           <!-- Collapsed: dropdown menu -->
           <Sidebar.MenuItem>
             <DropdownMenu.Root>
