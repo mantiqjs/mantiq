@@ -157,9 +157,9 @@ describe.skipIf(!algoliaAvailable)('AlgoliaEngine (live API)', () => {
     // Index the products
     await engine.update(models)
 
-    // Wait for Algolia to finish indexing
-    await new Promise((resolve) => setTimeout(resolve, 3000))
-  }, 15000) // Increase timeout for beforeAll
+    // Wait for Algolia to finish indexing + apply settings (new index needs time)
+    await new Promise((resolve) => setTimeout(resolve, 8000))
+  }, 20000)
 
   afterAll(async () => {
     try {
