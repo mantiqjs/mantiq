@@ -6,6 +6,8 @@ import { RedirectIfAuthenticated } from './middleware/RedirectIfAuthenticated.ts
 import { EnsureEmailIsVerified } from './middleware/EnsureEmailIsVerified.ts'
 import { ConfirmPassword } from './middleware/ConfirmPassword.ts'
 import { Authorize } from './middleware/Authorize.ts'
+import { CheckAbilities } from './middleware/CheckAbilities.ts'
+import { CheckForAnyAbility } from './middleware/CheckForAnyAbility.ts'
 import { GateManager } from './authorization/GateManager.ts'
 import { setGateManager, GATE_MANAGER } from './helpers/gate.ts'
 import type { AuthConfig } from './contracts/AuthConfig.ts'
@@ -55,10 +57,14 @@ export class AuthServiceProvider extends ServiceProvider {
     // Resolve the GateManager so setGateManager() is called
     this.app.make(GateManager)
 
-    // Register the 'can' middleware alias
+    // Register middleware aliases
     try {
       const kernel = this.app.make(HttpKernel)
       kernel.registerMiddleware('can', Authorize)
+      kernel.registerMiddleware('auth', Authenticate)
+      kernel.registerMiddleware('guest', RedirectIfAuthenticated)
+      kernel.registerMiddleware('abilities', CheckAbilities as any)
+      kernel.registerMiddleware('ability', CheckForAnyAbility as any)
     } catch {
       // HttpKernel may not be available in non-HTTP contexts (e.g., CLI)
     }

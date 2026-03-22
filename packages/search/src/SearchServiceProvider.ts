@@ -3,6 +3,11 @@ import { setSearchManager, SEARCH_MANAGER } from './helpers/search.ts'
 import type { SearchConfig } from './contracts/SearchConfig.ts'
 import { DEFAULT_CONFIG } from './contracts/SearchConfig.ts'
 import type { SearchEngine } from './contracts/SearchEngine.ts'
+import { registerCommands } from '@mantiq/cli'
+import { SearchImportCommand } from './commands/SearchImportCommand.ts'
+import { SearchFlushCommand } from './commands/SearchFlushCommand.ts'
+import { SearchIndexCommand } from './commands/SearchIndexCommand.ts'
+import { SearchDeleteIndexCommand } from './commands/SearchDeleteIndexCommand.ts'
 
 export class SearchServiceProvider {
   constructor(private readonly app: any) {}
@@ -53,7 +58,16 @@ export class SearchServiceProvider {
   }
 
   boot(): void {
-    // Service provider boot — nothing needed here.
-    // Models opt in to search via makeSearchable() in their booted().
+    // Register search commands
+    try {
+      registerCommands([
+        new SearchImportCommand() as any,
+        new SearchFlushCommand() as any,
+        new SearchIndexCommand() as any,
+        new SearchDeleteIndexCommand() as any,
+      ])
+    } catch {
+      // @mantiq/cli may not be available
+    }
   }
 }

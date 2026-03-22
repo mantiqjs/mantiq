@@ -101,5 +101,10 @@ export class CoreServiceProvider extends ServiceProvider {
     // ── Auto-register middleware aliases on HttpKernel ─────────────────────
     const kernel = this.app.make(HttpKernel)
     kernel.registerMiddleware('throttle', ThrottleRequests)
+    kernel.registerMiddleware('cors', CorsMiddleware)
+    kernel.registerMiddleware('trim', TrimStringsMiddleware)
+    kernel.registerMiddleware('encrypt.cookies', EncryptCookies)
+    kernel.registerMiddleware('session', StartSession)
+    kernel.registerMiddleware('csrf', VerifyCsrfToken)
   }
 }
