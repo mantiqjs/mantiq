@@ -50,6 +50,15 @@ export default {
     //   password: env('DB_PASSWORD', ''),
     // },
 
+    // mssql: {
+    //   driver: 'mssql' as const,
+    //   host: env('DB_HOST', '127.0.0.1'),
+    //   port: Number(env('DB_PORT', '1433')),
+    //   database: env('DB_DATABASE', 'mantiq'),
+    //   username: env('DB_USERNAME', 'sa'),
+    //   password: env('DB_PASSWORD', ''),
+    // },
+
     // mongodb: {
     //   driver: 'mongodb' as const,
     //   url: env('MONGODB_URL', 'mongodb://127.0.0.1:27017'),
