@@ -1,5 +1,18 @@
+function getCookie(name: string): string | null {
+  const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`))
+  return match ? decodeURIComponent(match[1]!) : null
+}
+
 export async function api<T = any>(url: string, opts: RequestInit = {}): Promise<{ ok: boolean; status: number; data: T }> {
-  const res = await fetch(url, { ...opts, headers: { Accept: 'application/json', ...opts.headers } })
+  const headers: Record<string, string> = { Accept: 'application/json', ...(opts.headers as Record<string, string>) }
+
+  // Attach XSRF token for CSRF protection on mutating requests
+  const xsrf = getCookie('XSRF-TOKEN')
+  if (xsrf && opts.method && !['GET', 'HEAD', 'OPTIONS'].includes(opts.method)) {
+    headers['X-XSRF-TOKEN'] = xsrf
+  }
+
+  const res = await fetch(url, { ...opts, credentials: 'same-origin', headers })
 
   // Session expired — redirect to login
   if (res.status === 401 || res.status === 419) {
@@ -14,4 +27,12 @@ export async function api<T = any>(url: string, opts: RequestInit = {}): Promise
 
 export function post(url: string, body: object) {
   return api(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+}
+
+export function put(url: string, body: object) {
+  return api(url, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+}
+
+export function del(url: string) {
+  return api(url, { method: 'DELETE' })
 }
