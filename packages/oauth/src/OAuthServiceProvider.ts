@@ -63,7 +63,7 @@ export class OAuthServiceProvider extends ServiceProvider {
       const publicKey = await readFile(server.publicKeyPath, 'utf-8')
       await signer.loadKeys(privateKey, publicKey)
     } catch {
-      // Keys not yet generated — oauth:install must be run first
+      console.warn('[Mantiq] OAuth RSA keys not found. Run `bun mantiq oauth:install` to generate them.')
     }
 
     // Register 'oauth' guard on AuthManager

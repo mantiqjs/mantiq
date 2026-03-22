@@ -10,7 +10,16 @@ Priority: **P1** = should fix soon, **P2** = nice to have
 
 ## Testing
 
-- [ ] **P2** `@mantiq/heartbeat` — dashboard + widget tests
+- [ ] **P1** Auth e2e flow: register → login → protected route → logout → session expiry
+- [ ] **P1** Middleware header assertions: CORS, CSRF token, session cookie flags, security headers
+- [ ] **P1** SSR rendering tests (dev via ssrLoadModule, prod via bundle import)
+- [ ] **P1** Equalize e2e coverage across kits (Vue/Svelte missing heartbeat, content-type, header scoping tests)
+- [ ] **P2** Error state browser tests: 404 page, error boundaries, failed API calls, CSRF expiry
+- [ ] **P2** Heartbeat e2e with real database (widget injection, panel toggle, SPA stat updates)
+- [ ] **P2** Queue/Jobs integration: dispatch → worker process → completion flow
+- [ ] **P2** WebSocket/Realtime e2e tests
+- [ ] **P2** CLI generator verification: generated migration runs, generated model queries
+- [ ] **P2** Performance baseline: response times, memory under sustained traffic, connection pool
 
 ## Documentation
 
@@ -24,6 +33,56 @@ Priority: **P1** = should fix soon, **P2** = nice to have
 - [ ] **P2** 2FA / TOTP support
 - [ ] **P2** Polymorphic relationships: `morphOne`, `morphMany`, `morphToMany`
 - [ ] **P2** `hasOneThrough`, `hasManyThrough` relationships
+
+## @mantiq/panel — Admin Panel (Filament-like)
+
+Server-driven admin panel using React + shadcn/ui. Define Resources in TypeScript, get full CRUD UI with zero frontend code. Server sends JSON schema, React renders it.
+
+### Core (P2 — post-1.0)
+- [ ] `Panel` config builder (path, guard, brand, theme, discovery)
+- [ ] `PanelServiceProvider` base class (route registration, middleware, resource discovery)
+- [ ] `Resource` base class (model binding, table/form/filter/action definitions)
+- [ ] `Page` base class (dashboard, custom pages)
+- [ ] JSON protocol: server describes UI schema, frontend renders generically
+
+### Table System
+- [ ] Column types: Text, Boolean, Image, Badge, Date, Icon, Color
+- [ ] Sorting, search, pagination (server-driven)
+- [ ] Filters: Select, Date range, Trashed, custom
+- [ ] Bulk actions with confirmation dialogs
+- [ ] Row actions (edit, delete, custom)
+- [ ] Column toggling, reordering
+
+### Form System
+- [ ] Field types: TextInput, Select, Toggle, DatePicker, FileUpload, RichEditor, Repeater
+- [ ] `RelationSelect` — auto-populates from belongsTo/hasMany
+- [ ] Validation integration with `@mantiq/validation`
+- [ ] Create / Edit / View modes from same definition
+- [ ] Form sections, tabs, grid layout
+
+### Widgets & Dashboard
+- [ ] `StatsWidget` — stat cards with trends
+- [ ] `ChartWidget` — line, bar, pie (lightweight charting lib)
+- [ ] `TableWidget` — mini table widget
+- [ ] Dashboard grid layout, widget discovery
+
+### Frontend (pre-built React + shadcn)
+- [ ] `PanelLayout` — sidebar + topbar shell
+- [ ] `ResourceTable` — data table (shadcn table + column renderers)
+- [ ] `ResourceForm` — dynamic form renderer from schema
+- [ ] Generic column/field component map (server type → React component)
+- [ ] Dark mode, responsive, theme customization
+
+### Auth & Navigation
+- [ ] Dedicated admin guard (reuses `@mantiq/auth`)
+- [ ] Auto-generated sidebar navigation from discovered resources
+- [ ] Navigation groups, icons, badges, ordering
+- [ ] User menu (profile, logout)
+
+### CLI
+- [ ] `make:resource` — generates Resource class for a model
+- [ ] `make:panel-page` — generates custom page
+- [ ] `make:widget` — generates dashboard widget
 
 ## Starter Kits
 
@@ -58,6 +117,9 @@ Priority: **P1** = should fix soon, **P2** = nice to have
 | Vite 8 migration | Rolldown + Oxc, all plugins updated |
 | 865 → 0 type errors | Typecheck enforced in CI |
 | 2600+ tests | 320 Tier 1 tests, 643 integration tests, full CI |
+| Playwright e2e | 30 browser tests across 4 starter kits (api, react, vue, svelte) |
+| Static asset 404 fix | ViteServiceProvider auto-discovered via mantiq.provider field |
+| Heartbeat SPA updates | X-Heartbeat scoped to HTML + SPA, clean API responses |
 | OAuth 2.0 server | @mantiq/oauth with 4 grants, PKCE, scopes, JWT |
 | Social login | @mantiq/social-auth with 8 providers |
 | Sanctum tokens | PersonalAccessToken, TokenGuard, HasApiTokens |

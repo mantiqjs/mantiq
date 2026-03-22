@@ -100,3 +100,5 @@ export { response, json, html, redirect, noContent, stream, download } from './h
 export { hash, hashCheck } from './helpers/hash.ts'
 export { cache } from './helpers/cache.ts'
 export { session } from './helpers/session.ts'
+export { dd, dump } from './helpers/dd.ts'
+export { base_path, app_path, config_path, database_path, storage_path, public_path, resource_path } from './helpers/paths.ts'

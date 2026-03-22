@@ -51,8 +51,8 @@ export class HeartbeatServiceProvider extends ServiceProvider {
     let heartbeat: Heartbeat
     try {
       heartbeat = this.app.make(Heartbeat)
-    } catch {
-      // Database not configured — heartbeat requires a database connection
+    } catch (e) {
+      console.warn('[Mantiq] HeartbeatServiceProvider skipped — database not configured. Run `bun mantiq migrate` to set up.')
       return
     }
     const config = heartbeat.config

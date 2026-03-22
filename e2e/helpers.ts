@@ -47,6 +47,16 @@ export async function createTestApp(
     } catch { /* skip if can't link */ }
   }
 
+  // Run migrations + seed if database config exists
+  if (existsSync(join(dir, 'config/database.ts'))) {
+    try {
+      execSync('bun mantiq.ts migrate', { cwd: dir, stdio: 'pipe', timeout: 30_000 })
+      execSync('bun mantiq.ts db:seed', { cwd: dir, stdio: 'pipe', timeout: 30_000 })
+    } catch {
+      // Seed may fail if command not registered — non-fatal
+    }
+  }
+
   // Find a free port
   const port = 3000 + Math.floor(Math.random() * 1000)
 
