@@ -1,0 +1,14 @@
+import type { Router } from '@mantiq/core'
+import { json } from '@mantiq/core'
+import { UserController } from '../app/Http/Controllers/UserController.ts'
+
+export default function (router: Router) {
+  // Public
+  router.get('/ping', () => json({ status: 'ok', timestamp: new Date().toISOString() }))
+
+  // Protected — session auth via cookies (stateful API for SPA)
+  router.get('/users', [UserController, 'index']).middleware('auth')
+  router.post('/users', [UserController, 'store']).middleware('auth')
+  router.put('/users/:id', [UserController, 'update']).middleware('auth')
+  router.delete('/users/:id', [UserController, 'destroy']).middleware('auth')
+}

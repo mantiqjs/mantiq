@@ -93,27 +93,68 @@ export function getTemplates(ctx: TemplateContext): Record<string, string> {
   }, null, 2) + '\n'
 
   // ── .env (dynamic — APP_KEY generated) ─────────────────────────────────
-  templates['.env'] = `APP_NAME=${ctx.name}
+  const envBody = (appKey: string) => `# Application
+APP_NAME=${ctx.name}
 APP_ENV=local
 APP_DEBUG=true
-APP_KEY=${ctx.appKey}
+APP_KEY=${appKey}
 APP_URL=http://localhost:3000
+APP_PORT=3000
 
+# Database
 DB_CONNECTION=sqlite
 DB_DATABASE=database/database.sqlite
-${ctx.kit ? '\nVITE_DEV_SERVER_URL=http://localhost:5173' : ''}
+# DB_HOST=127.0.0.1
+# DB_PORT=5432
+# DB_USERNAME=postgres
+# DB_PASSWORD=
+
+# Session
+SESSION_DRIVER=memory
+SESSION_LIFETIME=120
+SESSION_COOKIE=mantiq_session
+
+# Cache
+CACHE_STORE=memory
+# REDIS_HOST=127.0.0.1
+# REDIS_PORT=6379
+# REDIS_PASSWORD=
+
+# Queue
+QUEUE_CONNECTION=sync
+
+# Mail
+MAIL_MAILER=log
+MAIL_FROM_ADDRESS=hello@example.com
+MAIL_FROM_NAME=\${APP_NAME}
+# MAIL_HOST=localhost
+# MAIL_PORT=587
+# MAIL_USERNAME=
+# MAIL_PASSWORD=
+
+# Logging
+LOG_CHANNEL=stack
+
+# Hashing
+HASH_DRIVER=bcrypt
+BCRYPT_ROUNDS=10
+
+# Broadcasting
+BROADCAST_DRIVER=bun
+
+# Filesystem
+FILESYSTEM_DISK=local
+
+# Search
+# ALGOLIA_APP_ID=
+# ALGOLIA_SECRET=
+# MEILISEARCH_HOST=http://127.0.0.1:7700
+# MEILISEARCH_KEY=
+${ctx.kit ? '\n# Vite\nVITE_DEV_SERVER_URL=http://localhost:5173' : ''}
 `
 
-  templates['.env.example'] = `APP_NAME=${ctx.name}
-APP_ENV=local
-APP_DEBUG=true
-APP_KEY=
-APP_URL=http://localhost:3000
-
-DB_CONNECTION=sqlite
-DB_DATABASE=database/database.sqlite
-${ctx.kit ? '\nVITE_DEV_SERVER_URL=http://localhost:5173' : ''}
-`
+  templates['.env'] = envBody(ctx.appKey)
+  templates['.env.example'] = envBody('')
 
   return templates
 }

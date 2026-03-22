@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { post, put, del } from '@/lib/api'
 import {
   Dialog,
   DialogContent,
@@ -50,15 +51,8 @@ export function AddUserDialog({
     setSubmitting(true)
     setError('')
     try {
-      const res = await fetch('/api/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      })
-      if (!res.ok) {
-        const data = await res.json().catch(() => null)
-        throw new Error(data?.message ?? `Request failed (${res.status})`)
-      }
+      const { ok, data } = await post('/api/users', form)
+      if (!ok) throw new Error(data?.error ?? 'Request failed')
       reset()
       onOpenChange(false)
       onSuccess()
@@ -165,15 +159,8 @@ export function EditUserDialog({
     setSubmitting(true)
     setError('')
     try {
-      const res = await fetch(`/api/users/${user.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      })
-      if (!res.ok) {
-        const data = await res.json().catch(() => null)
-        throw new Error(data?.message ?? `Request failed (${res.status})`)
-      }
+      const { ok, data } = await put(`/api/users/${user.id}`, form)
+      if (!ok) throw new Error(data?.error ?? 'Request failed')
       onOpenChange(false)
       onSuccess()
     } catch (err: any) {
@@ -252,14 +239,8 @@ export function DeleteUserDialog({
     setSubmitting(true)
     setError('')
     try {
-      const res = await fetch(`/api/users/${user.id}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-      })
-      if (!res.ok) {
-        const data = await res.json().catch(() => null)
-        throw new Error(data?.message ?? `Request failed (${res.status})`)
-      }
+      const { ok, data } = await del(`/api/users/${user.id}`)
+      if (!ok) throw new Error(data?.error ?? 'Request failed')
       onOpenChange(false)
       onSuccess()
     } catch (err: any) {

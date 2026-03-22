@@ -1,5 +1,5 @@
 import { execSync, spawn, type ChildProcess } from 'node:child_process'
-import { existsSync, rmSync, readdirSync, symlinkSync } from 'node:fs'
+import { existsSync, rmSync, readdirSync, symlinkSync, lstatSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -41,10 +41,9 @@ export async function createTestApp(
   for (const pkg of readdirSync(packagesDir)) {
     const pkgDir = join(packagesDir, pkg)
     const target = join(mantiqModules, pkg)
-    if (existsSync(target)) rmSync(target, { recursive: true })
-    try {
-      symlinkSync(pkgDir, target)
-    } catch { /* skip if can't link */ }
+    // Force remove existing (directory or symlink) before linking
+    try { lstatSync(target); rmSync(target, { recursive: true, force: true }) } catch {}
+    try { symlinkSync(pkgDir, target) } catch {}
   }
 
   // Run migrations + seed if database config exists
