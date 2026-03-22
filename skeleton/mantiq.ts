@@ -40,6 +40,7 @@ import {
 import { InstallCommand as HeartbeatInstallCommand } from '@mantiq/heartbeat'
 import { MakeMailCommand } from '@mantiq/mail'
 import { MakeNotificationCommand } from '@mantiq/notify'
+import { MakePolicyCommand } from '@mantiq/cli'
 
 const kernel = new Kernel()
 
@@ -71,6 +72,7 @@ kernel.registerAll([
   new MakeTestCommand(),
   new MakeMailCommand(),
   new MakeNotificationCommand(),
+  new MakePolicyCommand(),
 
   // Queue
   new QueueWorkCommand(),

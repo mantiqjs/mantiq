@@ -34,6 +34,10 @@ export { MakeRequestCommand } from './commands/MakeRequestCommand.ts'
 export { MakeRuleCommand } from './commands/MakeRuleCommand.ts'
 export { MakeSeederCommand } from './commands/MakeSeederCommand.ts'
 export { MakeTestCommand } from './commands/MakeTestCommand.ts'
+export { MakeMailCommand } from './commands/MakeMailCommand.ts'
+export { MakeNotificationCommand } from './commands/MakeNotificationCommand.ts'
+export { MakeJobCommand } from './commands/MakeJobCommand.ts'
+export { MakePolicyCommand } from './commands/MakePolicyCommand.ts'
 
 // Utility commands
 export { AboutCommand } from './commands/AboutCommand.ts'
