@@ -8,4 +8,7 @@ export default {
   url: env('APP_URL', 'http://localhost:3000'),
   port: Number(env('APP_PORT', '3000')),
   basePath: import.meta.dir + '/..',
+
+  // Global middleware applied to every request
+  middleware: ['cors', 'encrypt.cookies', 'session'],
 }

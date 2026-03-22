@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/logging",
-  "version": "0.1.3",
+  "version": "0.5.6",
   "description": "Channel-based logging",
   "type": "module",
   "license": "MIT",
@@ -51,7 +51,7 @@
     "@mantiq/core": "workspace:*"
   },
   "peerDependencies": {
-    "@mantiq/core": "^0.1.0"
+    "@mantiq/core": "^0.5.0"
   },
   "mantiq": {
     "provider": "LoggingServiceProvider"

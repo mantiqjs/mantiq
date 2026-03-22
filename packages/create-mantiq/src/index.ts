@@ -1,9 +1,36 @@
 #!/usr/bin/env bun
-import { existsSync, mkdirSync } from 'node:fs'
-import { dirname, resolve } from 'node:path'
+import { existsSync, mkdirSync, readdirSync, statSync, readFileSync } from 'node:fs'
+import { dirname, resolve, join, relative } from 'node:path'
 import { randomBytes } from 'node:crypto'
 import { getTemplates } from './templates.ts'
 import { Terminal } from './terminal.ts'
+
+/**
+ * Recursively copy a directory, preserving structure.
+ * Skips node_modules, .git, bun.lock, *.sqlite files.
+ */
+async function copyDirectory(src: string, dest: string): Promise<number> {
+  let count = 0
+  const entries = readdirSync(src, { withFileTypes: true })
+  for (const entry of entries) {
+    const srcPath = join(src, entry.name)
+    const destPath = join(dest, entry.name)
+
+    // Skip files that shouldn't be copied
+    if (['node_modules', '.git', 'bun.lock', 'README.md'].includes(entry.name)) continue
+    if (entry.name.endsWith('.sqlite') || entry.name.endsWith('.sqlite-wal') || entry.name.endsWith('.sqlite-shm')) continue
+
+    if (entry.isDirectory()) {
+      mkdirSync(destPath, { recursive: true })
+      count += await copyDirectory(srcPath, destPath)
+    } else {
+      mkdirSync(dirname(destPath), { recursive: true })
+      await Bun.write(destPath, Bun.file(srcPath))
+      count++
+    }
+  }
+  return count
+}
 
 // ── ANSI helpers ─────────────────────────────────────────────────────────────
 const R = '\x1b[0m'
@@ -98,19 +125,28 @@ if (!isCI && !kit) {
 // ── Generate ─────────────────────────────────────────────────────────────────
 term.step('Scaffolding project')
 
-const appKey = `base64:${randomBytes(32).toString('base64')}`
-const templates = getTemplates({ name: projectName, appKey, kit, ui })
+let fileCount = 0
 
-// Write base skeleton (dynamic templates)
-const templateFiles = Object.keys(templates).sort()
-for (const relativePath of templateFiles) {
-  const fullPath = `${projectDir}/${relativePath}`
-  mkdirSync(dirname(fullPath), { recursive: true })
-  await Bun.write(fullPath, templates[relativePath]!)
+// Step 1: Copy the skeleton directory as the base
+const skeletonDir = resolve(import.meta.dir, '..', 'skeleton')
+if (existsSync(skeletonDir)) {
+  fileCount += await copyDirectory(skeletonDir, projectDir)
+} else {
+  // Fallback: skeleton not bundled (shouldn't happen in published package)
+  console.error('  Skeleton directory not found')
 }
 
-// Copy starter kit stubs (static files)
-let stubCount = 0
+// Step 2: Generate dynamic files (package.json, .env — overwrites skeleton versions)
+const appKey = `base64:${randomBytes(32).toString('base64')}`
+const templates = getTemplates({ name: projectName, appKey, kit, ui })
+for (const [relativePath, content] of Object.entries(templates)) {
+  const fullPath = `${projectDir}/${relativePath}`
+  mkdirSync(dirname(fullPath), { recursive: true })
+  await Bun.write(fullPath, content)
+  fileCount++
+}
+
+// Step 3: Overlay starter kit stubs (new files + route overrides)
 if (kit) {
   const stubsDir = resolve(import.meta.dir, '..', 'stubs')
   const manifestPath = resolve(stubsDir, 'manifest.json')
@@ -120,18 +156,18 @@ if (kit) {
     const kitManifest = manifest[kit]
     const sharedManifest = manifest.shared
 
-    // Copy kit-specific stubs (src/, vite.config.ts, tsconfig.json, etc.)
+    // Kit-specific stubs (src/, vite.config.ts, etc.)
     if (kitManifest?.files) {
       for (const { stub, target } of kitManifest.files) {
         const src = resolve(stubsDir, kit, stub)
         const dest = resolve(projectDir, target)
         mkdirSync(dirname(dest), { recursive: true })
         await Bun.write(dest, Bun.file(src))
-        stubCount++
+        fileCount++
       }
     }
 
-    // Copy shared stubs (routes, controllers, seeder) with placeholder replacement
+    // Shared stubs (routes, controllers, seeder — overwrites skeleton routes)
     if (sharedManifest?.files) {
       const mainEntry = kitManifest?.mainEntry ?? 'src/main.ts'
       for (const { stub, target } of sharedManifest.files) {
@@ -141,12 +177,12 @@ if (kit) {
         let content = await Bun.file(src).text()
         content = content.replace(/\{\{MAIN_ENTRY\}\}/g, mainEntry)
         await Bun.write(dest, content)
-        stubCount++
+        fileCount++
       }
     }
   }
 }
-console.log(`  ${dim(`${templateFiles.length + stubCount} files created`)}`)
+console.log(`  ${dim(`${fileCount} files created`)}`)
 
 // ── Install dependencies ─────────────────────────────────────────────────────
 const spin = term.spinner('Installing dependencies')

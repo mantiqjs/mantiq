@@ -12,8 +12,8 @@ const props = withDefaults(defineProps<{
   appName: 'Mantiq',
 })
 
-const email = ref('admin@example.com')
-const password = ref('password')
+const email = ref('')
+const password = ref('')
 const error = ref('')
 const loading = ref(false)
 
@@ -82,7 +82,7 @@ async function handleSubmit() {
               v-model="email"
               type="email"
               required
-              placeholder="admin@example.com"
+              placeholder="you@example.com"
               autocomplete="email"
             />
           </div>

@@ -13,8 +13,8 @@
     [key: string]: any
   } = $props()
 
-  let email = $state('admin@example.com')
-  let password = $state('password')
+  let email = $state('')
+  let password = $state('')
   let error = $state('')
   let loading = $state(false)
 
@@ -82,7 +82,7 @@
             type="email"
             bind:value={email}
             required
-            placeholder="admin@example.com"
+            placeholder="you@example.com"
             autocomplete="email"
           />
         </div>

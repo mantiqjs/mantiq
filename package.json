@@ -1,6 +1,7 @@
 {
   "name": "mantiqjs",
-  "version": "0.0.0",
+  "version": "0.5.6",
+  "type": "module",
   "private": true,
   "workspaces": [
     "packages/*",
@@ -13,24 +14,32 @@
     "lint": "bun run --filter '*' lint",
     "typecheck": "bun run --filter '*' typecheck",
     "clean": "bun run --filter '*' clean",
-    "publish:all": "for dir in packages/*/; do (cd \"$dir\" && npm publish --access public); done"
+    "publish:all": "for dir in packages/*/; do (cd \"$dir\" && npm publish --access public); done",
+    "publish:next": "for dir in packages/*/; do (cd \"$dir\" && npm publish --access public --tag next); done",
+    "test:e2e": "bunx playwright test",
+    "test:e2e:react": "bunx playwright test e2e/react-kit.spec.ts",
+    "test:e2e:vue": "bunx playwright test e2e/vue-kit.spec.ts",
+    "test:e2e:svelte": "bunx playwright test e2e/svelte-kit.spec.ts",
+    "test:e2e:api": "bunx playwright test e2e/api-only.spec.ts",
+    "version:set": "node -e \"const v=process.argv[1];const fs=require('fs');const path=require('path');fs.readdirSync('packages').forEach(d=>{const p=path.join('packages',d,'package.json');if(fs.existsSync(p)){const j=JSON.parse(fs.readFileSync(p));j.version=v;fs.writeFileSync(p,JSON.stringify(j,null,2)+'\\n')}});const rp='package.json';const rj=JSON.parse(fs.readFileSync(rp));rj.version=v;fs.writeFileSync(rp,JSON.stringify(rj,null,2)+'\\n');console.log('All packages set to '+v)\""
   },
   "devDependencies": {
-    "typescript": "^5.7.0",
-    "@mantiq/core": "workspace:*",
-    "@mantiq/database": "workspace:*",
     "@mantiq/auth": "workspace:*",
     "@mantiq/cli": "workspace:*",
-    "@mantiq/validation": "workspace:*",
-    "@mantiq/helpers": "workspace:*",
-    "@mantiq/filesystem": "workspace:*",
-    "@mantiq/logging": "workspace:*",
+    "@mantiq/core": "workspace:*",
+    "@mantiq/database": "workspace:*",
     "@mantiq/events": "workspace:*",
+    "@mantiq/filesystem": "workspace:*",
+    "@mantiq/heartbeat": "workspace:*",
+    "@mantiq/helpers": "workspace:*",
+    "@mantiq/logging": "workspace:*",
+    "@mantiq/mail": "workspace:*",
+    "@mantiq/notify": "workspace:*",
     "@mantiq/queue": "workspace:*",
     "@mantiq/realtime": "workspace:*",
-    "@mantiq/heartbeat": "workspace:*",
+    "@mantiq/validation": "workspace:*",
     "@mantiq/vite": "workspace:*",
-    "@mantiq/mail": "workspace:*",
-    "@mantiq/notify": "workspace:*"
+    "@playwright/test": "^1.58.2",
+    "typescript": "^5.7.0"
   }
 }

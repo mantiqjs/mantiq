@@ -1,0 +1,33 @@
+{
+  "name": "skeleton",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch index.ts",
+    "start": "bun run index.ts",
+    "mantiq": "bun run mantiq.ts"
+  },
+  "dependencies": {
+    "@mantiq/0,
+    "@mantiq/0,
+    "@mantiq/0,
+    "@mantiq/0,
+    "@mantiq/0,
+    "@mantiq/0,
+    "@mantiq/0,
+    "@mantiq/0,
+    "@mantiq/0,
+    "@mantiq/0,
+    "@mantiq/0,
+    "@mantiq/0,
+    "@mantiq/0,
+    "@mantiq/0,
+    "@mantiq/0,
+    "@mantiq/0
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "typescript": "^5.7.0"
+  }
+}

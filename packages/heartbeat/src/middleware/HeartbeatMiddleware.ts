@@ -141,36 +141,41 @@ export class HeartbeatMiddleware implements Middleware {
     }
 
     // Debug mode: attach X-Heartbeat header + inject widget
+    // Only for browser requests (HTML pages or SPA navigation), not raw API calls
     if (process.env.APP_DEBUG === 'true' && response!) {
-      const totalDuration = performance.now() - startTime
-      const totalMemory = Math.abs(process.memoryUsage().rss - startMemory)
-      const mem = (totalMemory / 1024 / 1024).toFixed(1)
-      const statsHeader = `${Math.round(totalDuration)}ms;${mem}MB;${response!.status};0q`
+      const ct = response!.headers.get('content-type') ?? ''
+      const isHtml = ct.includes('text/html') && response!.status < 400
+      const isSPA = request.header('X-Mantiq') === 'true'
 
-      try {
-        const ct = response!.headers.get('content-type') ?? ''
-        const isHtml = ct.includes('text/html') && response!.status < 400
-        const cloned = response!.clone()
-        const body = await cloned.text()
-        const headers = new Headers(response!.headers)
+      if (isHtml || isSPA) {
+        const totalDuration = performance.now() - startTime
+        const totalMemory = Math.abs(process.memoryUsage().rss - startMemory)
+        const mem = (totalMemory / 1024 / 1024).toFixed(1)
+        const statsHeader = `${Math.round(totalDuration)}ms;${mem}MB;${response!.status};0q`
 
-        headers.set('X-Heartbeat', statsHeader)
-        headers.set('Access-Control-Expose-Headers', [headers.get('Access-Control-Expose-Headers'), 'X-Heartbeat'].filter(Boolean).join(', '))
+        try {
+          const cloned = response!.clone()
+          const body = await cloned.text()
+          const headers = new Headers(response!.headers)
 
-        let finalBody = body
-        if (isHtml && this.heartbeat.config.widget?.enabled !== false && body.includes('</body>')) {
-          const widget = renderWidget({
-            duration: totalDuration,
-            memory: totalMemory,
-            status: response!.status,
-            queries: 0,
-            dashboardPath: this.heartbeat.config.dashboard.path,
-          })
-          finalBody = body.replace('</body>', widget + '\n</body>')
-        }
+          headers.set('X-Heartbeat', statsHeader)
+          headers.set('Access-Control-Expose-Headers', [headers.get('Access-Control-Expose-Headers'), 'X-Heartbeat'].filter(Boolean).join(', '))
 
-        response = new Response(finalBody, { status: response!.status, statusText: response!.statusText, headers })
-      } catch (e) { console.error('[Heartbeat Widget]', e) }
+          let finalBody = body
+          if (isHtml && this.heartbeat.config.widget?.enabled !== false && body.includes('</body>')) {
+            const widget = renderWidget({
+              duration: totalDuration,
+              memory: totalMemory,
+              status: response!.status,
+              queries: 0,
+              dashboardPath: this.heartbeat.config.dashboard.path,
+            })
+            finalBody = body.replace('</body>', widget + '\n</body>')
+          }
+
+          response = new Response(finalBody, { status: response!.status, statusText: response!.statusText, headers })
+        } catch (e) { console.error('[Heartbeat Widget]', e) }
+      }
     }
 
     return response!

@@ -106,5 +106,12 @@ export class CoreServiceProvider extends ServiceProvider {
     kernel.registerMiddleware('encrypt.cookies', EncryptCookies)
     kernel.registerMiddleware('session', StartSession)
     kernel.registerMiddleware('csrf', VerifyCsrfToken)
+
+    // Set default global middleware stack (can be overridden in config/app.ts)
+    const configRepo = this.app.make(ConfigRepository)
+    const globalMiddleware = configRepo.get('app.middleware', [
+      'cors', 'encrypt.cookies', 'session',
+    ]) as string[]
+    kernel.setGlobalMiddleware(globalMiddleware)
   }
 }
