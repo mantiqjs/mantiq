@@ -181,6 +181,24 @@ if (kit) {
       }
     }
   }
+} else {
+  // API-only: overlay token-based auth stubs
+  const stubsDir = resolve(import.meta.dir, '..', 'stubs')
+  const apiOnlyFiles = [
+    { stub: 'api-only/routes/api.ts.stub', target: 'routes/api.ts' },
+    { stub: 'shared/app/Http/Controllers/ApiAuthController.ts.stub', target: 'app/Http/Controllers/ApiAuthController.ts' },
+    { stub: 'shared/database/seeders/DatabaseSeeder.ts.stub', target: 'database/seeders/DatabaseSeeder.ts' },
+    { stub: 'shared/database/factories/UserFactory.ts.stub', target: 'database/factories/UserFactory.ts' },
+  ]
+  for (const { stub, target } of apiOnlyFiles) {
+    const src = resolve(stubsDir, stub)
+    if (existsSync(src)) {
+      const dest = resolve(projectDir, target)
+      mkdirSync(dirname(dest), { recursive: true })
+      await Bun.write(dest, Bun.file(src))
+      fileCount++
+    }
+  }
 }
 console.log(`  ${dim(`${fileCount} files created`)}`)
 
