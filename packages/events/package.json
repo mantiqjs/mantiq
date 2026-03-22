@@ -64,5 +64,8 @@
     "@mantiq/auth": {
       "optional": true
     }
+  },
+  "mantiq": {
+    "provider": "EventServiceProvider"
   }
 }

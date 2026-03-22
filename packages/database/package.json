@@ -73,5 +73,8 @@
     "mongodb": {
       "optional": true
     }
+  },
+  "mantiq": {
+    "provider": "DatabaseServiceProvider"
   }
 }

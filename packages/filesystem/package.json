@@ -78,5 +78,8 @@
     "ssh2-sftp-client": {
       "optional": true
     }
+  },
+  "mantiq": {
+    "provider": "FilesystemServiceProvider"
   }
 }

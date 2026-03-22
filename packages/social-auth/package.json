@@ -14,12 +14,32 @@
   "bugs": {
     "url": "https://github.com/mantiqjs/mantiq/issues"
   },
-  "keywords": ["mantiq", "social-auth", "oauth", "google", "github", "facebook", "apple", "login"],
-  "engines": { "bun": ">=1.1.0" },
+  "keywords": [
+    "mantiq",
+    "social-auth",
+    "oauth",
+    "google",
+    "github",
+    "facebook",
+    "apple",
+    "login"
+  ],
+  "engines": {
+    "bun": ">=1.1.0"
+  },
   "main": "./src/index.ts",
   "types": "./src/index.ts",
-  "exports": { ".": { "bun": "./src/index.ts", "default": "./src/index.ts" } },
-  "files": ["src/", "package.json", "README.md"],
+  "exports": {
+    ".": {
+      "bun": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "files": [
+    "src/",
+    "package.json",
+    "README.md"
+  ],
   "scripts": {
     "build": "bun build ./src/index.ts --outdir ./dist --target bun --packages=external",
     "test": "bun test",
@@ -33,5 +53,8 @@
     "bun-types": "latest",
     "typescript": "^5.7.0",
     "@mantiq/core": "workspace:*"
+  },
+  "mantiq": {
+    "provider": "SocialAuthServiceProvider"
   }
 }

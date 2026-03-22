@@ -18,23 +18,16 @@ if (await envFile.exists()) {
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 const app = await Application.create(import.meta.dir, 'config')
 
-// Core provider (always required)
-await app.registerProviders([CoreServiceProvider])
-
-// Auto-discover framework + user providers
-const frameworkProviders = await discoverFrameworkProviders()
-await app.registerProviders(frameworkProviders)
-
-const discoverer = new Discoverer(process.cwd())
+// Discover user providers from app/Providers/
+const discoverer = new Discoverer(import.meta.dir)
 const isDev = process.env['APP_ENV'] !== 'production'
 const manifest = await discoverer.resolve(isDev)
-
 const userProviders = await discoverer.loadProviders(manifest)
-await app.registerProviders(userProviders)
 
-await app.bootProviders()
+// Register all: core → installed @mantiq/* packages → user providers
+await app.bootstrap([CoreServiceProvider], userProviders)
 
-// Auto-load route files (routes/*.ts)
+// Auto-load route files
 const router = app.make(RouterImpl)
 await discoverer.loadRoutes(manifest, router)
 
@@ -45,36 +38,4 @@ export default app
 if (import.meta.main) {
   const kernel = app.make(HttpKernel)
   await kernel.start()
-}
-
-// ── Framework provider discovery ──────────────────────────────────────────────
-async function discoverFrameworkProviders(): Promise<any[]> {
-  const providers: any[] = []
-  const packages = [
-    ['@mantiq/auth', 'AuthServiceProvider'],
-    ['@mantiq/database', 'DatabaseServiceProvider'],
-    ['@mantiq/filesystem', 'FilesystemServiceProvider'],
-    ['@mantiq/logging', 'LoggingServiceProvider'],
-    ['@mantiq/events', 'EventServiceProvider'],
-    ['@mantiq/queue', 'QueueServiceProvider'],
-    ['@mantiq/validation', 'ValidationServiceProvider'],
-    ['@mantiq/heartbeat', 'HeartbeatServiceProvider'],
-    ['@mantiq/realtime', 'RealtimeServiceProvider'],
-    ['@mantiq/mail', 'MailServiceProvider'],
-    ['@mantiq/notify', 'NotificationServiceProvider'],
-    ['@mantiq/search', 'SearchServiceProvider'],
-  ]
-
-  for (const entry of packages) {
-    const pkg = entry[0]!
-    const name = entry[1]!
-    try {
-      const mod = await import(pkg)
-      if (mod[name]) providers.push(mod[name])
-    } catch {
-      // Package not installed — skip
-    }
-  }
-
-  return providers
 }
