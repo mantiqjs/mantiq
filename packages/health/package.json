@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/health",
-  "version": "0.5.14",
+  "version": "0.5.15",
   "description": "Application health checks — database, cache, queue, filesystem, mail, and custom checks",
   "type": "module",
   "license": "MIT",
