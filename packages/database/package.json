@@ -75,7 +75,5 @@
       "optional": true
     }
   },
-  "mantiq": {
-    "provider": "DatabaseServiceProvider"
-  }
+  "mantiq": {}
 }
