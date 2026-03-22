@@ -33,6 +33,8 @@ export class Terminal {
     write(`   ${EMERALD}●${R}  ${BOLD}mantiq${R}   ${GRAY}│${R}   ${DIM}The Bun framework for artisans${R}\n`)
     write(`\n`)
     write(`   ${GRAY}───────────────────────────────────────────────${R}\n`)
+    const version = require('../package.json').version
+    write(`   ${DIM}v${version}${R}\n`)
     write('\n\n')
   }
 
