@@ -2,16 +2,15 @@
 
 Priority: **P1** = should fix soon, **P2** = nice to have
 
+## DevEx Helpers (P1)
+
+- [ ] **P1** Global helpers: `dd()`, `dump()`, `env()`, `config()`, `app()`
+- [ ] **P1** Path helpers: `app_path()`, `base_path()`, `storage_path()`, `config_path()`, `database_path()`
+- [ ] **P1** Console output helpers: colorized dump, table output, progress bars
+
 ## Testing
 
-- [ ] **P2** `@mantiq/oauth` — integration tests (full auth code flow with PKCE)
-- [ ] **P2** `@mantiq/social-auth` — provider response mocking tests
-- [ ] **P2** `@mantiq/vite` — only 1 test file
 - [ ] **P2** `@mantiq/heartbeat` — dashboard + widget tests
-
-## TypeScript Strictness
-
-- [ ] **P1** Typecheck `continue-on-error` in CI — 848 errors (mostly tsconfig path cascading, not real bugs)
 
 ## Documentation
 
@@ -22,7 +21,6 @@ Priority: **P1** = should fix soon, **P2** = nice to have
 
 ## Framework Features
 
-- [ ] **P2** Authorization — Gates & Policies
 - [ ] **P2** 2FA / TOTP support
 - [ ] **P2** Polymorphic relationships: `morphOne`, `morphMany`, `morphToMany`
 - [ ] **P2** `hasOneThrough`, `hasManyThrough` relationships
@@ -48,41 +46,47 @@ Priority: **P1** = should fix soon, **P2** = nice to have
 
 | Item | Resolution |
 |---|---|
-| Rate limiting middleware | `ThrottleRequests` auto-registered via CoreServiceProvider |
+| Auto-discovery | Providers discovered from package.json `mantiq.provider` field |
+| Skeleton-based scaffolding | create-mantiq copies skeleton/ + overlays deltas |
+| .env loading | Moved into Application.create() — no user code needed |
+| Command auto-registration | Kernel registers all 33 builtins, providers register their own |
+| Middleware auto-registration | Each provider registers its own aliases in boot() |
+| Gates & Policies | GateManager, Policy, Authorize middleware, Authorizable mixin |
+| 19 CLI generators | make:model/controller/migration/job/mail/notification/policy/... |
+| Rate limiting | ThrottleRequests auto-registered via CoreServiceProvider |
 | Unified dev command | `bun run dev` starts backend + vite concurrently |
 | Vite 8 migration | Rolldown + Oxc, all plugins updated |
-| JWT auth guard | Sanctum tokens in @mantiq/auth, JWT in @mantiq/oauth |
-| OAuth 2.0 server | @mantiq/oauth with 4 grants, PKCE, scopes |
+| 865 → 0 type errors | Typecheck enforced in CI |
+| 2600+ tests | 320 Tier 1 tests, 643 integration tests, full CI |
+| OAuth 2.0 server | @mantiq/oauth with 4 grants, PKCE, scopes, JWT |
 | Social login | @mantiq/social-auth with 8 providers |
-| Unified database layer | SQL + MongoDB behind same API |
+| Sanctum tokens | PersonalAccessToken, TokenGuard, HasApiTokens |
+| Unified database | SQL + MongoDB behind same QueryBuilder/Model API |
 | Full-text search | @mantiq/search with 6 drivers |
 | Health checks | @mantiq/health with 12 checks |
 | API JSON responses | /api/* always returns JSON errors |
-| Validation unique/exists | DatabasePresenceVerifier auto-wired |
-| 643 integration tests | 10 packages, 7 CI service containers |
-| CI/CD pipeline | Test, build, typecheck, 4 scaffold sanity checks |
 
 ## Published Packages (20)
 
-| # | Package | Version | Description |
-|---|---|---|---|
-| 1 | `@mantiq/core` | 0.3.0 | Container, router, kernel, config, sessions, cache, rate limiting |
-| 2 | `@mantiq/database` | 0.2.0 | Query builder, ORM, migrations (SQL + MongoDB) |
-| 3 | `@mantiq/auth` | 0.2.1 | Session + token auth, guards, Sanctum tokens |
-| 4 | `@mantiq/cli` | 0.1.6 | 18 generators, migrations, REPL |
-| 5 | `@mantiq/validation` | 0.2.0 | 40+ rules, FormRequest, DatabasePresenceVerifier |
-| 6 | `@mantiq/helpers` | 0.1.3 | Str, Arr, Num, Collection, HTTP client |
-| 7 | `@mantiq/filesystem` | 0.1.3 | Local, S3, GCS, Azure, FTP, SFTP |
-| 8 | `@mantiq/logging` | 0.1.3 | Console, file, daily, stack channels |
-| 9 | `@mantiq/events` | 0.1.3 | Dispatcher, broadcasting, model observers |
-| 10 | `@mantiq/queue` | 0.1.3 | Jobs, chains, batches, scheduling |
-| 11 | `@mantiq/realtime` | 0.1.3 | WebSocket, SSE, pub/sub |
-| 12 | `@mantiq/heartbeat` | 0.3.6 | APM dashboard, debug widget, mail watcher |
-| 13 | `@mantiq/vite` | 0.2.0 | Vite 8 integration, SSR |
-| 14 | `@mantiq/mail` | 0.2.0 | 8 transports, markdown emails |
-| 15 | `@mantiq/notify` | 0.2.1 | 13 notification channels |
-| 16 | `@mantiq/search` | 0.1.0 | 6 search drivers |
-| 17 | `@mantiq/health` | 0.1.0 | 12 health checks |
-| 18 | `@mantiq/oauth` | 0.1.0 | OAuth 2.0 server, JWT, PKCE |
-| 19 | `@mantiq/social-auth` | 0.1.0 | Social login, 8 providers |
-| 20 | `create-mantiq` | 0.9.0 | Scaffold CLI, Vite 8, 4 kits |
+| # | Package | Latest | Next | Description |
+|---|---|---|---|---|
+| 1 | `@mantiq/core` | 0.3.0 | 0.4.0-rc.3 | Container, router, kernel, discovery, rate limiting |
+| 2 | `@mantiq/database` | 0.2.0 | 0.3.0-rc.2 | Query builder, ORM, migrations (SQL + MongoDB) |
+| 3 | `@mantiq/auth` | 0.3.0 | 0.4.0-rc.2 | Session + token auth, Gates & Policies |
+| 4 | `@mantiq/cli` | 0.1.6 | 0.2.0-rc.2 | 19 generators, command auto-registration |
+| 5 | `@mantiq/validation` | 0.2.0 | 0.3.0-rc.2 | 40+ rules, DatabasePresenceVerifier |
+| 6 | `@mantiq/helpers` | 0.1.3 | 0.2.0-rc.2 | Str, Arr, Num, Collection, HTTP client |
+| 7 | `@mantiq/filesystem` | 0.1.3 | 0.2.0-rc.2 | Local, S3, GCS, Azure, FTP, SFTP |
+| 8 | `@mantiq/logging` | 0.1.3 | 0.2.0-rc.2 | Console, file, daily, stack channels |
+| 9 | `@mantiq/events` | 0.1.3 | 0.2.0-rc.2 | Dispatcher, broadcasting, model observers |
+| 10 | `@mantiq/queue` | 0.1.3 | 0.2.0-rc.2 | Jobs, chains, batches, scheduling |
+| 11 | `@mantiq/realtime` | 0.1.3 | 0.2.0-rc.2 | WebSocket, SSE, pub/sub |
+| 12 | `@mantiq/heartbeat` | 0.3.6 | 0.4.0-rc.2 | APM dashboard, debug widget |
+| 13 | `@mantiq/vite` | 0.2.0 | 0.3.0-rc.2 | Vite 8 integration, SSR |
+| 14 | `@mantiq/mail` | 0.2.0 | 0.3.0-rc.2 | 8 transports, markdown emails |
+| 15 | `@mantiq/notify` | 0.2.1 | 0.3.0-rc.2 | 13 notification channels |
+| 16 | `@mantiq/search` | 0.1.0 | 0.2.0-rc.2 | 6 search drivers |
+| 17 | `@mantiq/health` | 0.1.0 | 0.2.0-rc.2 | 12 health checks |
+| 18 | `@mantiq/oauth` | 0.1.0 | 0.2.0-rc.2 | OAuth 2.0 server, JWT, PKCE |
+| 19 | `@mantiq/social-auth` | 0.1.0 | 0.2.0-rc.2 | Social login, 8 providers |
+| 20 | `create-mantiq` | 0.9.0 | 1.0.0-rc.4 | Skeleton-based scaffold, 4 kits |
