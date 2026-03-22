@@ -9,6 +9,11 @@ import { KeyGenerateCommand } from './commands/KeyGenerateCommand.ts'
 import { ServeCommand } from './commands/ServeCommand.ts'
 import { RouteListCommand } from './commands/RouteListCommand.ts'
 import { TinkerCommand } from './commands/TinkerCommand.ts'
+import { DownCommand } from './commands/DownCommand.ts'
+import { UpCommand } from './commands/UpCommand.ts'
+import { CacheClearCommand } from './commands/CacheClearCommand.ts'
+import { StorageLinkCommand } from './commands/StorageLinkCommand.ts'
+import { ConfigCacheCommand, ConfigClearCommand } from './commands/ConfigCacheCommand.ts'
 
 // Built-in commands — database
 import { MigrateCommand } from './commands/MigrateCommand.ts'
@@ -72,6 +77,12 @@ export class Kernel {
       new ServeCommand(),
       new RouteListCommand(),
       new TinkerCommand(),
+      new DownCommand(),
+      new UpCommand(),
+      new CacheClearCommand(),
+      new StorageLinkCommand(),
+      new ConfigCacheCommand(),
+      new ConfigClearCommand(),
 
       // Database
       new MigrateCommand(),
