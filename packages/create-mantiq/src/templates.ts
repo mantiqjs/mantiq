@@ -108,19 +108,7 @@ storage/heartbeat/
 
     // ── Entry points ────────────────────────────────────────────────────────
 
-    'index.ts': `import { Application, CoreServiceProvider, HttpKernel, RouterImpl, CorsMiddleware, StartSession, EncryptCookies, VerifyCsrfToken } from '@mantiq/core'
-import { AuthServiceProvider, Authenticate, RedirectIfAuthenticated, CheckAbilities, CheckForAnyAbility } from '@mantiq/auth'
-import { FilesystemServiceProvider } from '@mantiq/filesystem'
-import { LoggingServiceProvider } from '@mantiq/logging'
-import { EventServiceProvider } from '@mantiq/events'
-import { QueueServiceProvider } from '@mantiq/queue'
-import { ValidationServiceProvider } from '@mantiq/validation'
-import { HeartbeatServiceProvider, HeartbeatMiddleware } from '@mantiq/heartbeat'
-import { RealtimeServiceProvider } from '@mantiq/realtime'
-import { MailServiceProvider } from '@mantiq/mail'
-import { NotificationServiceProvider } from '@mantiq/notify'
-import { SearchServiceProvider } from '@mantiq/search'
-import { DatabaseServiceProvider } from './app/Providers/DatabaseServiceProvider.ts'
+    'index.ts': `import { Application, CoreServiceProvider, HttpKernel, RouterImpl, Discoverer } from '@mantiq/core'
 
 // ── Load .env ─────────────────────────────────────────────────────────────────
 const envFile = Bun.file(import.meta.dir + '/.env')
@@ -140,53 +128,25 @@ if (await envFile.exists()) {
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 const app = await Application.create(import.meta.dir, 'config')
 
-await app.registerProviders([
-  CoreServiceProvider,
-  DatabaseServiceProvider,
-  AuthServiceProvider,
-  FilesystemServiceProvider,
-  LoggingServiceProvider,
-  EventServiceProvider,
-  QueueServiceProvider,
-  ValidationServiceProvider,
-  HeartbeatServiceProvider,
-  RealtimeServiceProvider,
-  MailServiceProvider,
-  NotificationServiceProvider,
-  SearchServiceProvider,
-])
-await app.bootProviders()
+// Discover user providers from app/Providers/
+const discoverer = new Discoverer(import.meta.dir)
+const isDev = process.env['APP_ENV'] !== 'production'
+const manifest = await discoverer.resolve(isDev)
+const userProviders = await discoverer.loadProviders(manifest)
 
-// ── Kernel setup ──────────────────────────────────────────────────────────────
-const kernel = app.make(HttpKernel)
+// Register all: core → installed @mantiq/* packages → user providers
+await app.bootstrap([CoreServiceProvider], userProviders)
+
+// Auto-load route files
 const router = app.make(RouterImpl)
-
-// Register middleware aliases
-kernel.registerMiddleware('cors', CorsMiddleware)
-kernel.registerMiddleware('encrypt.cookies', EncryptCookies)
-kernel.registerMiddleware('session', StartSession)
-kernel.registerMiddleware('csrf', VerifyCsrfToken)
-kernel.registerMiddleware('auth', Authenticate)
-kernel.registerMiddleware('guest', RedirectIfAuthenticated)
-kernel.registerMiddleware('heartbeat', HeartbeatMiddleware)
-kernel.registerMiddleware('abilities', CheckAbilities)
-kernel.registerMiddleware('ability', CheckForAnyAbility)
-
-// Global middleware
-kernel.setGlobalMiddleware(['cors', 'encrypt.cookies', 'session', 'heartbeat'])
-
-// ── Routes ────────────────────────────────────────────────────────────────────
-import webRoutes from './routes/web.ts'
-import apiRoutes from './routes/api.ts'
-
-webRoutes(router)
-apiRoutes(router)
+await discoverer.loadRoutes(manifest, router)
 
 // ── Export for CLI ────────────────────────────────────────────────────────────
 export default app
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 if (import.meta.main) {
+  const kernel = app.make(HttpKernel)
   await kernel.start()
 }
 `,
@@ -195,93 +155,8 @@ if (import.meta.main) {
 await import('./index.ts')
 
 import { Kernel } from '@mantiq/cli'
-import {
-  AboutCommand,
-  MigrateCommand,
-  MigrateRollbackCommand,
-  MigrateResetCommand,
-  MigrateFreshCommand,
-  MigrateStatusCommand,
-  SeedCommand,
-  MakeCommandCommand,
-  MakeControllerCommand,
-  MakeEventCommand,
-  MakeExceptionCommand,
-  MakeFactoryCommand,
-  MakeListenerCommand,
-  MakeMiddlewareCommand,
-  MakeMigrationCommand,
-  MakeModelCommand,
-  MakeObserverCommand,
-  MakeProviderCommand,
-  MakeRequestCommand,
-  MakeRuleCommand,
-  MakeSeederCommand,
-  MakeTestCommand,
-  ServeCommand,
-  RouteListCommand,
-  TinkerCommand,
-} from '@mantiq/cli'
-import {
-  QueueWorkCommand,
-  QueueRetryCommand,
-  QueueFailedCommand,
-  QueueFlushCommand,
-  MakeJobCommand,
-  ScheduleRunCommand,
-} from '@mantiq/queue'
-import { InstallCommand as HeartbeatInstallCommand } from '@mantiq/heartbeat'
-import { MakeMailCommand } from '@mantiq/mail'
-import { MakeNotificationCommand } from '@mantiq/notify'
 
 const kernel = new Kernel()
-
-kernel.registerAll([
-  // Database
-  new MigrateCommand(),
-  new MigrateRollbackCommand(),
-  new MigrateResetCommand(),
-  new MigrateFreshCommand(),
-  new MigrateStatusCommand(),
-  new SeedCommand(),
-
-  // Code generators
-  new MakeCommandCommand(),
-  new MakeControllerCommand(),
-  new MakeEventCommand(),
-  new MakeExceptionCommand(),
-  new MakeFactoryCommand(),
-  new MakeJobCommand(),
-  new MakeListenerCommand(),
-  new MakeMiddlewareCommand(),
-  new MakeMigrationCommand(),
-  new MakeModelCommand(),
-  new MakeObserverCommand(),
-  new MakeProviderCommand(),
-  new MakeRequestCommand(),
-  new MakeRuleCommand(),
-  new MakeSeederCommand(),
-  new MakeTestCommand(),
-  new MakeMailCommand(),
-  new MakeNotificationCommand(),
-
-  // Queue
-  new QueueWorkCommand(),
-  new QueueRetryCommand(),
-  new QueueFailedCommand(),
-  new QueueFlushCommand(),
-  new ScheduleRunCommand(),
-
-  // Utilities
-  new AboutCommand(),
-  new ServeCommand(),
-  new RouteListCommand(),
-  new TinkerCommand(),
-
-  // Heartbeat
-  new HeartbeatInstallCommand(),
-])
-
 const code = await kernel.run()
 process.exit(code)
 `,
@@ -889,20 +764,7 @@ bootstrap/
 `
 
   // ── index.ts ────────────────────────────────────────────────────────────
-  templates['index.ts'] = `import { Application, CoreServiceProvider, HttpKernel, RouterImpl, CorsMiddleware, StartSession, EncryptCookies, VerifyCsrfToken } from '@mantiq/core'
-import { ViteServiceProvider, ServeStaticFiles } from '@mantiq/vite'
-import { AuthServiceProvider, Authenticate, RedirectIfAuthenticated, CheckAbilities, CheckForAnyAbility } from '@mantiq/auth'
-import { FilesystemServiceProvider } from '@mantiq/filesystem'
-import { LoggingServiceProvider } from '@mantiq/logging'
-import { EventServiceProvider } from '@mantiq/events'
-import { QueueServiceProvider } from '@mantiq/queue'
-import { ValidationServiceProvider } from '@mantiq/validation'
-import { HeartbeatServiceProvider, HeartbeatMiddleware } from '@mantiq/heartbeat'
-import { RealtimeServiceProvider } from '@mantiq/realtime'
-import { MailServiceProvider } from '@mantiq/mail'
-import { NotificationServiceProvider } from '@mantiq/notify'
-import { SearchServiceProvider } from '@mantiq/search'
-import { DatabaseServiceProvider } from './app/Providers/DatabaseServiceProvider.ts'
+  templates['index.ts'] = `import { Application, CoreServiceProvider, HttpKernel, RouterImpl, Discoverer } from '@mantiq/core'
 
 // ── Load .env ─────────────────────────────────────────────────────────────────
 const envFile = Bun.file(import.meta.dir + '/.env')
@@ -922,65 +784,25 @@ if (await envFile.exists()) {
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 const app = await Application.create(import.meta.dir, 'config')
 
-await app.registerProviders([
-  CoreServiceProvider,
-  DatabaseServiceProvider,
-  AuthServiceProvider,
-  ViteServiceProvider,
-  FilesystemServiceProvider,
-  LoggingServiceProvider,
-  EventServiceProvider,
-  QueueServiceProvider,
-  ValidationServiceProvider,
-  HeartbeatServiceProvider,
-  RealtimeServiceProvider,
-  MailServiceProvider,
-  NotificationServiceProvider,
-  SearchServiceProvider,
-])
-await app.bootProviders()
+// Discover user providers from app/Providers/
+const discoverer = new Discoverer(import.meta.dir)
+const isDev = process.env['APP_ENV'] !== 'production'
+const manifest = await discoverer.resolve(isDev)
+const userProviders = await discoverer.loadProviders(manifest)
 
-// ── Seed default data (only when running the server directly) ────────────────
-if (import.meta.main) {
-  try {
-    const UserSeeder = (await import('./database/seeders/UserSeeder.ts')).default
-    await new UserSeeder().run()
-  } catch {
-    // Table may not exist yet — run: bun mantiq migrate
-  }
-}
+// Register all: core → installed @mantiq/* packages → user providers
+await app.bootstrap([CoreServiceProvider], userProviders)
 
-// ── Kernel setup ──────────────────────────────────────────────────────────────
-const kernel = app.make(HttpKernel)
+// Auto-load route files
 const router = app.make(RouterImpl)
-
-// Register middleware aliases
-kernel.registerMiddleware('cors', CorsMiddleware)
-kernel.registerMiddleware('static', ServeStaticFiles)
-kernel.registerMiddleware('encrypt.cookies', EncryptCookies)
-kernel.registerMiddleware('session', StartSession)
-kernel.registerMiddleware('csrf', VerifyCsrfToken)
-kernel.registerMiddleware('auth', Authenticate)
-kernel.registerMiddleware('guest', RedirectIfAuthenticated)
-kernel.registerMiddleware('heartbeat', HeartbeatMiddleware)
-kernel.registerMiddleware('abilities', CheckAbilities)
-kernel.registerMiddleware('ability', CheckForAnyAbility)
-
-// Global middleware
-kernel.setGlobalMiddleware(['static', 'cors', 'encrypt.cookies', 'session', 'heartbeat'])
-
-// ── Routes ────────────────────────────────────────────────────────────────────
-import webRoutes from './routes/web.ts'
-import apiRoutes from './routes/api.ts'
-
-webRoutes(router)
-apiRoutes(router)
+await discoverer.loadRoutes(manifest, router)
 
 // ── Export for CLI ────────────────────────────────────────────────────────────
 export default app
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 if (import.meta.main) {
+  const kernel = app.make(HttpKernel)
   await kernel.start()
 }
 `
