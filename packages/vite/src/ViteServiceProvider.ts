@@ -1,4 +1,4 @@
-import { ServiceProvider, ConfigRepository } from '@mantiq/core'
+import { ServiceProvider, ConfigRepository, HttpKernel } from '@mantiq/core'
 import { Vite } from './Vite.ts'
 import { ServeStaticFiles } from './middleware/ServeStaticFiles.ts'
 
@@ -44,5 +44,14 @@ export class ViteServiceProvider extends ServiceProvider {
     }
 
     await vite.initialize()
+
+    // Register 'static' middleware and prepend to global stack for asset serving
+    try {
+      const kernel = this.app.make(HttpKernel)
+      kernel.registerMiddleware('static', ServeStaticFiles)
+      kernel.prependGlobalMiddleware('static')
+    } catch {
+      // HttpKernel may not be available in CLI context
+    }
   }
 }
