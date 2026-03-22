@@ -23,7 +23,14 @@ export class ServeStaticFiles implements Middleware {
 
   private getPublicDir(): string {
     if (this.publicDir) return this.publicDir
-    if (this.vite) return this.vite.getConfig().publicDir
+    if (this.vite) {
+      const publicDir = this.vite.getConfig().publicDir
+      const basePath = this.vite.getBasePath()
+      if (basePath && !publicDir.startsWith('/')) {
+        return `${basePath}/${publicDir}`
+      }
+      return publicDir
+    }
     return 'public'
   }
 

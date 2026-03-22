@@ -474,6 +474,11 @@ export class Vite {
   getConfig(): Readonly<ViteConfig> {
     return this.config
   }
+
+  /** Returns the application base path. */
+  getBasePath(): string {
+    return this.basePath
+  }
 }
 
 /** Escape HTML special characters to prevent XSS. */
