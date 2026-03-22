@@ -67,5 +67,8 @@
     "@mantiq/realtime": "^0.1.0",
     "@mantiq/queue": "^0.1.0",
     "@mantiq/cli": "^0.1.0"
+  },
+  "mantiq": {
+    "provider": "NotificationServiceProvider"
   }
 }

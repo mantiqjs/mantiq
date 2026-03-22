@@ -68,5 +68,8 @@
     "kafkajs": {
       "optional": true
     }
+  },
+  "mantiq": {
+    "provider": "QueueServiceProvider"
   }
 }

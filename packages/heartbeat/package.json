@@ -62,5 +62,8 @@
     "@mantiq/events": "^0.1.0",
     "@mantiq/database": "^0.1.0",
     "@mantiq/logging": "^0.1.0"
+  },
+  "mantiq": {
+    "provider": "HeartbeatServiceProvider"
   }
 }

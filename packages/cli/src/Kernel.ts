@@ -1,6 +1,42 @@
 import type { Command } from './Command.ts'
 import { parse, type ParsedArgs } from './Parser.ts'
 import { IO } from './IO.ts'
+import { getRegisteredCommands } from './CommandRegistry.ts'
+
+// Built-in commands — utility
+import { AboutCommand } from './commands/AboutCommand.ts'
+import { ServeCommand } from './commands/ServeCommand.ts'
+import { RouteListCommand } from './commands/RouteListCommand.ts'
+import { TinkerCommand } from './commands/TinkerCommand.ts'
+
+// Built-in commands — database
+import { MigrateCommand } from './commands/MigrateCommand.ts'
+import { MigrateRollbackCommand } from './commands/MigrateRollbackCommand.ts'
+import { MigrateResetCommand } from './commands/MigrateResetCommand.ts'
+import { MigrateFreshCommand } from './commands/MigrateFreshCommand.ts'
+import { MigrateStatusCommand } from './commands/MigrateStatusCommand.ts'
+import { SeedCommand } from './commands/SeedCommand.ts'
+
+// Built-in commands — generators
+import { MakeCommandCommand } from './commands/MakeCommandCommand.ts'
+import { MakeControllerCommand } from './commands/MakeControllerCommand.ts'
+import { MakeEventCommand } from './commands/MakeEventCommand.ts'
+import { MakeExceptionCommand } from './commands/MakeExceptionCommand.ts'
+import { MakeFactoryCommand } from './commands/MakeFactoryCommand.ts'
+import { MakeJobCommand } from './commands/MakeJobCommand.ts'
+import { MakeListenerCommand } from './commands/MakeListenerCommand.ts'
+import { MakeMailCommand } from './commands/MakeMailCommand.ts'
+import { MakeMiddlewareCommand } from './commands/MakeMiddlewareCommand.ts'
+import { MakeMigrationCommand } from './commands/MakeMigrationCommand.ts'
+import { MakeModelCommand } from './commands/MakeModelCommand.ts'
+import { MakeNotificationCommand } from './commands/MakeNotificationCommand.ts'
+import { MakeObserverCommand } from './commands/MakeObserverCommand.ts'
+import { MakePolicyCommand } from './commands/MakePolicyCommand.ts'
+import { MakeProviderCommand } from './commands/MakeProviderCommand.ts'
+import { MakeRequestCommand } from './commands/MakeRequestCommand.ts'
+import { MakeRuleCommand } from './commands/MakeRuleCommand.ts'
+import { MakeSeederCommand } from './commands/MakeSeederCommand.ts'
+import { MakeTestCommand } from './commands/MakeTestCommand.ts'
 
 /**
  * The CLI Kernel — registers commands and dispatches to the right one.
@@ -9,6 +45,7 @@ export class Kernel {
   private commands = new Map<string, Command>()
   private io = new IO()
   private discovered = false
+  private builtinsRegistered = false
 
   constructor(public readonly app: any = null) {}
 
@@ -20,6 +57,66 @@ export class Kernel {
   registerAll(commands: Command[]): this {
     for (const cmd of commands) this.register(cmd)
     return this
+  }
+
+  /**
+   * Register all built-in framework commands (utility, database, generators).
+   * Called once on the first run() invocation.
+   */
+  private registerBuiltins(): void {
+    this.registerAll([
+      // Utility
+      new AboutCommand(),
+      new ServeCommand(),
+      new RouteListCommand(),
+      new TinkerCommand(),
+
+      // Database
+      new MigrateCommand(),
+      new MigrateRollbackCommand(),
+      new MigrateResetCommand(),
+      new MigrateFreshCommand(),
+      new MigrateStatusCommand(),
+      new SeedCommand(),
+
+      // Generators
+      new MakeCommandCommand(),
+      new MakeControllerCommand(),
+      new MakeEventCommand(),
+      new MakeExceptionCommand(),
+      new MakeFactoryCommand(),
+      new MakeJobCommand(),
+      new MakeListenerCommand(),
+      new MakeMailCommand(),
+      new MakeMiddlewareCommand(),
+      new MakeMigrationCommand(),
+      new MakeModelCommand(),
+      new MakeNotificationCommand(),
+      new MakeObserverCommand(),
+      new MakePolicyCommand(),
+      new MakeProviderCommand(),
+      new MakeRequestCommand(),
+      new MakeRuleCommand(),
+      new MakeSeederCommand(),
+      new MakeTestCommand(),
+    ])
+  }
+
+  /**
+   * Dynamically import and register commands from optional packages.
+   * Uses try/catch so the CLI works fine when a package isn't installed.
+   *
+   * Note: Queue commands (queue:work, queue:retry, etc.) require a QueueManager
+   * instance and are registered by QueueServiceProvider.boot() instead.
+   */
+  private async registerPackageCommands(): Promise<void> {
+    // Heartbeat commands (if @mantiq/heartbeat is installed)
+    try {
+      const { InstallCommand } = await import('@mantiq/heartbeat')
+      this.register(new InstallCommand())
+    } catch {
+      // @mantiq/heartbeat not installed — skip heartbeat commands
+    }
   }
 
   /**
@@ -55,11 +152,24 @@ export class Kernel {
       // Directory doesn't exist — no commands to discover
     }
 
+    // Collect commands registered by service providers via CommandRegistry
+    for (const cmd of getRegisteredCommands()) {
+      if (!this.commands.has(cmd.name)) {
+        this.register(cmd)
+      }
+    }
+
     this.discovered = true
     return this
   }
 
   async run(argv: string[] = process.argv): Promise<number> {
+    if (!this.builtinsRegistered) {
+      this.registerBuiltins()
+      await this.registerPackageCommands()
+      this.builtinsRegistered = true
+    }
+
     await this.discover()
     const parsed = parse(argv)
 

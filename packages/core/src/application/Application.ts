@@ -133,6 +133,61 @@ export class Application extends ContainerImpl {
     return this.basePath_(path ? `storage/${path}` : 'storage')
   }
 
+  // ── Package provider discovery ──────────────────────────────────────────
+
+  /**
+   * Discover service providers from installed @mantiq/* packages.
+   * Each package declares its provider in package.json:
+   *   { "mantiq": { "provider": "AuthServiceProvider" } }
+   *
+   * Install a package → provider auto-discovered. Uninstall → gone.
+   */
+  async discoverPackageProviders(): Promise<Constructor<ServiceProvider>[]> {
+    const providers: Constructor<ServiceProvider>[] = []
+    const nodeModulesDir = this.basePath_('node_modules/@mantiq')
+
+    try {
+      const glob = new Bun.Glob('*/package.json')
+      for await (const file of glob.scan({ cwd: nodeModulesDir, absolute: false })) {
+        try {
+          const pkgJson = JSON.parse(
+            await Bun.file(`${nodeModulesDir}/${file}`).text()
+          )
+          const providerName = pkgJson?.mantiq?.provider
+          if (!providerName) continue
+
+          const pkgName = pkgJson.name as string
+          const mod = await import(pkgName)
+          if (mod[providerName] && typeof mod[providerName] === 'function') {
+            providers.push(mod[providerName])
+          }
+        } catch {
+          // Skip packages that can't be loaded
+        }
+      }
+    } catch {
+      // node_modules/@mantiq doesn't exist
+    }
+
+    return providers
+  }
+
+  /**
+   * One-call bootstrap: discover package providers, register, boot.
+   * Equivalent to:
+   *   const providers = await app.discoverPackageProviders()
+   *   await app.registerProviders([CoreServiceProvider, ...providers, ...userProviders])
+   *   await app.bootProviders()
+   */
+  async bootstrap(
+    coreProviders: Constructor<ServiceProvider>[] = [],
+    userProviders: Constructor<ServiceProvider>[] = [],
+  ): Promise<void> {
+    const packageProviders = await this.discoverPackageProviders()
+    await this.registerProviders([...coreProviders, ...packageProviders, ...userProviders])
+    await this.bootProviders()
+  }
+
   // ── Provider lifecycle ────────────────────────────────────────────────────
 
   /**

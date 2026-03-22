@@ -1,4 +1,5 @@
 import { ServiceProvider } from '@mantiq/core'
+import { registerCommands } from '@mantiq/cli'
 import { QueueManager } from './QueueManager.ts'
 import type { QueueConfig, QueueConnectionConfig } from './QueueManager.ts'
 import { SyncDriver } from './drivers/SyncDriver.ts'
@@ -10,6 +11,12 @@ import { setQueueManager, QUEUE_MANAGER } from './helpers/queue.ts'
 import { setPendingDispatchResolver } from './PendingDispatch.ts'
 import { setChainResolver } from './JobChain.ts'
 import { setBatchResolver } from './JobBatch.ts'
+import { Schedule } from './schedule/Schedule.ts'
+import { QueueWorkCommand } from './commands/QueueWorkCommand.ts'
+import { QueueRetryCommand } from './commands/QueueRetryCommand.ts'
+import { QueueFailedCommand } from './commands/QueueFailedCommand.ts'
+import { QueueFlushCommand } from './commands/QueueFlushCommand.ts'
+import { ScheduleRunCommand } from './commands/ScheduleRunCommand.ts'
 
 /**
  * Registers the QueueManager in the container and wires up helpers.
@@ -53,6 +60,9 @@ export class QueueServiceProvider extends ServiceProvider {
     this.app.singleton(QUEUE_MANAGER as any, () => {
       return this.app.make(QueueManager)
     })
+
+    // Register a Schedule singleton for the schedule:run command
+    this.app.singleton(Schedule, () => new Schedule())
   }
 
   override boot(): void {
@@ -65,6 +75,18 @@ export class QueueServiceProvider extends ServiceProvider {
     } catch {
       // Events package not installed — fine, events are optional
     }
+
+    // Register queue CLI commands via the CommandRegistry
+    const manager = this.app.make(QueueManager) as QueueManager
+    const schedule = this.app.make(Schedule) as Schedule
+
+    registerCommands([
+      new QueueWorkCommand(manager),
+      new QueueRetryCommand(manager),
+      new QueueFailedCommand(manager),
+      new QueueFlushCommand(manager),
+      new ScheduleRunCommand(schedule),
+    ])
   }
 }
 

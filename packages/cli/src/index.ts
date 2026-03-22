@@ -7,6 +7,9 @@ export { IO } from './IO.ts'
 export { parse } from './Parser.ts'
 export type { ParsedArgs } from './Parser.ts'
 
+// Command Registry (service providers register commands here)
+export { registerCommand, registerCommands, getRegisteredCommands, clearRegisteredCommands } from './CommandRegistry.ts'
+
 // Base
 export { GeneratorCommand } from './commands/GeneratorCommand.ts'
 

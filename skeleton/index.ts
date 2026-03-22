@@ -1,15 +1,4 @@
 import { Application, CoreServiceProvider, HttpKernel, RouterImpl, Discoverer } from '@mantiq/core'
-import { AuthServiceProvider } from '@mantiq/auth'
-import { FilesystemServiceProvider } from '@mantiq/filesystem'
-import { LoggingServiceProvider } from '@mantiq/logging'
-import { EventServiceProvider } from '@mantiq/events'
-import { QueueServiceProvider } from '@mantiq/queue'
-import { ValidationServiceProvider } from '@mantiq/validation'
-import { HeartbeatServiceProvider } from '@mantiq/heartbeat'
-import { RealtimeServiceProvider } from '@mantiq/realtime'
-import { MailServiceProvider } from '@mantiq/mail'
-import { NotificationServiceProvider } from '@mantiq/notify'
-import { SearchServiceProvider } from '@mantiq/search'
 
 // ── Load .env ─────────────────────────────────────────────────────────────────
 const envFile = Bun.file(import.meta.dir + '/.env')
@@ -29,34 +18,16 @@ if (await envFile.exists()) {
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 const app = await Application.create(import.meta.dir, 'config')
 
-// Framework providers (order matters for dependency resolution)
-await app.registerProviders([
-  CoreServiceProvider,
-  AuthServiceProvider,
-  FilesystemServiceProvider,
-  LoggingServiceProvider,
-  EventServiceProvider,
-  QueueServiceProvider,
-  ValidationServiceProvider,
-  HeartbeatServiceProvider,
-  RealtimeServiceProvider,
-  MailServiceProvider,
-  NotificationServiceProvider,
-  SearchServiceProvider,
-])
-
-// Auto-discover app providers, routes
-const discoverer = new Discoverer(process.cwd())
+// Discover user providers from app/Providers/
+const discoverer = new Discoverer(import.meta.dir)
 const isDev = process.env['APP_ENV'] !== 'production'
 const manifest = await discoverer.resolve(isDev)
-
-// Register user's service providers (app/Providers/)
 const userProviders = await discoverer.loadProviders(manifest)
-await app.registerProviders(userProviders)
 
-await app.bootProviders()
+// Register all: core → installed @mantiq/* packages → user providers
+await app.bootstrap([CoreServiceProvider], userProviders)
 
-// Auto-load route files (routes/*.ts)
+// Auto-load route files
 const router = app.make(RouterImpl)
 await discoverer.loadRoutes(manifest, router)
 

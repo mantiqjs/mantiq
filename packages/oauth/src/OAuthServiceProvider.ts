@@ -1,4 +1,4 @@
-import { ServiceProvider, ConfigRepository } from '@mantiq/core'
+import { ServiceProvider, ConfigRepository, HttpKernel } from '@mantiq/core'
 import type { Router } from '@mantiq/core'
 import { ROUTER } from '@mantiq/core'
 import { AuthManager } from '@mantiq/auth'
@@ -15,6 +15,11 @@ import { RefreshTokenGrant } from './grants/RefreshTokenGrant.ts'
 import { PersonalAccessGrant } from './grants/PersonalAccessGrant.ts'
 import { oauthRoutes } from './routes/oauthRoutes.ts'
 import { OAUTH_SERVER } from './helpers/oauth.ts'
+import { registerCommands } from '@mantiq/cli'
+import { OAuthClientCommand } from './commands/OAuthClientCommand.ts'
+import { OAuthInstallCommand } from './commands/OAuthInstallCommand.ts'
+import { OAuthKeysCommand } from './commands/OAuthKeysCommand.ts'
+import { OAuthPurgeCommand } from './commands/OAuthPurgeCommand.ts'
 import { readFile } from 'node:fs/promises'
 
 const DEFAULT_CONFIG: OAuthConfig = {
@@ -84,6 +89,28 @@ export class OAuthServiceProvider extends ServiceProvider {
       oauthRoutes(router, { server, grants })
     } catch {
       // Router not available
+    }
+
+    // Register middleware aliases
+    try {
+      const kernel = this.app.make(HttpKernel)
+      kernel.registerMiddleware('scopes', CheckScopes as any)
+      kernel.registerMiddleware('scope', CheckForAnyScope as any)
+      kernel.registerMiddleware('client', CheckClientCredentials as any)
+    } catch {
+      // HttpKernel may not be available in non-HTTP contexts
+    }
+
+    // Register commands
+    try {
+      registerCommands([
+        new OAuthClientCommand(),
+        new OAuthInstallCommand(),
+        new OAuthKeysCommand(),
+        new OAuthPurgeCommand(),
+      ])
+    } catch {
+      // @mantiq/cli may not be available
     }
   }
 }
