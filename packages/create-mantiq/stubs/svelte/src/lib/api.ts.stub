@@ -3,13 +3,24 @@ function getCookie(name: string): string | null {
   return match ? decodeURIComponent(match[1]!) : null
 }
 
+/** Ensure a session + XSRF-TOKEN cookie exists before mutating requests. */
+let csrfReady: Promise<void> | null = null
+async function ensureCsrf(): Promise<void> {
+  if (getCookie('XSRF-TOKEN')) return
+  if (!csrfReady) {
+    csrfReady = fetch('/csrf-cookie', { credentials: 'same-origin' }).then(() => { csrfReady = null })
+  }
+  await csrfReady
+}
+
 export async function api<T = any>(url: string, opts: RequestInit = {}): Promise<{ ok: boolean; status: number; data: T }> {
   const headers: Record<string, string> = { Accept: 'application/json', ...(opts.headers as Record<string, string>) }
 
-  // Attach XSRF token for CSRF protection on mutating requests
-  const xsrf = getCookie('XSRF-TOKEN')
-  if (xsrf && opts.method && !['GET', 'HEAD', 'OPTIONS'].includes(opts.method)) {
-    headers['X-XSRF-TOKEN'] = xsrf
+  // For mutating requests, ensure CSRF cookie exists then attach it
+  if (opts.method && !['GET', 'HEAD', 'OPTIONS'].includes(opts.method)) {
+    await ensureCsrf()
+    const xsrf = getCookie('XSRF-TOKEN')
+    if (xsrf) headers['X-XSRF-TOKEN'] = xsrf
   }
 
   const res = await fetch(url, { ...opts, credentials: 'same-origin', headers })
