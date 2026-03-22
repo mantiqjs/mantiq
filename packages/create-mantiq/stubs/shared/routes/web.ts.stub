@@ -18,13 +18,6 @@ export default function (router: Router) {
   router.get('/account/security', [PageController, 'security']).middleware('auth')
   router.get('/account/preferences', [PageController, 'preferences']).middleware('auth')
 
-  // CSRF cookie — SPA calls this on mount to establish session + XSRF token
-  router.get('/csrf-cookie', (request: any) => {
-    // Session middleware already started the session and CSRF middleware
-    // will attach the XSRF-TOKEN cookie on the response. Just return 204.
-    return new Response(null, { status: 204 })
-  })
-
   // Auth actions
   router.post('/login', [AuthController, 'login'])
   router.post('/register', [AuthController, 'register'])

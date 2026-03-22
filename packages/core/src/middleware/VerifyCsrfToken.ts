@@ -74,16 +74,12 @@ export class VerifyCsrfToken implements Middleware {
     const csrfHeader = request.header('x-csrf-token')
     if (csrfHeader) return csrfHeader
 
-    // 3. Check X-XSRF-TOKEN header (encrypted, from cookie)
+    // 3. Check X-XSRF-TOKEN header (plain token from XSRF-TOKEN cookie)
+    // XSRF-TOKEN cookie is excluded from EncryptCookies so JS can read it.
+    // The value is the raw session token — no decryption needed.
     const xsrfHeader = request.header('x-xsrf-token')
     if (xsrfHeader) {
-      try {
-        // Cookie values may be URL-encoded — decode before decrypting
-        const decoded = decodeURIComponent(xsrfHeader)
-        return await this.encrypter.decrypt(decoded)
-      } catch {
-        return null
-      }
+      return decodeURIComponent(xsrfHeader)
     }
 
     return null
