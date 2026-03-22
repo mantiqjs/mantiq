@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { createTestApp, type TestApp } from './helpers.ts'
+import { createTestApp, postWithCsrf, type TestApp } from './helpers.ts'
 
 let app: TestApp
 
@@ -21,9 +21,7 @@ test.describe('Auth Flow — Register → Login → Protected → Logout', () =>
   // ── Registration ────────────────────────────────────────────────────────
 
   test('POST /register creates user and sets session', async ({ request }) => {
-    const res = await request.post(app.url + '/register', {
-      data: testUser,
-    })
+    const res = await postWithCsrf(request, app.url + '/register', testUser)
     expect(res.status()).toBe(201)
 
     const body = await res.json()
@@ -34,9 +32,7 @@ test.describe('Auth Flow — Register → Login → Protected → Logout', () =>
   })
 
   test('POST /register rejects duplicate email', async ({ request }) => {
-    const res = await request.post(app.url + '/register', {
-      data: testUser,
-    })
+    const res = await postWithCsrf(request, app.url + '/register', testUser)
     expect(res.status()).toBe(422)
 
     const body = await res.json()
@@ -44,16 +40,12 @@ test.describe('Auth Flow — Register → Login → Protected → Logout', () =>
   })
 
   test('POST /register validates required fields', async ({ request }) => {
-    const res = await request.post(app.url + '/register', {
-      data: { name: 'No Email' },
-    })
+    const res = await postWithCsrf(request, app.url + '/register', { name: 'No Email' })
     expect(res.status()).toBe(422)
   })
 
   test('POST /register validates password length', async ({ request }) => {
-    const res = await request.post(app.url + '/register', {
-      data: { name: 'Short', email: 'short@example.com', password: '123' },
-    })
+    const res = await postWithCsrf(request, app.url + '/register', { name: 'Short', email: 'short@example.com', password: '123' })
     expect(res.status()).toBe(422)
     const body = await res.json()
     expect(body.error).toContain('6 characters')
@@ -62,9 +54,7 @@ test.describe('Auth Flow — Register → Login → Protected → Logout', () =>
   // ── Login ──────────────────────────────────────────────────────────────
 
   test('POST /login with valid credentials returns 200', async ({ request }) => {
-    const res = await request.post(app.url + '/login', {
-      data: { email: testUser.email, password: testUser.password },
-    })
+    const res = await postWithCsrf(request, app.url + '/login', { email: testUser.email, password: testUser.password })
     expect(res.status()).toBe(200)
 
     const body = await res.json()
@@ -73,9 +63,7 @@ test.describe('Auth Flow — Register → Login → Protected → Logout', () =>
   })
 
   test('POST /login with wrong password returns 401', async ({ request }) => {
-    const res = await request.post(app.url + '/login', {
-      data: { email: testUser.email, password: 'wrongpassword' },
-    })
+    const res = await postWithCsrf(request, app.url + '/login', { email: testUser.email, password: 'wrongpassword' })
     expect(res.status()).toBe(401)
 
     const body = await res.json()
@@ -83,9 +71,7 @@ test.describe('Auth Flow — Register → Login → Protected → Logout', () =>
   })
 
   test('POST /login with missing fields returns 422', async ({ request }) => {
-    const res = await request.post(app.url + '/login', {
-      data: { email: testUser.email },
-    })
+    const res = await postWithCsrf(request, app.url + '/login', { email: testUser.email })
     expect(res.status()).toBe(422)
   })
 
@@ -98,9 +84,7 @@ test.describe('Auth Flow — Register → Login → Protected → Logout', () =>
 
   test('login → access protected route → data returned', async ({ request }) => {
     // Login within the same request context (cookies persist)
-    const loginRes = await request.post(app.url + '/login', {
-      data: { email: testUser.email, password: testUser.password },
-    })
+    const loginRes = await postWithCsrf(request, app.url + '/login', { email: testUser.email, password: testUser.password })
     expect(loginRes.status()).toBe(200)
 
     // Access protected route — same context, session cookie present
@@ -118,13 +102,11 @@ test.describe('Auth Flow — Register → Login → Protected → Logout', () =>
 
   test('login → logout → session cleared', async ({ request }) => {
     // Login
-    const loginRes = await request.post(app.url + '/login', {
-      data: { email: testUser.email, password: testUser.password },
-    })
+    const loginRes = await postWithCsrf(request, app.url + '/login', { email: testUser.email, password: testUser.password })
     expect(loginRes.status()).toBe(200)
 
     // Logout
-    const logoutRes = await request.post(app.url + '/logout')
+    const logoutRes = await postWithCsrf(request, app.url + '/logout', {})
     expect(logoutRes.status()).toBe(200)
 
     // Verify session is cleared — protected route should fail

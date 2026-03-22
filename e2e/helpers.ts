@@ -84,6 +84,31 @@ export async function createTestApp(
   }
 }
 
+/**
+ * POST with CSRF — GETs the base URL first to establish session + XSRF cookie,
+ * then sends POST with X-XSRF-TOKEN header. Playwright persists cookies across calls.
+ */
+export async function postWithCsrf(
+  request: any,
+  url: string,
+  data: Record<string, any>,
+): Promise<any> {
+  // Establish session + get XSRF-TOKEN cookie
+  const baseUrl = new URL(url).origin + '/'
+  const initRes = await request.get(baseUrl)
+  const setCookies: string[] = (await initRes.headersArray()).filter((h: any) => h.name.toLowerCase() === 'set-cookie').map((h: any) => h.value)
+  let xsrf = ''
+  for (const c of setCookies) {
+    const match = c.match(/XSRF-TOKEN=([^;]+)/)
+    if (match) { xsrf = decodeURIComponent(match[1]); break }
+  }
+
+  return request.post(url, {
+    data,
+    headers: xsrf ? { 'X-XSRF-TOKEN': xsrf } : {},
+  })
+}
+
 async function waitForServer(url: string, timeout: number): Promise<void> {
   const start = Date.now()
   while (Date.now() - start < timeout) {

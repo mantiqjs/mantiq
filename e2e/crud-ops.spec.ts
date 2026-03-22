@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { createTestApp, type TestApp } from './helpers.ts'
+import { createTestApp, postWithCsrf, type TestApp } from './helpers.ts'
 
 let app: TestApp
 
@@ -21,7 +21,7 @@ test.describe('CRUD Operations (SPA stateful API)', () => {
   // ── Setup: register + login ────────────────────────────────────────────
 
   test('setup: register admin user', async ({ request }) => {
-    const res = await request.post(app.url + '/register', { data: adminUser })
+    const res = await postWithCsrf(request, app.url + '/register', adminUser)
     expect(res.status()).toBe(201)
   })
 
@@ -29,9 +29,7 @@ test.describe('CRUD Operations (SPA stateful API)', () => {
 
   test('POST /api/users creates a new user', async ({ request }) => {
     // Login first
-    await request.post(app.url + '/login', {
-      data: { email: adminUser.email, password: adminUser.password },
-    })
+    await postWithCsrf(request, app.url + '/login', { email: adminUser.email, password: adminUser.password })
 
     const res = await request.post(app.url + '/api/users', {
       data: { name: 'New User', email: `new-${Date.now()}@example.com`, password: 'secret123' },
@@ -46,9 +44,7 @@ test.describe('CRUD Operations (SPA stateful API)', () => {
   })
 
   test('POST /api/users rejects missing fields', async ({ request }) => {
-    await request.post(app.url + '/login', {
-      data: { email: adminUser.email, password: adminUser.password },
-    })
+    await postWithCsrf(request, app.url + '/login', { email: adminUser.email, password: adminUser.password })
 
     const res = await request.post(app.url + '/api/users', {
       data: { name: 'No Email' },
@@ -57,9 +53,7 @@ test.describe('CRUD Operations (SPA stateful API)', () => {
   })
 
   test('POST /api/users rejects duplicate email', async ({ request }) => {
-    await request.post(app.url + '/login', {
-      data: { email: adminUser.email, password: adminUser.password },
-    })
+    await postWithCsrf(request, app.url + '/login', { email: adminUser.email, password: adminUser.password })
 
     const res = await request.post(app.url + '/api/users', {
       data: { name: 'Dupe', email: adminUser.email, password: 'secret123' },
@@ -70,9 +64,7 @@ test.describe('CRUD Operations (SPA stateful API)', () => {
   // ── Read ───────────────────────────────────────────────────────────────
 
   test('GET /api/users returns paginated list', async ({ request }) => {
-    await request.post(app.url + '/login', {
-      data: { email: adminUser.email, password: adminUser.password },
-    })
+    await postWithCsrf(request, app.url + '/login', { email: adminUser.email, password: adminUser.password })
 
     const res = await request.get(app.url + '/api/users')
     expect(res.status()).toBe(200)
@@ -87,9 +79,7 @@ test.describe('CRUD Operations (SPA stateful API)', () => {
   })
 
   test('GET /api/users supports search', async ({ request }) => {
-    await request.post(app.url + '/login', {
-      data: { email: adminUser.email, password: adminUser.password },
-    })
+    await postWithCsrf(request, app.url + '/login', { email: adminUser.email, password: adminUser.password })
 
     const res = await request.get(app.url + '/api/users?search=Admin')
     expect(res.status()).toBe(200)
@@ -100,9 +90,7 @@ test.describe('CRUD Operations (SPA stateful API)', () => {
   })
 
   test('GET /api/users supports pagination', async ({ request }) => {
-    await request.post(app.url + '/login', {
-      data: { email: adminUser.email, password: adminUser.password },
-    })
+    await postWithCsrf(request, app.url + '/login', { email: adminUser.email, password: adminUser.password })
 
     const res = await request.get(app.url + '/api/users?page=1&per_page=1')
     expect(res.status()).toBe(200)
@@ -113,9 +101,7 @@ test.describe('CRUD Operations (SPA stateful API)', () => {
   })
 
   test('GET /api/users supports sorting', async ({ request }) => {
-    await request.post(app.url + '/login', {
-      data: { email: adminUser.email, password: adminUser.password },
-    })
+    await postWithCsrf(request, app.url + '/login', { email: adminUser.email, password: adminUser.password })
 
     const asc = await request.get(app.url + '/api/users?sort=name&dir=asc')
     const desc = await request.get(app.url + '/api/users?sort=name&dir=desc')
@@ -133,9 +119,7 @@ test.describe('CRUD Operations (SPA stateful API)', () => {
   // ── Update ─────────────────────────────────────────────────────────────
 
   test('PUT /api/users/:id updates a user', async ({ request }) => {
-    await request.post(app.url + '/login', {
-      data: { email: adminUser.email, password: adminUser.password },
-    })
+    await postWithCsrf(request, app.url + '/login', { email: adminUser.email, password: adminUser.password })
 
     // Create a user to update
     const createRes = await request.post(app.url + '/api/users', {
@@ -155,9 +139,7 @@ test.describe('CRUD Operations (SPA stateful API)', () => {
   })
 
   test('PUT /api/users/:id returns 404 for nonexistent', async ({ request }) => {
-    await request.post(app.url + '/login', {
-      data: { email: adminUser.email, password: adminUser.password },
-    })
+    await postWithCsrf(request, app.url + '/login', { email: adminUser.email, password: adminUser.password })
 
     const res = await request.put(app.url + '/api/users/99999', {
       data: { name: 'Ghost' },
@@ -168,9 +150,7 @@ test.describe('CRUD Operations (SPA stateful API)', () => {
   // ── Delete ─────────────────────────────────────────────────────────────
 
   test('DELETE /api/users/:id removes a user', async ({ request }) => {
-    await request.post(app.url + '/login', {
-      data: { email: adminUser.email, password: adminUser.password },
-    })
+    await postWithCsrf(request, app.url + '/login', { email: adminUser.email, password: adminUser.password })
 
     // Create a user to delete
     const createRes = await request.post(app.url + '/api/users', {
@@ -194,9 +174,7 @@ test.describe('CRUD Operations (SPA stateful API)', () => {
   })
 
   test('DELETE /api/users/:id returns 404 for nonexistent', async ({ request }) => {
-    await request.post(app.url + '/login', {
-      data: { email: adminUser.email, password: adminUser.password },
-    })
+    await postWithCsrf(request, app.url + '/login', { email: adminUser.email, password: adminUser.password })
 
     const res = await request.delete(app.url + '/api/users/99999')
     expect(res.status()).toBeGreaterThanOrEqual(400)
