@@ -35,6 +35,7 @@
   "files": [
     "src/",
     "stubs/",
+    "skeleton/",
     "package.json",
     "README.md"
   ],
