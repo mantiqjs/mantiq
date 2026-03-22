@@ -107,11 +107,21 @@ export class CoreServiceProvider extends ServiceProvider {
     kernel.registerMiddleware('session', StartSession)
     kernel.registerMiddleware('csrf', VerifyCsrfToken)
 
-    // Set default global middleware stack (can be overridden in config/app.ts)
+    // Register middleware groups from config
     const configRepo = this.app.make(ConfigRepository)
-    const globalMiddleware = configRepo.get('app.middleware', [
-      'cors', 'encrypt.cookies', 'session', 'csrf',
-    ]) as string[]
-    kernel.setGlobalMiddleware(globalMiddleware)
+    const middlewareGroups = configRepo.get('app.middlewareGroups', {
+      web: ['cors', 'encrypt.cookies', 'session', 'csrf'],
+      api: ['cors', 'throttle'],
+    }) as Record<string, string[]>
+
+    for (const [name, middleware] of Object.entries(middlewareGroups)) {
+      kernel.registerMiddlewareGroup(name, middleware)
+    }
+
+    // Legacy: if app.middleware is set, apply as global middleware (backward compat)
+    const globalMiddleware = configRepo.get('app.middleware', []) as string[]
+    if (globalMiddleware.length > 0) {
+      kernel.setGlobalMiddleware(globalMiddleware)
+    }
   }
 }

@@ -19,13 +19,18 @@ export class CorsMiddleware implements Middleware {
   private config: CorsConfig
 
   constructor(configRepo?: ConfigRepository) {
+    // Smart default: use APP_URL as origin with credentials when available
+    const appUrl = configRepo?.get('app.url', '') as string
+    const defaultOrigin = appUrl || '*'
+    const defaultCredentials = !!appUrl
+
     this.config = {
-      origin: configRepo?.get('cors.origin', '*') ?? '*',
+      origin: configRepo?.get('cors.origin', defaultOrigin) ?? defaultOrigin,
       methods: configRepo?.get('cors.methods', ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']) ?? ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-      allowedHeaders: configRepo?.get('cors.allowedHeaders', ['Content-Type', 'Authorization', 'X-Requested-With']) ?? ['Content-Type', 'Authorization', 'X-Requested-With'],
-      exposedHeaders: configRepo?.get('cors.exposedHeaders', []) ?? [],
-      credentials: configRepo?.get('cors.credentials', false) ?? false,
-      maxAge: configRepo?.get('cors.maxAge', 0) ?? 0,
+      allowedHeaders: configRepo?.get('cors.allowedHeaders', ['Content-Type', 'Authorization', 'X-Requested-With', 'X-CSRF-TOKEN', 'X-XSRF-TOKEN', 'X-Mantiq']) ?? ['Content-Type', 'Authorization', 'X-Requested-With', 'X-CSRF-TOKEN', 'X-XSRF-TOKEN', 'X-Mantiq'],
+      exposedHeaders: configRepo?.get('cors.exposedHeaders', ['X-Heartbeat']) ?? ['X-Heartbeat'],
+      credentials: configRepo?.get('cors.credentials', defaultCredentials) ?? defaultCredentials,
+      maxAge: configRepo?.get('cors.maxAge', 7200) ?? 7200,
     }
   }
 

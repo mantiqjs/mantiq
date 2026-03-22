@@ -187,6 +187,7 @@ if (kit) {
   const apiOnlyFiles = [
     { stub: 'api-only/routes/api.ts.stub', target: 'routes/api.ts' },
     { stub: 'shared/app/Http/Controllers/ApiAuthController.ts.stub', target: 'app/Http/Controllers/ApiAuthController.ts' },
+    { stub: 'shared/app/Http/Controllers/UserController.ts.stub', target: 'app/Http/Controllers/UserController.ts' },
     { stub: 'shared/database/seeders/DatabaseSeeder.ts.stub', target: 'database/seeders/DatabaseSeeder.ts' },
     { stub: 'shared/database/factories/UserFactory.ts.stub', target: 'database/factories/UserFactory.ts' },
   ]

@@ -1,7 +1,9 @@
 import type { Router } from '@mantiq/core'
+import { json } from '@mantiq/core'
 import { HomeController } from '../app/Http/Controllers/HomeController.ts'
 import { PageController } from '../app/Http/Controllers/PageController.ts'
 import { AuthController } from '../app/Http/Controllers/AuthController.ts'
+import { UserController } from '../app/Http/Controllers/UserController.ts'
 
 export default function (router: Router) {
   router.get('/', [HomeController, 'index'])
@@ -20,4 +22,11 @@ export default function (router: Router) {
   router.post('/login', [AuthController, 'login'])
   router.post('/register', [AuthController, 'register'])
   router.post('/logout', [AuthController, 'logout']).middleware('auth')
+
+  // API endpoints (stateful — session auth via cookies)
+  router.get('/api/ping', () => json({ status: 'ok', timestamp: new Date().toISOString() }))
+  router.get('/api/users', [UserController, 'index']).middleware('auth')
+  router.post('/api/users', [UserController, 'store']).middleware('auth')
+  router.put('/api/users/:id', [UserController, 'update']).middleware('auth')
+  router.delete('/api/users/:id', [UserController, 'destroy']).middleware('auth')
 }

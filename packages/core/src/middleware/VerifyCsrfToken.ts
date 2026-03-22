@@ -19,7 +19,7 @@ import { serializeCookie } from '../http/Cookie.ts'
  */
 export class VerifyCsrfToken implements Middleware {
   /** URIs that should be excluded from CSRF verification. */
-  protected except: string[] = ['/api/*']
+  protected except: string[] = []
 
   constructor(private readonly encrypter: AesEncrypter) {}
 
@@ -40,9 +40,6 @@ export class VerifyCsrfToken implements Middleware {
     if (['GET', 'HEAD', 'OPTIONS'].includes(method)) return false
 
     const path = request.path()
-
-    // API routes are always excluded — token auth is inherently CSRF-safe
-    if (path.startsWith('/api/') || path === '/api') return false
 
     // Check user-defined exclusions
     return !this.except.some((pattern) => {
