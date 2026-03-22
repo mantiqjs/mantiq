@@ -268,8 +268,8 @@ jobs:
           check "Heartbeat header" "http://localhost:$PORT/"       200 ""
 
           # Verify X-Heartbeat header exists
-          HB=$(curl -s -D - http://localhost:$PORT/ 2>/dev/null | grep -i "X-Heartbeat" || echo "")
-          if [ -n "$HB" ]; then
+          curl -s -D /tmp/headers.txt -o /dev/null http://localhost:$PORT/ 2>/dev/null
+          if grep -qi "X-Heartbeat" /tmp/headers.txt 2>/dev/null; then
             echo "  ✓ X-Heartbeat header present"
             PASS=$((PASS+1))
           else
