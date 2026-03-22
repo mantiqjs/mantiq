@@ -66,7 +66,9 @@ export class AuthServiceProvider extends ServiceProvider {
       kernel.registerMiddleware('abilities', CheckAbilities as any)
       kernel.registerMiddleware('ability', CheckForAnyAbility as any)
     } catch {
-      // HttpKernel may not be available in non-HTTP contexts (e.g., CLI)
+      if (process.env.APP_DEBUG === 'true') {
+        console.warn('[Mantiq] AuthServiceProvider: HttpKernel not available, auth middleware not registered')
+      }
     }
   }
 }

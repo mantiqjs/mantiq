@@ -188,12 +188,14 @@ export class Application extends ContainerImpl {
           if (mod[providerName] && typeof mod[providerName] === 'function') {
             providers.push(mod[providerName])
           }
-        } catch {
-          // Skip packages that can't be loaded
+        } catch (e) {
+          if (process.env.APP_DEBUG === 'true') {
+            console.warn(`[Mantiq] Failed to load provider from ${file}:`, (e as Error)?.message ?? e)
+          }
         }
       }
     } catch {
-      // node_modules/@mantiq doesn't exist
+      // node_modules/@mantiq doesn't exist — expected when no @mantiq packages installed
     }
 
     return providers

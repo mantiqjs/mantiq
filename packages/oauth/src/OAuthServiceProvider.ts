@@ -74,7 +74,9 @@ export class OAuthServiceProvider extends ServiceProvider {
         return new JwtGuard(signer, provider)
       })
     } catch {
-      // AuthManager not available — @mantiq/auth may not be installed
+      if (process.env.APP_DEBUG === 'true') {
+        console.warn('[Mantiq] OAuthServiceProvider: @mantiq/auth not installed, oauth guard not registered')
+      }
     }
 
     // Register OAuth routes
@@ -88,7 +90,9 @@ export class OAuthServiceProvider extends ServiceProvider {
       ]
       oauthRoutes(router, { server, grants })
     } catch {
-      // Router not available
+      if (process.env.APP_DEBUG === 'true') {
+        console.warn('[Mantiq] OAuthServiceProvider: Router not available, OAuth routes not registered')
+      }
     }
 
     // Register middleware aliases
@@ -98,7 +102,9 @@ export class OAuthServiceProvider extends ServiceProvider {
       kernel.registerMiddleware('scope', CheckForAnyScope as any)
       kernel.registerMiddleware('client', CheckClientCredentials as any)
     } catch {
-      // HttpKernel may not be available in non-HTTP contexts
+      if (process.env.APP_DEBUG === 'true') {
+        console.warn('[Mantiq] OAuthServiceProvider: HttpKernel not available, OAuth middleware not registered')
+      }
     }
 
     // Register commands
@@ -110,7 +116,7 @@ export class OAuthServiceProvider extends ServiceProvider {
         new OAuthPurgeCommand(),
       ])
     } catch {
-      // @mantiq/cli may not be available
+      // CLI not available — commands optional
     }
   }
 }

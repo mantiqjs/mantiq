@@ -33,7 +33,7 @@ export class EventServiceProvider extends ServiceProvider {
       try {
         config = c.make(ConfigRepository).get<BroadcastConfig>('broadcasting', DEFAULT_BROADCAST_CONFIG)
       } catch {
-        // ConfigRepository not yet registered — use defaults
+        // ConfigRepository not yet registered — use defaults (safe during early bootstrap)
       }
       return new BroadcastManager(config)
     })
