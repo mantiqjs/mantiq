@@ -11,6 +11,17 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    // Proxy all non-asset requests to the Mantiq backend in dev mode
+    // so session cookies and CSRF tokens work on the same origin
+    proxy: {
+      '/api': 'http://localhost:3000',
+      '/login': 'http://localhost:3000',
+      '/register': 'http://localhost:3000',
+      '/logout': 'http://localhost:3000',
+      '/_heartbeat': 'http://localhost:3000',
+    },
+  },
   build: {
     outDir: 'public/build',
     manifest: true,

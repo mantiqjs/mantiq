@@ -12,6 +12,15 @@ export default defineConfig({
       '$lib': path.resolve(__dirname, './src/lib'),
     },
   },
+  server: {
+    proxy: {
+      '/api': 'http://localhost:3000',
+      '/login': 'http://localhost:3000',
+      '/register': 'http://localhost:3000',
+      '/logout': 'http://localhost:3000',
+      '/_heartbeat': 'http://localhost:3000',
+    },
+  },
   build: {
     outDir: 'public/build',
     manifest: true,
