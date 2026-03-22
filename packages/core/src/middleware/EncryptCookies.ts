@@ -11,7 +11,7 @@ import { parseCookies, serializeCookie } from '../http/Cookie.ts'
  */
 export class EncryptCookies implements Middleware {
   /** Cookie names that should NOT be encrypted/decrypted. */
-  protected except: string[] = []
+  protected except: string[] = ['XSRF-TOKEN']
 
   constructor(private readonly encrypter: AesEncrypter) {}
 

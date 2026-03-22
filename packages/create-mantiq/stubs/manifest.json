@@ -1396,10 +1396,6 @@
         "target": "app/Http/Controllers/HomeController.ts"
       },
       {
-        "stub": "routes/api.ts.stub",
-        "target": "routes/api.ts"
-      },
-      {
         "stub": "routes/web.ts.stub",
         "target": "routes/web.ts"
       }

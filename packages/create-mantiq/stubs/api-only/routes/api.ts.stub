@@ -4,7 +4,7 @@ import { ApiAuthController } from '../app/Http/Controllers/ApiAuthController.ts'
 import { User } from '../app/Models/User.ts'
 
 export default function (router: Router) {
-  router.get('/api/ping', () => {
+  router.get('/ping', () => {
     return MantiqResponse.json({ status: 'ok', timestamp: new Date().toISOString() })
   })
 
@@ -12,15 +12,15 @@ export default function (router: Router) {
   // Sanctum-style: register/login return a bearer token.
   // Send it as: Authorization: Bearer {token}
 
-  router.post('/api/register', [ApiAuthController, 'register'])
-  router.post('/api/login', [ApiAuthController, 'login'])
-  router.post('/api/logout', [ApiAuthController, 'logout']).middleware('auth:api')
-  router.get('/api/user', [ApiAuthController, 'user']).middleware('auth:api')
-  router.get('/api/tokens', [ApiAuthController, 'tokens']).middleware('auth:api')
+  router.post('/register', [ApiAuthController, 'register'])
+  router.post('/login', [ApiAuthController, 'login'])
+  router.post('/logout', [ApiAuthController, 'logout']).middleware('auth:api')
+  router.get('/user', [ApiAuthController, 'user']).middleware('auth:api')
+  router.get('/tokens', [ApiAuthController, 'tokens']).middleware('auth:api')
 
   // ── Users CRUD (protected) ────────────────────────────────────────────
 
-  router.get('/api/users', async (request: any) => {
+  router.get('/users', async (request: any) => {
     const search = request.query('search') ?? ''
     const page = Math.max(1, Number(request.query('page') ?? 1))
     const perPage = Math.min(100, Math.max(1, Number(request.query('per_page') ?? 10)))
@@ -67,7 +67,7 @@ export default function (router: Router) {
     })
   }).middleware('auth:api')
 
-  router.post('/api/users', async (request: any) => {
+  router.post('/users', async (request: any) => {
     const body = await request.input()
     if (!body?.name || !body?.email || !body?.password) {
       return MantiqResponse.json({ error: 'Name, email and password are required.' }, 422)
@@ -89,7 +89,7 @@ export default function (router: Router) {
     return MantiqResponse.json({ data: user.toObject() }, 201)
   }).middleware('auth:api')
 
-  router.put('/api/users/:id', async (request: any) => {
+  router.put('/users/:id', async (request: any) => {
     const id = request.param('id')
     const body = await request.input()
     const user = await User.find(Number(id))
@@ -108,7 +108,7 @@ export default function (router: Router) {
     return MantiqResponse.json({ data: user.toObject() })
   }).middleware('auth:api')
 
-  router.delete('/api/users/:id', async (request: any) => {
+  router.delete('/users/:id', async (request: any) => {
     const id = request.param('id')
     const user = await User.find(Number(id))
     if (!user) return MantiqResponse.json({ error: 'User not found.' }, 404)

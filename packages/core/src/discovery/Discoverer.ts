@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs'
-import { dirname, join, relative } from 'node:path'
+import { basename, dirname, join, relative } from 'node:path'
 
 /**
  * Auto-discovers application classes by scanning conventional directories.
@@ -126,13 +126,33 @@ export class Discoverer {
   /**
    * Load and register all discovered route files.
    * Each route file should export a default function: (router) => void
+   *
+   * Routes are auto-wrapped in middleware groups by filename convention:
+   * - web.ts → router.group({ middleware: ['web'] })
+   * - api.ts → router.group({ middleware: ['api'], prefix: '/api' })
+   * - Other files (console.ts, channels.ts) → loaded as-is
    */
   async loadRoutes(manifest: DiscoveryManifest, router: any): Promise<void> {
+    const groupMap: Record<string, { prefix: string }> = {
+      web: { prefix: '' },
+      api: { prefix: '/api' },
+    }
+
     for (const file of manifest.routes) {
       const fullPath = join(this.basePath, file)
       try {
         const mod = await import(fullPath)
-        if (typeof mod.default === 'function') {
+        if (typeof mod.default !== 'function') continue
+
+        const stem = basename(file, '.ts')
+        const group = groupMap[stem]
+
+        if (group) {
+          router.group(
+            { middleware: [stem], prefix: group.prefix },
+            (r: any) => mod.default(r),
+          )
+        } else {
           mod.default(router)
         }
       } catch {

@@ -9,6 +9,11 @@ export default {
   port: Number(env('APP_PORT', '3000')),
   basePath: import.meta.dir + '/..',
 
-  // Global middleware applied to every request
-  middleware: ['cors', 'encrypt.cookies', 'session', 'csrf'],
+  // Middleware groups — applied automatically based on route file:
+  // routes/web.ts → 'web' group (stateful: sessions, CSRF, cookies)
+  // routes/api.ts → 'api' group (stateless: throttled, no sessions)
+  middlewareGroups: {
+    web: ['cors', 'encrypt.cookies', 'session', 'csrf'],
+    api: ['cors', 'throttle'],
+  },
 }
