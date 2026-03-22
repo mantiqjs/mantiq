@@ -96,7 +96,7 @@ export abstract class Model {
     const conn = this.connection
     if (!conn) throw new Error(`No connection set on model ${this.table}. Call Model.setConnection() first.`)
 
-    const tableName = this.table || snakeCase(this.name)
+    const tableName = this.table || pluralize(snakeCase(this.name))
     const builder = new ModelQueryBuilder<T>(
       conn,
       tableName,
@@ -785,4 +785,14 @@ function snakeCase(name: string): string {
     .replace(/([a-z])([A-Z])/g, '$1_$2')
     .replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2')
     .toLowerCase()
+}
+
+/** Simple English pluralization for table name derivation. */
+function pluralize(word: string): string {
+  if (word.endsWith('ss') || word.endsWith('sh') || word.endsWith('ch') || word.endsWith('x') || word.endsWith('z')) return word + 'es'
+  if (word.endsWith('y') && !/[aeiou]y$/i.test(word)) return word.slice(0, -1) + 'ies'
+  if (word.endsWith('fe')) return word.slice(0, -2) + 'ves'
+  if (word.endsWith('f')) return word.slice(0, -1) + 'ves'
+  if (word.endsWith('s')) return word
+  return word + 's'
 }

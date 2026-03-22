@@ -43,6 +43,7 @@ export { Attempting, Authenticated, Login, Failed, Logout, Registered, Lockout }
 export { PersonalAccessToken } from './models/PersonalAccessToken.ts'
 
 // ── Mixins ────────────────────────────────────────────────────────────────────
+export { AuthenticatableModel } from './AuthenticatableModel.ts'
 export { applyHasApiTokens } from './HasApiTokens.ts'
 export { applyAuthorizable } from './Authorizable.ts'
 
