@@ -59,6 +59,8 @@ export { ThrottleRequests, getDefaultRateLimiter, setDefaultRateLimiter } from '
 export { WebSocketKernel } from './websocket/WebSocketKernel.ts'
 export { DefaultExceptionHandler } from './exceptions/Handler.ts'
 export { CoreServiceProvider } from './providers/CoreServiceProvider.ts'
+export { Discoverer } from './discovery/Discoverer.ts'
+export type { DiscoveryManifest } from './discovery/Discoverer.ts'
 
 // ── Encryption ────────────────────────────────────────────────────────────────
 export { AesEncrypter } from './encryption/Encrypter.ts'
