@@ -212,8 +212,8 @@ describe('Skeleton directory', () => {
     expect(existsSync(join(skeletonDir, 'routes/api.ts'))).toBe(true)
   })
 
-  it('has DatabaseServiceProvider', () => {
-    expect(existsSync(join(skeletonDir, 'app/Providers/DatabaseServiceProvider.ts'))).toBe(true)
+  it('has AppServiceProvider', () => {
+    expect(existsSync(join(skeletonDir, 'app/Providers/AppServiceProvider.ts'))).toBe(true)
   })
 
   it('index.ts imports only @mantiq/core', () => {

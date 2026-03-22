@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/database",
-  "version": "0.5.13",
+  "version": "0.5.14",
   "description": "Query builder, ORM, migrations, seeders, factories — with SQLite, Postgres, MySQL and MongoDB support",
   "type": "module",
   "license": "MIT",
@@ -55,6 +55,7 @@
     "typescript": "^5.7.0"
   },
   "peerDependencies": {
+    "@mantiq/core": "^0.5.0",
     "pg": "",
     "mysql2": "",
     "mssql": ">=10",

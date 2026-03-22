@@ -6,13 +6,13 @@ Priority: **P0** = critical / blocks users, **P1** = important / should fix soon
 
 ## Scaffold & Environment (P0)
 
-- [ ] **P0** `.env` template only has 5 vars — configs reference 60+. Add all env vars grouped by section (DB, mail, cache, queue, etc.)
-- [ ] **P0** `key:generate` CLI command — users can't generate APP_KEY
-- [ ] **P0** Missing `routes/console.ts` in skeleton — no place for scheduled tasks
-- [ ] **P0** Missing `routes/channels.ts` in skeleton — no place for WebSocket channel authorization
-- [ ] **P0** Missing `storage/cache/` directory with .gitkeep — cache file driver fails on first use
-- [ ] **P0** Missing `bootstrap/` directory — no manifest cache location
-- [ ] **P0** Missing .gitkeep in `app/Providers/`, `app/Http/Controllers/`
+- [x] ~~`.env` template expanded to 30+ vars grouped by section~~
+- [x] ~~`key:generate` CLI command~~
+- [x] ~~`routes/console.ts` in skeleton~~
+- [x] ~~`routes/channels.ts` in skeleton~~
+- [x] ~~`storage/cache/` directory with .gitkeep~~
+- [x] ~~`bootstrap/` directory with .gitkeep~~
+- [x] ~~`.gitkeep` in `app/Console/Commands/`~~
 
 ## CLI Commands (P1)
 
