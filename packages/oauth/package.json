@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/oauth",
-  "version": "0.5.13",
+  "version": "0.5.14",
   "description": "OAuth 2.0 server — authorization code (PKCE), client credentials, JWT access tokens, scopes",
   "type": "module",
   "license": "MIT",

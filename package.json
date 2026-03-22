@@ -1,6 +1,6 @@
 {
   "name": "mantiqjs",
-  "version": "0.5.13",
+  "version": "0.5.14",
   "type": "module",
   "private": true,
   "workspaces": [
