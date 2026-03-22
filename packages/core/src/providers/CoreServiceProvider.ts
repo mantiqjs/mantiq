@@ -110,7 +110,7 @@ export class CoreServiceProvider extends ServiceProvider {
     // Set default global middleware stack (can be overridden in config/app.ts)
     const configRepo = this.app.make(ConfigRepository)
     const globalMiddleware = configRepo.get('app.middleware', [
-      'cors', 'encrypt.cookies', 'session',
+      'cors', 'encrypt.cookies', 'session', 'csrf',
     ]) as string[]
     kernel.setGlobalMiddleware(globalMiddleware)
   }

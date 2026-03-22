@@ -19,7 +19,7 @@ import { serializeCookie } from '../http/Cookie.ts'
  */
 export class VerifyCsrfToken implements Middleware {
   /** URIs that should be excluded from CSRF verification. */
-  protected except: string[] = []
+  protected except: string[] = ['/api/*']
 
   constructor(private readonly encrypter: AesEncrypter) {}
 
@@ -39,8 +39,12 @@ export class VerifyCsrfToken implements Middleware {
     // Read-only methods don't need CSRF
     if (['GET', 'HEAD', 'OPTIONS'].includes(method)) return false
 
-    // Check exclusions
     const path = request.path()
+
+    // API routes are always excluded — token auth is inherently CSRF-safe
+    if (path.startsWith('/api/') || path === '/api') return false
+
+    // Check user-defined exclusions
     return !this.except.some((pattern) => {
       if (pattern.endsWith('*')) {
         return path.startsWith(pattern.slice(0, -1))
@@ -77,7 +81,9 @@ export class VerifyCsrfToken implements Middleware {
     const xsrfHeader = request.header('x-xsrf-token')
     if (xsrfHeader) {
       try {
-        return await this.encrypter.decrypt(xsrfHeader)
+        // Cookie values may be URL-encoded — decode before decrypting
+        const decoded = decodeURIComponent(xsrfHeader)
+        return await this.encrypter.decrypt(decoded)
       } catch {
         return null
       }
