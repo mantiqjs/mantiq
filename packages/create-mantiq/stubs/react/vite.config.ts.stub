@@ -2,51 +2,26 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
+import { writeFileSync, unlinkSync } from 'node:fs'
 
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    // Proxy non-asset requests to the Mantiq backend in dev mode
-    // so session cookies and CSRF tokens work on the same origin
+    // Write public/hot so the backend knows the dev server is running
     {
-      name: 'mantiq-proxy',
+      name: 'mantiq-hot',
       configureServer(server) {
-        server.middlewares.use((req, res, next) => {
-          // Let Vite handle its own files: HMR, source files, node_modules
-          const viteOwned = req.url?.startsWith('/@') ||
-            req.url?.startsWith('/src/') ||
-            req.url?.startsWith('/node_modules/') ||
-            req.url?.includes('?import') ||
-            req.url?.includes('?t=')
-
-          if (viteOwned) return next()
-
-          // For HTML page navigations (SPA), let Vite serve index.html
-          const accept = req.headers.accept ?? ''
-          if (req.method === 'GET' && accept.includes('text/html')) return next()
-
-          // Everything else (POST, API calls, etc.) → proxy to backend
-          const backend = `http://localhost:${process.env.APP_PORT ?? 3000}`
-          import('node:http').then(({ request }) => {
-            const proxyReq = request(
-              `${backend}${req.url}`,
-              {
-                method: req.method,
-                headers: req.headers,
-              },
-              (proxyRes) => {
-                res.writeHead(proxyRes.statusCode ?? 500, proxyRes.headers)
-                proxyRes.pipe(res)
-              },
-            )
-            proxyReq.on('error', () => {
-              res.writeHead(502)
-              res.end('Backend not running. Start with: bun run index.ts')
-            })
-            req.pipe(proxyReq)
-          })
+        const hotPath = path.resolve(__dirname, 'public/hot')
+        server.httpServer?.once('listening', () => {
+          const addr = server.httpServer!.address()
+          const url = typeof addr === 'string' ? addr : `http://localhost:${addr?.port}`
+          writeFileSync(hotPath, url)
         })
+        const cleanup = () => { try { unlinkSync(hotPath) } catch {} }
+        process.on('exit', cleanup)
+        process.on('SIGINT', () => { cleanup(); process.exit() })
+        process.on('SIGTERM', () => { cleanup(); process.exit() })
       },
     },
   ],

@@ -43,7 +43,9 @@ export class EncryptCookies implements Middleware {
       }
 
       try {
-        decrypted[name] = await this.encrypter.decrypt(value)
+        // Cookie values may be URL-encoded (= → %3D) — decode before decrypting
+        const decoded = decodeURIComponent(value)
+        decrypted[name] = await this.encrypter.decrypt(decoded)
       } catch {
         // Can't decrypt — skip this cookie (expired key, tampered, etc.)
         decrypted[name] = value
