@@ -110,41 +110,20 @@ storage/heartbeat/
 
     'index.ts': `import { Application, CoreServiceProvider, HttpKernel, RouterImpl, Discoverer } from '@mantiq/core'
 
-// ── Load .env ─────────────────────────────────────────────────────────────────
-const envFile = Bun.file(import.meta.dir + '/.env')
-if (await envFile.exists()) {
-  const text = await envFile.text()
-  for (const line of text.split('\\n')) {
-    const trimmed = line.trim()
-    if (!trimmed || trimmed.startsWith('#')) continue
-    const eqIdx = trimmed.indexOf('=')
-    if (eqIdx === -1) continue
-    const key = trimmed.slice(0, eqIdx).trim()
-    const value = trimmed.slice(eqIdx + 1).trim()
-    if (key && !(key in process.env)) process.env[key] = value
-  }
-}
-
-// ── Bootstrap ─────────────────────────────────────────────────────────────────
 const app = await Application.create(import.meta.dir, 'config')
 
-// Discover user providers from app/Providers/
 const discoverer = new Discoverer(import.meta.dir)
 const isDev = process.env['APP_ENV'] !== 'production'
 const manifest = await discoverer.resolve(isDev)
 const userProviders = await discoverer.loadProviders(manifest)
 
-// Register all: core → installed @mantiq/* packages → user providers
 await app.bootstrap([CoreServiceProvider], userProviders)
 
-// Auto-load route files
 const router = app.make(RouterImpl)
 await discoverer.loadRoutes(manifest, router)
 
-// ── Export for CLI ────────────────────────────────────────────────────────────
 export default app
 
-// ── Start ─────────────────────────────────────────────────────────────────────
 if (import.meta.main) {
   const kernel = app.make(HttpKernel)
   await kernel.start()
@@ -766,41 +745,20 @@ bootstrap/
   // ── index.ts ────────────────────────────────────────────────────────────
   templates['index.ts'] = `import { Application, CoreServiceProvider, HttpKernel, RouterImpl, Discoverer } from '@mantiq/core'
 
-// ── Load .env ─────────────────────────────────────────────────────────────────
-const envFile = Bun.file(import.meta.dir + '/.env')
-if (await envFile.exists()) {
-  const text = await envFile.text()
-  for (const line of text.split('\\n')) {
-    const trimmed = line.trim()
-    if (!trimmed || trimmed.startsWith('#')) continue
-    const eqIdx = trimmed.indexOf('=')
-    if (eqIdx === -1) continue
-    const key = trimmed.slice(0, eqIdx).trim()
-    const value = trimmed.slice(eqIdx + 1).trim()
-    if (key && !(key in process.env)) process.env[key] = value
-  }
-}
-
-// ── Bootstrap ─────────────────────────────────────────────────────────────────
 const app = await Application.create(import.meta.dir, 'config')
 
-// Discover user providers from app/Providers/
 const discoverer = new Discoverer(import.meta.dir)
 const isDev = process.env['APP_ENV'] !== 'production'
 const manifest = await discoverer.resolve(isDev)
 const userProviders = await discoverer.loadProviders(manifest)
 
-// Register all: core → installed @mantiq/* packages → user providers
 await app.bootstrap([CoreServiceProvider], userProviders)
 
-// Auto-load route files
 const router = app.make(RouterImpl)
 await discoverer.loadRoutes(manifest, router)
 
-// ── Export for CLI ────────────────────────────────────────────────────────────
 export default app
 
-// ── Start ─────────────────────────────────────────────────────────────────────
 if (import.meta.main) {
   const kernel = app.make(HttpKernel)
   await kernel.start()

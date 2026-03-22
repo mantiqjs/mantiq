@@ -47,6 +47,7 @@ export class Application extends ContainerImpl {
     configPath: string = 'config',
   ): Promise<Application> {
     const app = new Application(basePath)
+    await app.loadEnv()
     await app.loadConfig(configPath)
     Application._instance = app
     return app
@@ -77,6 +78,32 @@ export class Application extends ContainerImpl {
    */
   static resetInstance(): void {
     Application._instance = null
+  }
+
+  // ── Environment ─────────────────────────────────────────────────────────
+
+  /**
+   * Load .env file from the base path.
+   * Variables are only set if not already present in process.env.
+   */
+  private async loadEnv(): Promise<void> {
+    const envFile = Bun.file(this.basePath + '/.env')
+    try {
+      if (await envFile.exists()) {
+        const text = await envFile.text()
+        for (const line of text.split('\n')) {
+          const trimmed = line.trim()
+          if (!trimmed || trimmed.startsWith('#')) continue
+          const eqIdx = trimmed.indexOf('=')
+          if (eqIdx === -1) continue
+          const key = trimmed.slice(0, eqIdx).trim()
+          const value = trimmed.slice(eqIdx + 1).trim()
+          if (key && !(key in process.env)) process.env[key] = value
+        }
+      }
+    } catch {
+      // .env file doesn't exist or can't be read — that's fine
+    }
   }
 
   // ── Config ────────────────────────────────────────────────────────────────
