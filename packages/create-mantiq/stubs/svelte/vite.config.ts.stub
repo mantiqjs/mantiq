@@ -4,21 +4,49 @@ import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
 export default defineConfig({
-  plugins: [svelte(), tailwindcss()],
+  plugins: [
+    svelte(),
+    tailwindcss(),
+    {
+      name: 'mantiq-proxy',
+      configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+          const viteOwned = req.url?.startsWith('/@') ||
+            req.url?.startsWith('/src/') ||
+            req.url?.startsWith('/node_modules/') ||
+            req.url?.includes('?import') ||
+            req.url?.includes('?t=')
+
+          if (viteOwned) return next()
+
+          const accept = req.headers.accept ?? ''
+          if (req.method === 'GET' && accept.includes('text/html')) return next()
+
+          const backend = `http://localhost:${process.env.APP_PORT ?? 3000}`
+          import('node:http').then(({ request }) => {
+            const proxyReq = request(
+              `${backend}${req.url}`,
+              { method: req.method, headers: req.headers },
+              (proxyRes) => {
+                res.writeHead(proxyRes.statusCode ?? 500, proxyRes.headers)
+                proxyRes.pipe(res)
+              },
+            )
+            proxyReq.on('error', () => {
+              res.writeHead(502)
+              res.end('Backend not running. Start with: bun run index.ts')
+            })
+            req.pipe(proxyReq)
+          })
+        })
+      },
+    },
+  ],
   publicDir: false,
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
       '$lib': path.resolve(__dirname, './src/lib'),
-    },
-  },
-  server: {
-    proxy: {
-      '/api': 'http://localhost:3000',
-      '/login': 'http://localhost:3000',
-      '/register': 'http://localhost:3000',
-      '/logout': 'http://localhost:3000',
-      '/_heartbeat': 'http://localhost:3000',
     },
   },
   build: {
