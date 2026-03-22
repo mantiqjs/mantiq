@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/database",
-  "version": "0.3.0-rc.2",
+  "version": "0.5.2",
   "description": "Query builder, ORM, migrations, seeders, factories — with SQLite, Postgres, MySQL and MongoDB support",
   "type": "module",
   "license": "MIT",

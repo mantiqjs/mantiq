@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/social-auth",
-  "version": "0.2.0-rc.2",
+  "version": "0.5.2",
   "description": "Social authentication — login with Google, GitHub, Facebook, Apple, and more via extensible providers",
   "type": "module",
   "license": "MIT",
@@ -47,7 +47,7 @@
     "clean": "rm -rf dist"
   },
   "peerDependencies": {
-    "@mantiq/core": "^0.2.0"
+    "@mantiq/core": "^0.5.0"
   },
   "devDependencies": {
     "bun-types": "latest",

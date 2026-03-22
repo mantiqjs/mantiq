@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/mail",
-  "version": "0.3.0-rc.2",
+  "version": "0.5.2",
   "description": "Transactional email — SMTP, Resend, SendGrid, Mailgun, Postmark, SES, markdown templates",
   "type": "module",
   "license": "MIT",
@@ -54,7 +54,7 @@
     "@mantiq/queue": "^0.1.0"
   },
   "peerDependencies": {
-    "@mantiq/core": "^0.1.0"
+    "@mantiq/core": "^0.5.0"
   },
   "mantiq": {
     "provider": "MailServiceProvider"

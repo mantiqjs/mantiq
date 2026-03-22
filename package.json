@@ -1,6 +1,6 @@
 {
   "name": "mantiqjs",
-  "version": "0.0.0",
+  "version": "0.5.2",
   "private": true,
   "workspaces": [
     "packages/*",
@@ -13,7 +13,9 @@
     "lint": "bun run --filter '*' lint",
     "typecheck": "bun run --filter '*' typecheck",
     "clean": "bun run --filter '*' clean",
-    "publish:all": "for dir in packages/*/; do (cd \"$dir\" && npm publish --access public); done"
+    "publish:all": "for dir in packages/*/; do (cd \"$dir\" && npm publish --access public); done",
+    "publish:next": "for dir in packages/*/; do (cd \"$dir\" && npm publish --access public --tag next); done",
+    "version:set": "node -e \"const v=process.argv[1];const fs=require('fs');const path=require('path');fs.readdirSync('packages').forEach(d=>{const p=path.join('packages',d,'package.json');if(fs.existsSync(p)){const j=JSON.parse(fs.readFileSync(p));j.version=v;fs.writeFileSync(p,JSON.stringify(j,null,2)+'\\n')}});const rp='package.json';const rj=JSON.parse(fs.readFileSync(rp));rj.version=v;fs.writeFileSync(rp,JSON.stringify(rj,null,2)+'\\n');console.log('All packages set to '+v)\""
   },
   "devDependencies": {
     "typescript": "^5.7.0",

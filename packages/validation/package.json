@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/validation",
-  "version": "0.3.0-rc.2",
+  "version": "0.5.2",
   "description": "Rule engine, form requests",
   "type": "module",
   "license": "MIT",
@@ -51,7 +51,7 @@
     "@mantiq/core": "workspace:*"
   },
   "peerDependencies": {
-    "@mantiq/core": "^0.1.0"
+    "@mantiq/core": "^0.5.0"
   },
   "mantiq": {
     "provider": "ValidationServiceProvider"

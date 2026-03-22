@@ -21,22 +21,22 @@ export function getTemplates(ctx: TemplateContext): Record<string, string> {
 
   // ── package.json (always dynamic — name + deps) ────────────────────────
   const baseDeps: Record<string, string> = {
-    '@mantiq/auth': '^0.3.0',
-    '@mantiq/cli': '^0.1.6',
-    '@mantiq/core': '^0.3.0',
-    '@mantiq/database': '^0.2.0',
-    '@mantiq/events': '^0.1.3',
-    '@mantiq/filesystem': '^0.1.3',
-    '@mantiq/heartbeat': '^0.3.6',
-    '@mantiq/helpers': '^0.1.3',
-    '@mantiq/logging': '^0.1.3',
-    '@mantiq/queue': '^0.1.3',
-    '@mantiq/realtime': '^0.1.3',
-    '@mantiq/validation': '^0.2.0',
-    '@mantiq/mail': '^0.2.0',
-    '@mantiq/notify': '^0.2.1',
-    '@mantiq/search': '^0.1.0',
-    '@mantiq/health': '^0.1.0',
+    '@mantiq/auth': '^0.5.0',
+    '@mantiq/cli': '^0.5.0',
+    '@mantiq/core': '^0.5.0',
+    '@mantiq/database': '^0.5.0',
+    '@mantiq/events': '^0.5.0',
+    '@mantiq/filesystem': '^0.5.0',
+    '@mantiq/heartbeat': '^0.5.0',
+    '@mantiq/helpers': '^0.5.0',
+    '@mantiq/logging': '^0.5.0',
+    '@mantiq/queue': '^0.5.0',
+    '@mantiq/realtime': '^0.5.0',
+    '@mantiq/validation': '^0.5.0',
+    '@mantiq/mail': '^0.5.0',
+    '@mantiq/notify': '^0.5.0',
+    '@mantiq/search': '^0.5.0',
+    '@mantiq/health': '^0.5.0',
   }
 
   const baseDevDeps: Record<string, string> = {
@@ -65,7 +65,7 @@ export function getTemplates(ctx: TemplateContext): Record<string, string> {
       : { 'clsx': '^2.1.0', 'tailwind-merge': '^2.6.0', 'tailwind-variants': '^3.2.0', 'lucide-svelte': '^0.577.0', '@lucide/svelte': '^0.577.0', 'bits-ui': '^2.16.0' }
 
     Object.assign(baseDeps, {
-      '@mantiq/vite': '^0.2.0',
+      '@mantiq/vite': '^0.5.0',
       ...uiDeps,
     })
 

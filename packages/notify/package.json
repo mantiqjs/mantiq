@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/notify",
-  "version": "0.3.0-rc.2",
+  "version": "0.5.2",
   "description": "Multi-channel notifications — mail, database, broadcast, SMS, Slack, webhook",
   "type": "module",
   "license": "MIT",
@@ -60,13 +60,13 @@
     "@mantiq/cli": "workspace:*"
   },
   "peerDependencies": {
-    "@mantiq/core": "^0.1.0",
-    "@mantiq/database": "^0.1.0",
-    "@mantiq/mail": "^0.2.0",
-    "@mantiq/events": "^0.1.0",
-    "@mantiq/realtime": "^0.1.0",
-    "@mantiq/queue": "^0.1.0",
-    "@mantiq/cli": "^0.1.0"
+    "@mantiq/core": "^0.5.0",
+    "@mantiq/database": "^0.5.0",
+    "@mantiq/mail": "^0.5.0",
+    "@mantiq/events": "^0.5.0",
+    "@mantiq/realtime": "^0.5.0",
+    "@mantiq/queue": "^0.5.0",
+    "@mantiq/cli": "^0.5.0"
   },
   "mantiq": {
     "provider": "NotificationServiceProvider"

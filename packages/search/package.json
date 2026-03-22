@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/search",
-  "version": "0.2.0-rc.2",
+  "version": "0.5.2",
   "description": "Full-text search abstraction — Algolia, Meilisearch, Typesense, Elasticsearch, database, and collection drivers",
   "type": "module",
   "license": "MIT",
@@ -48,8 +48,8 @@
     "clean": "rm -rf dist"
   },
   "peerDependencies": {
-    "@mantiq/core": "^0.1.0",
-    "@mantiq/database": "^0.1.0"
+    "@mantiq/core": "^0.5.0",
+    "@mantiq/database": "^0.5.0"
   },
   "devDependencies": {
     "bun-types": "latest",

@@ -1,6 +1,6 @@
 {
   "name": "create-mantiq",
-  "version": "1.0.0-rc.4",
+  "version": "0.5.2",
   "description": "Scaffold a new MantiqJS application",
   "type": "module",
   "license": "MIT",

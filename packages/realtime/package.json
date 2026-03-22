@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/realtime",
-  "version": "0.2.0-rc.2",
+  "version": "0.5.2",
   "description": "WebSocket, SSE, channels, broadcasting",
   "type": "module",
   "license": "MIT",
@@ -52,8 +52,8 @@
     "@mantiq/events": "workspace:*"
   },
   "peerDependencies": {
-    "@mantiq/core": "^0.1.0",
-    "@mantiq/events": "^0.1.0"
+    "@mantiq/core": "^0.5.0",
+    "@mantiq/events": "^0.5.0"
   },
   "mantiq": {
     "provider": "RealtimeServiceProvider"

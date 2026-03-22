@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/auth",
-  "version": "0.4.0-rc.2",
+  "version": "0.5.2",
   "description": "Session & token auth, guards, providers",
   "type": "module",
   "license": "MIT",
@@ -52,8 +52,8 @@
     "@mantiq/database": "workspace:*"
   },
   "peerDependencies": {
-    "@mantiq/core": "^0.1.0",
-    "@mantiq/database": "^0.1.0"
+    "@mantiq/core": "^0.5.0",
+    "@mantiq/database": "^0.5.0"
   },
   "mantiq": {
     "provider": "AuthServiceProvider"

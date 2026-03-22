@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/oauth",
-  "version": "0.2.0-rc.2",
+  "version": "0.5.2",
   "description": "OAuth 2.0 server — authorization code (PKCE), client credentials, JWT access tokens, scopes",
   "type": "module",
   "license": "MIT",
@@ -45,9 +45,9 @@
     "clean": "rm -rf dist"
   },
   "peerDependencies": {
-    "@mantiq/core": "^0.2.0",
-    "@mantiq/database": "^0.2.0",
-    "@mantiq/auth": "^0.2.0"
+    "@mantiq/core": "^0.5.0",
+    "@mantiq/database": "^0.5.0",
+    "@mantiq/auth": "^0.5.0"
   },
   "devDependencies": {
     "bun-types": "latest",
