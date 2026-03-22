@@ -19,3 +19,5 @@ specs/
 addons/
 starters/
 playground/
+playwright-report/
+test-results/

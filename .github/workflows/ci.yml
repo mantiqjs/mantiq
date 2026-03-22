@@ -280,3 +280,34 @@ jobs:
           echo ""
           echo "Results: $PASS passed, $FAIL failed"
           if [ "$FAIL" -gt 0 ]; then exit 1; fi
+
+  e2e:
+    name: E2E Browser Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        kit: [api-only, react, vue, svelte]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: bunx playwright install chromium --with-deps
+
+      - name: Run ${{ matrix.kit }} e2e tests
+        run: bunx playwright test e2e/${{ matrix.kit }}-kit.spec.ts || bunx playwright test e2e/${{ matrix.kit }}.spec.ts
+
+      - name: Upload test artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-${{ matrix.kit }}-results
+          path: |
+            playwright-report/
+            test-results/

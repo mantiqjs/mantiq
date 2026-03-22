@@ -11,8 +11,8 @@ interface LoginProps {
 }
 
 export default function Login({ appName = 'Mantiq', navigate }: LoginProps) {
-  const [email, setEmail] = useState('admin@example.com')
-  const [password, setPassword] = useState('password')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -81,7 +81,7 @@ export default function Login({ appName = 'Mantiq', navigate }: LoginProps) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                placeholder="admin@example.com"
+                placeholder="you@example.com"
                 autoComplete="email"
               />
             </div>
