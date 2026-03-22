@@ -216,6 +216,10 @@ describe('Skeleton directory', () => {
     expect(existsSync(join(skeletonDir, 'app/Providers/AppServiceProvider.ts'))).toBe(true)
   })
 
+  it('has DatabaseServiceProvider', () => {
+    expect(existsSync(join(skeletonDir, 'app/Providers/DatabaseServiceProvider.ts'))).toBe(true)
+  })
+
   it('index.ts imports only @mantiq/core', () => {
     const content = readFileSync(join(skeletonDir, 'index.ts'), 'utf-8')
     const imports = content.match(/from ['"]@mantiq\//g) ?? []

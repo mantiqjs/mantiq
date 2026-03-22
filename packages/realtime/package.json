@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/realtime",
-  "version": "0.5.14",
+  "version": "0.5.15",
   "description": "WebSocket, SSE, channels, broadcasting",
   "type": "module",
   "license": "MIT",
