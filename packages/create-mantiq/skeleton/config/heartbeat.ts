@@ -1,60 +1,112 @@
-/**
- * Heartbeat Configuration (APM & Observability)
- *
- * Heartbeat records requests, queries, exceptions, cache hits, jobs,
- * and events. The debug widget shows real-time metrics in the browser.
- *
- * Dashboard: /_heartbeat (when enabled)
- */
 export default {
-  // Master switch — disable to turn off all telemetry
+
+  /*
+  |--------------------------------------------------------------------------
+  | Heartbeat Enabled
+  |--------------------------------------------------------------------------
+  |
+  | Master switch for the APM & observability system. When disabled, no
+  | telemetry is recorded and the dashboard is inaccessible.
+  |
+  */
   enabled: true,
 
-  // Where telemetry data is stored
+  /*
+  |--------------------------------------------------------------------------
+  | Telemetry Storage
+  |--------------------------------------------------------------------------
+  |
+  | Where Heartbeat stores request traces, queries, exceptions, and other
+  | telemetry data. SQLite is zero-config. Retention controls how long
+  | entries are kept before automatic pruning.
+  |
+  */
   storage: {
     driver: 'sqlite' as const,
     path: 'storage/heartbeat/heartbeat.sqlite',
-    retention: 86400,    // How long to keep entries (seconds) — 24 hours
-    pruneInterval: 300,  // How often to prune old entries (seconds) — 5 minutes
+    retention: 86400,    // Seconds to keep entries (86400 = 24 hours)
+    pruneInterval: 300,  // Seconds between prune runs (300 = 5 minutes)
   },
 
-  // Queue configuration for async telemetry writes
+  /*
+  |--------------------------------------------------------------------------
+  | Queue Configuration
+  |--------------------------------------------------------------------------
+  |
+  | Controls how telemetry data is flushed to storage. Use 'sync' for
+  | immediate writes (simpler) or a queue connection for async (faster).
+  |
+  */
   queue: {
-    connection: 'sync',  // Use 'sync' for immediate writes, or a queue name for async
+    connection: 'sync',
     queue: 'heartbeat',
-    batchSize: 50,       // Number of entries to flush at once
+    batchSize: 50,       // Entries to flush per batch
     flushInterval: 1000, // Milliseconds between flushes
   },
 
-  // Individual watchers — disable what you don't need
+  /*
+  |--------------------------------------------------------------------------
+  | Watchers
+  |--------------------------------------------------------------------------
+  |
+  | Each watcher monitors a specific aspect of your application. Disable
+  | individual watchers to reduce telemetry volume or ignore specific
+  | classes/routes via the ignore arrays.
+  |
+  */
   watchers: {
-    request:   { enabled: true, slow_threshold: 1000, ignore: [] },  // Slow request threshold (ms)
-    query:     { enabled: true, slow_threshold: 100, detect_n_plus_one: true },  // Slow query threshold (ms)
-    exception: { enabled: true, ignore: [] },      // Exception class names to ignore
-    cache:     { enabled: true },                   // Cache hits, misses, writes
-    job:       { enabled: true },                   // Queue job processing
-    event:     { enabled: true, ignore: [] },       // Event class names to ignore
-    model:     { enabled: true },                   // Model created/updated/deleted
-    log:       { enabled: true, level: 'debug' },   // Minimum log level to capture
-    schedule:  { enabled: true },                   // Scheduled task runs
+    request:   { enabled: true, slow_threshold: 1000, ignore: [] },  // ms
+    query:     { enabled: true, slow_threshold: 100, detect_n_plus_one: true },  // ms
+    exception: { enabled: true, ignore: [] },
+    cache:     { enabled: true },
+    job:       { enabled: true },
+    event:     { enabled: true, ignore: [] },
+    model:     { enabled: true },
+    log:       { enabled: true, level: 'debug' },
+    schedule:  { enabled: true },
   },
 
-  // Distributed tracing — propagates trace IDs across services
+  /*
+  |--------------------------------------------------------------------------
+  | Distributed Tracing
+  |--------------------------------------------------------------------------
+  |
+  | When enabled, Heartbeat generates trace IDs and propagates them across
+  | service boundaries via HTTP headers for end-to-end request tracking.
+  |
+  */
   tracing: {
     enabled: true,
-    propagate: true,  // Add trace headers to outgoing HTTP requests
+    propagate: true,
   },
 
-  // Sampling — reduce volume in high-traffic environments
+  /*
+  |--------------------------------------------------------------------------
+  | Sampling
+  |--------------------------------------------------------------------------
+  |
+  | In high-traffic environments, record only a fraction of requests to
+  | reduce storage and performance overhead. Errors are always recorded
+  | regardless of the sampling rate.
+  |
+  */
   sampling: {
-    rate: 1.0,                  // 1.0 = record everything, 0.1 = 10% of requests
-    always_sample_errors: true, // Always record requests that result in errors
+    rate: 1.0,                  // 1.0 = 100%, 0.1 = 10%
+    always_sample_errors: true,
   },
 
-  // Built-in dashboard UI
+  /*
+  |--------------------------------------------------------------------------
+  | Dashboard
+  |--------------------------------------------------------------------------
+  |
+  | The built-in web dashboard for viewing recorded telemetry. Protect it
+  | with middleware in production (e.g., ['auth'] to require login).
+  |
+  */
   dashboard: {
     enabled: true,
-    path: '/_heartbeat',  // URL path for the dashboard
-    middleware: [],        // Additional middleware (e.g., ['auth'] for protection)
+    path: '/_heartbeat',
+    middleware: [],
   },
 }

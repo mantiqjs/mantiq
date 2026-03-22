@@ -1,32 +1,50 @@
 import { User } from '../app/Models/User.ts'
 
-/**
- * Authentication Configuration
- *
- * Guards define how users are authenticated for each request.
- * Providers define how users are retrieved from your database.
- *
- * Supported guard drivers: 'session' (cookie-based), 'token' (bearer token)
- * Supported provider drivers: 'database' (Eloquent-style model)
- */
 export default {
-  // Default guard used when calling auth() without specifying a guard
+
+  /*
+  |--------------------------------------------------------------------------
+  | Authentication Defaults
+  |--------------------------------------------------------------------------
+  |
+  | This option controls the default authentication "guard" for your
+  | application. You may change this to any of the guards defined below.
+  |
+  */
   defaults: {
     guard: 'web',
   },
 
-  // Authentication guards
-  //   web — session-based, for browser requests (login forms, SPA)
-  //   api — token-based, for API consumers (mobile apps, third-party)
-  //         Uses Sanctum-style personal access tokens: Authorization: Bearer {id}|{token}
+  /*
+  |--------------------------------------------------------------------------
+  | Authentication Guards
+  |--------------------------------------------------------------------------
+  |
+  | Guards define how users are authenticated for each request. The "web"
+  | guard uses session cookies (for browsers and SPAs). The "api" guard
+  | uses Sanctum-style bearer tokens (for mobile apps and third-party).
+  |
+  | Supported drivers: 'session', 'token'
+  |
+  | Token format: Authorization: Bearer {id}|{plaintext}
+  |
+  */
   guards: {
     web: { driver: 'session', provider: 'users' },
     api: { driver: 'token', provider: 'users' },
   },
 
-  // User providers — how to look up users for authentication
-  //   driver: 'database' queries the model's table
-  //   model:  the Authenticatable class to query
+  /*
+  |--------------------------------------------------------------------------
+  | User Providers
+  |--------------------------------------------------------------------------
+  |
+  | Providers define how users are retrieved from your database. The
+  | "database" driver queries the model specified below.
+  |
+  | Supported drivers: 'database'
+  |
+  */
   providers: {
     users: { driver: 'database', model: User },
   },

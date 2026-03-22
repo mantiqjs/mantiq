@@ -1,34 +1,71 @@
 // import { env } from '@mantiq/core'
 
-/**
- * Full-Text Search Configuration
- *
- * Define search engines for your application. Models using the Searchable
- * trait are automatically indexed and searchable.
- *
- * Supported drivers: 'collection' (in-memory), 'database' (SQL LIKE),
- *   'algolia', 'meilisearch', 'typesense', 'elasticsearch'
- */
 export default {
-  // Default search engine
+
+  /*
+  |--------------------------------------------------------------------------
+  | Default Search Engine
+  |--------------------------------------------------------------------------
+  |
+  | The default search engine used when performing full-text searches on
+  | models with the Searchable trait. The "collection" engine works
+  | in-memory with no external dependencies — ideal for development.
+  |
+  | Supported: 'collection', 'database', 'algolia', 'meilisearch',
+  |            'typesense', 'elasticsearch'
+  |
+  */
   default: 'collection',
 
-  // Index prefix — useful to avoid collisions in shared search services
+  /*
+  |--------------------------------------------------------------------------
+  | Index Prefix
+  |--------------------------------------------------------------------------
+  |
+  | This prefix is added to all search index names. Useful to avoid
+  | collisions when multiple applications share the same search service.
+  |
+  */
   prefix: '',
 
-  // Queue indexing operations for better performance
+  /*
+  |--------------------------------------------------------------------------
+  | Queue Indexing
+  |--------------------------------------------------------------------------
+  |
+  | When true, model index updates are dispatched to the queue for
+  | background processing, keeping your request cycle fast.
+  |
+  */
   queue: false,
 
-  // Include soft-deleted models in search results
+  /*
+  |--------------------------------------------------------------------------
+  | Soft Delete Behavior
+  |--------------------------------------------------------------------------
+  |
+  | When true, soft-deleted models remain in the search index and can
+  | be included in search results.
+  |
+  */
   softDelete: false,
 
+  /*
+  |--------------------------------------------------------------------------
+  | Search Engines
+  |--------------------------------------------------------------------------
+  |
+  | Configure the search engine backends available to your application.
+  | Uncomment and configure the engines you need.
+  |
+  */
   engines: {
-    // In-memory collection search — no external service needed (good for development)
+    // In-memory — no external service needed (development)
     collection: {
       driver: 'collection' as const,
     },
 
-    // SQL-based search using LIKE queries
+    // SQL LIKE queries — uses your existing database
     database: {
       driver: 'database' as const,
     },
@@ -40,14 +77,14 @@ export default {
     //   apiKey: env('ALGOLIA_SECRET', ''),
     // },
 
-    // Meilisearch — open-source search engine (https://meilisearch.com)
+    // Meilisearch — open-source (https://meilisearch.com)
     // meilisearch: {
     //   driver: 'meilisearch' as const,
     //   host: env('MEILISEARCH_HOST', 'http://127.0.0.1:7700'),
     //   apiKey: env('MEILISEARCH_KEY', ''),
     // },
 
-    // Typesense — open-source search engine (https://typesense.org)
+    // Typesense — open-source (https://typesense.org)
     // typesense: {
     //   driver: 'typesense' as const,
     //   host: env('TYPESENSE_HOST', 'localhost'),

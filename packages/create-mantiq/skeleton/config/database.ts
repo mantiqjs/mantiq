@@ -1,21 +1,34 @@
 import { env } from '@mantiq/core'
 
-/**
- * Database Configuration
- *
- * Define your database connections here. The default connection is used
- * by the query builder, ORM, migrations, and seeders.
- *
- * Supported drivers: 'sqlite', 'postgres', 'mysql', 'mssql', 'mongodb'
- */
 export default {
-  // Default connection name — must match a key in connections below
+
+  /*
+  |--------------------------------------------------------------------------
+  | Default Database Connection
+  |--------------------------------------------------------------------------
+  |
+  | The database connection used by default for all database operations.
+  | This corresponds to one of the connections defined below. You can
+  | switch connections at runtime with db().connection('name').
+  |
+  */
   default: env('DB_CONNECTION', 'sqlite'),
 
+  /*
+  |--------------------------------------------------------------------------
+  | Database Connections
+  |--------------------------------------------------------------------------
+  |
+  | Here are each of the database connections set up for your application.
+  | SQLite is pre-configured and requires no external services. Add
+  | additional connections for PostgreSQL, MySQL, or MongoDB as needed.
+  |
+  | Supported drivers: 'sqlite', 'postgres', 'mysql', 'mssql', 'mongodb'
+  |
+  */
   connections: {
     sqlite: {
       driver: 'sqlite' as const,
-      // Path to the SQLite file — created automatically on first use
       database: env('DB_DATABASE', import.meta.dir + '/../database/database.sqlite'),
     },
 
@@ -35,6 +48,12 @@ export default {
     //   database: env('DB_DATABASE', 'mantiq'),
     //   username: env('DB_USERNAME', 'root'),
     //   password: env('DB_PASSWORD', ''),
+    // },
+
+    // mongodb: {
+    //   driver: 'mongodb' as const,
+    //   url: env('MONGODB_URL', 'mongodb://127.0.0.1:27017'),
+    //   database: env('DB_DATABASE', 'mantiq'),
     // },
   },
 }

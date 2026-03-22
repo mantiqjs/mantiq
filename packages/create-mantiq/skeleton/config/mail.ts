@@ -1,23 +1,45 @@
 import { env } from '@mantiq/core'
 
-/**
- * Mail Configuration
- *
- * Configure outgoing email transports. Each mailer defines a delivery
- * driver and its credentials. Switch mailers via MAIL_MAILER in .env.
- *
- * Supported drivers: 'smtp', 'resend', 'sendgrid', 'mailgun', 'postmark', 'ses', 'log', 'array'
- */
 export default {
-  // Default mailer — 'log' writes emails to the log file (safe for development)
+
+  /*
+  |--------------------------------------------------------------------------
+  | Default Mailer
+  |--------------------------------------------------------------------------
+  |
+  | This option controls the default mailer used to send emails. The "log"
+  | mailer writes email content to your log file — safe for development.
+  |
+  | Supported: 'smtp', 'resend', 'sendgrid', 'mailgun', 'postmark',
+  |            'ses', 'log', 'array'
+  |
+  */
   default: env('MAIL_MAILER', 'log'),
 
-  // Global "from" address — used when a mailable doesn't specify its own
+  /*
+  |--------------------------------------------------------------------------
+  | Global "From" Address
+  |--------------------------------------------------------------------------
+  |
+  | The default sender address used when a mailable doesn't specify its own.
+  | All emails sent by your application will use this address unless
+  | explicitly overridden.
+  |
+  */
   from: {
     address: env('MAIL_FROM_ADDRESS', 'hello@example.com'),
     name: env('MAIL_FROM_NAME', 'MantiqJS'),
   },
 
+  /*
+  |--------------------------------------------------------------------------
+  | Mailer Configurations
+  |--------------------------------------------------------------------------
+  |
+  | Here you may configure all of the mailers used by your application.
+  | Each mailer uses a specific transport driver and credentials.
+  |
+  */
   mailers: {
     // Standard SMTP — works with any SMTP server (Mailtrap, Gmail, etc.)
     smtp: {
@@ -35,26 +57,26 @@ export default {
       apiKey: env('RESEND_API_KEY', ''),
     },
 
-    // SendGrid — transactional email (https://sendgrid.com)
+    // SendGrid (https://sendgrid.com)
     sendgrid: {
       driver: 'sendgrid' as const,
       apiKey: env('SENDGRID_API_KEY', ''),
     },
 
-    // Mailgun — email API (https://mailgun.com)
+    // Mailgun (https://mailgun.com)
     mailgun: {
       driver: 'mailgun' as const,
       apiKey: env('MAILGUN_API_KEY', ''),
       domain: env('MAILGUN_DOMAIN', ''),
     },
 
-    // Postmark — transactional email (https://postmarkapp.com)
+    // Postmark (https://postmarkapp.com)
     postmark: {
       driver: 'postmark' as const,
       serverToken: env('POSTMARK_TOKEN', ''),
     },
 
-    // Amazon SES — AWS email service
+    // Amazon SES
     ses: {
       driver: 'ses' as const,
       region: env('AWS_REGION', 'us-east-1'),
@@ -62,10 +84,10 @@ export default {
       secretAccessKey: env('AWS_SECRET_ACCESS_KEY', ''),
     },
 
-    // Log — writes email content to log file (for development/testing)
+    // Writes email content to log file (development)
     log: { driver: 'log' as const },
 
-    // Array — stores emails in memory (for unit testing)
+    // Stores emails in memory (unit testing)
     array: { driver: 'array' as const },
   },
 }
