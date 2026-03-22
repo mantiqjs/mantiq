@@ -34,7 +34,7 @@ export class RealtimeServiceProvider extends ServiceProvider {
     let config = DEFAULT_CONFIG
     try {
       const configRepo = this.app.make(ConfigRepository)
-      const userConfig = configRepo.get<Partial<RealtimeConfig>>('realtime', {})
+      const userConfig = configRepo.get<Partial<RealtimeConfig>>('broadcasting', configRepo.get<Partial<RealtimeConfig>>('realtime', {}))
       config = { ...DEFAULT_CONFIG, ...userConfig }
     } catch {
       // ConfigRepository not yet registered — use defaults
