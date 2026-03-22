@@ -24,7 +24,7 @@ export class StorageLinkCommand extends Command {
       // Check if link already exists
       try {
         lstatSync(linkPath)
-        if (args.options['force'] !== true) {
+        if (args.flags['force'] !== true) {
           this.io.warn(`  Link already exists: ${link} → ${target}`)
           continue
         }

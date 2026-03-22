@@ -25,7 +25,7 @@ try {
  * Users no longer need a skeleton DatabaseServiceProvider.
  */
 export class DatabaseServiceProvider extends ServiceProvider {
-  override register(): void {
+  register(): void {
     this.app.singleton(DatabaseManager, () => {
       let dbConfig: any
       try {
@@ -48,7 +48,7 @@ export class DatabaseServiceProvider extends ServiceProvider {
     })
   }
 
-  override async boot(): Promise<void> {
+  async boot(): Promise<void> {
     try {
       this.app.make(DatabaseManager)
     } catch {

@@ -13,8 +13,8 @@ export class DownCommand extends Command {
 
     const data: Record<string, any> = {
       time: Date.now(),
-      retry: args.options['retry'] ? Number(args.options['retry']) : null,
-      secret: (args.options['secret'] as string) || null,
+      retry: args.flags['retry'] ? Number(args.flags['retry']) : null,
+      secret: (args.flags['secret'] as string) || null,
     }
 
     writeFileSync(`${storagePath}/down`, JSON.stringify(data))

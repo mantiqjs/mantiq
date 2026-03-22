@@ -10,7 +10,7 @@ export class KeyGenerateCommand extends Command {
 
   override async handle(args: ParsedArgs): Promise<number> {
     const key = `base64:${randomBytes(32).toString('base64')}`
-    const showOnly = args.options['show'] === true
+    const showOnly = args.flags['show'] === true
 
     if (showOnly) {
       this.io.line(`  ${key}`)
@@ -27,7 +27,7 @@ export class KeyGenerateCommand extends Command {
     let env = readFileSync(envPath, 'utf8')
     const hasKey = /^APP_KEY=.+$/m.test(env) && !/^APP_KEY=\s*$/m.test(env)
 
-    if (hasKey && args.options['force'] !== true) {
+    if (hasKey && args.flags['force'] !== true) {
       this.io.warn('  APP_KEY is already set. Use --force to overwrite.')
       return 1
     }
