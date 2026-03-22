@@ -5,6 +5,7 @@ import { getRegisteredCommands } from './CommandRegistry.ts'
 
 // Built-in commands — utility
 import { AboutCommand } from './commands/AboutCommand.ts'
+import { KeyGenerateCommand } from './commands/KeyGenerateCommand.ts'
 import { ServeCommand } from './commands/ServeCommand.ts'
 import { RouteListCommand } from './commands/RouteListCommand.ts'
 import { TinkerCommand } from './commands/TinkerCommand.ts'
@@ -67,6 +68,7 @@ export class Kernel {
     this.registerAll([
       // Utility
       new AboutCommand(),
+      new KeyGenerateCommand(),
       new ServeCommand(),
       new RouteListCommand(),
       new TinkerCommand(),
