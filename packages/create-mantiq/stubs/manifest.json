@@ -1402,6 +1402,14 @@
       {
         "stub": "routes/web.ts.stub",
         "target": "routes/web.ts"
+      },
+      {
+        "stub": "routes/api.ts.stub",
+        "target": "routes/api.ts"
+      },
+      {
+        "stub": "config/app.ts.stub",
+        "target": "config/app.ts"
       }
     ],
     "placeholders": {
