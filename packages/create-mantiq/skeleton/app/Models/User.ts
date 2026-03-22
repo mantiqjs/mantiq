@@ -1,5 +1,6 @@
 import { Model } from '@mantiq/database'
 import type { Authenticatable } from '@mantiq/auth'
+import { applyHasApiTokens } from '@mantiq/auth'
 
 export class User extends Model implements Authenticatable {
   static override table = 'users'
@@ -15,4 +16,13 @@ export class User extends Model implements Authenticatable {
   getRememberToken(): string | null { return (this.getAttribute('remember_token') as string) ?? null }
   setRememberToken(token: string | null): void { this.setAttribute('remember_token', token) }
   getRememberTokenName(): string { return 'remember_token' }
+
+  // Token methods: createToken(), tokens(), currentAccessToken(), tokenCan(), tokenCant()
+  declare createToken: (name: string, abilities?: string[], expiresAt?: Date) => Promise<{ accessToken: any; plainTextToken: string }>
+  declare tokens: () => any
+  declare currentAccessToken: () => any
+  declare tokenCan: (ability: string) => boolean
+  declare tokenCant: (ability: string) => boolean
 }
+
+applyHasApiTokens(User)

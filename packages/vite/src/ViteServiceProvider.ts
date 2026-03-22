@@ -40,7 +40,9 @@ export class ViteServiceProvider extends ServiceProvider {
       const basePath = config.get('app.basePath')
       if (basePath) vite.setBasePath(basePath)
     } catch {
-      // Config may not be available in all contexts
+      if (process.env.APP_DEBUG === 'true') {
+        console.warn('[Mantiq] ViteServiceProvider: ConfigRepository not available, basePath not set')
+      }
     }
 
     await vite.initialize()
@@ -51,7 +53,9 @@ export class ViteServiceProvider extends ServiceProvider {
       kernel.registerMiddleware('static', ServeStaticFiles)
       kernel.prependGlobalMiddleware('static')
     } catch {
-      // HttpKernel may not be available in CLI context
+      if (process.env.APP_DEBUG === 'true') {
+        console.warn('[Mantiq] ViteServiceProvider: HttpKernel not available, static middleware not registered')
+      }
     }
   }
 }

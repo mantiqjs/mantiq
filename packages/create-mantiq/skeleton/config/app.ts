@@ -10,5 +10,5 @@ export default {
   basePath: import.meta.dir + '/..',
 
   // Global middleware applied to every request
-  middleware: ['cors', 'encrypt.cookies', 'session', 'heartbeat'],
+  middleware: ['cors', 'encrypt.cookies', 'session', 'csrf'],
 }
