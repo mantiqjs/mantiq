@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/health",
-  "version": "0.1.0",
+  "version": "0.2.0-rc.2",
   "description": "Application health checks — database, cache, queue, filesystem, mail, and custom checks",
   "type": "module",
   "license": "MIT",
@@ -52,10 +52,20 @@
     "@mantiq/core": "^0.1.0"
   },
   "peerDependenciesMeta": {
-    "@mantiq/database": { "optional": true },
-    "@mantiq/cache": { "optional": true },
-    "@mantiq/queue": { "optional": true },
-    "@mantiq/filesystem": { "optional": true },
-    "@mantiq/mail": { "optional": true }
+    "@mantiq/database": {
+      "optional": true
+    },
+    "@mantiq/cache": {
+      "optional": true
+    },
+    "@mantiq/queue": {
+      "optional": true
+    },
+    "@mantiq/filesystem": {
+      "optional": true
+    },
+    "@mantiq/mail": {
+      "optional": true
+    }
   }
 }
