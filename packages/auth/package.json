@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/auth",
-  "version": "0.5.11",
+  "version": "0.5.12",
   "description": "Session & token auth, guards, providers",
   "type": "module",
   "license": "MIT",
