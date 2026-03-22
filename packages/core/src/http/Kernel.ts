@@ -100,8 +100,8 @@ export class HttpKernel {
     const request = MantiqRequest.fromBun(bunRequest)
 
     try {
-      // Combine prepend + global + append middleware
-      const allMiddleware = [...this.prependMiddleware, ...this.globalMiddleware, ...this.appendMiddleware]
+      // Combine prepend + global + append middleware (deduplicated, preserving order)
+      const allMiddleware = [...new Set([...this.prependMiddleware, ...this.globalMiddleware, ...this.appendMiddleware])]
       const globalClasses = this.resolveMiddlewareList(allMiddleware)
 
       const response = await new Pipeline(this.container)

@@ -48,7 +48,13 @@ export class HeartbeatServiceProvider extends ServiceProvider {
   }
 
   override async boot(): Promise<void> {
-    const heartbeat = this.app.make(Heartbeat)
+    let heartbeat: Heartbeat
+    try {
+      heartbeat = this.app.make(Heartbeat)
+    } catch {
+      // Database not configured — heartbeat requires a database connection
+      return
+    }
     const config = heartbeat.config
 
     if (!config.enabled) return

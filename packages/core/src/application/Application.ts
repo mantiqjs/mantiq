@@ -175,7 +175,7 @@ export class Application extends ContainerImpl {
 
     try {
       const glob = new Bun.Glob('*/package.json')
-      for await (const file of glob.scan({ cwd: nodeModulesDir, absolute: false })) {
+      for await (const file of glob.scan({ cwd: nodeModulesDir, absolute: false, followSymlinks: true })) {
         try {
           const pkgJson = JSON.parse(
             await Bun.file(`${nodeModulesDir}/${file}`).text()
