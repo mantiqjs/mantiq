@@ -1,5 +1,5 @@
 import type { MantiqRequest } from '@mantiq/core'
-import { MantiqResponse, HashManager } from '@mantiq/core'
+import { json, hash, hashCheck, abort } from '@mantiq/core'
 import { auth } from '@mantiq/auth'
 import { User } from '../../Models/User.ts'
 
@@ -10,64 +10,33 @@ import { User } from '../../Models/User.ts'
 export class ApiAuthController {
   async register(request: MantiqRequest): Promise<Response> {
     const body = await request.input() as { name?: string; email?: string; password?: string; device_name?: string }
+    if (!body.name || !body.email || !body.password) abort(422, 'Name, email and password are required.')
+    if (body.password!.length < 6) abort(422, 'Password must be at least 6 characters.')
+    if (await User.where('email', body.email).first()) abort(422, 'A user with this email already exists.')
 
-    if (!body.name || !body.email || !body.password) {
-      return MantiqResponse.json({ error: 'Name, email and password are required.' }, 422)
-    }
-    if (body.password.length < 6) {
-      return MantiqResponse.json({ error: 'Password must be at least 6 characters.' }, 422)
-    }
-
-    const existing = await User.where('email', body.email).first()
-    if (existing) {
-      return MantiqResponse.json({ error: 'A user with this email already exists.' }, 422)
-    }
-
-    const hasher = new HashManager({ bcrypt: { rounds: 10 } })
     const user = await User.create({
       name: body.name,
       email: body.email,
-      password: await hasher.make(body.password),
+      password: await hash(body.password!),
     })
 
-    const { plainTextToken } = await (user as any).createToken(
-      body.device_name ?? 'api',
-    )
+    const { plainTextToken } = await (user as any).createToken(body.device_name ?? 'api')
 
-    return MantiqResponse.json({
-      message: 'Registered.',
-      user: user.toObject(),
-      token: plainTextToken,
-    }, 201)
+    return json({ message: 'Registered.', user: user.toObject(), token: plainTextToken }, 201)
   }
 
   async login(request: MantiqRequest): Promise<Response> {
     const body = await request.input() as { email?: string; password?: string; device_name?: string }
-
-    if (!body.email || !body.password) {
-      return MantiqResponse.json({ error: 'Email and password are required.' }, 422)
-    }
+    if (!body.email || !body.password) abort(422, 'Email and password are required.')
 
     const user = await User.where('email', body.email).first()
-    if (!user) {
-      return MantiqResponse.json({ error: 'Invalid credentials.' }, 401)
+    if (!user || !(await hashCheck(body.password!, user.getAuthPassword()))) {
+      abort(401, 'Invalid credentials.')
     }
 
-    const hasher = new HashManager({ bcrypt: { rounds: 10 } })
-    const valid = await hasher.check(body.password, user.getAuthPassword())
-    if (!valid) {
-      return MantiqResponse.json({ error: 'Invalid credentials.' }, 401)
-    }
+    const { plainTextToken } = await (user as any).createToken(body.device_name ?? 'api')
 
-    const { plainTextToken } = await (user as any).createToken(
-      body.device_name ?? 'api',
-    )
-
-    return MantiqResponse.json({
-      message: 'Logged in.',
-      user: user.toObject(),
-      token: plainTextToken,
-    })
+    return json({ message: 'Logged in.', user: user!.toObject(), token: plainTextToken })
   }
 
   async logout(request: MantiqRequest): Promise<Response> {
@@ -76,44 +45,19 @@ export class ApiAuthController {
     const user = await manager.guard('api').user()
 
     if (user) {
-      // Revoke the current token
       const token = (user as any).currentAccessToken?.()
       if (token) await token.delete()
     }
 
-    return MantiqResponse.json({ message: 'Token revoked.' })
+    return json({ message: 'Token revoked.' })
   }
 
   async user(request: MantiqRequest): Promise<Response> {
     const manager = auth()
     manager.setRequest(request)
     const user = await manager.guard('api').user()
+    if (!user) abort(401, 'Unauthenticated.')
 
-    if (!user) {
-      return MantiqResponse.json({ error: 'Unauthenticated.' }, 401)
-    }
-
-    return MantiqResponse.json({ user: (user as any).toObject() })
-  }
-
-  async tokens(request: MantiqRequest): Promise<Response> {
-    const manager = auth()
-    manager.setRequest(request)
-    const user = await manager.guard('api').user()
-
-    if (!user) {
-      return MantiqResponse.json({ error: 'Unauthenticated.' }, 401)
-    }
-
-    const tokens = await (user as any).tokens().get()
-    return MantiqResponse.json({
-      data: tokens.map((t: any) => ({
-        id: t.getKey(),
-        name: t.getAttribute('name'),
-        abilities: JSON.parse(t.getAttribute('abilities') ?? '["*"]'),
-        last_used_at: t.getAttribute('last_used_at'),
-        created_at: t.getAttribute('created_at'),
-      })),
-    })
+    return json({ user: (user as any).toObject() })
   }
 }

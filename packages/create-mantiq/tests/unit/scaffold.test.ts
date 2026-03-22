@@ -197,8 +197,9 @@ describe('Skeleton directory', () => {
     expect(existsSync(join(skeletonDir, 'app/Models/User.ts'))).toBe(true)
   })
 
-  it('has PersonalAccessToken model', () => {
-    expect(existsSync(join(skeletonDir, 'app/Models/PersonalAccessToken.ts'))).toBe(true)
+  it('User model uses AuthenticatableModel mixin', () => {
+    const content = readFileSync(join(skeletonDir, 'app/Models/User.ts'), 'utf8')
+    expect(content).toContain('AuthenticatableModel')
   })
 
   it('has migrations', () => {

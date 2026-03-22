@@ -155,8 +155,10 @@ export class Discoverer {
         } else {
           mod.default(router)
         }
-      } catch {
-        // Skip unloadable routes
+      } catch (e) {
+        if (process.env.APP_DEBUG === 'true') {
+          console.warn(`[Mantiq] Failed to load route file ${file}:`, (e as Error)?.message ?? e)
+        }
       }
     }
   }

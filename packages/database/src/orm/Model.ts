@@ -443,7 +443,7 @@ export abstract class Model {
     // saving (cancellable)
     if (await this.fireModelEvent('saving') === false) return this
 
-    const table = ctor.table || snakeCase(ctor.name)
+    const table = ctor.table || pluralize(snakeCase(ctor.name))
     const now = new Date()
 
     if (this._exists) {
@@ -497,7 +497,7 @@ export abstract class Model {
     // deleting (cancellable)
     if (await this.fireModelEvent('deleting') === false) return false
 
-    const table = ctor.table || snakeCase(ctor.name)
+    const table = ctor.table || pluralize(snakeCase(ctor.name))
 
     if (ctor.softDelete) {
       await ctor.connection.table(table)
@@ -522,7 +522,7 @@ export abstract class Model {
     // forceDeleting (cancellable)
     if (await this.fireModelEvent('forceDeleting') === false) return false
 
-    const table = ctor.table || snakeCase(ctor.name)
+    const table = ctor.table || pluralize(snakeCase(ctor.name))
     await ctor.connection.table(table).where(ctor.primaryKey, this.getKey()).delete()
     this._exists = false
 
@@ -537,7 +537,7 @@ export abstract class Model {
     // restoring (cancellable)
     if (await this.fireModelEvent('restoring') === false) return false
 
-    const table = ctor.table || snakeCase(ctor.name)
+    const table = ctor.table || pluralize(snakeCase(ctor.name))
     await ctor.connection.table(table)
       .where(ctor.primaryKey, this.getKey())
       .update({ [ctor.softDeleteColumn]: null })
