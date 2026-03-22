@@ -1,15 +1,4 @@
 import { Application, CoreServiceProvider, HttpKernel, RouterImpl, Discoverer } from '@mantiq/core'
-import { AuthServiceProvider } from '@mantiq/auth'
-import { FilesystemServiceProvider } from '@mantiq/filesystem'
-import { LoggingServiceProvider } from '@mantiq/logging'
-import { EventServiceProvider } from '@mantiq/events'
-import { QueueServiceProvider } from '@mantiq/queue'
-import { ValidationServiceProvider } from '@mantiq/validation'
-import { HeartbeatServiceProvider } from '@mantiq/heartbeat'
-import { RealtimeServiceProvider } from '@mantiq/realtime'
-import { MailServiceProvider } from '@mantiq/mail'
-import { NotificationServiceProvider } from '@mantiq/notify'
-import { SearchServiceProvider } from '@mantiq/search'
 
 // ── Load .env ─────────────────────────────────────────────────────────────────
 const envFile = Bun.file(import.meta.dir + '/.env')
@@ -29,28 +18,17 @@ if (await envFile.exists()) {
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 const app = await Application.create(import.meta.dir, 'config')
 
-// Framework providers (order matters for dependency resolution)
-await app.registerProviders([
-  CoreServiceProvider,
-  AuthServiceProvider,
-  FilesystemServiceProvider,
-  LoggingServiceProvider,
-  EventServiceProvider,
-  QueueServiceProvider,
-  ValidationServiceProvider,
-  HeartbeatServiceProvider,
-  RealtimeServiceProvider,
-  MailServiceProvider,
-  NotificationServiceProvider,
-  SearchServiceProvider,
-])
+// Core provider (always required)
+await app.registerProviders([CoreServiceProvider])
 
-// Auto-discover app providers, routes
+// Auto-discover framework + user providers
+const frameworkProviders = await discoverFrameworkProviders()
+await app.registerProviders(frameworkProviders)
+
 const discoverer = new Discoverer(process.cwd())
 const isDev = process.env['APP_ENV'] !== 'production'
 const manifest = await discoverer.resolve(isDev)
 
-// Register user's service providers (app/Providers/)
 const userProviders = await discoverer.loadProviders(manifest)
 await app.registerProviders(userProviders)
 
@@ -67,4 +45,36 @@ export default app
 if (import.meta.main) {
   const kernel = app.make(HttpKernel)
   await kernel.start()
+}
+
+// ── Framework provider discovery ──────────────────────────────────────────────
+async function discoverFrameworkProviders(): Promise<any[]> {
+  const providers: any[] = []
+  const packages = [
+    ['@mantiq/auth', 'AuthServiceProvider'],
+    ['@mantiq/database', 'DatabaseServiceProvider'],
+    ['@mantiq/filesystem', 'FilesystemServiceProvider'],
+    ['@mantiq/logging', 'LoggingServiceProvider'],
+    ['@mantiq/events', 'EventServiceProvider'],
+    ['@mantiq/queue', 'QueueServiceProvider'],
+    ['@mantiq/validation', 'ValidationServiceProvider'],
+    ['@mantiq/heartbeat', 'HeartbeatServiceProvider'],
+    ['@mantiq/realtime', 'RealtimeServiceProvider'],
+    ['@mantiq/mail', 'MailServiceProvider'],
+    ['@mantiq/notify', 'NotificationServiceProvider'],
+    ['@mantiq/search', 'SearchServiceProvider'],
+  ]
+
+  for (const entry of packages) {
+    const pkg = entry[0]!
+    const name = entry[1]!
+    try {
+      const mod = await import(pkg)
+      if (mod[name]) providers.push(mod[name])
+    } catch {
+      // Package not installed — skip
+    }
+  }
+
+  return providers
 }
