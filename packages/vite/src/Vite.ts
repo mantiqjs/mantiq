@@ -224,12 +224,18 @@ export class Vite {
     this.manifestCache = null
   }
 
+  private resolvePublicDir(): string {
+    const pub = this.config.publicDir
+    if (pub.startsWith('/')) return pub
+    return this.basePath ? `${this.basePath}/${pub}` : pub
+  }
+
   private manifestPath(): string {
-    return `${this.config.publicDir}/${this.config.buildDir}/${this.config.manifest}`
+    return `${this.resolvePublicDir()}/${this.config.buildDir}/${this.config.manifest}`
   }
 
   private hotFilePath(): string {
-    return `${this.config.publicDir}/${this.config.hotFile}`
+    return `${this.resolvePublicDir()}/${this.config.hotFile}`
   }
 
   // ── SSR ─────────────────────────────────────────────────────────────────
