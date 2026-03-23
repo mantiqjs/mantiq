@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/cli",
-  "version": "0.5.18",
+  "version": "0.5.19",
   "description": "Command runner, code generators, dev server",
   "type": "module",
   "license": "MIT",

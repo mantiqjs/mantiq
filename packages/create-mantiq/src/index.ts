@@ -167,15 +167,24 @@ if (kit) {
       }
     }
 
-    // Shared stubs (routes, controllers, seeder — overwrites skeleton routes)
+    // Shared stubs (routes, controllers, config — overwrites skeleton versions)
     if (sharedManifest?.files) {
-      const mainEntry = kitManifest?.mainEntry ?? 'src/main.ts'
+      // Build placeholder map from manifest
+      const placeholders: Record<string, string> = {}
+      if (sharedManifest.placeholders) {
+        for (const [key, values] of Object.entries(sharedManifest.placeholders)) {
+          placeholders[key] = (values as Record<string, string>)[kit!] ?? ''
+        }
+      }
+
       for (const { stub, target } of sharedManifest.files) {
         const src = resolve(stubsDir, 'shared', stub)
         const dest = resolve(projectDir, target)
         mkdirSync(dirname(dest), { recursive: true })
         let content = await Bun.file(src).text()
-        content = content.replace(/\{\{MAIN_ENTRY\}\}/g, mainEntry)
+        for (const [key, value] of Object.entries(placeholders)) {
+          content = content.replaceAll(key, value)
+        }
         await Bun.write(dest, content)
         fileCount++
       }
