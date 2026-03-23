@@ -3,7 +3,9 @@ function getCookie(name: string): string | null {
   return match ? decodeURIComponent(match[1]!) : null
 }
 
-export async function api<T = any>(url: string, opts: RequestInit = {}): Promise<{ ok: boolean; status: number; data: T }> {
+type ApiResult<T> = { ok: true; status: number; data: T } | { ok: false; status: number; data: null }
+
+export async function api<T = any>(url: string, opts: RequestInit = {}): Promise<ApiResult<T>> {
   const headers: Record<string, string> = { Accept: 'application/json', ...(opts.headers as Record<string, string>) }
 
   // Attach XSRF token for CSRF protection on mutating requests
@@ -17,22 +19,23 @@ export async function api<T = any>(url: string, opts: RequestInit = {}): Promise
   // Session expired — redirect to login
   if (res.status === 401 || res.status === 419) {
     window.location.href = '/login'
-    return { ok: false, status: res.status, data: null as any }
+    return { ok: false, status: res.status, data: null }
   }
 
   const ct = res.headers.get('content-type') ?? ''
   const data = ct.includes('json') ? await res.json() : null
-  return { ok: res.ok, status: res.status, data }
+  if (!res.ok) return { ok: false, status: res.status, data: null }
+  return { ok: true, status: res.status, data }
 }
 
-export function post(url: string, body: object) {
-  return api(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+export function post<T = any>(url: string, body: object) {
+  return api<T>(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
 }
 
-export function put(url: string, body: object) {
-  return api(url, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+export function put<T = any>(url: string, body: object) {
+  return api<T>(url, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
 }
 
-export function del(url: string) {
-  return api(url, { method: 'DELETE' })
+export function del<T = any>(url: string) {
+  return api<T>(url, { method: 'DELETE' })
 }

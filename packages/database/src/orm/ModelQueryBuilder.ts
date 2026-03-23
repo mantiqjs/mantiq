@@ -132,7 +132,7 @@ export class ModelQueryBuilder<T> extends QueryBuilder {
 
   // ── Hydrating read methods ─────────────────────────────────────────────────
 
-  override async get(): Promise<any[]> {
+  override async get(): Promise<T[]> {
     this.applyGlobalScopes()
     const rows = await this.raw().get()
     const models = rows.map(this._hydrate)
@@ -149,7 +149,7 @@ export class ModelQueryBuilder<T> extends QueryBuilder {
     return models
   }
 
-  override async first(): Promise<any> {
+  override async first(): Promise<T | null> {
     this.applyGlobalScopes()
     const row = await this.raw().first()
     if (!row) return null
@@ -167,7 +167,7 @@ export class ModelQueryBuilder<T> extends QueryBuilder {
     return model
   }
 
-  override async firstOrFail(): Promise<any> {
+  override async firstOrFail(): Promise<T> {
     const result = await this.first()
     if (!result) throw new ModelNotFoundError(this.state.table)
     return result
@@ -199,7 +199,7 @@ export class ModelQueryBuilder<T> extends QueryBuilder {
 
   // ── Pagination (hydrated) ─────────────────────────────────────────────────
 
-  override async paginate(page = 1, perPage = 15): Promise<PaginationResult> {
+  override async paginate(page = 1, perPage = 15): Promise<PaginationResult<T>> {
     const total = await this.count()
     const lastPage = Math.max(1, Math.ceil(total / perPage))
     const currentPage = Math.min(page, lastPage)

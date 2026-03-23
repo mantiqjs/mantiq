@@ -1400,6 +1400,22 @@
         "target": "app/Http/Controllers/UserController.ts"
       },
       {
+        "stub": "app/Http/Requests/RegisterRequest.ts.stub",
+        "target": "app/Http/Requests/RegisterRequest.ts"
+      },
+      {
+        "stub": "app/Http/Requests/LoginRequest.ts.stub",
+        "target": "app/Http/Requests/LoginRequest.ts"
+      },
+      {
+        "stub": "app/Http/Requests/StoreUserRequest.ts.stub",
+        "target": "app/Http/Requests/StoreUserRequest.ts"
+      },
+      {
+        "stub": "app/Http/Requests/UpdateUserRequest.ts.stub",
+        "target": "app/Http/Requests/UpdateUserRequest.ts"
+      },
+      {
         "stub": "routes/web.ts.stub",
         "target": "routes/web.ts"
       },

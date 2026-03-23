@@ -8,33 +8,27 @@ import { User } from '../../Models/User.ts'
  * Issues bearer tokens instead of session cookies.
  */
 export class ApiAuthController {
-  async register(request: MantiqRequest): Promise<Response> {
-    const body = await request.input() as { name?: string; email?: string; password?: string; device_name?: string }
-    if (!body.name || !body.email || !body.password) abort(422, 'Name, email and password are required.')
-    if (body.password!.length < 6) abort(422, 'Password must be at least 6 characters.')
-    if (await User.where('email', body.email).first()) abort(422, 'A user with this email already exists.')
+  async register(request: MantiqRequest, data: Record<string, any>): Promise<Response> {
+    if (await User.where('email', data.email).first()) abort(422, 'A user with this email already exists.')
 
     const user = await User.create({
-      name: body.name,
-      email: body.email,
-      password: await hash(body.password!),
+      name: data.name,
+      email: data.email,
+      password: await hash(data.password),
     })
 
-    const { plainTextToken } = await (user as any).createToken(body.device_name ?? 'api')
+    const { plainTextToken } = await user.createToken(data.device_name ?? 'api')
 
     return json({ message: 'Registered.', user: user.toObject(), token: plainTextToken }, 201)
   }
 
-  async login(request: MantiqRequest): Promise<Response> {
-    const body = await request.input() as { email?: string; password?: string; device_name?: string }
-    if (!body.email || !body.password) abort(422, 'Email and password are required.')
-
-    const user = await User.where('email', body.email).first()
-    if (!user || !(await hashCheck(body.password!, user.getAuthPassword()))) {
+  async login(request: MantiqRequest, data: Record<string, any>): Promise<Response> {
+    const user = await User.where('email', data.email).first()
+    if (!user || !(await hashCheck(data.password, user.getAuthPassword()))) {
       abort(401, 'Invalid credentials.')
     }
 
-    const { plainTextToken } = await (user as any).createToken(body.device_name ?? 'api')
+    const { plainTextToken } = await user!.createToken(data.device_name ?? 'api')
 
     return json({ message: 'Logged in.', user: user!.toObject(), token: plainTextToken })
   }
@@ -45,7 +39,7 @@ export class ApiAuthController {
     const user = await manager.guard('api').user()
 
     if (user) {
-      const token = (user as any).currentAccessToken?.()
+      const token = user.currentAccessToken?.()
       if (token) await token.delete()
     }
 
@@ -58,6 +52,6 @@ export class ApiAuthController {
     const user = await manager.guard('api').user()
     if (!user) abort(401, 'Unauthenticated.')
 
-    return json({ user: (user as any).toObject() })
+    return json({ user: user!.toObject() })
   }
 }

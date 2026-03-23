@@ -10,9 +10,9 @@ async function getUser(request: MantiqRequest) {
   const user = await manager.user()
   if (!user) return null
   return {
-    id: (user as any).getAttribute?.('id') ?? user.getAuthIdentifier(),
-    name: (user as any).getAttribute?.('name') ?? '',
-    email: (user as any).getAttribute?.('email') ?? '',
+    id: user.getAttribute('id') ?? user.getAuthIdentifier(),
+    name: user.getAttribute('name') ?? '',
+    email: user.getAttribute('email') ?? '',
   }
 }
 

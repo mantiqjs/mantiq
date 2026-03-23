@@ -283,16 +283,16 @@ export class QueryBuilder {
 
   // ── Execution ───────────────────────────────────────────────────────────────
 
-  async get(): Promise<Record<string, any>[]> {
+  async get(): Promise<any[]> {
     return this._connection.executeSelect(this.state)
   }
 
-  async first(): Promise<Record<string, any> | null> {
+  async first(): Promise<any> {
     const rows = await this.limit(1).get()
     return rows[0] ?? null
   }
 
-  async firstOrFail(): Promise<Record<string, any>> {
+  async firstOrFail(): Promise<any> {
     const row = await this.first()
     if (!row) throw new ModelNotFoundError(this.state.table)
     return row
@@ -393,7 +393,7 @@ export class QueryBuilder {
 
   // ── Pagination ──────────────────────────────────────────────────────────────
 
-  async paginate(page = 1, perPage = 15): Promise<PaginationResult> {
+  async paginate(page = 1, perPage = 15): Promise<PaginationResult<any>> {
     const countQuery = this.clone()
     countQuery.state.orders = []
     const total = await countQuery.count()

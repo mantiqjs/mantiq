@@ -41,9 +41,14 @@ export class Vite {
 
   /**
    * Check for the hot file to determine dev/prod mode.
-   * Called during ViteServiceProvider.boot().
+   * Called during ViteServiceProvider.boot() and re-checked lazily
+   * if the initial check found no hot file (backend may start before Vite).
    */
   async initialize(): Promise<void> {
+    await this.refreshHotFile()
+  }
+
+  private async refreshHotFile(): Promise<void> {
     const hotPath = this.hotFilePath()
     const file = Bun.file(hotPath)
     if (await file.exists()) {
@@ -57,6 +62,12 @@ export class Vite {
   /** Whether the Vite dev server is running (hot file exists). */
   isDev(): boolean {
     return typeof this.hotFileCache === 'string'
+  }
+
+  /** Re-check hot file — called when manifest not found (might be dev mode). */
+  async recheckDev(): Promise<boolean> {
+    await this.refreshHotFile()
+    return this.isDev()
   }
 
   /** The dev server URL (from hot file or config fallback). */
@@ -79,6 +90,9 @@ export class Vite {
    */
   async assets(entrypoints: string | string[]): Promise<string> {
     const entries = Array.isArray(entrypoints) ? entrypoints : [entrypoints]
+
+    // Re-check hot file if not yet in dev mode (backend may have started before Vite)
+    if (!this.isDev()) await this.recheckDev()
 
     if (this.isDev()) {
       return this.devAssets(entries)
@@ -212,6 +226,13 @@ export class Vite {
     const file = Bun.file(path)
 
     if (!(await file.exists())) {
+      // Manifest not found — maybe Vite started after us (dev mode).
+      // Re-check the hot file before throwing a production error.
+      if (await this.recheckDev()) {
+        // We're now in dev mode — no manifest needed, caller should
+        // use devAssets() instead. Return empty manifest to avoid throw.
+        return {}
+      }
       throw new ViteManifestNotFoundError(path)
     }
 
@@ -224,12 +245,18 @@ export class Vite {
     this.manifestCache = null
   }
 
+  private resolvePublicDir(): string {
+    const pub = this.config.publicDir
+    if (pub.startsWith('/')) return pub
+    return this.basePath ? `${this.basePath}/${pub}` : pub
+  }
+
   private manifestPath(): string {
-    return `${this.config.publicDir}/${this.config.buildDir}/${this.config.manifest}`
+    return `${this.resolvePublicDir()}/${this.config.buildDir}/${this.config.manifest}`
   }
 
   private hotFilePath(): string {
-    return `${this.config.publicDir}/${this.config.hotFile}`
+    return `${this.resolvePublicDir()}/${this.config.hotFile}`
   }
 
   // ── SSR ─────────────────────────────────────────────────────────────────

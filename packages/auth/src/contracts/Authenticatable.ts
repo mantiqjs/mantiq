@@ -26,4 +26,18 @@ export interface Authenticatable {
 
   /** Return the column name for the remember token (e.g. 'remember_token'). */
   getRememberTokenName(): string
+
+  // ── Model methods (available on all Authenticatable models) ──────────
+
+  /** Get an attribute value by key. */
+  getAttribute(key: string): any
+
+  /** Set an attribute value by key. */
+  setAttribute(key: string, value: any): this
+
+  /** Convert the model to a plain object (respects hidden fields). */
+  toObject(): Record<string, any>
+
+  /** Get the primary key value. */
+  getKey(): string | number
 }

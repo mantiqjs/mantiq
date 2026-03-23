@@ -1,10 +1,11 @@
 {
   "name": "mantiqjs",
-  "version": "0.5.16",
+  "version": "0.5.17",
   "type": "module",
   "private": true,
   "workspaces": [
     "packages/*",
+    "playground/*",
     "docs"
   ],
   "scripts": {

@@ -6,7 +6,8 @@ const props = defineProps<{
   initialData?: Record<string, any>
 }>()
 
-const windowData = typeof window !== 'undefined' ? (window as any).__MANTIQ_DATA__ : {}
+declare global { interface Window { __MANTIQ_DATA__?: Record<string, any> } }
+const windowData = typeof window !== 'undefined' ? window.__MANTIQ_DATA__ ?? {} : {}
 const initial = props.initialData ?? windowData
 
 const currentPage = ref<string>(initial._page ?? 'Login')

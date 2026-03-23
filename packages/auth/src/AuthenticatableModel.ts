@@ -1,6 +1,14 @@
 import type { Authenticatable } from './contracts/Authenticatable.ts'
 import { applyHasApiTokens } from './HasApiTokens.ts'
 
+/** Minimum interface a base class must have for the mixin to work. */
+interface ModelLike {
+  getAttribute(key: string): any
+  setAttribute(key: string, value: any): any
+  toObject(): Record<string, any>
+  getKey(): string | number
+}
+
 // Accept both abstract and concrete constructors
 type AbstractConstructor<T = any> = abstract new (...args: any[]) => T
 
@@ -31,14 +39,14 @@ interface TokenMethods {
  *     static override hidden = ['password', 'remember_token']
  *   }
  */
-export function AuthenticatableModel<T extends AbstractConstructor>(Base: T) {
+export function AuthenticatableModel<T extends AbstractConstructor<ModelLike>>(Base: T) {
   abstract class AuthModel extends Base implements Authenticatable {
     getAuthIdentifierName(): string { return 'id' }
-    getAuthIdentifier(): string | number { return (this as any).getAttribute('id') }
+    getAuthIdentifier(): string | number { return this.getAttribute('id') }
     getAuthPasswordName(): string { return 'password' }
-    getAuthPassword(): string { return (this as any).getAttribute('password') as string }
-    getRememberToken(): string | null { return ((this as any).getAttribute('remember_token') as string) ?? null }
-    setRememberToken(token: string | null): void { (this as any).setAttribute('remember_token', token) }
+    getAuthPassword(): string { return this.getAttribute('password') as string }
+    getRememberToken(): string | null { return (this.getAttribute('remember_token') as string) ?? null }
+    setRememberToken(token: string | null): void { this.setAttribute('remember_token', token) }
     getRememberTokenName(): string { return 'remember_token' }
 
     declare createToken: TokenMethods['createToken']
