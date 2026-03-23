@@ -1,7 +1,9 @@
 export interface HeartbeatConfig {
   enabled: boolean
   storage: {
-    connection?: string | undefined
+    driver: 'sqlite' | 'database'
+    path: string  // SQLite file path (used when driver is 'sqlite')
+    connection?: string | undefined  // database connection name (used when driver is 'database')
     retention: number
     pruneInterval: number
   }
@@ -32,7 +34,9 @@ export interface HeartbeatConfig {
 export const DEFAULT_CONFIG: HeartbeatConfig = {
   enabled: true,
   storage: {
-    connection: undefined,  // uses app's default database connection
+    driver: 'sqlite',
+    path: 'storage/heartbeat/heartbeat.sqlite',
+    connection: undefined,
     retention: 86_400, // 24 hours
     pruneInterval: 300, // 5 minutes
   },
