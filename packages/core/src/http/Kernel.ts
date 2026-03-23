@@ -181,9 +181,17 @@ export class HttpKernel {
     if (typeof action === 'function') {
       result = await action(request)
     } else if (Array.isArray(action)) {
-      const [ControllerClass, method] = action
+      const [ControllerClass, method, FormRequestClass] = action
       const controller = this.container.make(ControllerClass)
-      result = await (controller as any)[method](request)
+
+      // If a FormRequest class is specified, auto-validate before calling the action
+      if (FormRequestClass) {
+        const formRequest = new FormRequestClass(request)
+        const validated = await formRequest.validate()
+        result = await (controller as any)[method](request, validated)
+      } else {
+        result = await (controller as any)[method](request)
+      }
     } else {
       throw new Error(`Unresolved string action '${action}'. Controllers must be registered with router.controllers().`)
     }

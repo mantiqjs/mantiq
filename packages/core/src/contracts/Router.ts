@@ -5,6 +5,7 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'OPTIONS'
 
 export type RouteAction =
   | [Constructor<any>, string]
+  | [Constructor<any>, string, Constructor<any>]  // [Controller, method, FormRequest]
   | ((request: MantiqRequest) => any)
   | string
 
