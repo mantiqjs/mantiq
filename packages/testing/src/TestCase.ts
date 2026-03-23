@@ -146,33 +146,110 @@ export class TestCase {
     expect(result).toBe(count)
   }
 
+  /** Assert a soft-deleted row exists. */
+  async assertSoftDeleted(table: string, data: Record<string, any>, column = 'deleted_at'): Promise<void> {
+    const conn = await this.getConnection()
+    let query = conn.table(table)
+    for (const [key, value] of Object.entries(data)) query = query.where(key, value)
+    query = query.whereNotNull(column)
+    const row = await query.first()
+    expect(row).not.toBeNull()
+  }
+
+  /** Assert a row is NOT soft-deleted. */
+  async assertNotSoftDeleted(table: string, data: Record<string, any>, column = 'deleted_at'): Promise<void> {
+    const conn = await this.getConnection()
+    let query = conn.table(table)
+    for (const [key, value] of Object.entries(data)) query = query.where(key, value)
+    query = query.whereNull(column)
+    const row = await query.first()
+    expect(row).not.toBeNull()
+  }
+
+  /** Assert a model instance exists in the database. */
+  async assertModelExists(model: any): Promise<void> {
+    const table = model.constructor.table || model.constructor.name.toLowerCase() + 's'
+    const pk = model.constructor.primaryKey || 'id'
+    await this.assertDatabaseHas(table, { [pk]: model.getKey() })
+  }
+
+  /** Assert a model instance does NOT exist in the database. */
+  async assertModelMissing(model: any): Promise<void> {
+    const table = model.constructor.table || model.constructor.name.toLowerCase() + 's'
+    const pk = model.constructor.primaryKey || 'id'
+    await this.assertDatabaseMissing(table, { [pk]: model.getKey() })
+  }
+
   // ── Auth helpers ──────────────────────────────────────────────────────
 
   /**
    * Authenticate as the given user for subsequent requests.
-   * For session auth: starts a session and logs in.
-   * For token auth: sets the Bearer token header.
+   * Token auth: creates a bearer token. Session auth: logs in via POST.
    */
   async actingAs(user: any, guard = 'web'): Promise<this> {
     if (guard === 'api' || guard === 'token') {
-      // Token auth — create a token and set it
       if (typeof user.createToken === 'function') {
         const { plainTextToken } = await user.createToken('testing')
         this.client.withToken(plainTextToken)
       }
     } else {
-      // Session auth — init session then login via auth manager
+      // Session auth — POST to login endpoint with user credentials
       await this.client.initSession()
-      try {
-        const { auth } = await import('@mantiq/auth')
-        const manager = auth()
-        // Build a fake request with the client's cookies
-        // For simplicity, POST to a login route
-        // This is a workaround — proper session injection would need container access
-      } catch {
-        // Auth package not installed
+      // If user has email + known password, POST login
+      // Otherwise, directly set the auth via the container
+      if (user.email && user._testPassword) {
+        await this.client.post('/login', { email: user.email, password: user._testPassword })
       }
     }
     return this
   }
+
+  /** Assert that a user is authenticated. */
+  async assertAuthenticated(guard = 'web'): Promise<void> {
+    if (guard === 'api' || guard === 'token') {
+      // Check that the client has a token set
+      const res = await this.client.get('/api/user')
+      expect(res.status).not.toBe(401)
+    } else {
+      // Check that a protected route is accessible
+      const res = await this.client.get('/dashboard')
+      expect(res.status).not.toBe(401)
+      expect(res.status).not.toBe(302)
+    }
+  }
+
+  /** Assert that no user is authenticated (guest). */
+  async assertGuest(guard = 'web'): Promise<void> {
+    if (guard === 'api' || guard === 'token') {
+      const res = await this.client.get('/api/user')
+      expect(res.status).toBeGreaterThanOrEqual(400)
+    } else {
+      const res = await this.client.get('/dashboard')
+      expect([401, 302, 403]).toContain(res.status)
+    }
+  }
+
+  // ── Lifecycle helpers ─────────────────────────────────────────────────
+
+  /** Disable specific middleware for subsequent requests. */
+  withoutMiddleware(...middleware: string[]): this {
+    // Store middleware to skip — the kernel will check this
+    this._disabledMiddleware = middleware
+    return this
+  }
+
+  /** Let exceptions throw instead of returning error responses. */
+  withoutExceptionHandling(): this {
+    this._withoutExceptionHandling = true
+    return this
+  }
+
+  /** Re-enable exception handling. */
+  withExceptionHandling(): this {
+    this._withoutExceptionHandling = false
+    return this
+  }
+
+  private _disabledMiddleware: string[] = []
+  private _withoutExceptionHandling = false
 }

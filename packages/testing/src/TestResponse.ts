@@ -98,6 +98,51 @@ export class TestResponse {
     return this
   }
 
+  /** Assert value at a dot-notation path in the JSON response. */
+  async assertJsonPath(path: string, expected: any): Promise<this> {
+    const data = await this.json()
+    const value = resolvePath(data, path)
+    expect(value).toEqual(expected)
+    return this
+  }
+
+  /** Assert the number of items at a dot-notation path (or root if no path). */
+  async assertJsonCount(count: number, path?: string): Promise<this> {
+    const data = await this.json()
+    const target = path ? resolvePath(data, path) : data
+    expect(Array.isArray(target) ? target.length : Object.keys(target).length).toBe(count)
+    return this
+  }
+
+  /** Assert the JSON response matches a structure (keys only, no values). */
+  async assertJsonStructure(structure: string[] | Record<string, any>, path?: string): Promise<this> {
+    const data = await this.json()
+    const target = path ? resolvePath(data, path) : data
+    assertStructure(target, structure)
+    return this
+  }
+
+  /** Assert the JSON response does NOT contain the given subset. */
+  async assertJsonMissing(unexpected: Record<string, any>): Promise<this> {
+    const data = await this.json()
+    for (const [key, value] of Object.entries(unexpected)) {
+      if (data[key] !== undefined) expect(data[key]).not.toEqual(value)
+    }
+    return this
+  }
+
+  /** Assert strings appear in order in the response body. */
+  async assertSeeInOrder(texts: string[]): Promise<this> {
+    const body = await this.text()
+    let lastIndex = -1
+    for (const text of texts) {
+      const idx = body.indexOf(text, lastIndex + 1)
+      expect(idx).toBeGreaterThan(lastIndex)
+      lastIndex = idx
+    }
+    return this
+  }
+
   /** Assert response body contains a string. */
   async assertSee(text: string): Promise<this> {
     const body = await this.text()
@@ -140,5 +185,92 @@ export class TestResponse {
     const found = cookies.some(c => c.startsWith(`${name}=`))
     expect(found).toBe(false)
     return this
+  }
+
+  // ── Extra status assertions ────────────────────────────────────────────
+
+  assertServerError(): this {
+    expect(this.status).toBeGreaterThanOrEqual(500)
+    expect(this.status).toBeLessThan(600)
+    return this
+  }
+
+  assertClientError(): this {
+    expect(this.status).toBeGreaterThanOrEqual(400)
+    expect(this.status).toBeLessThan(500)
+    return this
+  }
+
+  // ── Validation assertions ──────────────────────────────────────────────
+
+  /** Assert the response has no validation errors (status is not 422). */
+  assertValid(): this {
+    expect(this.status).not.toBe(422)
+    return this
+  }
+
+  /** Assert the response has validation errors (status 422), optionally for specific fields. */
+  async assertInvalid(fields?: string[]): Promise<this> {
+    expect(this.status).toBe(422)
+    if (fields) {
+      const data = await this.json()
+      const errors = data.errors ?? data
+      for (const field of fields) {
+        expect(errors[field]).toBeDefined()
+      }
+    }
+    return this
+  }
+
+  // ── Download assertion ─────────────────────────────────────────────────
+
+  assertDownload(filename?: string): this {
+    const disposition = this.headers.get('content-disposition')
+    expect(disposition).not.toBeNull()
+    expect(disposition!).toContain('attachment')
+    if (filename) expect(disposition!).toContain(filename)
+    return this
+  }
+
+  // ── Debug helpers ──────────────────────────────────────────────────────
+
+  /** Print response status + body to console. */
+  async dump(): Promise<this> {
+    console.log(`[${this.status}]`, await this.text())
+    return this
+  }
+
+  /** Print response and throw to stop test. */
+  async dd(): Promise<never> {
+    console.log(`[${this.status}]`, await this.text())
+    throw new Error('dd() called on TestResponse')
+  }
+}
+
+// ── Utility functions ─────────────────────────────────────────────────────
+
+/** Resolve a dot-notation path on an object: 'data.users.0.name' */
+function resolvePath(obj: any, path: string): any {
+  return path.split('.').reduce((cur, key) => cur?.[key], obj)
+}
+
+/** Recursively check that an object matches a structure definition. */
+function assertStructure(data: any, structure: string[] | Record<string, any>): void {
+  if (Array.isArray(structure)) {
+    for (const key of structure) {
+      expect(data).toHaveProperty(key)
+    }
+  } else {
+    for (const [key, nested] of Object.entries(structure)) {
+      expect(data).toHaveProperty(key)
+      if (Array.isArray(nested) || (typeof nested === 'object' && nested !== null)) {
+        if (Array.isArray(data[key]) && data[key].length > 0) {
+          // Check first item of array against nested structure
+          assertStructure(data[key][0], nested)
+        } else {
+          assertStructure(data[key], nested)
+        }
+      }
+    }
   }
 }
