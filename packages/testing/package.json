@@ -1,0 +1,34 @@
+{
+  "name": "@mantiq/testing",
+  "version": "0.5.19",
+  "description": "Testing utilities for MantiqJS — HTTP client, database assertions, auth helpers",
+  "type": "module",
+  "license": "MIT",
+  "author": "Abdullah Khan",
+  "homepage": "https://github.com/mantiqjs/mantiq/tree/main/packages/testing",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mantiqjs/mantiq.git",
+    "directory": "packages/testing"
+  },
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src/"
+  ],
+  "peerDependencies": {
+    "@mantiq/core": "^0.5.0",
+    "@mantiq/database": "^0.5.0",
+    "@mantiq/auth": "^0.5.0"
+  },
+  "peerDependenciesMeta": {
+    "@mantiq/auth": { "optional": true }
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "typescript": "^5.7.0"
+  }
+}
