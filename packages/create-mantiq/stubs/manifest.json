@@ -1430,6 +1430,14 @@
       {
         "stub": "config/vite.ts.stub",
         "target": "config/vite.ts"
+      },
+      {
+        "stub": "tests/feature/auth.test.ts.stub",
+        "target": "tests/feature/auth.test.ts"
+      },
+      {
+        "stub": "tests/feature/users.test.ts.stub",
+        "target": "tests/feature/users.test.ts"
       }
     ],
     "placeholders": {

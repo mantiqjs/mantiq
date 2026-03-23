@@ -40,6 +40,7 @@ export function getTemplates(ctx: TemplateContext): Record<string, string> {
   }
 
   const baseDevDeps: Record<string, string> = {
+    '@mantiq/testing': '^0.5.0',
     'bun-types': 'latest',
     'typescript': '^5.7.0',
   }
@@ -48,6 +49,7 @@ export function getTemplates(ctx: TemplateContext): Record<string, string> {
     dev: 'bun run --watch index.ts',
     start: 'bun run index.ts',
     mantiq: 'bun run mantiq.ts',
+    test: 'bun test tests/',
   }
 
   if (ctx.kit) {
