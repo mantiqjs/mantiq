@@ -1,6 +1,8 @@
 import type { MantiqRequest } from '@mantiq/core'
 import { json, abort, hash } from '@mantiq/core'
 import { User } from '../../Models/User.ts'
+import { StoreUserRequest } from '../Requests/StoreUserRequest.ts'
+import { UpdateUserRequest } from '../Requests/UpdateUserRequest.ts'
 
 export class UserController {
   async index(request: MantiqRequest): Promise<Response> {
@@ -29,16 +31,14 @@ export class UserController {
   }
 
   async store(request: MantiqRequest): Promise<Response> {
-    const body = await request.input()
-    if (!body?.name || !body?.email || !body?.password) abort(422, 'Name, email and password are required.')
+    const data = await new StoreUserRequest(request).validate()
 
-    const existing = await User.where('email', body.email).first()
-    if (existing) abort(422, 'Email already exists.')
+    if (await User.where('email', data.email).first()) abort(422, 'Email already exists.')
 
     const user = await User.create({
-      name: body.name,
-      email: body.email,
-      password: await hash(body.password),
+      name: data.name,
+      email: data.email,
+      password: await hash(data.password),
     })
 
     return json({ data: user.toObject() }, 201)
@@ -48,10 +48,10 @@ export class UserController {
     const user = await User.find(Number(request.param('id')))
     if (!user) abort(404, 'User not found.')
 
-    const body = await request.input()
-    if (body.name) user.setAttribute('name', body.name)
-    if (body.email) user.setAttribute('email', body.email)
-    if (body.password) user.setAttribute('password', await hash(body.password))
+    const data = await new UpdateUserRequest(request).validate()
+    if (data.name) user.setAttribute('name', data.name)
+    if (data.email) user.setAttribute('email', data.email)
+    if (data.password) user.setAttribute('password', await hash(data.password))
 
     await user.save()
     return json({ data: user.toObject() })

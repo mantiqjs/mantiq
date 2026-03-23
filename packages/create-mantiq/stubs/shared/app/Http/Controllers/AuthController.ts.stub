@@ -2,19 +2,19 @@ import type { MantiqRequest } from '@mantiq/core'
 import { json, hash, abort } from '@mantiq/core'
 import { auth } from '@mantiq/auth'
 import { User } from '../../Models/User.ts'
+import { RegisterRequest } from '../Requests/RegisterRequest.ts'
+import { LoginRequest } from '../Requests/LoginRequest.ts'
 
 export class AuthController {
   async register(request: MantiqRequest): Promise<Response> {
-    const body = await request.input()
-    if (!body.name || !body.email || !body.password) abort(422, 'Name, email and password are required.')
-    if (body.password.length < 6) abort(422, 'Password must be at least 6 characters.')
+    const data = await new RegisterRequest(request).validate()
 
-    if (await User.where('email', body.email).first()) abort(422, 'A user with this email already exists.')
+    if (await User.where('email', data.email).first()) abort(422, 'A user with this email already exists.')
 
     const user = await User.create({
-      name: body.name,
-      email: body.email,
-      password: await hash(body.password),
+      name: data.name,
+      email: data.email,
+      password: await hash(data.password),
     })
 
     const manager = auth()
@@ -25,15 +25,14 @@ export class AuthController {
   }
 
   async login(request: MantiqRequest): Promise<Response> {
-    const body = await request.input()
-    if (!body.email || !body.password) abort(422, 'Email and password are required.')
+    const data = await new LoginRequest(request).validate()
 
     const manager = auth()
     manager.setRequest(request)
 
     const success = await manager.attempt(
-      { email: body.email, password: body.password },
-      body.remember ?? false,
+      { email: data.email, password: data.password },
+      data.remember ?? false,
     )
     if (!success) abort(401, 'Invalid credentials.')
 
