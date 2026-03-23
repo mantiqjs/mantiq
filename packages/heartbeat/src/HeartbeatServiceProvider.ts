@@ -1,6 +1,7 @@
 import { ServiceProvider, ConfigRepository, RouterImpl, HttpKernel, CacheManager } from '@mantiq/core'
 import type { EventDispatcher } from '@mantiq/core'
-import { DatabaseManager, SQLiteConnection } from '@mantiq/database'
+import { SQLiteConnection, DatabaseManager } from '@mantiq/database'
+import { mkdirSync } from 'node:fs'
 import type { HeartbeatConfig } from './contracts/HeartbeatConfig.ts'
 import { DEFAULT_CONFIG } from './contracts/HeartbeatConfig.ts'
 import { Heartbeat } from './Heartbeat.ts'
@@ -29,11 +30,29 @@ import { SimpleEventBus } from './helpers/SimpleEventBus.ts'
 export class HeartbeatServiceProvider extends ServiceProvider {
   override register(): void {
     this.app.singleton(Heartbeat, (c) => {
-      const config = c.make(ConfigRepository).get<HeartbeatConfig>('heartbeat', DEFAULT_CONFIG)
+      const userConfig = c.make(ConfigRepository).get<Partial<HeartbeatConfig>>('heartbeat', {})
+      const config: HeartbeatConfig = {
+        ...DEFAULT_CONFIG,
+        ...userConfig,
+        storage: { ...DEFAULT_CONFIG.storage, ...userConfig?.storage },
+        watchers: { ...DEFAULT_CONFIG.watchers, ...userConfig?.watchers },
+        dashboard: { ...DEFAULT_CONFIG.dashboard, ...userConfig?.dashboard },
+      }
 
-      // Resolve connection — undefined means use app's default database connection
-      const dbManager = c.make(DatabaseManager)
-      const connection = dbManager.connection(config.storage.connection)
+      // Resolve database connection
+      let connection: any
+      if (config.storage.driver === 'database' && config.storage.connection) {
+        // Use an existing app database connection
+        connection = c.make(DatabaseManager).connection(config.storage.connection)
+      } else {
+        // Default: dedicated SQLite file for heartbeat telemetry
+        const basePath = c.make(ConfigRepository).get<string>('app.basePath', process.cwd())
+        const storagePath = config.storage.path
+        const dbPath = storagePath.startsWith('/') ? storagePath : `${basePath}/${storagePath}`
+        const dir = dbPath.substring(0, dbPath.lastIndexOf('/'))
+        try { mkdirSync(dir, { recursive: true }) } catch {}
+        connection = new SQLiteConnection({ driver: 'sqlite', database: dbPath })
+      }
 
       const heartbeat = new Heartbeat(config, connection)
       setHeartbeat(heartbeat)
@@ -52,7 +71,7 @@ export class HeartbeatServiceProvider extends ServiceProvider {
     try {
       heartbeat = this.app.make(Heartbeat)
     } catch (e) {
-      console.warn('[Mantiq] HeartbeatServiceProvider skipped — database not configured. Run `bun mantiq migrate` to set up.')
+      if (process.env.APP_DEBUG === 'true') console.warn('[Mantiq] HeartbeatServiceProvider skipped:', (e as Error)?.message ?? e)
       return
     }
     const config = heartbeat.config
@@ -91,11 +110,15 @@ export class HeartbeatServiceProvider extends ServiceProvider {
     systemMetrics.start()
 
     // Register HeartbeatMiddleware as first global middleware
-    this.registerMiddleware(heartbeat, tracer, requestWatcher, metrics)
+    try {
+      this.registerMiddleware(heartbeat, tracer, requestWatcher, metrics)
+    } catch { /* HttpKernel not available */ }
 
     // Register dashboard routes
     if (config.dashboard.enabled) {
-      this.registerDashboardRoutes(heartbeat, metrics, config)
+      try {
+        this.registerDashboardRoutes(heartbeat, metrics, config)
+      } catch { /* Router not available */ }
     }
   }
 
@@ -105,7 +128,8 @@ export class HeartbeatServiceProvider extends ServiceProvider {
     requestWatcher: RequestWatcher | null,
     metrics: MetricsCollector,
   ): void {
-    const kernel = this.app.make(HttpKernel)
+    let kernel: any
+    try { kernel = this.app.make(HttpKernel) } catch { return }
 
     // Register the middleware instance in the container
     const middleware = new HeartbeatMiddleware(heartbeat, tracer, requestWatcher, metrics)
