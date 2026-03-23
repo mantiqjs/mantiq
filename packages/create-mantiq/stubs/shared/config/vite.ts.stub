@@ -1,0 +1,8 @@
+export default {
+  reactRefresh: {{REACT_REFRESH}},
+
+  ssr: {
+    entry: '{{SSR_ENTRY}}',
+    bundle: 'bootstrap/ssr/ssr.js',
+  },
+}

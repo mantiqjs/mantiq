@@ -1426,9 +1426,23 @@
       {
         "stub": "config/app.ts.stub",
         "target": "config/app.ts"
+      },
+      {
+        "stub": "config/vite.ts.stub",
+        "target": "config/vite.ts"
       }
     ],
     "placeholders": {
+      "{{REACT_REFRESH}}": {
+        "react": "true",
+        "vue": "false",
+        "svelte": "false"
+      },
+      "{{SSR_ENTRY}}": {
+        "react": "src/ssr.tsx",
+        "vue": "src/ssr.ts",
+        "svelte": "src/ssr.ts"
+      },
       "{{MAIN_ENTRY}}": {
         "react": "src/main.tsx",
         "vue": "src/main.ts",
