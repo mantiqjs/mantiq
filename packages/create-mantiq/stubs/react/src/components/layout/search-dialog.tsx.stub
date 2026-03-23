@@ -7,7 +7,7 @@ import {
   Lock,
   Palette,
   BookOpen,
-  Github,
+  ExternalLink,
   FileText,
   ArrowRight,
 } from 'lucide-react'
@@ -30,7 +30,7 @@ const pages = [
   { title: 'Security', url: '/account/security', icon: Lock, group: 'Settings' },
   { title: 'Preferences', url: '/account/preferences', icon: Palette, group: 'Settings' },
   { title: 'Documentation', url: 'https://github.com/mantiqjs/mantiq#readme', icon: BookOpen, group: 'Links', external: true },
-  { title: 'GitHub', url: 'https://github.com/mantiqjs/mantiq', icon: Github, group: 'Links', external: true },
+  { title: 'GitHub', url: 'https://github.com/mantiqjs/mantiq', icon: ExternalLink, group: 'Links', external: true },
 ]
 
 export function SearchDialog({ open, onOpenChange, navigate }: SearchDialogProps) {

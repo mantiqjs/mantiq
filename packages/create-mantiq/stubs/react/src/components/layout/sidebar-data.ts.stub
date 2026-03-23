@@ -6,7 +6,7 @@ import {
   Lock,
   Palette,
   BookOpen,
-  Github,
+  ExternalLink,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -36,7 +36,7 @@ export const sidebarData: NavGroup[] = [
     title: 'Documentation',
     items: [
       { title: 'Docs', url: 'https://github.com/mantiqjs/mantiq#readme', icon: BookOpen, external: true },
-      { title: 'GitHub', url: 'https://github.com/mantiqjs/mantiq', icon: Github, external: true },
+      { title: 'GitHub', url: 'https://github.com/mantiqjs/mantiq', icon: ExternalLink, external: true },
     ],
   },
   {
