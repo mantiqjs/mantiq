@@ -18,7 +18,14 @@ bun.lockb
 specs/
 addons/
 starters/
-playground/
+playground/*/node_modules/
+playground/*/bun.lock
+playground/*/.env
+playground/*/database/*.sqlite*
+playground/*/storage/
+playground/*/public/build/
+playground/*/public/hot
+playground/*/bootstrap/ssr/
 playwright-report/
 test-results/
 test-mantiq-app/
