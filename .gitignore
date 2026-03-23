@@ -29,3 +29,6 @@ playground/*/bootstrap/ssr/
 playwright-report/
 test-results/
 test-mantiq-app/
+playground/app*
+playground/test*
+playground/react-shadcn
