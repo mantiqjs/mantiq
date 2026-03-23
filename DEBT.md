@@ -1,10 +1,43 @@
 # Technical Debt & Gaps
 
-Priority: **P0** = critical / blocks users, **P1** = important / should fix soon, **P2** = nice to have
+Priority: **P0** = critical / blocks 1.0, **P1** = important / should fix soon, **P2** = nice to have
+
+**Current rating: 6.5/10** — strong foundation, not production-ready yet.
 
 ---
 
-## Scaffold & Environment (P0)
+## Type Safety (P0 — biggest quality gap)
+
+- [ ] **P0** Remove `as any` from all generated stubs — controllers, routes, user code should be strictly typed
+- [ ] **P0** Fix ORM return types: `User.query().count()` should not need `as any` cast
+- [ ] **P0** Fix `ModelQueryBuilder` generics: `.where().orWhere()` chain should preserve type
+- [ ] **P0** Fix `request.input()` return type — should be generic `request.input<T>()` not `as { ... }`
+- [ ] **P0** Fix `auth().login(user)` — should accept `Authenticatable`, not require `as any`
+- [ ] **P0** Audit all `as any` in packages/core, packages/auth, packages/database — eliminate or justify each
+
+## Error Visibility (P0 — silent failures are dangerous)
+
+- [ ] **P0** Provider boot failures must log with stack trace (not just "[Mantiq] skipped")
+- [ ] **P0** Deferred provider boot is fire-and-forget async — errors swallowed at Application.ts:300
+- [ ] **P0** Route loading failures should always log (even outside debug mode)
+- [ ] **P0** EncryptCookies silent fallback (line 51) — if decryption fails, log a warning instead of silently returning encrypted value
+- [ ] **P1** Add structured error codes to all framework errors (not just string messages)
+
+## Validation in Stubs (P0)
+
+- [ ] **P0** Use FormRequest in AuthController stub instead of manual `if (!body.name)` checks
+- [ ] **P0** Use FormRequest in ApiAuthController stub
+- [ ] **P0** Use FormRequest in UserController stub
+- [ ] **P0** Create RegisterRequest, LoginRequest, StoreUserRequest FormRequest classes as stubs
+
+## Security (P0)
+
+- [ ] **P0** Security headers middleware — X-Frame-Options, Content-Security-Policy, X-Content-Type-Options, Strict-Transport-Security
+- [ ] **P1** Cookie size validation — prevent >4KB session payloads silently failing
+- [ ] **P1** Request timeout middleware — prevent slow requests from blocking the server
+- [ ] **P2** Trust proxies middleware — X-Forwarded-* header handling
+
+## Scaffold & Environment (P0) — COMPLETED
 
 - [x] ~~`.env` template expanded to 30+ vars grouped by section~~
 - [x] ~~`key:generate` CLI command~~
@@ -16,20 +49,29 @@ Priority: **P0** = critical / blocks users, **P1** = important / should fix soon
 
 ## CLI Commands (P1)
 
+- [x] ~~`down`, `up` — maintenance mode~~
+- [x] ~~`config:cache`, `config:clear` — config caching for production~~
+- [x] ~~`cache:clear` — cache management~~
+- [x] ~~`storage:link` — symlink storage/app/public → public/storage~~
 - [ ] **P1** `schedule:run` — scheduled task runner
 - [ ] **P1** `queue:work`, `queue:failed`, `queue:retry` — queue worker commands
-- [ ] **P1** `down`, `up` — maintenance mode
-- [ ] **P1** `config:cache`, `config:clear` — config caching for production
-- [ ] **P1** `cache:clear`, `cache:forget` — cache management
-- [ ] **P1** `storage:link` — symlink storage/app/public → public/storage
 - [ ] **P2** `optimize` — cache config + routes + views
 - [ ] **P2** `env:encrypt`, `env:decrypt` — encrypted .env for deployment
 
+## Production Hardening (P1)
+
+- [ ] **P1** Graceful shutdown hooks — drain queue workers, close DB connections on SIGTERM
+- [ ] **P1** Request correlation IDs — trace requests across services via X-Request-ID header
+- [ ] **P1** Structured logging integration — wire logging to HTTP kernel (request ID, duration, status)
+- [ ] **P1** Database transaction helpers in Model and migrations
+- [ ] **P1** Middleware dedup bug — `new Set()` collapses `auth:admin` and `auth:user` to one entry
+- [ ] **P2** Database connection pooling visibility
+- [ ] **P2** Cache warming/preload
+
 ## Middleware (P1)
 
-- [ ] **P1** Register `auth` and `guest` middleware aliases in CoreServiceProvider (exist in @mantiq/auth but not auto-aliased)
-- [ ] **P1** Security headers middleware — X-Frame-Options, Content-Security-Policy, X-Content-Type-Options
-- [ ] **P2** Trust proxies middleware — X-Forwarded-* header handling
+- [x] ~~`auth` and `guest` middleware aliases — auto-registered by AuthServiceProvider~~
+- [ ] **P1** Security headers middleware (see Security section above)
 - [ ] **P2** Verified email middleware alias
 
 ## Stubs / Generators (P1)
@@ -48,10 +90,11 @@ Priority: **P0** = critical / blocks users, **P1** = important / should fix soon
 
 ## Testing (P1)
 
-- [ ] **P1** Auth e2e flow: register → login → protected route → logout → session expiry
+- [x] ~~Auth e2e flow: register → login → protected → logout~~
+- [x] ~~CRUD e2e: create, read, search, pagination, sort, update, delete~~
 - [ ] **P1** Middleware header assertions: CORS, CSRF token, session cookie flags, security headers
 - [ ] **P1** 8 packages lack integration tests: cli, create-mantiq, health, helpers, heartbeat, notify, social-auth, vite
-- [ ] **P1** 5 packages have < 5 tests total: create-mantiq(1), social-auth(2), vite(2), health(1), validation(3)
+- [ ] **P1** 5 packages have < 5 tests total: create-mantiq(34), social-auth(2), vite(2), health(1), validation(3)
 - [ ] **P1** SSR rendering tests (dev via ssrLoadModule, prod via bundle import)
 - [ ] **P1** Equalize e2e coverage across kits (Vue/Svelte thinner than React)
 - [ ] **P2** Error state browser tests: 404 page, error boundaries, CSRF expiry
@@ -61,10 +104,17 @@ Priority: **P0** = critical / blocks users, **P1** = important / should fix soon
 - [ ] **P2** CLI generator verification: generated files actually work
 - [ ] **P2** Performance baseline: response times, memory under load
 
+## Architecture Cleanup (P1)
+
+- [ ] **P1** Clarify `app()` vs `Application.getInstance()` — document canonical pattern
+- [ ] **P1** Clarify `config()` helper vs `ConfigRepository` — when to use which
+- [ ] **P1** Service locator pattern in controllers (`auth()`, `vite()`) — consider DI instead
+- [ ] **P2** Model static vs instance method naming audit (create/save/fill consistency)
+
 ## DevEx Helpers (P1)
 
+- [x] ~~Example `AppServiceProvider` in skeleton~~
 - [ ] **P1** Console output helpers: colorized dump, table output, progress bars
-- [ ] **P1** Example `AppServiceProvider` in skeleton — starting point for custom providers
 - [ ] **P2** Example custom middleware in `app/Http/Middleware/`
 
 ## Documentation (P1)
@@ -128,18 +178,20 @@ Server-driven admin panel using React + shadcn/ui. Define Resources in TypeScrip
 | Auto-discovery | Providers discovered from package.json `mantiq.provider` field |
 | Skeleton-based scaffolding | create-mantiq copies skeleton/ + overlays deltas |
 | .env loading | Moved into Application.create() — no user code needed |
-| Command auto-registration | Kernel registers all 33 builtins, providers register their own |
+| Command auto-registration | 38 built-in commands, providers register their own |
 | Middleware auto-registration | Each provider registers its own aliases in boot() |
+| Middleware groups | web (stateful) + api (configurable per kit) auto-applied by route file |
 | Gates & Policies | GateManager, Policy, Authorize middleware, Authorizable mixin |
 | 19 CLI generators | make:model/controller/migration/job/mail/notification/policy/... |
+| 6 utility commands | key:generate, down/up, cache:clear, config:cache/clear, storage:link |
 | Rate limiting | ThrottleRequests auto-registered via CoreServiceProvider |
 | Unified dev command | `bun run dev` starts backend + vite concurrently |
 | Vite 8 + hot file | Rolldown + Oxc, mantiq-hot plugin writes public/hot for dev mode |
 | 865 → 0 type errors | Typecheck enforced in CI |
-| 3200+ tests | Unit + integration + 44 e2e browser tests across 4 kits |
+| 3200+ tests | Unit + integration + 64 e2e browser tests across 4 kits |
 | CSRF protection | EncryptCookies URL-decode fix, middleware groups (web/api) |
 | Static asset serving | ViteServiceProvider auto-discovered, ServeStaticFiles middleware |
-| Heartbeat SPA updates | X-Heartbeat scoped to HTML + SPA, clean API responses |
+| Heartbeat APM | Dedicated SQLite, 10 watchers, dashboard at /_heartbeat |
 | OAuth 2.0 server | @mantiq/oauth with 4 grants, PKCE, scopes, JWT |
 | Social login | @mantiq/social-auth with 8 providers |
 | Sanctum tokens | PersonalAccessToken, TokenGuard, HasApiTokens, AuthenticatableModel mixin |
@@ -147,23 +199,23 @@ Server-driven admin panel using React + shadcn/ui. Define Resources in TypeScrip
 | Auto-pluralized tables | User → users, BlogPost → blog_posts (convention over config) |
 | Full-text search | @mantiq/search with 6 drivers |
 | Health checks | @mantiq/health with 12 checks |
-| API JSON responses | /api/* always returns JSON errors |
 | Boilerplate reduction | User model 28→7 lines, routes 119→19 lines, hash()/abort()/json() helpers |
 | 16 config files | All with Laravel-style comment blocks, including broadcasting |
 | CORS smart defaults | Auto-derived from APP_URL, credentials + allowed headers |
 | 14 CLI skills | /publish, /test, /audit, /progress, /compare-laravel, etc. |
 | Skeleton dedup | Root skeleton/ is symlink to packages/create-mantiq/skeleton/ |
+| Stateful SPA API | SPA kits use session-based api group, clean route separation |
 
-## Published Packages (20) — v0.5.12
+## Published Packages (20) — v0.5.16
 
-All packages at unified version 0.5.12 on `latest` tag.
+All packages at unified version 0.5.16 on `latest` tag.
 
 | # | Package | Description |
 |---|---------|-------------|
 | 1 | `@mantiq/core` | Container, router, kernel, middleware, discovery, helpers |
 | 2 | `@mantiq/database` | Query builder, ORM, migrations (SQLite, Postgres, MySQL, MSSQL, MongoDB) |
 | 3 | `@mantiq/auth` | Session + token auth, Gates & Policies, AuthenticatableModel |
-| 4 | `@mantiq/cli` | 31 commands, 19 generators, command auto-registration |
+| 4 | `@mantiq/cli` | 38 commands, 19 generators, command auto-registration |
 | 5 | `@mantiq/validation` | 40+ rules, FormRequest, DatabasePresenceVerifier |
 | 6 | `@mantiq/helpers` | Str, Arr, Num, Collection, HTTP client |
 | 7 | `@mantiq/filesystem` | Local, S3, GCS, R2, Azure, FTP, SFTP |
@@ -171,7 +223,7 @@ All packages at unified version 0.5.12 on `latest` tag.
 | 9 | `@mantiq/events` | Dispatcher, broadcasting, model observers |
 | 10 | `@mantiq/queue` | Jobs, chains, batches, scheduling |
 | 11 | `@mantiq/realtime` | WebSocket, SSE, presence channels, pub/sub |
-| 12 | `@mantiq/heartbeat` | APM dashboard, debug widget, telemetry |
+| 12 | `@mantiq/heartbeat` | APM dashboard, debug widget, dedicated SQLite telemetry |
 | 13 | `@mantiq/vite` | Vite 8, HMR, SSR, hot file dev mode |
 | 14 | `@mantiq/mail` | 8 transports, markdown emails |
 | 15 | `@mantiq/notify` | 12 notification channels |
