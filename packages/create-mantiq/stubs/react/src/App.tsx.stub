@@ -1,5 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 
+declare global { interface Window { __MANTIQ_DATA__?: Record<string, any> } }
+
 interface MantiqAppProps {
   pages: Record<string, React.ComponentType<any>>
   initialData?: Record<string, any>
@@ -15,7 +17,7 @@ function initTheme() {
 initTheme()
 
 export function MantiqApp({ pages, initialData }: MantiqAppProps) {
-  const windowData = typeof window !== 'undefined' ? (window as any).__MANTIQ_DATA__ : {}
+  const windowData = typeof window !== 'undefined' ? window.__MANTIQ_DATA__ : {}
   const initial = initialData ?? windowData
   const [page, setPage] = useState<string>(initial._page ?? 'Login')
   const [data, setData] = useState<Record<string, any>>(initial)

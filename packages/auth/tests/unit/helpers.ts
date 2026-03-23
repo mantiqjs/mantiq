@@ -22,6 +22,12 @@ export class FakeUser implements Authenticatable {
   setRememberToken(token: string | null): void { this.rememberToken = token }
   getRememberTokenName(): string { return 'remember_token' }
 
+  // Authenticatable Model methods
+  getAttribute(key: string): any { return (this as any)[key] }
+  setAttribute(key: string, value: any): this { (this as any)[key] = value; return this }
+  toObject(): Record<string, any> { return { id: this.id, email: this.email } }
+  getKey(): number { return this.id }
+
   // Model-like methods for DatabaseUserProvider compatibility
   forceFill(data: Record<string, any>): this {
     for (const [k, v] of Object.entries(data)) {

@@ -1,10 +1,12 @@
+declare global { interface Window { __MANTIQ_DATA__?: Record<string, any> } }
+
 import './style.css'
 import { createApp, createSSRApp } from 'vue'
 import App from './App.vue'
 import { pages } from './pages.ts'
 
 const root = document.getElementById('app')!
-const data = (window as any).__MANTIQ_DATA__ ?? {}
+const data = window.__MANTIQ_DATA__ ?? {}
 
 const app = root.innerHTML.trim()
   ? createSSRApp(App, { pages, initialData: data })

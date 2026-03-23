@@ -1,44 +1,44 @@
 import type { MantiqRequest } from '@mantiq/core'
-import { json, hash, hashCheck, abort } from '@mantiq/core'
+import { json, hash, abort } from '@mantiq/core'
 import { auth } from '@mantiq/auth'
 import { User } from '../../Models/User.ts'
 
 export class AuthController {
   async register(request: MantiqRequest): Promise<Response> {
-    const body = await request.input() as { name?: string; email?: string; password?: string }
+    const body = await request.input()
     if (!body.name || !body.email || !body.password) abort(422, 'Name, email and password are required.')
-    if (body.password!.length < 6) abort(422, 'Password must be at least 6 characters.')
+    if (body.password.length < 6) abort(422, 'Password must be at least 6 characters.')
 
     if (await User.where('email', body.email).first()) abort(422, 'A user with this email already exists.')
 
     const user = await User.create({
       name: body.name,
       email: body.email,
-      password: await hash(body.password!),
+      password: await hash(body.password),
     })
 
     const manager = auth()
     manager.setRequest(request)
-    await manager.login(user as any)
+    await manager.login(user)
 
     return json({ message: 'Registered.', user: user.toObject() }, 201)
   }
 
   async login(request: MantiqRequest): Promise<Response> {
-    const body = await request.input() as { email?: string; password?: string; remember?: boolean }
+    const body = await request.input()
     if (!body.email || !body.password) abort(422, 'Email and password are required.')
 
     const manager = auth()
     manager.setRequest(request)
 
     const success = await manager.attempt(
-      { email: body.email!, password: body.password! },
+      { email: body.email, password: body.password },
       body.remember ?? false,
     )
     if (!success) abort(401, 'Invalid credentials.')
 
     const user = await manager.user()
-    return json({ message: 'Logged in.', user })
+    return json({ message: 'Logged in.', user: user?.toObject() })
   }
 
   async logout(request: MantiqRequest): Promise<Response> {

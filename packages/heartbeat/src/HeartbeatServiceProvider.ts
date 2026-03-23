@@ -51,7 +51,7 @@ export class HeartbeatServiceProvider extends ServiceProvider {
         const dbPath = storagePath.startsWith('/') ? storagePath : `${basePath}/${storagePath}`
         const dir = dbPath.substring(0, dbPath.lastIndexOf('/'))
         try { mkdirSync(dir, { recursive: true }) } catch {}
-        connection = new SQLiteConnection({ driver: 'sqlite', database: dbPath })
+        connection = new SQLiteConnection({ database: dbPath })
       }
 
       const heartbeat = new Heartbeat(config, connection)

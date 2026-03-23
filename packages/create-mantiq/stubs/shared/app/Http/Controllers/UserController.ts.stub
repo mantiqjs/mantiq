@@ -11,25 +11,25 @@ export class UserController {
     const sortDir = request.query('dir') === 'asc' ? 'asc' : 'desc'
 
     const baseQuery = () => search
-      ? User.query().where('name', 'LIKE', `%${search}%`).orWhere('email', 'LIKE', `%${search}%`)
+      ? User.where('name', 'LIKE', `%${search}%`).orWhere('email', 'LIKE', `%${search}%`)
       : User.query()
 
-    const total = await (User.query() as any).count() as number
-    const filteredTotal = await (baseQuery() as any).count() as number
-    const users = await (baseQuery() as any)
+    const total = await User.count()
+    const filteredTotal = await baseQuery().count()
+    const users = await baseQuery()
       .orderBy(sortBy, sortDir)
       .limit(perPage)
       .offset((page - 1) * perPage)
-      .get() as any[]
+      .get()
 
     return json({
-      data: users.map((u: any) => u.toObject()),
+      data: users.map(u => u.toObject()),
       meta: { total, filtered_total: filteredTotal, page, per_page: perPage, last_page: Math.ceil(filteredTotal / perPage) },
     })
   }
 
   async store(request: MantiqRequest): Promise<Response> {
-    const body = await request.input() as Record<string, any>
+    const body = await request.input()
     if (!body?.name || !body?.email || !body?.password) abort(422, 'Name, email and password are required.')
 
     const existing = await User.where('email', body.email).first()
@@ -48,7 +48,7 @@ export class UserController {
     const user = await User.find(Number(request.param('id')))
     if (!user) abort(404, 'User not found.')
 
-    const body = await request.input() as Record<string, any>
+    const body = await request.input()
     if (body.name) user.setAttribute('name', body.name)
     if (body.email) user.setAttribute('email', body.email)
     if (body.password) user.setAttribute('password', await hash(body.password))
