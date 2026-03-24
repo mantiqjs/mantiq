@@ -10,6 +10,7 @@ import { StartSession } from '../middleware/StartSession.ts'
 import { EncryptCookies } from '../middleware/EncryptCookies.ts'
 import { VerifyCsrfToken } from '../middleware/VerifyCsrfToken.ts'
 import { ThrottleRequests } from '../rateLimit/ThrottleRequests.ts'
+import { SecureHeaders } from '../middleware/SecureHeaders.ts'
 import { ROUTER } from '../helpers/route.ts'
 import { ENCRYPTER } from '../helpers/encrypt.ts'
 import { AesEncrypter } from '../encryption/Encrypter.ts'
@@ -80,6 +81,7 @@ export class CoreServiceProvider extends ServiceProvider {
 
     // Rate limiting — zero-config, uses shared in-memory store
     this.app.singleton(ThrottleRequests, () => new ThrottleRequests())
+    this.app.singleton(SecureHeaders, () => new SecureHeaders())
 
     // HTTP kernel — singleton, depends on Router + ExceptionHandler + WsKernel
     this.app.singleton(HttpKernel, (c) => {
@@ -106,6 +108,7 @@ export class CoreServiceProvider extends ServiceProvider {
     kernel.registerMiddleware('encrypt.cookies', EncryptCookies)
     kernel.registerMiddleware('session', StartSession)
     kernel.registerMiddleware('csrf', VerifyCsrfToken)
+    kernel.registerMiddleware('secure-headers', SecureHeaders)
 
     // Register middleware groups from config
     const configRepo = this.app.make(ConfigRepository)

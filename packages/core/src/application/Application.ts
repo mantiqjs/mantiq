@@ -189,9 +189,7 @@ export class Application extends ContainerImpl {
             providers.push(mod[providerName])
           }
         } catch (e) {
-          if (process.env.APP_DEBUG === 'true') {
-            console.warn(`[Mantiq] Failed to load provider from ${file}:`, (e as Error)?.message ?? e)
-          }
+          console.warn(`[Mantiq] Failed to load provider from ${file}:`, (e as Error)?.message ?? e)
         }
       }
     } catch {
@@ -250,7 +248,12 @@ export class Application extends ContainerImpl {
    */
   async bootProviders(): Promise<void> {
     for (const provider of this.providers) {
-      await provider.boot()
+      try {
+        await provider.boot()
+      } catch (e) {
+        const name = provider.constructor?.name ?? 'Unknown'
+        console.error(`[Mantiq] ${name}.boot() failed:`, (e as Error)?.stack ?? e)
+      }
     }
     this.booted = true
   }
@@ -295,9 +298,11 @@ export class Application extends ContainerImpl {
             await deferredProvider.boot()
             this.providers.push(deferredProvider)
           }
-          // @internal: sync wrapper — deferred providers must not have async register/boot
-          // that relies on other async operations. In practice this is fine.
-          void boot()
+          // Deferred boot — catch and log errors instead of swallowing
+          boot().catch((e) => {
+            const name = deferredProvider.constructor?.name ?? 'DeferredProvider'
+            console.error(`[Mantiq] ${name} deferred boot failed:`, (e as Error)?.stack ?? e)
+          })
           return super.make(abstract)
         }
       }

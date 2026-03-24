@@ -156,9 +156,7 @@ export class Discoverer {
           mod.default(router)
         }
       } catch (e) {
-        if (process.env.APP_DEBUG === 'true') {
-          console.warn(`[Mantiq] Failed to load route file ${file}:`, (e as Error)?.message ?? e)
-        }
+        console.warn(`[Mantiq] Failed to load route file ${file}:`, (e as Error)?.message ?? e)
       }
     }
   }

@@ -47,7 +47,10 @@ export class EncryptCookies implements Middleware {
         const decoded = decodeURIComponent(value)
         decrypted[name] = await this.encrypter.decrypt(decoded)
       } catch {
-        // Can't decrypt — skip this cookie (expired key, tampered, etc.)
+        // Can't decrypt — expired key, tampered, or wrong format
+        if (process.env.APP_DEBUG === 'true') {
+          console.warn(`[Mantiq] Failed to decrypt cookie "${name}" — using raw value`)
+        }
         decrypted[name] = value
       }
     }
