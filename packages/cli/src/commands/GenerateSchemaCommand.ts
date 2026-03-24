@@ -8,13 +8,16 @@ import { join } from 'node:path'
 const SQLITE_TYPE_MAP: Record<string, string> = {
   integer: 'number',
   int: 'number',
+  bigint: 'number',
+  smallint: 'number',
+  mediumint: 'number',
+  tinyint: 'number',
   real: 'number',
   float: 'number',
   double: 'number',
   numeric: 'number',
   decimal: 'number',
   boolean: 'boolean',
-  tinyint: 'boolean',
   text: 'string',
   varchar: 'string',
   char: 'string',
@@ -130,7 +133,8 @@ export class GenerateSchemaCommand extends Command {
       return rows.map((r: any) => ({
         name: r.name,
         type: sqlTypeToTs(r.type || 'text'),
-        nullable: r.notnull === 0,
+        // pk=1 means primary key — never nullable (SQLite quirk: notnull=0 for autoincrement PKs)
+        nullable: r.pk ? false : r.notnull === 0,
       }))
     } catch {}
 
