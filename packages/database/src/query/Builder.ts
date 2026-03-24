@@ -455,14 +455,13 @@ applyMacros(QueryBuilder)
  */
 function sanitizeColumn(column: string): string {
   // Already quoted — pass through
-  if (column.startsWith('"') || column.startsWith('`') || column.startsWith("'")) return column
+  if (column.startsWith('"') || column.startsWith('`') || column.startsWith("'") || column.startsWith('[')) return column
 
   // Validate: only allow alphanumeric, underscores, dots
   if (!/^[\w]+(?:\.[\w]+)?$/.test(column)) {
     throw new Error(`Invalid column name: "${column}"`)
   }
-  // Quote the column: users.created_at → "users"."created_at"
-  return column.split('.').map(part => `"${part}"`).join('.')
+  return column
 }
 
 const VALID_OPERATORS = new Set(['=', '!=', '<>', '<', '>', '<=', '>=', 'LIKE', 'NOT LIKE', 'IN', 'NOT IN', 'IS', 'IS NOT', 'BETWEEN'])
