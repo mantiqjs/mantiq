@@ -193,7 +193,7 @@ export class QueryBuilder {
    */
   whereDate(column: string, operatorOrValue: string, value?: string): this {
     const [op, val] = value === undefined ? ['=', operatorOrValue] : [operatorOrValue, value]
-    return this.whereRaw(`DATE(${column}) ${op} ?`, [val])
+    return this.whereRaw(`DATE(${sanitizeColumn(column)}) ${sanitizeOperator(op)} ?`, [val])
   }
 
   /**
@@ -202,7 +202,7 @@ export class QueryBuilder {
    */
   whereMonth(column: string, operatorOrValue: string | number, value?: string | number): this {
     const [op, val] = value === undefined ? ['=', operatorOrValue] : [operatorOrValue, value]
-    return this.whereRaw(`strftime('%m', ${column}) ${op} ?`, [String(val).padStart(2, '0')])
+    return this.whereRaw(`strftime('%m', ${sanitizeColumn(column)}) ${sanitizeOperator(String(op))} ?`, [String(val).padStart(2, '0')])
   }
 
   /**
@@ -211,7 +211,7 @@ export class QueryBuilder {
    */
   whereYear(column: string, operatorOrValue: string | number, value?: string | number): this {
     const [op, val] = value === undefined ? ['=', operatorOrValue] : [operatorOrValue, value]
-    return this.whereRaw(`strftime('%Y', ${column}) ${op} ?`, [String(val)])
+    return this.whereRaw(`strftime('%Y', ${sanitizeColumn(column)}) ${sanitizeOperator(String(op))} ?`, [String(val)])
   }
 
   /**
@@ -220,23 +220,23 @@ export class QueryBuilder {
    */
   whereTime(column: string, operatorOrValue: string, value?: string): this {
     const [op, val] = value === undefined ? ['=', operatorOrValue] : [operatorOrValue, value]
-    return this.whereRaw(`strftime('%H:%M:%S', ${column}) ${op} ?`, [val])
+    return this.whereRaw(`strftime('%H:%M:%S', ${sanitizeColumn(column)}) ${sanitizeOperator(op)} ?`, [val])
   }
 
   // ── Joins ───────────────────────────────────────────────────────────────────
 
   join(table: string, first: string, operator: string, second: string): this {
-    this.state.joins.push({ type: 'inner', table, first, operator, second })
+    this.state.joins.push({ type: 'inner', table, first: sanitizeColumn(first), operator, second: sanitizeColumn(second) })
     return this
   }
 
   leftJoin(table: string, first: string, operator: string, second: string): this {
-    this.state.joins.push({ type: 'left', table, first, operator, second })
+    this.state.joins.push({ type: 'left', table, first: sanitizeColumn(first), operator, second: sanitizeColumn(second) })
     return this
   }
 
   rightJoin(table: string, first: string, operator: string, second: string): this {
-    this.state.joins.push({ type: 'right', table, first, operator, second })
+    this.state.joins.push({ type: 'right', table, first: sanitizeColumn(first), operator, second: sanitizeColumn(second) })
     return this
   }
 
@@ -447,3 +447,29 @@ export class QueryBuilder {
 
 // Add macro support — QueryBuilder.macro('name', fn) / instance.__macro('name')
 applyMacros(QueryBuilder)
+
+/**
+ * Sanitize a column name to prevent SQL injection.
+ * Allows: alphanumeric, underscores, dots (table.column), quotes.
+ * Rejects anything else.
+ */
+function sanitizeColumn(column: string): string {
+  // Already quoted — pass through
+  if (column.startsWith('"') || column.startsWith('`') || column.startsWith("'")) return column
+
+  // Validate: only allow alphanumeric, underscores, dots
+  if (!/^[\w]+(?:\.[\w]+)?$/.test(column)) {
+    throw new Error(`Invalid column name: "${column}"`)
+  }
+  // Quote the column: users.created_at → "users"."created_at"
+  return column.split('.').map(part => `"${part}"`).join('.')
+}
+
+const VALID_OPERATORS = new Set(['=', '!=', '<>', '<', '>', '<=', '>=', 'LIKE', 'NOT LIKE', 'IN', 'NOT IN', 'IS', 'IS NOT', 'BETWEEN'])
+
+function sanitizeOperator(op: string): string {
+  if (!VALID_OPERATORS.has(op.toUpperCase())) {
+    throw new Error(`Invalid SQL operator: "${op}"`)
+  }
+  return op
+}

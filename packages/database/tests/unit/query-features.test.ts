@@ -106,19 +106,19 @@ describe('Date where clauses', () => {
   test('whereDate generates DATE() SQL', () => {
     const conn = makeConn()
     const sql = conn.table('posts').whereDate('created_at', '2024-01-15').toSql()
-    expect(sql).toContain('DATE(created_at) = ?')
+    expect(sql).toContain('DATE("created_at") = ?')
   })
 
   test('whereDate with operator', () => {
     const conn = makeConn()
     const sql = conn.table('posts').whereDate('created_at', '>=', '2024-01-01').toSql()
-    expect(sql).toContain('DATE(created_at) >= ?')
+    expect(sql).toContain('DATE("created_at") >= ?')
   })
 
   test('whereMonth generates strftime SQL', () => {
     const conn = makeConn()
     const sql = conn.table('posts').whereMonth('created_at', 3).toSql()
-    expect(sql).toContain("strftime('%m', created_at) = ?")
+    expect(sql).toContain("strftime('%m', "created_at") = ?")
   })
 
   test('whereMonth pads single digit months', () => {
@@ -130,19 +130,19 @@ describe('Date where clauses', () => {
   test('whereYear generates strftime SQL', () => {
     const conn = makeConn()
     const sql = conn.table('posts').whereYear('created_at', 2024).toSql()
-    expect(sql).toContain("strftime('%Y', created_at) = ?")
+    expect(sql).toContain("strftime('%Y', "created_at") = ?")
   })
 
   test('whereYear with operator', () => {
     const conn = makeConn()
     const sql = conn.table('posts').whereYear('created_at', '>=', 2020).toSql()
-    expect(sql).toContain("strftime('%Y', created_at) >= ?")
+    expect(sql).toContain("strftime('%Y', "created_at") >= ?")
   })
 
   test('whereTime generates strftime SQL', () => {
     const conn = makeConn()
     const sql = conn.table('events').whereTime('starts_at', '>=', '10:00').toSql()
-    expect(sql).toContain("strftime('%H:%M:%S', starts_at) >= ?")
+    expect(sql).toContain('strftime(\'%H:%M:%S\', "starts_at") >= ?')
   })
 })
 
