@@ -17,7 +17,6 @@ export class Vite {
   // ── SSR state ───────────────────────────────────────────────────────────
   private readonly ssrEntry: string | null
   private readonly ssrBundle: string
-  private viteDevServer: any | null = null
   private ssrModuleCache: SSRModule | null = null
   /** Application base path (for resolving SSR bundle). Set via setBasePath(). */
   private basePath: string = ''
@@ -316,24 +315,12 @@ export class Vite {
   }
 
   /**
-   * Get or lazily create the embedded Vite dev server (for SSR module loading).
-   * Only used in development mode with SSR enabled.
-   */
-  private async getViteDevServer(): Promise<any> {
-    if (this.viteDevServer) return this.viteDevServer
-
-    const { createServer } = await import('vite')
-    this.viteDevServer = await createServer({
-      server: { middlewareMode: true },
-      appType: 'custom',
-    })
-
-    return this.viteDevServer
-  }
-
-  /**
-   * Load the SSR module. In dev mode, uses Vite's ssrLoadModule for HMR.
-   * In production, imports the pre-built bundle.
+   * Load the SSR module.
+   *
+   * In dev mode: uses Bun's native import (handles TSX, path aliases via tsconfig).
+   * No embedded Vite server needed — avoids HMR conflicts with the standalone dev server.
+   *
+   * In production: imports the pre-built SSR bundle.
    */
   private async loadSSRModule(): Promise<SSRModule> {
     if (this.ssrModuleCache) return this.ssrModuleCache
@@ -345,9 +332,11 @@ export class Vite {
     let mod: any
 
     if (this.isDev()) {
-      // Dev: use Vite's ssrLoadModule for HMR + transform
-      const server = await this.getViteDevServer()
-      mod = await server.ssrLoadModule(this.ssrEntry)
+      // Dev: use Bun's native import — it handles TSX and tsconfig path aliases
+      const entryPath = this.basePath
+        ? `${this.basePath}/${this.ssrEntry}`
+        : this.ssrEntry
+      mod = await import(entryPath)
     } else {
       // Prod: import the pre-built SSR bundle
       const bundlePath = this.basePath
@@ -383,24 +372,7 @@ export class Vite {
    */
   private async renderSSR(url: string, data?: Record<string, unknown>): Promise<SSRResult> {
     const ssrModule = await this.loadSSRModule()
-
-    try {
-      return await ssrModule.render(url, data)
-    } catch (err) {
-      // In dev, fix the stack trace for better DX
-      if (this.isDev() && this.viteDevServer && err instanceof Error) {
-        this.viteDevServer.ssrFixStacktrace(err)
-      }
-      throw err
-    }
-  }
-
-  /** Close the embedded Vite dev server (cleanup). */
-  async closeDevServer(): Promise<void> {
-    if (this.viteDevServer) {
-      await this.viteDevServer.close()
-      this.viteDevServer = null
-    }
+    return await ssrModule.render(url, data)
   }
 
   // ── HTML Shell ───────────────────────────────────────────────────────────
