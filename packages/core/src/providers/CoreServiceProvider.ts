@@ -98,6 +98,10 @@ export class CoreServiceProvider extends ServiceProvider {
     if (appKey) {
       const encrypter = await AesEncrypter.fromAppKey(appKey)
       this.app.instance(ENCRYPTER, encrypter)
+
+      // Give WebSocketKernel the encrypter so it can decrypt cookies on upgrade
+      const wsKernel = this.app.make(WebSocketKernel)
+      wsKernel.setEncrypter(encrypter)
     }
 
     // ── Auto-register middleware aliases on HttpKernel ─────────────────────

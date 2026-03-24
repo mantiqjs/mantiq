@@ -213,6 +213,12 @@ export class MantiqRequest implements MantiqRequestContract {
     this.authenticatedUser = user
   }
 
+  // ── FormData ────────────────────────────────────────────────────────────
+
+  async formData(): Promise<FormData> {
+    return this.bunRequest.clone().formData()
+  }
+
   // ── Raw ──────────────────────────────────────────────────────────────────
 
   raw(): Request {

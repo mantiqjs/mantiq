@@ -35,7 +35,9 @@ export class ChannelManager {
    * The pattern is matched against the base name (without the prefix).
    */
   authorize(pattern: string, callback: ChannelAuthorizer): void {
-    this.authorizers.set(pattern, callback)
+    // Strip channel-type prefix so the pattern matches against baseName
+    const { baseName } = parseChannelName(pattern)
+    this.authorizers.set(baseName, callback)
   }
 
   // ── Subscribe / Unsubscribe ─────────────────────────────────────────────

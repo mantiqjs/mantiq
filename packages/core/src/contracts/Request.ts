@@ -50,6 +50,9 @@ export interface MantiqRequest {
   isAuthenticated(): boolean
   setUser(user: any): void
 
+  // ── FormData ────────────────────────────────────────────────────────────
+  formData(): Promise<FormData>
+
   // ── Raw ──────────────────────────────────────────────────────────────────
   raw(): Request
 }
