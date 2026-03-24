@@ -174,7 +174,7 @@ export class Validator {
     if (colonIndex === -1) return { name: rule.trim(), params: [] }
     const name = rule.slice(0, colonIndex).trim()
     const paramStr = rule.slice(colonIndex + 1)
-    return { name, params: paramStr.split(',') }
+    return { name, params: paramStr.split(',').map(p => p.trim()) }
   }
 
   // ── Private: field expansion (wildcards) ──────────────────────────────────

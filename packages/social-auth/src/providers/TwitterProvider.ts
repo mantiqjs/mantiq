@@ -13,11 +13,8 @@ export class TwitterProvider extends AbstractProvider {
 
   protected override _scopes: string[] = ['users.read', 'tweet.read']
 
-  /**
-   * Stored PKCE code_verifier — needed during the token exchange to prove
-   * we are the same client that initiated the authorization request.
-   */
-  private _codeVerifier: string | null = null
+  /** Request reference for session access during token exchange. */
+  private _request: any = null
 
   protected override getAuthUrl(): string {
     return 'https://twitter.com/i/oauth2/authorize'
@@ -60,16 +57,22 @@ export class TwitterProvider extends AbstractProvider {
    * Override redirect to include PKCE parameters.
    * Twitter requires code_challenge_method=S256.
    */
-  override redirect(): Response {
-    this._codeVerifier = this.generateCodeVerifier()
-    const challenge = this.generateCodeChallenge(this._codeVerifier)
+  override redirect(request?: any): Response {
+    this._request = request
+    const codeVerifier = this.generateCodeVerifier()
+    const challenge = this.generateCodeChallenge(codeVerifier)
+
+    // Store code_verifier in session so it survives the redirect round-trip
+    if (request?.session?.()) {
+      request.session().put('_social_auth_pkce_verifier', codeVerifier)
+    }
 
     this.with({
       code_challenge: challenge,
       code_challenge_method: 'S256',
     })
 
-    return super.redirect()
+    return super.redirect(request)
   }
 
   /**
@@ -85,8 +88,11 @@ export class TwitterProvider extends AbstractProvider {
       redirect_uri: this.redirectUrl,
     }
 
-    if (this._codeVerifier) {
-      body.code_verifier = this._codeVerifier
+    // Retrieve code_verifier from session (stored during redirect)
+    const codeVerifier = this._request?.session?.()?.get('_social_auth_pkce_verifier')
+    if (codeVerifier) {
+      body.code_verifier = codeVerifier
+      this._request?.session?.()?.forget('_social_auth_pkce_verifier')
     }
 
     const credentials = btoa(`${this.clientId}:${this.clientSecret}`)

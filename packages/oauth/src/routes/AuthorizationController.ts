@@ -78,6 +78,12 @@ export class AuthorizationController {
     const client = await Client.find(clientId)
     if (!client) throw new OAuthError('Client not found.', 'invalid_client')
 
+    // Validate redirect URI matches client's registered URI (same check as GET)
+    const allowedRedirect = client.getAttribute('redirect') as string
+    if (allowedRedirect && redirectUri !== allowedRedirect) {
+      throw new OAuthError('Invalid redirect URI.', 'invalid_request')
+    }
+
     const userId = typeof user.getAuthIdentifier === 'function'
       ? user.getAuthIdentifier()
       : user.id ?? user.getAttribute?.('id')
