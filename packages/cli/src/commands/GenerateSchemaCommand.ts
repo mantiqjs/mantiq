@@ -1,43 +1,36 @@
 import { Command } from '../Command.ts'
 import type { ParsedArgs } from '../Parser.ts'
-import { readdirSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs'
+import { getManager } from '@mantiq/database'
+import { writeFileSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 
-/** Column type → TypeScript type mapping. */
-const TYPE_MAP: Record<string, string> = {
-  increments: 'number',
-  bigIncrements: 'number',
-  id: 'number',
+/** SQLite column type → TypeScript type. */
+const SQLITE_TYPE_MAP: Record<string, string> = {
   integer: 'number',
-  bigInteger: 'number',
-  tinyInteger: 'number',
-  smallInteger: 'number',
-  mediumInteger: 'number',
+  int: 'number',
+  real: 'number',
   float: 'number',
   double: 'number',
+  numeric: 'number',
   decimal: 'number',
-  unsignedInteger: 'number',
-  unsignedBigInteger: 'number',
   boolean: 'boolean',
-  string: 'string',
+  tinyint: 'boolean',
   text: 'string',
-  mediumText: 'string',
-  longText: 'string',
-  char: 'string',
   varchar: 'string',
+  char: 'string',
+  clob: 'string',
+  blob: 'Uint8Array',
   date: 'Date',
-  dateTime: 'Date',
+  datetime: 'Date',
   timestamp: 'Date',
-  timestamps: '__timestamps__',
-  softDeletes: '__softDeletes__',
-  time: 'string',
   json: 'Record<string, any>',
   jsonb: 'Record<string, any>',
-  binary: 'Uint8Array',
-  uuid: 'string',
-  enum: 'string',
-  ipAddress: 'string',
-  macAddress: 'string',
+}
+
+/** SQL type string → TypeScript type. Handles "VARCHAR(255)", "INTEGER", etc. */
+function sqlTypeToTs(sqlType: string): string {
+  const normalized = sqlType.toLowerCase().replace(/\(.*\)/, '').trim()
+  return SQLITE_TYPE_MAP[normalized] ?? 'any'
 }
 
 interface Column {
@@ -53,38 +46,26 @@ interface Table {
 
 export class GenerateSchemaCommand extends Command {
   override name = 'schema:generate'
-  override description = 'Generate TypeScript interfaces from migration files'
+  override description = 'Generate TypeScript interfaces from database schema'
   override usage = 'schema:generate [--output=app/Models/schemas.d.ts]'
 
   override async handle(args: ParsedArgs): Promise<number> {
-    const migrationsDir = join(process.cwd(), 'database/migrations')
     const outputPath = (args.flags['output'] as string) || 'app/Models/schemas.d.ts'
     const fullOutput = join(process.cwd(), outputPath)
 
-    // Read all migration files in order
-    let files: string[]
+    let connection: any
     try {
-      files = readdirSync(migrationsDir).filter(f => f.endsWith('.ts')).sort()
+      connection = getManager().connection()
     } catch {
-      this.io.error('  No migrations directory found.')
+      this.io.error('  Database not configured. Run migrations first.')
       return 1
     }
 
-    if (files.length === 0) {
-      this.io.warn('  No migration files found.')
-      return 0
-    }
+    // Get all tables from the database
+    const tables = await this.introspectTables(connection)
 
-    // Parse migrations to extract table schemas
-    const tables = new Map<string, Table>()
-
-    for (const file of files) {
-      const content = readFileSync(join(migrationsDir, file), 'utf8')
-      this.parseMigration(content, tables)
-    }
-
-    if (tables.size === 0) {
-      this.io.warn('  No tables found in migrations.')
+    if (tables.length === 0) {
+      this.io.warn('  No tables found in database.')
       return 0
     }
 
@@ -95,120 +76,89 @@ export class GenerateSchemaCommand extends Command {
     mkdirSync(join(fullOutput, '..'), { recursive: true })
     writeFileSync(fullOutput, output)
 
-    this.io.success(`  Generated ${tables.size} interface(s) → ${outputPath}`)
-    for (const [name, table] of tables) {
-      this.io.line(`    ${this.pascalCase(name)}Schema (${table.columns.length} columns)`)
+    this.io.success(`  Generated ${tables.length} interface(s) → ${outputPath}`)
+    for (const table of tables) {
+      this.io.line(`    ${this.pascalCase(table.name)}Schema (${table.columns.length} columns)`)
     }
 
     return 0
   }
 
-  private parseMigration(content: string, tables: Map<string, Table>): void {
-    // Only parse the up() method — ignore down() which has drops
-    const upMatch = content.match(/(?:async\s+)?up\s*\([^)]*\)\s*\{([\s\S]*?)^\s*\}/m)
-    const upContent = upMatch ? upMatch[0] : content
+  private async introspectTables(connection: any): Promise<Table[]> {
+    const tables: Table[] = []
 
-    const lines = upContent.split('\n')
-    let currentTable: Table | null = null
-    let depth = 0
+    // Get table names (skip internal/migration tables)
+    const skipTables = new Set(['migrations', 'sqlite_sequence'])
+    const tableNames = await this.getTableNames(connection)
 
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i]!.trim()
+    for (const tableName of tableNames) {
+      if (skipTables.has(tableName)) continue
 
-      // Start of schema.create
-      const createMatch = line.match(/schema\.create\s*\(\s*['"`](\w+)['"`]/)
-      if (createMatch && !currentTable) {
-        currentTable = { name: createMatch[1]!, columns: [] }
-        depth = 0
-        // Count braces on this line
-        for (const ch of line) { if (ch === '{') depth++; if (ch === '}') depth-- }
-        continue
+      const columns = await this.getColumns(connection, tableName)
+      if (columns.length > 0) {
+        tables.push({ name: tableName, columns })
       }
-
-      // Inside a create block
-      if (currentTable) {
-        // Count braces
-        for (const ch of line) { if (ch === '{') depth++; if (ch === '}') depth-- }
-
-        // Parse column if we see t. pattern
-        if (line.match(/^\w+\./)) {
-          this.parseColumnLine(line, currentTable)
-        }
-
-        // End of block
-        if (depth <= 0 || line === '})') {
-          tables.set(currentTable.name, currentTable)
-          currentTable = null
-          depth = 0
-        }
-      }
-
-      // Drops
-      const dropMatch = line.match(/schema\.(?:drop|dropIfExists)\s*\(\s*['"`](\w+)['"`]/)
-      if (dropMatch) tables.delete(dropMatch[1]!)
     }
+
+    return tables
   }
 
-  private parseColumnLine(line: string, table: Table): void {
-    const nullable = line.includes('.nullable()')
+  private async getTableNames(connection: any): Promise<string[]> {
+    // SQLite
+    try {
+      const rows = await connection.select(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name"
+      )
+      return rows.map((r: any) => r.name)
+    } catch {}
 
-    // t.id()
-    if (/\.id\s*\(/.test(line) && !line.includes("'")) {
-      if (!table.columns.find(c => c.name === 'id')) {
-        table.columns.push({ name: 'id', type: 'number', nullable: false })
-      }
-      return
-    }
+    // Postgres / MySQL / MSSQL — try information_schema
+    try {
+      const rows = await connection.select(
+        "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' OR table_schema = DATABASE() ORDER BY table_name"
+      )
+      return rows.map((r: any) => r.table_name ?? r.TABLE_NAME)
+    } catch {}
 
-    // t.timestamps()
-    if (/\.timestamps\s*\(/.test(line)) {
-      table.columns.push({ name: 'created_at', type: 'Date', nullable: true })
-      table.columns.push({ name: 'updated_at', type: 'Date', nullable: true })
-      return
-    }
-
-    // t.softDeletes()
-    if (/\.softDeletes\s*\(/.test(line)) {
-      table.columns.push({ name: 'deleted_at', type: 'Date', nullable: true })
-      return
-    }
-
-    // t.method('column_name', ...)
-    const colMatch = line.match(/\.(\w+)\s*\(\s*['"`](\w+)['"`]/)
-    if (!colMatch) return
-
-    const method = colMatch[1]!
-    const colName = colMatch[2]!
-
-    // Skip non-column methods
-    if (['index', 'unique', 'primary', 'foreign', 'dropColumn', 'drop'].includes(method)) {
-      if (method === 'dropColumn' || method === 'drop') {
-        table.columns = table.columns.filter(c => c.name !== colName)
-      }
-      return
-    }
-
-    const tsType = TYPE_MAP[method]
-    if (!tsType) return
-
-    const existing = table.columns.findIndex(c => c.name === colName)
-    if (existing >= 0) {
-      table.columns[existing] = { name: colName, type: tsType, nullable }
-    } else {
-      table.columns.push({ name: colName, type: tsType, nullable })
-    }
+    return []
   }
 
-  private generateInterfaces(tables: Map<string, Table>): string {
+  private async getColumns(connection: any, tableName: string): Promise<Column[]> {
+    // SQLite: PRAGMA table_info
+    try {
+      const rows = await connection.select(`PRAGMA table_info("${tableName}")`)
+      return rows.map((r: any) => ({
+        name: r.name,
+        type: sqlTypeToTs(r.type || 'text'),
+        nullable: r.notnull === 0,
+      }))
+    } catch {}
+
+    // Postgres / MySQL: information_schema.columns
+    try {
+      const rows = await connection.select(
+        `SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_name = '${tableName}' ORDER BY ordinal_position`
+      )
+      return rows.map((r: any) => ({
+        name: r.column_name ?? r.COLUMN_NAME,
+        type: sqlTypeToTs(r.data_type ?? r.DATA_TYPE ?? 'text'),
+        nullable: (r.is_nullable ?? r.IS_NULLABLE ?? 'YES') === 'YES',
+      }))
+    } catch {}
+
+    return []
+  }
+
+  private generateInterfaces(tables: Table[]): string {
     const lines: string[] = [
       '/**',
-      ' * Auto-generated from database migrations.',
+      ' * Auto-generated from database schema.',
       ' * DO NOT EDIT — re-generate with: bun mantiq schema:generate',
       ' */',
       '',
     ]
 
-    for (const [, table] of tables) {
+    for (const table of tables) {
       const name = this.pascalCase(table.name) + 'Schema'
       lines.push(`export interface ${name} {`)
 
