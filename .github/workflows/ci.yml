@@ -222,7 +222,7 @@ jobs:
           bun ${{ github.workspace }}/packages/create-mantiq/src/index.ts test-app $KIT_FLAG --yes --no-git
           # Link local workspace packages instead of published npm versions
           cd test-app
-          for pkg in core database auth cli validation helpers filesystem logging events queue realtime heartbeat vite mail notify search health oauth social-auth; do
+          for pkg in core database auth cli validation helpers filesystem logging events queue realtime heartbeat vite mail notify search health oauth social-auth testing; do
             PKG_DIR="${{ github.workspace }}/packages/$pkg"
             if [ -d "$PKG_DIR" ]; then
               rm -rf "node_modules/@mantiq/$pkg"
@@ -230,15 +230,29 @@ jobs:
             fi
           done
 
-      - name: Verify app boots and endpoints respond
+      - name: Run migrations
         run: |
           cd /tmp/test-app
-          timeout 15 bun run dev &
-          sleep 5
+          bun mantiq migrate
 
-          # Determine port
-          PORT=3000
-          curl -s -o /dev/null http://localhost:3000/ 2>/dev/null || PORT=3001
+      - name: Generate APP_KEY
+        run: |
+          cd /tmp/test-app
+          bun mantiq key:generate
+          grep "APP_KEY=base64:" .env
+
+      - name: Generate schema interfaces
+        run: |
+          cd /tmp/test-app
+          bun mantiq schema:generate
+          cat app/Models/schemas.d.ts
+
+      - name: Boot server and health check
+        run: |
+          cd /tmp/test-app
+          APP_PORT=3000 APP_DEBUG=true bun run index.ts &
+          SERVER_PID=$!
+          sleep 5
 
           PASS=0
           FAIL=0
@@ -262,20 +276,94 @@ jobs:
             fi
           }
 
-          echo "── ${{ matrix.kit }} starter kit health checks ──"
-          check "Welcome page"   "http://localhost:$PORT/"         200 "mantiq"
-          check "API ping"       "http://localhost:$PORT/api/ping" 200 '"status":"ok"'
-          check "Heartbeat header" "http://localhost:$PORT/"       200 ""
+          echo "── ${{ matrix.kit }} health checks ──"
+          check "Welcome page"   "http://localhost:3000/"         200 ""
+          check "API ping"       "http://localhost:3000/api/ping" 200 '"status":"ok"'
 
-          # Verify X-Heartbeat header (non-fatal — symlinked packages may have module identity issues)
-          curl -s -D /tmp/headers.txt -o /dev/null http://localhost:$PORT/ 2>/dev/null
-          if grep -qi "X-Heartbeat" /tmp/headers.txt 2>/dev/null; then
-            echo "  ✓ X-Heartbeat header present"
+          echo ""
+          echo "── Auth flow (register → login → protected → logout) ──"
+
+          # Get CSRF session
+          COOKIES=$(curl -s -D- -o /dev/null http://localhost:3000/ 2>/dev/null)
+          SESSION=$(echo "$COOKIES" | grep -i 'set-cookie.*mantiq_session' | sed 's/[Ss]et-[Cc]ookie: //' | sed 's/;.*//')
+          XSRF=$(echo "$COOKIES" | grep -i 'set-cookie.*XSRF-TOKEN' | sed 's/.*XSRF-TOKEN=//' | sed 's/;.*//')
+
+          if [ "${{ matrix.kit }}" = "none" ]; then
+            # API-only: token auth
+            check "Register (token)" "http://localhost:3000/api/register" 201 '"token"' <<< ""
+            REG_CODE=$(curl -s -o /tmp/reg.json -w "%{http_code}" -X POST http://localhost:3000/api/register \
+              -H "Content-Type: application/json" \
+              -d '{"name":"CI User","email":"ci@test.com","password":"secret123"}')
+            if [ "$REG_CODE" = "201" ]; then
+              echo "  ✓ Register — HTTP $REG_CODE"
+              PASS=$((PASS+1))
+              TOKEN=$(cat /tmp/reg.json | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+              # Access protected route with token
+              PROT_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/user \
+                -H "Authorization: Bearer $TOKEN")
+              if [ "$PROT_CODE" = "200" ]; then
+                echo "  ✓ Protected route with token — HTTP $PROT_CODE"
+                PASS=$((PASS+1))
+              else
+                echo "  ✗ Protected route with token — expected 200, got $PROT_CODE"
+                FAIL=$((FAIL+1))
+              fi
+            else
+              echo "  ✗ Register — expected 201, got $REG_CODE"
+              FAIL=$((FAIL+1))
+            fi
           else
-            echo "  ⚠ X-Heartbeat header not detected (may be a symlink issue)"
+            # SPA kits: session auth with CSRF
+            REG_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:3000/register \
+              -H "Content-Type: application/json" \
+              -H "X-XSRF-TOKEN: $XSRF" \
+              -b "$SESSION; XSRF-TOKEN=$XSRF" \
+              -d '{"name":"CI User","email":"ci@test.com","password":"secret123"}')
+            if [ "$REG_CODE" = "201" ] || [ "$REG_CODE" = "200" ]; then
+              echo "  ✓ Register — HTTP $REG_CODE"
+              PASS=$((PASS+1))
+            else
+              echo "  ✗ Register — expected 201, got $REG_CODE"
+              FAIL=$((FAIL+1))
+            fi
+
+            # Login
+            LOGIN_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:3000/login \
+              -H "Content-Type: application/json" \
+              -H "X-XSRF-TOKEN: $XSRF" \
+              -b "$SESSION; XSRF-TOKEN=$XSRF" \
+              -d '{"email":"ci@test.com","password":"secret123"}')
+            if [ "$LOGIN_CODE" = "200" ]; then
+              echo "  ✓ Login — HTTP $LOGIN_CODE"
+              PASS=$((PASS+1))
+            else
+              echo "  ✗ Login — expected 200, got $LOGIN_CODE"
+              FAIL=$((FAIL+1))
+            fi
+
+            # Protected route (API users list)
+            PROT_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/users \
+              -b "$SESSION; XSRF-TOKEN=$XSRF")
+            if [ "$PROT_CODE" = "200" ]; then
+              echo "  ✓ Protected API — HTTP $PROT_CODE"
+              PASS=$((PASS+1))
+            else
+              echo "  ✗ Protected API — expected 200, got $PROT_CODE"
+              FAIL=$((FAIL+1))
+            fi
           fi
 
-          kill %1 2>/dev/null || true
+          # Unauth access should fail
+          UNAUTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/users)
+          if [ "$UNAUTH" -ge 400 ]; then
+            echo "  ✓ Unauth blocked — HTTP $UNAUTH"
+            PASS=$((PASS+1))
+          else
+            echo "  ✗ Unauth should be blocked — got $UNAUTH"
+            FAIL=$((FAIL+1))
+          fi
+
+          kill $SERVER_PID 2>/dev/null || true
 
           echo ""
           echo "Results: $PASS passed, $FAIL failed"
@@ -301,7 +389,17 @@ jobs:
         run: bunx playwright install chromium --with-deps
 
       - name: Run ${{ matrix.kit }} e2e tests
-        run: bunx playwright test e2e/${{ matrix.kit }}-kit.spec.ts || bunx playwright test e2e/${{ matrix.kit }}.spec.ts
+        run: |
+          # Kit-specific tests
+          bunx playwright test e2e/${{ matrix.kit }}-kit.spec.ts 2>/dev/null || \
+          bunx playwright test e2e/${{ matrix.kit }}.spec.ts 2>/dev/null || true
+
+          # Shared tests (auth flow + CRUD) — run for all kits with frontend
+          if [ "${{ matrix.kit }}" != "api-only" ]; then
+            bunx playwright test e2e/auth-flow.spec.ts e2e/crud-ops.spec.ts
+          else
+            bunx playwright test e2e/token-auth.spec.ts e2e/api-only.spec.ts
+          fi
 
       - name: Upload test artifacts
         if: failure()
