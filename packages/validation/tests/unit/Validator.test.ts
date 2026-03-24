@@ -165,6 +165,38 @@ describe('numeric', () => {
     const v = new Validator({ age: 'abc' }, { age: 'numeric' })
     expect(await v.fails()).toBe(true)
   })
+
+  test('rejects booleans', async () => {
+    const v1 = new Validator({ val: true }, { val: 'numeric' })
+    expect(await v1.fails()).toBe(true)
+    const v2 = new Validator({ val: false }, { val: 'numeric' })
+    expect(await v2.fails()).toBe(true)
+  })
+
+  test('rejects null', async () => {
+    const v = new Validator({ val: null }, { val: 'required|numeric' })
+    expect(await v.fails()).toBe(true)
+  })
+
+  test('rejects arrays', async () => {
+    const v = new Validator({ val: [] }, { val: 'required|numeric' })
+    expect(await v.fails()).toBe(true)
+  })
+
+  test('rejects objects', async () => {
+    const v = new Validator({ val: {} }, { val: 'required|numeric' })
+    expect(await v.fails()).toBe(true)
+  })
+
+  test('passes for float strings', async () => {
+    const v = new Validator({ val: '3.14' }, { val: 'numeric' })
+    expect(await v.passes()).toBe(true)
+  })
+
+  test('passes for negative numbers', async () => {
+    const v = new Validator({ val: -5 }, { val: 'numeric' })
+    expect(await v.passes()).toBe(true)
+  })
 })
 
 describe('integer', () => {
@@ -458,6 +490,31 @@ describe('date', () => {
     const v = new Validator({ d: 'not-a-date' }, { d: 'date' })
     expect(await v.fails()).toBe(true)
   })
+
+  test('rejects Feb 30', async () => {
+    const v = new Validator({ d: '2024-02-30' }, { d: 'date' })
+    expect(await v.fails()).toBe(true)
+  })
+
+  test('rejects Feb 31', async () => {
+    const v = new Validator({ d: '2024-02-31' }, { d: 'date' })
+    expect(await v.fails()).toBe(true)
+  })
+
+  test('rejects Apr 31', async () => {
+    const v = new Validator({ d: '2024-04-31' }, { d: 'date' })
+    expect(await v.fails()).toBe(true)
+  })
+
+  test('accepts Feb 29 in leap year', async () => {
+    const v = new Validator({ d: '2024-02-29' }, { d: 'date' })
+    expect(await v.passes()).toBe(true)
+  })
+
+  test('rejects Feb 29 in non-leap year', async () => {
+    const v = new Validator({ d: '2023-02-29' }, { d: 'date' })
+    expect(await v.fails()).toBe(true)
+  })
 })
 
 describe('before / after', () => {
@@ -482,6 +539,41 @@ describe('ip', () => {
 
   test('fails for invalid IP', async () => {
     const v = new Validator({ ip: '999.999.999.999' }, { ip: 'ip' })
+    expect(await v.fails()).toBe(true)
+  })
+
+  test('passes for full IPv6', async () => {
+    const v = new Validator({ ip: '2001:0db8:85a3:0000:0000:8a2e:0370:7334' }, { ip: 'ip' })
+    expect(await v.passes()).toBe(true)
+  })
+
+  test('passes for compressed IPv6 (::1)', async () => {
+    const v = new Validator({ ip: '::1' }, { ip: 'ip' })
+    expect(await v.passes()).toBe(true)
+  })
+
+  test('passes for compressed IPv6 (2001:db8::1)', async () => {
+    const v = new Validator({ ip: '2001:db8::1' }, { ip: 'ip' })
+    expect(await v.passes()).toBe(true)
+  })
+
+  test('passes for compressed IPv6 (fe80::1)', async () => {
+    const v = new Validator({ ip: 'fe80::1' }, { ip: 'ip' })
+    expect(await v.passes()).toBe(true)
+  })
+
+  test('passes for all-zeros compressed IPv6 (::)', async () => {
+    const v = new Validator({ ip: '::' }, { ip: 'ip' })
+    expect(await v.passes()).toBe(true)
+  })
+
+  test('rejects IPv6 with more than one ::', async () => {
+    const v = new Validator({ ip: '2001::db8::1' }, { ip: 'ip' })
+    expect(await v.fails()).toBe(true)
+  })
+
+  test('rejects IPv6 with too many groups', async () => {
+    const v = new Validator({ ip: '2001:0db8:85a3:0000:0000:8a2e:0370:7334:extra' }, { ip: 'ip' })
     expect(await v.fails()).toBe(true)
   })
 })

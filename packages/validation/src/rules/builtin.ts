@@ -16,6 +16,32 @@ function getNestedValue(data: Record<string, any>, path: string): any {
   return path.split('.').reduce((obj, key) => obj?.[key], data)
 }
 
+/**
+ * Validate an IPv6 address string, including compressed (::) notation.
+ */
+function isValidIPv6(s: string): boolean {
+  // Must only contain hex digits and colons
+  if (!/^[0-9a-fA-F:]+$/.test(s)) return false
+
+  // Handle :: compression — only one :: is allowed
+  const doubleColonCount = (s.match(/::/g) || []).length
+  if (doubleColonCount > 1) return false
+
+  if (doubleColonCount === 1) {
+    const parts = s.split('::')
+    const left = parts[0] === '' ? [] : parts[0]!.split(':')
+    const right = parts[1] === '' ? [] : parts[1]!.split(':')
+    const totalGroups = left.length + right.length
+    if (totalGroups > 7) return false
+    return [...left, ...right].every((g) => g.length >= 1 && g.length <= 4)
+  }
+
+  // No compression — must have exactly 8 groups
+  const groups = s.split(':')
+  if (groups.length !== 8) return false
+  return groups.every((g) => g.length >= 1 && g.length <= 4)
+}
+
 // ── Presence rules ───────────────────────────────────────────────────────────
 
 export const required: Rule = {
@@ -92,14 +118,25 @@ export const string: Rule = {
 
 export const numeric: Rule = {
   name: 'numeric',
-  validate: (v, field) =>
-    isEmpty(v) || !isNaN(Number(v)) || `The ${field} field must be a number.`,
+  validate: (v, field) => {
+    if (isEmpty(v)) return true
+    // Reject booleans, objects, arrays — only accept numbers and numeric strings
+    if (typeof v === 'boolean' || typeof v === 'object') {
+      return `The ${field} field must be a number.`
+    }
+    return (typeof v === 'number' && !isNaN(v)) || (typeof v === 'string' && v.trim() !== '' && !isNaN(Number(v))) || `The ${field} field must be a number.`
+  },
 }
 
 export const integer: Rule = {
   name: 'integer',
-  validate: (v, field) =>
-    isEmpty(v) || Number.isInteger(Number(v)) || `The ${field} field must be an integer.`,
+  validate: (v, field) => {
+    if (isEmpty(v)) return true
+    if (typeof v === 'boolean' || typeof v === 'object') {
+      return `The ${field} field must be an integer.`
+    }
+    return Number.isInteger(typeof v === 'string' ? Number(v) : v) || `The ${field} field must be an integer.`
+  },
 }
 
 export const boolean: Rule = {
@@ -312,8 +349,28 @@ export const notIn: Rule = {
 
 export const date: Rule = {
   name: 'date',
-  validate: (v, field) =>
-    isEmpty(v) || !isNaN(Date.parse(String(v))) || `The ${field} field must be a valid date.`,
+  validate: (v, field) => {
+    if (isEmpty(v)) return true
+    const s = String(v)
+    const ts = Date.parse(s)
+    if (isNaN(ts)) return `The ${field} field must be a valid date.`
+
+    // For YYYY-MM-DD format, verify that the parsed date components match the input
+    // to reject impossible dates like Feb 30, Apr 31, etc.
+    const isoMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})/)
+    if (isoMatch) {
+      const d = new Date(ts)
+      const [, year, month, day] = isoMatch
+      if (
+        d.getUTCFullYear() !== Number(year) ||
+        d.getUTCMonth() + 1 !== Number(month) ||
+        d.getUTCDate() !== Number(day)
+      ) {
+        return `The ${field} field must be a valid date.`
+      }
+    }
+    return true
+  },
 }
 
 export const before: Rule = {
@@ -336,7 +393,7 @@ export const ip: Rule = {
     if (isEmpty(v)) return true
     const s = String(v)
     const v4 = /^(\d{1,3}\.){3}\d{1,3}$/.test(s) && s.split('.').every((p) => Number(p) <= 255)
-    const v6 = /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/.test(s)
+    const v6 = isValidIPv6(s)
     return v4 || v6 || `The ${field} field must be a valid IP address.`
   },
 }

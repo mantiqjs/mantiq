@@ -40,7 +40,8 @@ export class SessionStore {
    */
   async save(): Promise<void> {
     await this.handler.write(this.id, JSON.stringify(this.attributes))
-    this.started = false
+    // Keep started=true so the session remains writable after save.
+    // Middleware may still need to write to the session after saving.
   }
 
   // ── Getters & setters ───────────────────────────────────────────────────

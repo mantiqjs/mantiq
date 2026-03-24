@@ -138,9 +138,12 @@ export class MetricsCollector {
     const now = Date.now()
     const bucket = Math.floor(now / 60_000) // 1-minute buckets
 
+    // Snapshot current counters so new increments during the write are not lost
+    const counterSnapshot = new Map(this.counters)
+
     try {
       // Flush counters
-      for (const [key, value] of this.counters) {
+      for (const [key, value] of counterSnapshot) {
         const { name, tags } = this.parseMetricKey(key)
         await this.store.insertMetric(name, 'counter', value, tags, 60, bucket)
       }
@@ -159,10 +162,11 @@ export class MetricsCollector {
         await this.store.insertMetric(name, 'histogram', avg, tags, 60, bucket)
       }
 
-      // Reset counters after flush
+      // Reset counters only after successful write — if the write failed,
+      // data is preserved for the next flush attempt.
       this.counters.clear()
     } catch {
-      // swallow
+      // Write failed — counters are preserved for the next flush attempt
     }
   }
 

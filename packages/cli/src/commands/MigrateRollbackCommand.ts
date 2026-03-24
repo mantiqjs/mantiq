@@ -12,7 +12,17 @@ export class MigrateRollbackCommand extends Command {
     const migrator = new Migrator(connection, { migrationsPath: `${process.cwd()}/database/migrations` })
 
     this.io.info('Rolling back last batch...')
-    const rolled = await migrator.rollback()
+
+    let rolled: string[]
+    try {
+      rolled = await migrator.rollback()
+    } catch (error: any) {
+      if (error?.message?.includes('Migration file(s) not found')) {
+        this.io.error(error.message)
+        return 1
+      }
+      throw error
+    }
 
     if (rolled.length === 0) {
       this.io.success('Nothing to rollback.')

@@ -91,4 +91,31 @@ describe('MetricsCollector', () => {
       expect(metrics.histogramCount('histogram')).toBe(0)
     })
   })
+
+  describe('flush', () => {
+    it('preserves counters when store write fails', async () => {
+      const failingStore = {
+        insertMetric: async () => { throw new Error('write failed') },
+      } as any
+      metrics.setStore(failingStore)
+
+      metrics.increment('http.requests', 10)
+      await metrics.flush()
+
+      // Counters should NOT be cleared because the write failed
+      expect(metrics.getCounter('http.requests')).toBe(10)
+    })
+
+    it('clears counters after successful write', async () => {
+      const successStore = {
+        insertMetric: async () => {},
+      } as any
+      metrics.setStore(successStore)
+
+      metrics.increment('http.requests', 5)
+      await metrics.flush()
+
+      expect(metrics.getCounter('http.requests')).toBe(0)
+    })
+  })
 })
