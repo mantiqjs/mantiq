@@ -294,8 +294,7 @@ jobs:
           XSRF=$(echo "$COOKIES" | grep -i 'set-cookie.*XSRF-TOKEN' | sed 's/.*XSRF-TOKEN=//' | sed 's/;.*//')
 
           if [ "${{ matrix.kit }}" = "none" ]; then
-            # API-only: token auth
-            check "Register (token)" "http://localhost:3000/api/register" 201 '"token"' <<< ""
+            # API-only: token auth (POST requests — can't use check() which is GET-only)
             REG_CODE=$(curl -s -o /tmp/reg.json -w "%{http_code}" -X POST http://localhost:3000/api/register \
               -H "Content-Type: application/json" \
               -d '{"name":"CI User","email":"ci@test.com","password":"secret123"}')
