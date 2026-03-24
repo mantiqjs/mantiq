@@ -3,24 +3,30 @@ name: Publish
 on:
   workflow_dispatch:
     inputs:
+      version:
+        description: 'Version to publish (e.g., 0.5.22). Leave empty to auto-increment patch.'
+        required: false
+        default: ''
       packages:
         description: 'Packages to publish (comma-separated, or "all")'
         required: true
         default: all
       dry-run:
-        description: 'Dry run (no actual publish)'
+        description: 'Dry run (no actual publish or commit)'
         type: boolean
         default: false
 
 jobs:
   publish:
-    name: Publish to npm
+    name: Bump & Publish
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       id-token: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -32,8 +38,43 @@ jobs:
       - name: Typecheck
         run: bun run typecheck
 
-      - name: Run unit tests (integration tests already passed in CI)
+      - name: Run unit tests
         run: bun test packages/*/tests/unit/
+
+      - name: Determine version
+        id: version
+        run: |
+          INPUT_VERSION="${{ github.event.inputs.version }}"
+          if [ -n "$INPUT_VERSION" ]; then
+            echo "version=$INPUT_VERSION" >> $GITHUB_OUTPUT
+          else
+            # Auto-increment patch from current version
+            CURRENT=$(jq -r .version package.json)
+            MAJOR=$(echo $CURRENT | cut -d. -f1)
+            MINOR=$(echo $CURRENT | cut -d. -f2)
+            PATCH=$(echo $CURRENT | cut -d. -f3)
+            NEXT="$MAJOR.$MINOR.$((PATCH + 1))"
+            echo "version=$NEXT" >> $GITHUB_OUTPUT
+          fi
+          echo "  Version: $(cat $GITHUB_OUTPUT | grep version | cut -d= -f2)"
+
+      - name: Bump version
+        if: ${{ github.event.inputs.dry-run != 'true' }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          bun run version:set $VERSION
+          echo "  All packages set to $VERSION"
+
+      - name: Commit version bump
+        if: ${{ github.event.inputs.dry-run != 'true' }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: bump all packages to $VERSION" || echo "No changes to commit"
+          git tag "v$VERSION"
+          git push origin HEAD:master --tags
 
       - name: Setup npm auth
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
@@ -42,6 +83,11 @@ jobs:
         run: |
           PACKAGES="${{ github.event.inputs.packages }}"
           DRY_RUN="${{ github.event.inputs.dry-run }}"
+          VERSION="${{ steps.version.outputs.version }}"
+
+          PUBLISHED=0
+          SKIPPED=0
+          FAILED=0
 
           publish_pkg() {
             local dir=$1
@@ -51,22 +97,27 @@ jobs:
 
             if [ "$version" = "$published" ]; then
               echo "⏭  $name@$version — already published"
+              SKIPPED=$((SKIPPED+1))
               return
             fi
 
             if [ "$DRY_RUN" = "true" ]; then
               echo "🔍  $name@$version — dry run (would publish)"
-              npm publish "$dir" --access public --dry-run
+              PUBLISHED=$((PUBLISHED+1))
             else
               echo "📦  $name@$version — publishing..."
-              npm publish "$dir" --access public
-              echo "✓  $name@$version published"
+              if npm publish "$dir" --access public 2>&1; then
+                echo "✓  $name@$version published"
+                PUBLISHED=$((PUBLISHED+1))
+              else
+                echo "✗  $name@$version FAILED"
+                FAILED=$((FAILED+1))
+              fi
             fi
           }
 
           if [ "$PACKAGES" = "all" ]; then
             for dir in packages/*/; do
-              # Skip docs, skip private packages
               private=$(jq -r '.private // false' "$dir/package.json")
               [ "$private" = "true" ] && continue
               publish_pkg "$dir"
@@ -74,8 +125,7 @@ jobs:
           else
             IFS=',' read -ra NAMES <<< "$PACKAGES"
             for name in "${NAMES[@]}"; do
-              name=$(echo "$name" | xargs)  # trim whitespace
-              # Try packages/<name> or packages/create-<name>
+              name=$(echo "$name" | xargs)
               if [ -d "packages/$name" ]; then
                 publish_pkg "packages/$name"
               elif [ -d "packages/create-$name" ]; then
@@ -85,3 +135,21 @@ jobs:
               fi
             done
           fi
+
+          echo ""
+          echo "═══════════════════════════════════"
+          echo "  Published: $PUBLISHED"
+          echo "  Skipped:   $SKIPPED"
+          echo "  Failed:    $FAILED"
+          echo "  Version:   $VERSION"
+          echo "═══════════════════════════════════"
+
+          if [ "$FAILED" -gt 0 ]; then exit 1; fi
+
+      - name: Sync next branch
+        if: ${{ github.event.inputs.dry-run != 'true' }}
+        run: |
+          git fetch origin next
+          git checkout next
+          git merge origin/master --no-edit
+          git push origin next
