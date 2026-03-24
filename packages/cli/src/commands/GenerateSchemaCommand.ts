@@ -4,36 +4,119 @@ import { getManager } from '@mantiq/database'
 import { writeFileSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 
-/** SQLite column type → TypeScript type. */
-const SQLITE_TYPE_MAP: Record<string, string> = {
+/**
+ * SQL type → TypeScript type mapping.
+ * Covers SQLite, PostgreSQL, MySQL, MariaDB, and MSSQL type names.
+ * information_schema.columns returns data_type (Postgres) or DATA_TYPE (MySQL/MSSQL).
+ */
+const SQL_TYPE_MAP: Record<string, string> = {
+  // ── Numeric ───────────────────────────────────────────────────────────
   integer: 'number',
   int: 'number',
+  int4: 'number',               // Postgres alias
+  int8: 'number',               // Postgres alias for bigint
   bigint: 'number',
   smallint: 'number',
+  int2: 'number',               // Postgres alias for smallint
   mediumint: 'number',
   tinyint: 'number',
+  serial: 'number',             // Postgres auto-increment
+  bigserial: 'number',          // Postgres auto-increment
+  smallserial: 'number',        // Postgres auto-increment
   real: 'number',
   float: 'number',
+  float4: 'number',             // Postgres alias
+  float8: 'number',             // Postgres alias for double
   double: 'number',
+  'double precision': 'number', // Postgres/MSSQL
   numeric: 'number',
   decimal: 'number',
+  money: 'number',              // Postgres/MSSQL
+  smallmoney: 'number',         // MSSQL
+
+  // ── Boolean ───────────────────────────────────────────────────────────
   boolean: 'boolean',
+  bool: 'boolean',              // Postgres alias
+  bit: 'boolean',               // MSSQL
+
+  // ── String ────────────────────────────────────────────────────────────
   text: 'string',
   varchar: 'string',
+  'character varying': 'string', // Postgres full name
   char: 'string',
+  character: 'string',           // Postgres full name
   clob: 'string',
+  ntext: 'string',               // MSSQL
+  nchar: 'string',               // MSSQL
+  nvarchar: 'string',            // MSSQL
+  mediumtext: 'string',          // MySQL
+  longtext: 'string',            // MySQL
+  tinytext: 'string',            // MySQL
+  enum: 'string',                // MySQL
+  set: 'string',                 // MySQL
+  citext: 'string',              // Postgres extension
+
+  // ── Binary ────────────────────────────────────────────────────────────
   blob: 'Uint8Array',
+  bytea: 'Uint8Array',          // Postgres
+  binary: 'Uint8Array',         // MSSQL
+  varbinary: 'Uint8Array',      // MSSQL/MySQL
+  image: 'Uint8Array',          // MSSQL (deprecated)
+  mediumblob: 'Uint8Array',     // MySQL
+  longblob: 'Uint8Array',       // MySQL
+  tinyblob: 'Uint8Array',       // MySQL
+
+  // ── Date/Time ─────────────────────────────────────────────────────────
   date: 'Date',
-  datetime: 'Date',
+  datetime: 'Date',              // MySQL/MSSQL
+  datetime2: 'Date',             // MSSQL
+  datetimeoffset: 'Date',        // MSSQL
+  smalldatetime: 'Date',         // MSSQL
   timestamp: 'Date',
+  'timestamp without time zone': 'Date',  // Postgres
+  'timestamp with time zone': 'Date',     // Postgres (timestamptz)
+  timestamptz: 'Date',          // Postgres alias
+  time: 'string',
+  'time without time zone': 'string',     // Postgres
+  'time with time zone': 'string',        // Postgres
+  timetz: 'string',             // Postgres alias
+  year: 'number',               // MySQL
+  interval: 'string',           // Postgres
+
+  // ── JSON ──────────────────────────────────────────────────────────────
   json: 'Record<string, any>',
-  jsonb: 'Record<string, any>',
+  jsonb: 'Record<string, any>', // Postgres
+
+  // ── UUID ──────────────────────────────────────────────────────────────
+  uuid: 'string',
+  uniqueidentifier: 'string',   // MSSQL
+
+  // ── Network ───────────────────────────────────────────────────────────
+  inet: 'string',               // Postgres
+  cidr: 'string',               // Postgres
+  macaddr: 'string',            // Postgres
+  macaddr8: 'string',           // Postgres
+
+  // ── Geometric (Postgres) ──────────────────────────────────────────────
+  point: 'string',
+  line: 'string',
+  box: 'string',
+  path: 'string',
+  polygon: 'string',
+  circle: 'string',
+
+  // ── Other ─────────────────────────────────────────────────────────────
+  xml: 'string',                // Postgres/MSSQL
+  tsvector: 'string',           // Postgres full-text search
+  tsquery: 'string',            // Postgres full-text search
+  'user-defined': 'any',        // Postgres custom types
+  array: 'any[]',               // Postgres arrays
 }
 
 /** SQL type string → TypeScript type. Handles "VARCHAR(255)", "INTEGER", etc. */
 function sqlTypeToTs(sqlType: string): string {
-  const normalized = sqlType.toLowerCase().replace(/\(.*\)/, '').trim()
-  return SQLITE_TYPE_MAP[normalized] ?? 'any'
+  const normalized = sqlType.toLowerCase().replace(/\(.*\)/, '').replace(/\[\]/, '').trim()
+  return SQL_TYPE_MAP[normalized] ?? 'any'
 }
 
 interface Column {
@@ -138,16 +221,21 @@ export class GenerateSchemaCommand extends Command {
       }))
     } catch {}
 
-    // Postgres / MySQL: information_schema.columns
+    // Postgres / MySQL / MSSQL: information_schema.columns
     try {
       const rows = await connection.select(
-        `SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_name = '${tableName}' ORDER BY ordinal_position`
+        `SELECT column_name, data_type, is_nullable, column_default, udt_name FROM information_schema.columns WHERE table_name = '${tableName}' ORDER BY ordinal_position`
       )
-      return rows.map((r: any) => ({
-        name: r.column_name ?? r.COLUMN_NAME,
-        type: sqlTypeToTs(r.data_type ?? r.DATA_TYPE ?? 'text'),
-        nullable: (r.is_nullable ?? r.IS_NULLABLE ?? 'YES') === 'YES',
-      }))
+      return rows.map((r: any) => {
+        const name = r.column_name ?? r.COLUMN_NAME
+        // Prefer udt_name for Postgres (e.g., 'int4' instead of 'integer', 'timestamptz' instead of 'timestamp with time zone')
+        const rawType = r.udt_name ?? r.data_type ?? r.DATA_TYPE ?? 'text'
+        const type = sqlTypeToTs(rawType)
+        const nullable = (r.is_nullable ?? r.IS_NULLABLE ?? 'YES') === 'YES'
+        // Auto-generated PKs (serial, nextval) are never nullable even if is_nullable=YES
+        const isAutoGen = String(r.column_default ?? r.COLUMN_DEFAULT ?? '').includes('nextval')
+        return { name, type, nullable: isAutoGen ? false : nullable }
+      })
     } catch {}
 
     return []
