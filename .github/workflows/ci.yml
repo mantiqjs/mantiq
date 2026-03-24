@@ -318,10 +318,19 @@ jobs:
             fi
           else
             # SPA kits: session auth with CSRF
+            # Register (capture new cookies from response)
+            REG_HEADERS=$(curl -s -D- -o /tmp/reg.json -w "" -X POST http://localhost:3000/register \
+              -H "Content-Type: application/json" \
+              -H "X-XSRF-TOKEN: $XSRF" \
+              -b "$SESSION; XSRF-TOKEN=$XSRF" \
+              -d '{"name":"CI User","email":"ci@test.com","password":"secret123"}')
+            REG_CODE=$(head -1 /tmp/reg.json 2>/dev/null | grep -o '"message"' >/dev/null && echo "201" || echo "$(echo "$REG_HEADERS" | head -1 | grep -o '[0-9][0-9][0-9]')")
+            # Simpler: just check via curl
             REG_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:3000/register \
               -H "Content-Type: application/json" \
               -H "X-XSRF-TOKEN: $XSRF" \
               -b "$SESSION; XSRF-TOKEN=$XSRF" \
+              -D /tmp/reg_headers \
               -d '{"name":"CI User","email":"ci@test.com","password":"secret123"}')
             if [ "$REG_CODE" = "201" ] || [ "$REG_CODE" = "200" ]; then
               echo "  ✓ Register — HTTP $REG_CODE"
@@ -331,11 +340,18 @@ jobs:
               FAIL=$((FAIL+1))
             fi
 
-            # Login
+            # Re-read cookies after register (session may have changed)
+            NEW_SESSION=$(grep -i 'set-cookie.*mantiq_session' /tmp/reg_headers 2>/dev/null | tail -1 | sed 's/[Ss]et-[Cc]ookie: //' | sed 's/;.*//')
+            NEW_XSRF=$(grep -i 'set-cookie.*XSRF-TOKEN' /tmp/reg_headers 2>/dev/null | tail -1 | sed 's/.*XSRF-TOKEN=//' | sed 's/;.*//')
+            [ -n "$NEW_SESSION" ] && SESSION="$NEW_SESSION"
+            [ -n "$NEW_XSRF" ] && XSRF="$NEW_XSRF"
+
+            # Login with fresh cookies
             LOGIN_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:3000/login \
               -H "Content-Type: application/json" \
               -H "X-XSRF-TOKEN: $XSRF" \
               -b "$SESSION; XSRF-TOKEN=$XSRF" \
+              -D /tmp/login_headers \
               -d '{"email":"ci@test.com","password":"secret123"}')
             if [ "$LOGIN_CODE" = "200" ]; then
               echo "  ✓ Login — HTTP $LOGIN_CODE"
@@ -345,9 +361,13 @@ jobs:
               FAIL=$((FAIL+1))
             fi
 
+            # Re-read cookies after login
+            NEW_SESSION=$(grep -i 'set-cookie.*mantiq_session' /tmp/login_headers 2>/dev/null | tail -1 | sed 's/[Ss]et-[Cc]ookie: //' | sed 's/;.*//')
+            [ -n "$NEW_SESSION" ] && SESSION="$NEW_SESSION"
+
             # Protected route (API users list)
             PROT_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/users \
-              -b "$SESSION; XSRF-TOKEN=$XSRF")
+              -b "$SESSION")
             if [ "$PROT_CODE" = "200" ]; then
               echo "  ✓ Protected API — HTTP $PROT_CODE"
               PASS=$((PASS+1))
