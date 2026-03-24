@@ -14,6 +14,7 @@ import { UpCommand } from './commands/UpCommand.ts'
 import { CacheClearCommand } from './commands/CacheClearCommand.ts'
 import { StorageLinkCommand } from './commands/StorageLinkCommand.ts'
 import { ConfigCacheCommand, ConfigClearCommand } from './commands/ConfigCacheCommand.ts'
+import { GenerateSchemaCommand } from './commands/GenerateSchemaCommand.ts'
 
 // Built-in commands — database
 import { MigrateCommand } from './commands/MigrateCommand.ts'
@@ -83,6 +84,8 @@ export class Kernel {
       new StorageLinkCommand(),
       new ConfigCacheCommand(),
       new ConfigClearCommand(),
+
+      new GenerateSchemaCommand(),
 
       // Database
       new MigrateCommand(),

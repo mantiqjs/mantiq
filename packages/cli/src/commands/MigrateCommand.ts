@@ -2,12 +2,13 @@ import { Command } from '../Command.ts'
 import type { ParsedArgs } from '../Parser.ts'
 import { Migrator } from '@mantiq/database'
 import { getManager } from '@mantiq/database'
+import { GenerateSchemaCommand } from './GenerateSchemaCommand.ts'
 
 export class MigrateCommand extends Command {
   override name = 'migrate'
   override description = 'Run pending database migrations'
 
-  override async handle(_args: ParsedArgs): Promise<number> {
+  override async handle(args: ParsedArgs): Promise<number> {
     const connection = getManager().connection()
     const migrationsPath = this.resolveMigrationsPath()
     const migrator = new Migrator(connection, { migrationsPath })
@@ -23,6 +24,12 @@ export class MigrateCommand extends Command {
       }
       this.io.newLine()
       this.io.success(`Ran ${ran.length} migration${ran.length > 1 ? 's' : ''}.`)
+
+      // Auto-generate schema interfaces after migration
+      if (args.flags['no-schema'] !== true) {
+        const schemaCmd = new GenerateSchemaCommand()
+        await schemaCmd.handle({ command: 'schema:generate', args: [], flags: {} })
+      }
     }
     return 0
   }

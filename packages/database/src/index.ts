@@ -78,6 +78,7 @@ export {
 } from './orm/Model.ts'
 export type { ModelStatic } from './orm/Model.ts'
 export { ModelQueryBuilder } from './orm/ModelQueryBuilder.ts'
+export type { Override, ColumnTypeMap, ColumnType } from './types/Schema.ts'
 export { Collection } from './orm/Collection.ts'
 
 // ── MongoDB Document ORM (deprecated — use Model with MongoDB connection) ────
