@@ -1,5 +1,7 @@
 import type { WebSocketHandler } from './WebSocketContext.ts'
+import type { AesEncrypter } from '../encryption/Encrypter.ts'
 import { MantiqRequest } from '../http/Request.ts'
+import { parseCookies } from '../http/Cookie.ts'
 
 /**
  * Handles WebSocket upgrade detection and lifecycle delegation.
@@ -9,12 +11,21 @@ import { MantiqRequest } from '../http/Request.ts'
  */
 export class WebSocketKernel {
   private handler: WebSocketHandler | null = null
+  private encrypter: AesEncrypter | null = null
 
   /**
    * Called by @mantiq/realtime to register its WebSocket handler.
    */
   registerHandler(handler: WebSocketHandler): void {
     this.handler = handler
+  }
+
+  /**
+   * Inject the encrypter so WebSocket upgrades can decrypt cookies.
+   * Called during CoreServiceProvider boot.
+   */
+  setEncrypter(encrypter: AesEncrypter): void {
+    this.encrypter = encrypter
   }
 
   /**
@@ -29,6 +40,13 @@ export class WebSocketKernel {
     }
 
     const mantiqRequest = MantiqRequest.fromBun(request)
+
+    // Decrypt cookies — WebSocket upgrades bypass the middleware pipeline,
+    // so EncryptCookies never runs. Manually decrypt here.
+    if (this.encrypter) {
+      await this.decryptCookies(mantiqRequest)
+    }
+
     const context = await this.handler.onUpgrade(mantiqRequest)
 
     if (!context) {
@@ -56,5 +74,30 @@ export class WebSocketKernel {
       close: (ws: any, code: number, reason: string) => h?.close(ws, code, reason),
       drain: (ws: any) => h?.drain(ws),
     }
+  }
+
+  // ── Private ───────────────────────────────────────────────────────────────
+
+  private async decryptCookies(request: MantiqRequest): Promise<void> {
+    const cookieHeader = request.header('cookie')
+    if (!cookieHeader) return
+
+    const cookies = parseCookies(cookieHeader)
+    const decrypted: Record<string, string> = {}
+    const except = ['XSRF-TOKEN']
+
+    for (const [name, value] of Object.entries(cookies)) {
+      if (except.includes(name)) {
+        decrypted[name] = value
+        continue
+      }
+      try {
+        decrypted[name] = await this.encrypter!.decrypt(value)
+      } catch {
+        decrypted[name] = value
+      }
+    }
+
+    request.setCookies(decrypted)
   }
 }
