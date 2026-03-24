@@ -1,7 +1,7 @@
 import { FormRequest } from '@mantiq/validation'
 
 export class UpdateUserRequest extends FormRequest {
-  rules() {
+  override rules() {
     return {
       name: 'string|max:255',
       email: 'email|max:255',
