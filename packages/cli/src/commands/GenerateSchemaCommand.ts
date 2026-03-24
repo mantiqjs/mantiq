@@ -104,10 +104,11 @@ export class GenerateSchemaCommand extends Command {
   }
 
   private parseMigration(content: string, tables: Map<string, Table>): void {
-    // Simple approach: find schema.create blocks, then parse column lines within
-    // Works by finding the table name first, then scanning lines until closing })
+    // Only parse the up() method — ignore down() which has drops
+    const upMatch = content.match(/(?:async\s+)?up\s*\([^)]*\)\s*\{([\s\S]*?)^\s*\}/m)
+    const upContent = upMatch ? upMatch[0] : content
 
-    const lines = content.split('\n')
+    const lines = upContent.split('\n')
     let currentTable: Table | null = null
     let depth = 0
 
