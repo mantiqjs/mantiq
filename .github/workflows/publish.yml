@@ -3,30 +3,24 @@ name: Publish
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: 'Version to publish (e.g., 0.5.22). Leave empty to auto-increment patch.'
-        required: false
-        default: ''
       packages:
         description: 'Packages to publish (comma-separated, or "all")'
         required: true
         default: all
       dry-run:
-        description: 'Dry run (no actual publish or commit)'
+        description: 'Dry run (no actual publish)'
         type: boolean
         default: false
 
 jobs:
   publish:
-    name: Bump & Publish
+    name: Publish to npm
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       id-token: write
     steps:
       - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -41,41 +35,6 @@ jobs:
       - name: Run unit tests
         run: bun test packages/*/tests/unit/
 
-      - name: Determine version
-        id: version
-        run: |
-          INPUT_VERSION="${{ github.event.inputs.version }}"
-          if [ -n "$INPUT_VERSION" ]; then
-            echo "version=$INPUT_VERSION" >> $GITHUB_OUTPUT
-          else
-            # Auto-increment patch from current version
-            CURRENT=$(jq -r .version package.json)
-            MAJOR=$(echo $CURRENT | cut -d. -f1)
-            MINOR=$(echo $CURRENT | cut -d. -f2)
-            PATCH=$(echo $CURRENT | cut -d. -f3)
-            NEXT="$MAJOR.$MINOR.$((PATCH + 1))"
-            echo "version=$NEXT" >> $GITHUB_OUTPUT
-          fi
-          echo "  Version: $(cat $GITHUB_OUTPUT | grep version | cut -d= -f2)"
-
-      - name: Bump version
-        if: ${{ github.event.inputs.dry-run != 'true' }}
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          bun run version:set $VERSION
-          echo "  All packages set to $VERSION"
-
-      - name: Commit version bump
-        if: ${{ github.event.inputs.dry-run != 'true' }}
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "chore: bump all packages to $VERSION" || echo "No changes to commit"
-          git tag "v$VERSION"
-          git push origin HEAD:master --tags
-
       - name: Setup npm auth
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
 
@@ -83,7 +42,7 @@ jobs:
         run: |
           PACKAGES="${{ github.event.inputs.packages }}"
           DRY_RUN="${{ github.event.inputs.dry-run }}"
-          VERSION="${{ steps.version.outputs.version }}"
+          VERSION=$(jq -r .version package.json)
 
           PUBLISHED=0
           SKIPPED=0
@@ -138,18 +97,10 @@ jobs:
 
           echo ""
           echo "═══════════════════════════════════"
+          echo "  Version:   $VERSION"
           echo "  Published: $PUBLISHED"
           echo "  Skipped:   $SKIPPED"
           echo "  Failed:    $FAILED"
-          echo "  Version:   $VERSION"
           echo "═══════════════════════════════════"
 
           if [ "$FAILED" -gt 0 ]; then exit 1; fi
-
-      - name: Sync next branch
-        if: ${{ github.event.inputs.dry-run != 'true' }}
-        run: |
-          git fetch origin next
-          git checkout next
-          git merge origin/master --no-edit
-          git push origin next
