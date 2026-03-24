@@ -60,6 +60,19 @@ export default {
     //   },
     // },
 
+    // mariadb: {
+    //   driver: 'mysql' as const,  // MariaDB uses the MySQL driver
+    //   host: env('DB_HOST', '127.0.0.1'),
+    //   port: Number(env('DB_PORT', '3306')),
+    //   database: env('DB_DATABASE', 'mantiq'),
+    //   user: env('DB_USERNAME', 'root'),
+    //   password: env('DB_PASSWORD', ''),
+    //   pool: {
+    //     min: Number(env('DB_POOL_MIN', '2')),
+    //     max: Number(env('DB_POOL_MAX', '10')),
+    //   },
+    // },
+
     // mssql: {
     //   driver: 'mssql' as const,
     //   host: env('DB_HOST', '127.0.0.1'),
