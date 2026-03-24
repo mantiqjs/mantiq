@@ -45,6 +45,13 @@ export default {
     //     min: Number(env('DB_POOL_MIN', '2')),
     //     max: Number(env('DB_POOL_MAX', '10')),
     //   },
+    //   // Read/write splitting — route reads to replicas
+    //   // read: {
+    //   //   host: [env('DB_READ_HOST_1', '127.0.0.1'), env('DB_READ_HOST_2', '127.0.0.1')],
+    //   // },
+    //   // write: {
+    //   //   host: env('DB_WRITE_HOST', '127.0.0.1'),
+    //   // },
     // },
 
     // mysql: {
@@ -58,6 +65,13 @@ export default {
     //     min: Number(env('DB_POOL_MIN', '2')),
     //     max: Number(env('DB_POOL_MAX', '10')),
     //   },
+    //   // Read/write splitting — route reads to replicas
+    //   // read: {
+    //   //   host: [env('DB_READ_HOST_1', '127.0.0.1'), env('DB_READ_HOST_2', '127.0.0.1')],
+    //   // },
+    //   // write: {
+    //   //   host: env('DB_WRITE_HOST', '127.0.0.1'),
+    //   // },
     // },
 
     // mariadb: {
@@ -71,6 +85,8 @@ export default {
     //     min: Number(env('DB_POOL_MIN', '2')),
     //     max: Number(env('DB_POOL_MAX', '10')),
     //   },
+    //   // read: { host: [env('DB_READ_HOST_1', '127.0.0.1')] },
+    //   // write: { host: env('DB_WRITE_HOST', '127.0.0.1') },
     // },
 
     // mssql: {
@@ -86,6 +102,8 @@ export default {
     //     min: Number(env('DB_POOL_MIN', '2')),
     //     max: Number(env('DB_POOL_MAX', '10')),
     //   },
+    //   // read: { host: [env('DB_READ_HOST_1', '127.0.0.1')] },
+    //   // write: { host: env('DB_WRITE_HOST', '127.0.0.1') },
     // },
 
     // mongodb: {
@@ -95,6 +113,8 @@ export default {
     //   options: {
     //     // Any MongoClient options: retryWrites, w, etc.
     //   },
+    //   // Read preference for replicas
+    //   // readPreference: 'secondaryPreferred',
     // },
   },
 }
