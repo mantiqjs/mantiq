@@ -29,11 +29,11 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Build all packages
-        run: bun run build
+      - name: Typecheck
+        run: bun run typecheck
 
-      - name: Run tests
-        run: bun run test:ci
+      - name: Run unit tests (integration tests already passed in CI)
+        run: bun test packages/*/tests/unit/
 
       - name: Setup npm auth
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
