@@ -183,6 +183,36 @@ Package exists with TestCase, TestClient, TestResponse (18 unit tests). Compared
 - [ ] **P2** Polymorphic relationships: `morphOne`, `morphMany`, `morphToMany`
 - [ ] **P2** `hasOneThrough`, `hasManyThrough` relationships
 
+## Magic Classes & Helpers (P2)
+
+Utility classes for common async/concurrency patterns — inspired by Laravel Pipeline, Process, Concurrency.
+
+### Parallel & Concurrency
+- [ ] **P1** `Parallel.run([fn1, fn2, fn3])` — run async tasks concurrently, collect all results (like `Promise.all` with error handling + timeouts)
+- [ ] **P1** `Batch.of(items).chunk(50).process(fn)` — process large collections in parallel chunks with progress tracking
+- [ ] **P2** `Semaphore.of(5).acquire(() => work())` — limit concurrent access to a resource (e.g., max 5 DB connections)
+- [ ] **P2** `Defer.after(() => sendEmail())` — schedule work to run after the HTTP response is sent
+
+### Resilience
+- [ ] **P1** `Retry.times(3).backoff('exponential').run(fn)` — auto-retry with configurable backoff (constant, linear, exponential)
+- [ ] **P1** `CircuitBreaker` — fail-fast after N failures, auto-recover after cooldown. For external APIs, payment gateways, etc.
+- [ ] **P2** `Timeout.after(5000).run(fn)` — abort if function doesn't resolve within deadline
+- [ ] **P2** `Fallback.try(primary).catch(secondary).catch(tertiary)` — cascading fallbacks
+
+### Shell & Process
+- [ ] **P1** `Process.run('command').timeout(30).env({}).cwd('/path')` — fluent shell execution with output capture, timeouts, error handling
+- [ ] **P2** `Process.pipe('cat file | grep pattern | wc -l')` — piped commands
+- [ ] **P2** `Process.pool(5).run(commands)` — run multiple shell commands in parallel with concurrency limit
+
+### Functional Composition
+- [ ] **P2** `Tap` / `Pipe` — value.pipe(trim).pipe(lowercase).pipe(slugify)
+- [ ] **P2** `Lazy` — generator-based collection for memory-efficient processing of huge datasets: `Lazy.from(cursor).filter().map().chunk(100).each()`
+- [ ] **P2** `Conditionable` mixin — `query.when(search, q => q.where('name', 'LIKE', search))` (Laravel's `when()`)
+
+### Feature Flags
+- [ ] **P2** `Feature.active('new-dashboard')` — toggle features without deploy, backed by DB/env/config
+- [ ] **P2** `Feature.for(user).active('beta-ui')` — user-scoped feature flags with percentage rollouts
+
 ## @mantiq/panel — Admin Panel (P2 — post-1.0)
 
 Server-driven admin panel using React + shadcn/ui. Define Resources in TypeScript, get full CRUD UI with zero frontend code.
