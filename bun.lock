@@ -51,7 +51,7 @@
     },
     "packages/auth": {
       "name": "@mantiq/auth",
-      "version": "0.5.16",
+      "version": "0.5.20",
       "devDependencies": {
         "@mantiq/core": "workspace:*",
         "@mantiq/database": "workspace:*",
@@ -65,7 +65,7 @@
     },
     "packages/cli": {
       "name": "@mantiq/cli",
-      "version": "0.5.16",
+      "version": "0.5.20",
       "bin": {
         "mantiq": "./src/bin.ts",
       },
@@ -82,7 +82,7 @@
     },
     "packages/core": {
       "name": "@mantiq/core",
-      "version": "0.5.16",
+      "version": "0.5.20",
       "devDependencies": {
         "bun-types": "latest",
         "typescript": "^5.7.0",
@@ -99,7 +99,7 @@
     },
     "packages/create-mantiq": {
       "name": "create-mantiq",
-      "version": "0.5.16",
+      "version": "0.5.20",
       "bin": {
         "create-mantiq": "./src/index.ts",
       },
@@ -110,7 +110,7 @@
     },
     "packages/database": {
       "name": "@mantiq/database",
-      "version": "0.5.16",
+      "version": "0.5.20",
       "devDependencies": {
         "@types/pg": "^8.18.0",
         "bun-types": "latest",
@@ -135,7 +135,7 @@
     },
     "packages/events": {
       "name": "@mantiq/events",
-      "version": "0.5.16",
+      "version": "0.5.20",
       "devDependencies": {
         "@mantiq/auth": "workspace:*",
         "@mantiq/core": "workspace:*",
@@ -155,7 +155,7 @@
     },
     "packages/filesystem": {
       "name": "@mantiq/filesystem",
-      "version": "0.5.16",
+      "version": "0.5.20",
       "devDependencies": {
         "@mantiq/core": "workspace:*",
         "bun-types": "latest",
@@ -181,7 +181,7 @@
     },
     "packages/health": {
       "name": "@mantiq/health",
-      "version": "0.5.16",
+      "version": "0.5.20",
       "devDependencies": {
         "bun-types": "latest",
         "typescript": "^5.7.0",
@@ -192,7 +192,7 @@
     },
     "packages/heartbeat": {
       "name": "@mantiq/heartbeat",
-      "version": "0.5.16",
+      "version": "0.5.20",
       "devDependencies": {
         "@mantiq/cli": "workspace:*",
         "@mantiq/core": "workspace:*",
@@ -214,7 +214,7 @@
     },
     "packages/helpers": {
       "name": "@mantiq/helpers",
-      "version": "0.5.16",
+      "version": "0.5.20",
       "devDependencies": {
         "bun-types": "latest",
         "typescript": "^5.7.0",
@@ -222,7 +222,7 @@
     },
     "packages/logging": {
       "name": "@mantiq/logging",
-      "version": "0.5.16",
+      "version": "0.5.20",
       "devDependencies": {
         "@mantiq/core": "workspace:*",
         "bun-types": "latest",
@@ -234,7 +234,7 @@
     },
     "packages/mail": {
       "name": "@mantiq/mail",
-      "version": "0.5.16",
+      "version": "0.5.20",
       "devDependencies": {
         "@mantiq/core": "workspace:*",
         "bun-types": "latest",
@@ -249,7 +249,7 @@
     },
     "packages/notify": {
       "name": "@mantiq/notify",
-      "version": "0.5.16",
+      "version": "0.5.20",
       "devDependencies": {
         "@mantiq/cli": "workspace:*",
         "@mantiq/core": "workspace:*",
@@ -273,7 +273,7 @@
     },
     "packages/oauth": {
       "name": "@mantiq/oauth",
-      "version": "0.5.16",
+      "version": "0.5.20",
       "devDependencies": {
         "@mantiq/auth": "workspace:*",
         "@mantiq/core": "workspace:*",
@@ -289,7 +289,7 @@
     },
     "packages/queue": {
       "name": "@mantiq/queue",
-      "version": "0.5.16",
+      "version": "0.5.20",
       "devDependencies": {
         "@mantiq/cli": "workspace:*",
         "@mantiq/core": "workspace:*",
@@ -311,7 +311,7 @@
     },
     "packages/realtime": {
       "name": "@mantiq/realtime",
-      "version": "0.5.16",
+      "version": "0.5.20",
       "devDependencies": {
         "@mantiq/core": "workspace:*",
         "@mantiq/events": "workspace:*",
@@ -325,7 +325,7 @@
     },
     "packages/search": {
       "name": "@mantiq/search",
-      "version": "0.5.16",
+      "version": "0.5.20",
       "devDependencies": {
         "@mantiq/core": "workspace:*",
         "@mantiq/database": "workspace:*",
@@ -339,7 +339,7 @@
     },
     "packages/social-auth": {
       "name": "@mantiq/social-auth",
-      "version": "0.5.16",
+      "version": "0.5.20",
       "devDependencies": {
         "@mantiq/core": "workspace:*",
         "bun-types": "latest",
@@ -349,9 +349,25 @@
         "@mantiq/core": "^0.5.0",
       },
     },
+    "packages/testing": {
+      "name": "@mantiq/testing",
+      "version": "0.5.20",
+      "devDependencies": {
+        "bun-types": "latest",
+        "typescript": "^5.7.0",
+      },
+      "peerDependencies": {
+        "@mantiq/auth": "^0.5.0",
+        "@mantiq/core": "^0.5.0",
+        "@mantiq/database": "^0.5.0",
+      },
+      "optionalPeers": [
+        "@mantiq/auth",
+      ],
+    },
     "packages/validation": {
       "name": "@mantiq/validation",
-      "version": "0.5.16",
+      "version": "0.5.20",
       "devDependencies": {
         "@mantiq/core": "workspace:*",
         "bun-types": "latest",
@@ -363,7 +379,7 @@
     },
     "packages/vite": {
       "name": "@mantiq/vite",
-      "version": "0.5.16",
+      "version": "0.5.20",
       "devDependencies": {
         "@mantiq/core": "workspace:*",
         "bun-types": "latest",
@@ -968,6 +984,8 @@
     "@mantiq/search": ["@mantiq/search@workspace:packages/search"],
 
     "@mantiq/social-auth": ["@mantiq/social-auth@workspace:packages/social-auth"],
+
+    "@mantiq/testing": ["@mantiq/testing@workspace:packages/testing"],
 
     "@mantiq/validation": ["@mantiq/validation@workspace:packages/validation"],
 
