@@ -216,7 +216,7 @@ export class MantiqRequest implements MantiqRequestContract {
   // ── FormData ────────────────────────────────────────────────────────────
 
   async formData(): Promise<FormData> {
-    return this.bunRequest.clone().formData()
+    return this.bunRequest.clone().formData() as Promise<FormData>
   }
 
   // ── Raw ──────────────────────────────────────────────────────────────────
