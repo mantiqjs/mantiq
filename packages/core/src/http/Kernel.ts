@@ -100,8 +100,16 @@ export class HttpKernel {
     const request = MantiqRequest.fromBun(bunRequest)
 
     try {
-      // Combine prepend + global + append middleware (deduplicated, preserving order)
-      const allMiddleware = [...new Set([...this.prependMiddleware, ...this.globalMiddleware, ...this.appendMiddleware])]
+      // Combine prepend + global + append middleware
+      // Deduplicate exact duplicates but keep parameterized variants (auth:admin vs auth:user)
+      const seen = new Set<string>()
+      const allMiddleware: string[] = []
+      for (const mw of [...this.prependMiddleware, ...this.globalMiddleware, ...this.appendMiddleware]) {
+        if (!seen.has(mw)) {
+          seen.add(mw)
+          allMiddleware.push(mw)
+        }
+      }
       const globalClasses = this.resolveMiddlewareList(allMiddleware)
 
       const response = await new Pipeline(this.container)

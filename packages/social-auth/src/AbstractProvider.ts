@@ -41,7 +41,7 @@ export abstract class AbstractProvider implements OAuthProvider {
 
   // ── OAuth 2.0 flow ───────────────────────────────────────────────────────
 
-  redirect(): Response {
+  redirect(request?: any): Response {
     const url = new URL(this.getAuthUrl())
     url.searchParams.set('client_id', this.clientId)
     url.searchParams.set('redirect_uri', this.redirectUrl)
@@ -51,6 +51,10 @@ export abstract class AbstractProvider implements OAuthProvider {
     if (!this._stateless) {
       const state = crypto.randomUUID()
       url.searchParams.set('state', state)
+      // Store state in session for verification on callback
+      if (request?.session?.()) {
+        request.session().put('_social_auth_state', state)
+      }
     }
 
     for (const [k, v] of Object.entries(this._params)) {
@@ -61,12 +65,27 @@ export abstract class AbstractProvider implements OAuthProvider {
   }
 
   async user(request: any): Promise<OAuthUser> {
-    const code = typeof request?.query === 'function'
-      ? request.query('code')
-      : new URL(request.url).searchParams.get('code')
+    const getParam = (name: string): string | null => {
+      if (typeof request?.query === 'function') return request.query(name)
+      return new URL(request.url).searchParams.get(name)
+    }
 
+    const code = getParam('code')
     if (!code) {
       throw new Error('Authorization code not found in callback')
+    }
+
+    // Validate state parameter to prevent CSRF
+    if (!this._stateless) {
+      const callbackState = getParam('state')
+      const sessionState = request?.session?.()?.get('_social_auth_state') ?? null
+
+      if (!callbackState || !sessionState || callbackState !== sessionState) {
+        throw new Error('Invalid OAuth state — possible CSRF attack. State mismatch.')
+      }
+
+      // Clear used state
+      request?.session?.()?.forget('_social_auth_state')
     }
 
     const tokenData = await this.getAccessToken(code)
