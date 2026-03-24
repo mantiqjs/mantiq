@@ -235,10 +235,15 @@ jobs:
           cd /tmp/test-app
           bun mantiq migrate
 
-      - name: Generate APP_KEY
+      - name: Verify APP_KEY exists (or generate)
         run: |
           cd /tmp/test-app
-          bun mantiq key:generate
+          if grep -q "APP_KEY=base64:" .env; then
+            echo "  ✓ APP_KEY already set by scaffolder"
+          else
+            bun mantiq key:generate
+            echo "  ✓ APP_KEY generated"
+          fi
           grep "APP_KEY=base64:" .env
 
       - name: Generate schema interfaces
