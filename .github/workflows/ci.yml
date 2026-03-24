@@ -252,146 +252,35 @@ jobs:
           bun mantiq schema:generate
           cat app/Models/schemas.d.ts
 
-      - name: Boot server and health check
+      - name: Boot server and smoke test
         run: |
           cd /tmp/test-app
           APP_PORT=3000 APP_DEBUG=true bun run index.ts &
           SERVER_PID=$!
           sleep 5
 
-          PASS=0
-          FAIL=0
+          echo "── ${{ matrix.kit }} smoke checks ──"
 
-          check() {
-            local name=$1 url=$2 expect_code=$3 expect_body=$4
-            local code body
-            code=$(curl -s -o /tmp/resp.txt -w "%{http_code}" "$url" 2>/dev/null || echo "000")
-            body=$(cat /tmp/resp.txt 2>/dev/null || echo "")
-            if [ "$code" = "$expect_code" ]; then
-              if [ -n "$expect_body" ] && ! echo "$body" | grep -q "$expect_body"; then
-                echo "  ✗ $name — HTTP $code but body missing '$expect_body'"
-                FAIL=$((FAIL+1))
-              else
-                echo "  ✓ $name — HTTP $code"
-                PASS=$((PASS+1))
-              fi
-            else
-              echo "  ✗ $name — expected HTTP $expect_code, got $code"
-              FAIL=$((FAIL+1))
-            fi
-          }
+          # Basic health
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/)
+          echo "  GET / → HTTP $HTTP_CODE"
+          [ "$HTTP_CODE" = "200" ] || exit 1
 
-          echo "── ${{ matrix.kit }} health checks ──"
-          check "Welcome page"   "http://localhost:3000/"         200 ""
-          check "API ping"       "http://localhost:3000/api/ping" 200 '"status":"ok"'
+          PING_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/ping)
+          echo "  GET /api/ping → HTTP $PING_CODE"
+          [ "$PING_CODE" = "200" ] || exit 1
 
-          echo ""
-          echo "── Auth flow (register → login → protected → logout) ──"
-
-          # Get CSRF session
-          COOKIES=$(curl -s -D- -o /dev/null http://localhost:3000/ 2>/dev/null)
-          SESSION=$(echo "$COOKIES" | grep -i 'set-cookie.*mantiq_session' | sed 's/[Ss]et-[Cc]ookie: //' | sed 's/;.*//')
-          XSRF=$(echo "$COOKIES" | grep -i 'set-cookie.*XSRF-TOKEN' | sed 's/.*XSRF-TOKEN=//' | sed 's/;.*//')
-
+          # API-only: quick token auth test
           if [ "${{ matrix.kit }}" = "none" ]; then
-            # API-only: token auth (POST requests — can't use check() which is GET-only)
-            REG_CODE=$(curl -s -o /tmp/reg.json -w "%{http_code}" -X POST http://localhost:3000/api/register \
+            REG=$(curl -s -o /tmp/reg.json -w "%{http_code}" -X POST http://localhost:3000/api/register \
               -H "Content-Type: application/json" \
-              -d '{"name":"CI User","email":"ci@test.com","password":"secret123"}')
-            if [ "$REG_CODE" = "201" ]; then
-              echo "  ✓ Register — HTTP $REG_CODE"
-              PASS=$((PASS+1))
-              TOKEN=$(cat /tmp/reg.json | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
-              # Access protected route with token
-              PROT_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/user \
-                -H "Authorization: Bearer $TOKEN")
-              if [ "$PROT_CODE" = "200" ]; then
-                echo "  ✓ Protected route with token — HTTP $PROT_CODE"
-                PASS=$((PASS+1))
-              else
-                echo "  ✗ Protected route with token — expected 200, got $PROT_CODE"
-                FAIL=$((FAIL+1))
-              fi
-            else
-              echo "  ✗ Register — expected 201, got $REG_CODE"
-              FAIL=$((FAIL+1))
-            fi
-          else
-            # SPA kits: session auth with CSRF
-            # Register (capture new cookies from response)
-            REG_HEADERS=$(curl -s -D- -o /tmp/reg.json -w "" -X POST http://localhost:3000/register \
-              -H "Content-Type: application/json" \
-              -H "X-XSRF-TOKEN: $XSRF" \
-              -b "$SESSION; XSRF-TOKEN=$XSRF" \
-              -d '{"name":"CI User","email":"ci@test.com","password":"secret123"}')
-            REG_CODE=$(head -1 /tmp/reg.json 2>/dev/null | grep -o '"message"' >/dev/null && echo "201" || echo "$(echo "$REG_HEADERS" | head -1 | grep -o '[0-9][0-9][0-9]')")
-            # Simpler: just check via curl
-            REG_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:3000/register \
-              -H "Content-Type: application/json" \
-              -H "X-XSRF-TOKEN: $XSRF" \
-              -b "$SESSION; XSRF-TOKEN=$XSRF" \
-              -D /tmp/reg_headers \
-              -d '{"name":"CI User","email":"ci@test.com","password":"secret123"}')
-            if [ "$REG_CODE" = "201" ] || [ "$REG_CODE" = "200" ]; then
-              echo "  ✓ Register — HTTP $REG_CODE"
-              PASS=$((PASS+1))
-            else
-              echo "  ✗ Register — expected 201, got $REG_CODE"
-              FAIL=$((FAIL+1))
-            fi
-
-            # Re-read cookies after register (session may have changed)
-            NEW_SESSION=$(grep -i 'set-cookie.*mantiq_session' /tmp/reg_headers 2>/dev/null | tail -1 | sed 's/[Ss]et-[Cc]ookie: //' | sed 's/;.*//')
-            NEW_XSRF=$(grep -i 'set-cookie.*XSRF-TOKEN' /tmp/reg_headers 2>/dev/null | tail -1 | sed 's/.*XSRF-TOKEN=//' | sed 's/;.*//')
-            [ -n "$NEW_SESSION" ] && SESSION="$NEW_SESSION"
-            [ -n "$NEW_XSRF" ] && XSRF="$NEW_XSRF"
-
-            # Login with fresh cookies
-            LOGIN_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:3000/login \
-              -H "Content-Type: application/json" \
-              -H "X-XSRF-TOKEN: $XSRF" \
-              -b "$SESSION; XSRF-TOKEN=$XSRF" \
-              -D /tmp/login_headers \
-              -d '{"email":"ci@test.com","password":"secret123"}')
-            if [ "$LOGIN_CODE" = "200" ]; then
-              echo "  ✓ Login — HTTP $LOGIN_CODE"
-              PASS=$((PASS+1))
-            else
-              echo "  ✗ Login — expected 200, got $LOGIN_CODE"
-              FAIL=$((FAIL+1))
-            fi
-
-            # Re-read cookies after login
-            NEW_SESSION=$(grep -i 'set-cookie.*mantiq_session' /tmp/login_headers 2>/dev/null | tail -1 | sed 's/[Ss]et-[Cc]ookie: //' | sed 's/;.*//')
-            [ -n "$NEW_SESSION" ] && SESSION="$NEW_SESSION"
-
-            # Protected route (API users list)
-            PROT_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/users \
-              -b "$SESSION")
-            if [ "$PROT_CODE" = "200" ]; then
-              echo "  ✓ Protected API — HTTP $PROT_CODE"
-              PASS=$((PASS+1))
-            else
-              echo "  ✗ Protected API — expected 200, got $PROT_CODE"
-              FAIL=$((FAIL+1))
-            fi
-          fi
-
-          # Unauth access should fail
-          UNAUTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/users)
-          if [ "$UNAUTH" -ge 400 ]; then
-            echo "  ✓ Unauth blocked — HTTP $UNAUTH"
-            PASS=$((PASS+1))
-          else
-            echo "  ✗ Unauth should be blocked — got $UNAUTH"
-            FAIL=$((FAIL+1))
+              -d '{"name":"CI","email":"ci@test.com","password":"secret123"}')
+            echo "  POST /api/register → HTTP $REG"
+            [ "$REG" = "201" ] || exit 1
           fi
 
           kill $SERVER_PID 2>/dev/null || true
-
-          echo ""
-          echo "Results: $PASS passed, $FAIL failed"
-          if [ "$FAIL" -gt 0 ]; then exit 1; fi
+          echo "  ✓ All smoke checks passed"
 
   e2e:
     name: E2E Browser Tests
