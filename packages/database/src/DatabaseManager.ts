@@ -2,17 +2,20 @@ import type { DatabaseConnection } from './contracts/Connection.ts'
 import { SQLiteConnection } from './drivers/SQLiteConnection.ts'
 import { PostgresConnection } from './drivers/PostgresConnection.ts'
 import { MySQLConnection } from './drivers/MySQLConnection.ts'
+import { MSSQLConnection } from './drivers/MSSQLConnection.ts'
 import { MongoConnection } from './drivers/MongoConnection.ts'
 import { ConnectionError } from './errors/ConnectionError.ts'
 
 export interface SQLConfig {
-  driver: 'sqlite' | 'postgres' | 'mysql'
+  driver: 'sqlite' | 'postgres' | 'mysql' | 'mssql'
   database: string
   host?: string | undefined
   port?: number | undefined
   user?: string | undefined
   password?: string | undefined
   ssl?: boolean | undefined
+  encrypt?: boolean | undefined
+  trustServerCertificate?: boolean | undefined
   pool?: { min?: number | undefined; max?: number | undefined } | undefined
 }
 
@@ -104,6 +107,8 @@ export class DatabaseManager {
           password: cfg.password,
           pool: cfg.pool,
         })
+      case 'mssql':
+        return new MSSQLConnection(cfg as any)
       case 'mongodb':
         // MongoDB is handled separately via mongo()
         throw new ConnectionError(`Use .mongo() to access MongoDB connections`, cfg.driver)
