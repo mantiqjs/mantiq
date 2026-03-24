@@ -9,8 +9,8 @@
   ],
   "scripts": {
     "build": "bun run --filter '*' build",
-    "test": "bun test packages/",
-    "test:ci": "bun test packages/",
+    "test": "bun test packages/*/tests/",
+    "test:ci": "bun test packages/*/tests/",
     "lint": "bun run --filter '*' lint",
     "typecheck": "bun run --filter '*' typecheck",
     "clean": "bun run --filter '*' clean",
