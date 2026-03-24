@@ -21,7 +21,7 @@ export default {
   |
   | Here are each of the database connections set up for your application.
   | SQLite is pre-configured and requires no external services. Add
-  | additional connections for PostgreSQL, MySQL, or MongoDB as needed.
+  | additional connections for PostgreSQL, MySQL, MSSQL, or MongoDB.
   |
   | Supported drivers: 'sqlite', 'postgres', 'mysql', 'mssql', 'mongodb'
   |
@@ -29,6 +29,7 @@ export default {
   connections: {
     sqlite: {
       driver: 'sqlite' as const,
+      // ':memory:' for in-memory, or a file path
       database: env('DB_DATABASE', import.meta.dir + '/../database/database.sqlite'),
     },
 
@@ -37,8 +38,13 @@ export default {
     //   host: env('DB_HOST', '127.0.0.1'),
     //   port: Number(env('DB_PORT', '5432')),
     //   database: env('DB_DATABASE', 'mantiq'),
-    //   username: env('DB_USERNAME', 'postgres'),
+    //   user: env('DB_USERNAME', 'postgres'),
     //   password: env('DB_PASSWORD', ''),
+    //   ssl: env('DB_SSL', 'false') === 'true',
+    //   pool: {
+    //     min: Number(env('DB_POOL_MIN', '2')),
+    //     max: Number(env('DB_POOL_MAX', '10')),
+    //   },
     // },
 
     // mysql: {
@@ -46,8 +52,12 @@ export default {
     //   host: env('DB_HOST', '127.0.0.1'),
     //   port: Number(env('DB_PORT', '3306')),
     //   database: env('DB_DATABASE', 'mantiq'),
-    //   username: env('DB_USERNAME', 'root'),
+    //   user: env('DB_USERNAME', 'root'),
     //   password: env('DB_PASSWORD', ''),
+    //   pool: {
+    //     min: Number(env('DB_POOL_MIN', '2')),
+    //     max: Number(env('DB_POOL_MAX', '10')),
+    //   },
     // },
 
     // mssql: {
@@ -55,14 +65,23 @@ export default {
     //   host: env('DB_HOST', '127.0.0.1'),
     //   port: Number(env('DB_PORT', '1433')),
     //   database: env('DB_DATABASE', 'mantiq'),
-    //   username: env('DB_USERNAME', 'sa'),
+    //   user: env('DB_USERNAME', 'sa'),
     //   password: env('DB_PASSWORD', ''),
+    //   encrypt: env('DB_ENCRYPT', 'true') === 'true',
+    //   trustServerCertificate: env('DB_TRUST_CERT', 'false') === 'true',
+    //   pool: {
+    //     min: Number(env('DB_POOL_MIN', '2')),
+    //     max: Number(env('DB_POOL_MAX', '10')),
+    //   },
     // },
 
     // mongodb: {
     //   driver: 'mongodb' as const,
-    //   url: env('MONGODB_URL', 'mongodb://127.0.0.1:27017'),
+    //   uri: env('MONGODB_URL', 'mongodb://127.0.0.1:27017'),
     //   database: env('DB_DATABASE', 'mantiq'),
+    //   options: {
+    //     // Any MongoClient options: retryWrites, w, etc.
+    //   },
     // },
   },
 }
