@@ -6,14 +6,14 @@ Priority: **P0** = critical / blocks 1.0, **P1** = important / should fix soon, 
 
 ---
 
-## Type Safety (P0 — biggest quality gap)
+## Type Safety (P0) — MOSTLY DONE
 
-- [ ] **P0** Remove `as any` from all generated stubs — controllers, routes, user code should be strictly typed
-- [ ] **P0** Fix ORM return types: `User.query().count()` should not need `as any` cast
-- [ ] **P0** Fix `ModelQueryBuilder` generics: `.where().orWhere()` chain should preserve type
-- [ ] **P0** Fix `request.input()` return type — should be generic `request.input<T>()` not `as { ... }`
-- [ ] **P0** Fix `auth().login(user)` — should accept `Authenticatable`, not require `as any`
-- [ ] **P0** Audit all `as any` in packages/core, packages/auth, packages/database — eliminate or justify each
+- [x] ~~Remove `as any` from all generated stubs (18→0 in framework code)~~
+- [x] ~~Fix ORM return types: ModelQueryBuilder returns `T[]` and `T | null`~~
+- [x] ~~Fix `auth().login(user)` — Authenticatable expanded with getAttribute/toObject/getKey~~
+- [x] ~~AuthenticatableModel mixin constrained to ModelLike — no internal casts~~
+- [ ] **P1** Fix `request.input()` return type — should be generic `request.input<T>()` not `Record<string, any>`
+- [ ] **P1** Audit remaining `as any` in internal framework code (~70 in packages/core, database, auth)
 
 ## Error Visibility (P0 — silent failures are dangerous)
 
@@ -23,12 +23,12 @@ Priority: **P0** = critical / blocks 1.0, **P1** = important / should fix soon, 
 - [ ] **P0** EncryptCookies silent fallback (line 51) — if decryption fails, log a warning instead of silently returning encrypted value
 - [ ] **P1** Add structured error codes to all framework errors (not just string messages)
 
-## Validation in Stubs (P0)
+## Validation in Stubs (P0) — COMPLETED
 
-- [ ] **P0** Use FormRequest in AuthController stub instead of manual `if (!body.name)` checks
-- [ ] **P0** Use FormRequest in ApiAuthController stub
-- [ ] **P0** Use FormRequest in UserController stub
-- [ ] **P0** Create RegisterRequest, LoginRequest, StoreUserRequest FormRequest classes as stubs
+- [x] ~~FormRequest auto-validation in route tuples: `[Controller, 'method', RegisterRequest]`~~
+- [x] ~~Separate request classes: RegisterRequest, LoginRequest, StoreUserRequest, UpdateUserRequest~~
+- [x] ~~HttpKernel auto-resolves FormRequest, validates, passes data to controller~~
+- [x] ~~Controllers receive `(request, data)` — no manual validate() calls~~
 
 ## Security (P0)
 
@@ -103,6 +103,59 @@ Priority: **P0** = critical / blocks 1.0, **P1** = important / should fix soon, 
 - [ ] **P2** WebSocket/Realtime e2e tests
 - [ ] **P2** CLI generator verification: generated files actually work
 - [ ] **P2** Performance baseline: response times, memory under load
+
+## @mantiq/testing Gaps (P1)
+
+Package exists with TestCase, TestClient, TestResponse (18 unit tests). Compared against Laravel — 73% coverage.
+
+### JSON Assertions (P1 — most impactful gap)
+- [ ] **P1** `assertJsonPath('data.users.0.name', 'Ali')` — dot-notation path access
+- [ ] **P1** `assertJsonCount(3, 'data.users')` — count items at path
+- [ ] **P1** `assertJsonStructure(['data' => ['id', 'name']])` — validate shape
+- [ ] **P1** `assertJsonMissing({ key: 'value' })` — assert JSON doesn't contain subset
+- [ ] **P2** `assertSeeInOrder(['first', 'second'])` — ordered text assertions
+
+### Auth Assertions (P1)
+- [ ] **P1** Complete `actingAs(user, 'web')` — session auth (currently only token auth works)
+- [ ] **P1** `assertAuthenticated(guard?)` — verify user is logged in
+- [ ] **P1** `assertGuest(guard?)` — verify no user is logged in
+- [ ] **P1** `assertAuthenticatedAs(user)` — verify specific user
+
+### Database Assertions (P1)
+- [ ] **P1** `assertSoftDeleted(table, data)` / `assertNotSoftDeleted()`
+- [ ] **P1** `assertModelExists(model)` / `assertModelMissing(model)`
+- [ ] **P2** `expectsDatabaseQueryCount(n)` — assert number of queries executed
+- [ ] **P2** `DatabaseTransactions` trait — wrap each test in a transaction + rollback
+
+### Session & Validation Assertions (P1)
+- [ ] **P1** `assertSessionHas(key, value?)` / `assertSessionMissing(key)`
+- [ ] **P1** `assertSessionHasErrors(keys?)` — check validation errors in session
+- [ ] **P1** `assertValid()` / `assertInvalid(keys?)` — validation pass/fail
+- [ ] **P2** `assertDownload(filename?)` — assert response is a file download
+
+### TestCase Lifecycle (P1)
+- [ ] **P1** `withoutMiddleware(Middleware)` — disable specific middleware for test
+- [ ] **P1** `withoutExceptionHandling()` — let exceptions throw instead of returning 500
+- [ ] **P2** `freezeTime()` / `travelTo(date)` — time manipulation for expiry/schedule tests
+- [ ] **P2** `withSession(data)` / `withCookie(name, value)` — preset session/cookie state
+
+### Fake Re-exports (P1 — already built in other packages)
+- [ ] **P1** Re-export `EventFake` from @mantiq/events
+- [ ] **P1** Re-export `QueueFake` from @mantiq/queue
+- [ ] **P1** Re-export `MailFake` from @mantiq/mail
+- [ ] **P1** Re-export `NotificationFake` from @mantiq/notify
+- [ ] **P1** Re-export `HttpFake` from @mantiq/helpers
+- [ ] **P2** Re-export `SearchFake`, `RealtimeFake`, `HeartbeatFake`
+
+### Missing Features (P2)
+- [ ] **P2** File upload testing — `withFile()`, `UploadedFile.fake()`
+- [ ] **P2** Console command testing — `artisan('command')`, `assertExitCode`, `expectsOutput`
+- [ ] **P2** `from(url)` — set referer header
+- [ ] **P2** `withBasicAuth(user, pass)`
+- [ ] **P2** `followRedirects()` — auto-follow 3xx
+- [ ] **P2** `dump()` / `dd()` on TestResponse — debug helpers
+- [ ] **P2** `assertServerError()` (5xx) / `assertClientError()` (4xx)
+- [ ] **P2** `assertCookieExpired(name)`
 
 ## Architecture Cleanup (P1)
 
@@ -205,10 +258,16 @@ Server-driven admin panel using React + shadcn/ui. Define Resources in TypeScrip
 | 14 CLI skills | /publish, /test, /audit, /progress, /compare-laravel, etc. |
 | Skeleton dedup | Root skeleton/ is symlink to packages/create-mantiq/skeleton/ |
 | Stateful SPA API | SPA kits use session-based api group, clean route separation |
+| Type safety P0 | 18→0 as-any in stubs, ModelQueryBuilder returns T[], Authenticatable expanded |
+| FormRequest in stubs | Auto-validated via route tuple `[Controller, 'method', Request]` |
+| config/vite.ts | reactRefresh + SSR config per kit, skeleton has documented defaults |
+| Vite lazy hot file | Re-checks hot file on request — parallel startup safe |
+| @mantiq/testing | TestCase, TestClient, TestResponse — 18 unit tests, 73% Laravel parity |
+| Playground app | playground/react-app with workspace:* linking for local testing |
 
-## Published Packages (20) — v0.5.16
+## Published Packages (21) — v0.5.19
 
-All packages at unified version 0.5.16 on `latest` tag.
+All packages at unified version 0.5.19 on `latest` tag.
 
 | # | Package | Description |
 |---|---------|-------------|
@@ -217,18 +276,19 @@ All packages at unified version 0.5.16 on `latest` tag.
 | 3 | `@mantiq/auth` | Session + token auth, Gates & Policies, AuthenticatableModel |
 | 4 | `@mantiq/cli` | 38 commands, 19 generators, command auto-registration |
 | 5 | `@mantiq/validation` | 40+ rules, FormRequest, DatabasePresenceVerifier |
-| 6 | `@mantiq/helpers` | Str, Arr, Num, Collection, HTTP client |
+| 6 | `@mantiq/helpers` | Str, Arr, Num, Collection, HTTP client, HttpFake |
 | 7 | `@mantiq/filesystem` | Local, S3, GCS, R2, Azure, FTP, SFTP |
 | 8 | `@mantiq/logging` | Console, file, daily, stack channels |
-| 9 | `@mantiq/events` | Dispatcher, broadcasting, model observers |
-| 10 | `@mantiq/queue` | Jobs, chains, batches, scheduling |
-| 11 | `@mantiq/realtime` | WebSocket, SSE, presence channels, pub/sub |
+| 9 | `@mantiq/events` | Dispatcher, broadcasting, model observers, EventFake |
+| 10 | `@mantiq/queue` | Jobs, chains, batches, scheduling, QueueFake |
+| 11 | `@mantiq/realtime` | WebSocket, SSE, presence channels, pub/sub, RealtimeFake |
 | 12 | `@mantiq/heartbeat` | APM dashboard, debug widget, dedicated SQLite telemetry |
-| 13 | `@mantiq/vite` | Vite 8, HMR, SSR, hot file dev mode |
-| 14 | `@mantiq/mail` | 8 transports, markdown emails |
-| 15 | `@mantiq/notify` | 12 notification channels |
-| 16 | `@mantiq/search` | 6 search drivers (Algolia, Meilisearch, Typesense, ES, DB, collection) |
+| 13 | `@mantiq/vite` | Vite 8, HMR, SSR, hot file dev mode, React Refresh |
+| 14 | `@mantiq/mail` | 8 transports, markdown emails, MailFake |
+| 15 | `@mantiq/notify` | 12 notification channels, NotificationFake |
+| 16 | `@mantiq/search` | 6 search drivers, SearchFake |
 | 17 | `@mantiq/health` | 12 health checks |
 | 18 | `@mantiq/oauth` | OAuth 2.0 server, JWT, PKCE, 4 grants |
 | 19 | `@mantiq/social-auth` | Social login, 8 providers |
-| 20 | `create-mantiq` | Skeleton scaffold, 4 kits (React, Vue, Svelte, API-only) |
+| 20 | `@mantiq/testing` | TestCase, TestClient, TestResponse, DB + auth assertions |
+| 21 | `create-mantiq` | Skeleton scaffold, 4 kits (React, Vue, Svelte, API-only) |

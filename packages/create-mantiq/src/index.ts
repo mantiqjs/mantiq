@@ -203,6 +203,7 @@ if (kit) {
     { stub: 'shared/app/Http/Requests/UpdateUserRequest.ts.stub', target: 'app/Http/Requests/UpdateUserRequest.ts' },
     { stub: 'shared/database/seeders/DatabaseSeeder.ts.stub', target: 'database/seeders/DatabaseSeeder.ts' },
     { stub: 'shared/database/factories/UserFactory.ts.stub', target: 'database/factories/UserFactory.ts' },
+    { stub: 'api-only/tests/feature/token-auth.test.ts.stub', target: 'tests/feature/token-auth.test.ts' },
   ]
   for (const { stub, target } of apiOnlyFiles) {
     const src = resolve(stubsDir, stub)

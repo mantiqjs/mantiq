@@ -1,0 +1,90 @@
+import { describe, test } from 'bun:test'
+import { TestCase } from '@mantiq/testing'
+
+const t = new TestCase()
+t.refreshDatabase = true
+t.setup()
+
+const admin = {
+  name: 'Admin',
+  email: 'admin@example.com',
+  password: 'password123',
+}
+
+/** Register and login before CRUD tests. */
+async function login() {
+  await t.client.initSession()
+  await t.client.post('/register', admin)
+}
+
+describe('Users CRUD', () => {
+  test('can list users', async () => {
+    await login()
+    const res = await t.client.get('/api/users')
+    res.assertOk()
+    await res.assertJsonHasKey('data', 'meta')
+    await res.assertJsonPath('meta.page', 1)
+  })
+
+  test('can create a user', async () => {
+    await login()
+    const res = await t.client.post('/api/users', {
+      name: 'New User',
+      email: 'new@example.com',
+      password: 'secret123',
+    })
+    res.assertCreated()
+    await res.assertJsonPath('data.name', 'New User')
+    await res.assertJsonPath('data.email', 'new@example.com')
+    await t.assertDatabaseHas('users', { email: 'new@example.com' })
+  })
+
+  test('cannot create user with missing fields', async () => {
+    await login()
+    const res = await t.client.post('/api/users', { name: 'No Email' })
+    res.assertUnprocessable()
+  })
+
+  test('can update a user', async () => {
+    await login()
+    const createRes = await t.client.post('/api/users', {
+      name: 'Update Me',
+      email: 'update@example.com',
+      password: 'secret123',
+    })
+    const userId = (await createRes.json()).data.id
+
+    const res = await t.client.put(`/api/users/${userId}`, { name: 'Updated' })
+    res.assertOk()
+    await res.assertJsonPath('data.name', 'Updated')
+  })
+
+  test('can delete a user', async () => {
+    await login()
+    const createRes = await t.client.post('/api/users', {
+      name: 'Delete Me',
+      email: 'delete@example.com',
+      password: 'secret123',
+    })
+    const userId = (await createRes.json()).data.id
+
+    const res = await t.client.delete(`/api/users/${userId}`)
+    res.assertOk()
+    await t.assertDatabaseMissing('users', { email: 'delete@example.com' })
+  })
+
+  test('can search users', async () => {
+    await login()
+    const res = await t.client.get('/api/users?search=Admin')
+    res.assertOk()
+    const data = await res.json()
+    expect(data.data.length).toBeGreaterThan(0)
+  })
+
+  test('can paginate users', async () => {
+    await login()
+    const res = await t.client.get('/api/users?page=1&per_page=1')
+    res.assertOk()
+    await res.assertJsonPath('meta.per_page', 1)
+  })
+})

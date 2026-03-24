@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/notify",
-  "version": "0.5.19",
+  "version": "0.5.20",
   "description": "Multi-channel notifications — mail, database, broadcast, SMS, Slack, webhook",
   "type": "module",
   "license": "MIT",
