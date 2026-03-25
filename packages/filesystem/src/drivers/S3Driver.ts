@@ -73,7 +73,24 @@ export class S3Driver implements FilesystemDriver {
   }
 
   private key(path: string): string {
-    return this.prefix + path.replace(/^\/+/, '')
+    // Normalize and reject path traversal sequences
+    const segments = path.replace(/^\/+/, '').split('/')
+    const normalized: string[] = []
+    for (const segment of segments) {
+      if (segment === '..') {
+        throw new FilesystemError('Path traversal detected — ".." segments are not allowed.', { path })
+      }
+      if (segment !== '' && segment !== '.') {
+        normalized.push(segment)
+      }
+    }
+    const safePath = normalized.join('/')
+    const fullKey = this.prefix + safePath
+    // Ensure the resolved key stays within the configured prefix
+    if (this.prefix && !fullKey.startsWith(this.prefix)) {
+      throw new FilesystemError('Path traversal detected — resolved key escapes the configured root.', { path })
+    }
+    return fullKey
   }
 
   private aclFor(visibility: 'public' | 'private'): string {

@@ -99,6 +99,31 @@ export class HttpKernel {
 
     const request = MantiqRequest.fromBun(bunRequest)
 
+    // Pass the direct connection IP from Bun's server
+    const socketAddr = server.requestIP(bunRequest)
+    if (socketAddr) {
+      request.setConnectionIp(socketAddr.address)
+    }
+
+    // Configure trusted proxies and body size limit from config
+    let maxBodySize = 10 * 1024 * 1024 // default 10MB
+    try {
+      const config = this.container.make(ConfigRepository)
+      const proxies = config.get<string[]>('app.trustedProxies', [])
+      if (proxies && proxies.length > 0) {
+        request.setTrustedProxies(proxies)
+      }
+      maxBodySize = config.get<number>('app.maxBodySize', maxBodySize)
+    } catch {
+      // ConfigRepository may not be bound yet — leave defaults
+    }
+
+    // Reject oversized request bodies before reading them (413 Payload Too Large)
+    const contentLength = Number(bunRequest.headers.get('content-length'))
+    if (contentLength > maxBodySize) {
+      return new Response('Payload Too Large', { status: 413 })
+    }
+
     try {
       // Combine prepend + global + append middleware
       // Deduplicate exact duplicates but keep parameterized variants (auth:admin vs auth:user)

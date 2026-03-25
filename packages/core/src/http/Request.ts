@@ -11,6 +11,8 @@ export class MantiqRequest implements MantiqRequestContract {
   private authenticatedUser: any = null
   private cookies: Record<string, string> | null = null
   private sessionStore: SessionStore | null = null
+  private connectionIp: string = '127.0.0.1'
+  private trustedProxies: string[] = []
 
   constructor(
     private readonly bunRequest: Request,
@@ -112,10 +114,28 @@ export class MantiqRequest implements MantiqRequestContract {
   }
 
   ip(): string {
-    // @internal: Bun doesn't expose IP on Request — callers should pass it via middleware if needed
-    return this.header('x-forwarded-for')?.split(',')[0]?.trim()
-      ?? this.header('x-real-ip')
-      ?? '127.0.0.1'
+    // Only trust proxy headers when the direct connection comes from a trusted proxy
+    if (this.trustedProxies.length > 0 && this.trustedProxies.includes(this.connectionIp)) {
+      const forwarded = this.header('x-forwarded-for')?.split(',')[0]?.trim()
+      if (forwarded) return forwarded
+      const realIp = this.header('x-real-ip')
+      if (realIp) return realIp
+    }
+    return this.connectionIp
+  }
+
+  /**
+   * Set the direct connection IP address (from the server/socket).
+   */
+  setConnectionIp(ip: string): void {
+    this.connectionIp = ip
+  }
+
+  /**
+   * Configure which proxy IPs are trusted to set X-Forwarded-For / X-Real-IP.
+   */
+  setTrustedProxies(proxies: string[]): void {
+    this.trustedProxies = proxies
   }
 
   userAgent(): string {
