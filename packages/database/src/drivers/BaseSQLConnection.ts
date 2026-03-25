@@ -41,8 +41,8 @@ export abstract class BaseSQLConnection implements DatabaseConnection {
     return this.statement(sql, bindings)
   }
 
-  async executeInsertGetId(table: string, data: Record<string, any>): Promise<number | string> {
-    const { sql, bindings } = this._grammar.compileInsertGetId(table, data)
+  async executeInsertGetId(table: string, data: Record<string, any>, idColumn?: string): Promise<number | string> {
+    const { sql, bindings } = this._grammar.compileInsertGetId(table, data, idColumn)
     const id = await this.insertGetId(sql, bindings)
     // SQL drivers always return numeric IDs (bigint from SQLite, string from pg for BIGSERIAL)
     return Number(id)
@@ -95,8 +95,8 @@ export abstract class BaseSQLConnection implements DatabaseConnection {
       BaseSQLConnection.prototype.executeSelect.call({ ...txConn, _grammar: this._grammar }, state)
     txConn.executeInsert = (table: string, data: Record<string, any>) =>
       BaseSQLConnection.prototype.executeInsert.call({ ...txConn, _grammar: this._grammar }, table, data)
-    txConn.executeInsertGetId = (table: string, data: Record<string, any>) =>
-      BaseSQLConnection.prototype.executeInsertGetId.call({ ...txConn, _grammar: this._grammar }, table, data)
+    txConn.executeInsertGetId = (table: string, data: Record<string, any>, idColumn?: string) =>
+      BaseSQLConnection.prototype.executeInsertGetId.call({ ...txConn, _grammar: this._grammar }, table, data, idColumn)
     txConn.executeUpdate = (table: string, state: QueryState, data: Record<string, any>) =>
       BaseSQLConnection.prototype.executeUpdate.call({ ...txConn, _grammar: this._grammar }, table, state, data)
     txConn.executeDelete = (table: string, state: QueryState) =>

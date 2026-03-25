@@ -6,7 +6,7 @@ import type { SerializedPayload } from './contracts/JobContract.ts'
  */
 const JOB_BASE_KEYS = new Set([
   'queue', 'connection', 'tries', 'backoff', 'timeout',
-  'delay', 'attempts', 'jobId',
+  'delay', 'attempts', 'jobId', 'signal',
 ])
 
 /**
@@ -64,6 +64,9 @@ export abstract class Job {
 
   /** Queue driver's job ID (set after push) */
   jobId: string | number | null = null
+
+  /** Abort signal set by the Worker — check this.signal.aborted to cooperatively cancel long-running work */
+  signal: AbortSignal = new AbortController().signal
 
   /** Execute the job logic */
   abstract handle(): Promise<void>

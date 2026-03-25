@@ -171,10 +171,37 @@ export class S3Driver implements FilesystemDriver {
   }
 
   async putStream(path: string, stream: ReadableStream, options?: PutOptions): Promise<void> {
-    // Consume stream to bytes and upload — for large files, users should use
-    // the AWS SDK's Upload (multipart) directly.
-    const body = new Uint8Array(await new Response(stream).arrayBuffer())
-    await this.put(path, body, options)
+    const visibility = options?.visibility ?? this.defaultVisibility
+    const contentType = options?.mimeType ?? guessMimeType(path) ?? 'application/octet-stream'
+
+    // Try multipart streaming upload via @aws-sdk/lib-storage (avoids buffering the entire stream)
+    try {
+      const { Upload } = await import('@aws-sdk/lib-storage' as string)
+      const client = await this.client()
+      const upload = new Upload({
+        client,
+        params: {
+          Bucket: this.bucket,
+          Key: this.key(path),
+          Body: stream,
+          ContentType: contentType,
+          ACL: this.aclFor(visibility),
+        },
+      })
+      await upload.done()
+    } catch (importError: any) {
+      // @aws-sdk/lib-storage not installed — fall back to buffering with a warning
+      if (importError?.code === 'ERR_MODULE_NOT_FOUND' || importError?.message?.includes('Cannot find')) {
+        console.warn(
+          '[Mantiq] @aws-sdk/lib-storage not installed — putStream() will buffer the entire stream in memory. '
+          + 'For large files, install it with: bun add @aws-sdk/lib-storage',
+        )
+        const body = new Uint8Array(await new Response(stream).arrayBuffer())
+        await this.put(path, body, options)
+      } else {
+        throw importError
+      }
+    }
   }
 
   async append(path: string, contents: string): Promise<void> {

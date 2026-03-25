@@ -85,7 +85,7 @@ export abstract class BaseGrammar implements Grammar {
     }
   }
 
-  compileInsertGetId(table: string, data: Record<string, any>): { sql: string; bindings: any[] } {
+  compileInsertGetId(table: string, data: Record<string, any>, _idColumn?: string): { sql: string; bindings: any[] } {
     return this.compileInsert(table, data)
   }
 

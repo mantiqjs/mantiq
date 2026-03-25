@@ -6,7 +6,7 @@ export interface Grammar {
 
   compileSelect(state: QueryState): { sql: string; bindings: any[] }
   compileInsert(table: string, data: Record<string, any>): { sql: string; bindings: any[] }
-  compileInsertGetId(table: string, data: Record<string, any>): { sql: string; bindings: any[] }
+  compileInsertGetId(table: string, data: Record<string, any>, idColumn?: string): { sql: string; bindings: any[] }
   compileUpdate(table: string, state: QueryState, data: Record<string, any>): { sql: string; bindings: any[] }
   compileDelete(table: string, state: QueryState): { sql: string; bindings: any[] }
   compileTruncate(table: string): string

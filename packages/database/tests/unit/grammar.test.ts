@@ -253,7 +253,14 @@ describe('PostgresGrammar', () => {
 
   test('compileInsertGetId adds RETURNING id', () => {
     const { sql } = g.compileInsertGetId('users', { name: 'Alice' })
-    expect(sql).toContain('RETURNING id')
+    expect(sql).toContain('RETURNING')
+    expect(sql).toContain('"id"')
+  })
+
+  test('compileInsertGetId accepts custom id column', () => {
+    const { sql } = g.compileInsertGetId('users', { name: 'Alice' }, 'uuid')
+    expect(sql).toContain('RETURNING')
+    expect(sql).toContain('"uuid"')
   })
 
   test('compileTruncate uses TRUNCATE TABLE with RESTART IDENTITY', () => {

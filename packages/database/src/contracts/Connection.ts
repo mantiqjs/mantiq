@@ -5,7 +5,7 @@ export interface DatabaseConnection {
   // ── Universal execution (works on ALL drivers) ──────────────────────────
   executeSelect(state: QueryState): Promise<Record<string, any>[]>
   executeInsert(table: string, data: Record<string, any>): Promise<number>
-  executeInsertGetId(table: string, data: Record<string, any>): Promise<number | string>
+  executeInsertGetId(table: string, data: Record<string, any>, idColumn?: string): Promise<number | string>
   executeUpdate(table: string, state: QueryState, data: Record<string, any>): Promise<number>
   executeDelete(table: string, state: QueryState): Promise<number>
   executeTruncate(table: string): Promise<void>
