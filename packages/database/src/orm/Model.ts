@@ -599,6 +599,9 @@ export abstract class Model {
       throw new Error('Cannot increment on a model that has not been persisted.')
     }
 
+    // updating (cancellable)
+    if (await this.fireModelEvent('updating') === false) return this
+
     const table = ctor.table || pluralize(snakeCase(ctor.name))
     const data: Record<string, any> = {}
 
@@ -623,6 +626,8 @@ export abstract class Model {
       .update(data)
 
     this._original = { ...this._attributes }
+
+    await this.fireModelEvent('updated')
     return this
   }
 
@@ -636,6 +641,9 @@ export abstract class Model {
     if (!ctor.connection || !this._exists) {
       throw new Error('Cannot increment/decrement on a model that has not been persisted.')
     }
+
+    // updating (cancellable)
+    if (await this.fireModelEvent('updating') === false) return this
 
     const table = ctor.table || pluralize(snakeCase(ctor.name))
     const operator = method === 'increment' ? '+' : '-'
@@ -661,6 +669,8 @@ export abstract class Model {
       this._attributes[k] = v
     }
     this._original = { ...this._attributes }
+
+    await this.fireModelEvent('updated')
     return this
   }
 
