@@ -38,8 +38,11 @@ export class Dispatcher implements EventDispatcher {
    */
   once(eventClass: Constructor<Event>, handler: EventHandler): void {
     const wrapper: EventHandler = async (event) => {
-      this.off(eventClass, wrapper)
-      await handler(event)
+      try {
+        await handler(event)
+      } finally {
+        this.off(eventClass, wrapper)
+      }
     }
     this.on(eventClass, wrapper)
   }
@@ -104,17 +107,31 @@ export class Dispatcher implements EventDispatcher {
 
   async emit(event: Event): Promise<void> {
     const eventClass = event.constructor as Constructor<Event>
-    const registered = this.listeners.get(eventClass) ?? []
+    // Snapshot the array to avoid issues if listeners modify it during iteration
+    const registered = [...(this.listeners.get(eventClass) ?? [])]
+    const errors: ListenerError[] = []
 
-    // Fire class-based and closure listeners
+    // Fire class-based and closure listeners — isolated, one failure doesn't stop others
     for (const listener of registered) {
-      await this.callListener(listener, event)
+      try {
+        await this.callListener(listener, event)
+      } catch (error) {
+        if (error instanceof ListenerError) errors.push(error)
+        else errors.push(new ListenerError(event.constructor.name, 'unknown', error instanceof Error ? error : new Error(String(error))))
+      }
     }
 
-    // Fire wildcard listeners
-    for (const handler of this.wildcardListeners) {
-      await handler(event)
+    // Fire wildcard listeners — also isolated
+    for (const handler of [...this.wildcardListeners]) {
+      try {
+        await handler(event)
+      } catch (error) {
+        errors.push(new ListenerError(event.constructor.name, handler.name || '(wildcard)', error instanceof Error ? error : new Error(String(error))))
+      }
     }
+
+    // Re-throw first error after all listeners have run (preserves the contract)
+    if (errors.length > 0) throw errors[0]
 
     // Broadcast if the event implements ShouldBroadcast
     if (this.broadcaster && isBroadcastable(event)) {

@@ -91,6 +91,13 @@ export class FileCacheStore implements CacheStore {
     return this.increment(key, -value)
   }
 
+  /**
+   * Store an item in the cache if the key does not already exist.
+   *
+   * Note: File-based storage cannot guarantee atomicity. Between the existence
+   * check and the write, another process could set the key. For truly atomic
+   * add semantics, use the Redis or Memcached cache driver.
+   */
   async add(key: string, value: unknown, ttl?: number): Promise<boolean> {
     if (await this.has(key)) return false
     await this.put(key, value, ttl)

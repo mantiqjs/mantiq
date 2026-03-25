@@ -69,6 +69,21 @@ describe('SessionStore', () => {
     expect(session2.get('persisted')).toBe(true)
   })
 
+  it('remains started after save', async () => {
+    session.put('key', 'value')
+    expect(session.isStarted()).toBe(true)
+    await session.save()
+    expect(session.isStarted()).toBe(true)
+  })
+
+  it('allows writing after save', async () => {
+    session.put('first', 1)
+    await session.save()
+    session.put('second', 2)
+    expect(session.get('second')).toBe(2)
+    expect(session.isStarted()).toBe(true)
+  })
+
   it('generates a CSRF token', () => {
     const token = session.token()
     expect(typeof token).toBe('string')

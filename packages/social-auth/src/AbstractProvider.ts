@@ -65,6 +65,9 @@ export abstract class AbstractProvider implements OAuthProvider {
   }
 
   async user(request: any): Promise<OAuthUser> {
+    // Store request for subclass access (e.g., TwitterProvider needs session for PKCE)
+    (this as any)._request = request
+
     const getParam = (name: string): string | null => {
       if (typeof request?.query === 'function') return request.query(name)
       return new URL(request.url).searchParams.get(name)

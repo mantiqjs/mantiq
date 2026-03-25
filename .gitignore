@@ -22,3 +22,4 @@ playground/
 test-mantiq-app/
 playwright-report/
 test-results/
+.claude/worktrees/

@@ -528,7 +528,7 @@ describe('Dispatcher lifecycle integration', () => {
       }
     })
 
-    it('error in first listener prevents subsequent listeners from firing', async () => {
+    it('error in one listener does not prevent other listeners from firing', async () => {
       const calls: string[] = []
 
       dispatcher.on(UserRegistered, () => {
@@ -542,9 +542,10 @@ describe('Dispatcher lifecycle integration', () => {
 
       try {
         await dispatcher.emit(new UserRegistered(1))
-      } catch { /* expected */ }
+      } catch { /* expected — re-throws first error after all run */ }
 
-      expect(calls).toEqual(['first'])
+      // Both listeners ran despite the first one throwing
+      expect(calls).toEqual(['first', 'second'])
     })
   })
 

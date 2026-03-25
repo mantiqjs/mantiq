@@ -238,6 +238,35 @@ describe('Dispatcher', () => {
         expect(error.message).toContain('boom')
       }
     })
+
+    it('continues executing listeners when one throws (#79)', async () => {
+      const calls: string[] = []
+
+      dispatcher.on(UserRegistered, () => { calls.push('first') })
+      dispatcher.on(UserRegistered, () => { throw new Error('second fails') })
+      dispatcher.on(UserRegistered, () => { calls.push('third') })
+
+      try {
+        await dispatcher.emit(new UserRegistered(1))
+      } catch {
+        // Expected — first error is re-thrown after all listeners run
+      }
+
+      expect(calls).toEqual(['first', 'third'])
+    })
+  })
+
+  describe('once() iteration safety (#75)', () => {
+    it('does not skip listeners when once() removes during iteration', async () => {
+      const calls: string[] = []
+
+      dispatcher.once(UserRegistered, () => { calls.push('once-handler') })
+      dispatcher.on(UserRegistered, () => { calls.push('permanent') })
+
+      await dispatcher.emit(new UserRegistered(1))
+
+      expect(calls).toEqual(['once-handler', 'permanent'])
+    })
   })
 
   describe('Event base class', () => {

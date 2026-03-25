@@ -55,8 +55,20 @@ export class MemoryCacheStore implements CacheStore {
   }
 
   async add(key: string, value: unknown, ttl?: number): Promise<boolean> {
-    if (await this.has(key)) return false
-    await this.put(key, value, ttl)
+    // Atomic check-and-set: read the entry directly and check expiry in one step
+    // to avoid TOCTOU race between has() and put().
+    const existing = this.store.get(key)
+    if (existing) {
+      if (existing.expiresAt === null || Date.now() <= existing.expiresAt) {
+        return false
+      }
+      // Expired — remove and allow re-add
+      this.store.delete(key)
+    }
+    this.store.set(key, {
+      value,
+      expiresAt: ttl != null ? Date.now() + ttl * 1000 : null,
+    })
     return true
   }
 }

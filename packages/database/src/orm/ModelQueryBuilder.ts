@@ -279,11 +279,15 @@ export class ModelQueryBuilder<T> extends QueryBuilder {
     while (true) {
       const originalLimit = this.state.limitValue
       const originalOffset = this.state.offsetValue
-      this.state.limitValue = size
-      this.state.offsetValue = (page - 1) * size
-      const results = await this.get()
-      this.state.limitValue = originalLimit
-      this.state.offsetValue = originalOffset
+      let results: T[]
+      try {
+        this.state.limitValue = size
+        this.state.offsetValue = (page - 1) * size
+        results = await this.get()
+      } finally {
+        this.state.limitValue = originalLimit
+        this.state.offsetValue = originalOffset
+      }
 
       if (results.length === 0) break
 
@@ -315,21 +319,24 @@ export class ModelQueryBuilder<T> extends QueryBuilder {
     while (true) {
       const originalLimit = this.state.limitValue
       const originalOrders = [...this.state.orders]
-      this.state.limitValue = size
-      this.state.orders = [{ column, direction: 'asc' }]
-
-      // Clone wheres, add id constraint
       const originalWheres = [...this.state.wheres]
-      if (lastId !== null) {
-        this.state.wheres.push({ type: 'basic', boolean: 'and', column, operator: '>', value: lastId })
+      let results: T[]
+      try {
+        this.state.limitValue = size
+        this.state.orders = [{ column, direction: 'asc' }]
+
+        // Add id constraint
+        if (lastId !== null) {
+          this.state.wheres.push({ type: 'basic', boolean: 'and', column, operator: '>', value: lastId })
+        }
+
+        results = await this.get()
+      } finally {
+        // Restore state
+        this.state.limitValue = originalLimit
+        this.state.orders = originalOrders
+        this.state.wheres = originalWheres
       }
-
-      const results = await this.get()
-
-      // Restore state
-      this.state.limitValue = originalLimit
-      this.state.orders = originalOrders
-      this.state.wheres = originalWheres
 
       if (results.length === 0) break
 
@@ -359,11 +366,15 @@ export class ModelQueryBuilder<T> extends QueryBuilder {
     while (true) {
       const originalLimit = this.state.limitValue
       const originalOffset = this.state.offsetValue
-      this.state.limitValue = batchSize
-      this.state.offsetValue = offset
-      const results = await this.get()
-      this.state.limitValue = originalLimit
-      this.state.offsetValue = originalOffset
+      let results: T[]
+      try {
+        this.state.limitValue = batchSize
+        this.state.offsetValue = offset
+        results = await this.get()
+      } finally {
+        this.state.limitValue = originalLimit
+        this.state.offsetValue = originalOffset
+      }
 
       for (const item of results) {
         yield item

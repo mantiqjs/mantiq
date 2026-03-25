@@ -70,15 +70,26 @@ export class Migrator {
 
     await Migrator._dispatcher?.emit(new MigrationsStarted('down'))
 
+    const missing: string[] = []
+
     for (const name of lastBatch) {
       const file = lookup.get(name)
-      if (!file) continue
+      if (!file) {
+        missing.push(name)
+        continue
+      }
       await Migrator._dispatcher?.emit(new MigrationStarted(name, 'down'))
       const schema = this.connection.schema()
       await file.migration.down(schema, this.connection)
       await this.repo.delete(name)
       rolled.push(name)
       await Migrator._dispatcher?.emit(new MigrationEnded(name, 'down'))
+    }
+
+    if (missing.length > 0) {
+      throw new Error(
+        `Migration file(s) not found: ${missing.join(', ')}. Cannot rollback without the migration source.`,
+      )
     }
 
     await Migrator._dispatcher?.emit(new MigrationsEnded('down'))
@@ -99,15 +110,26 @@ export class Migrator {
 
     await Migrator._dispatcher?.emit(new MigrationsStarted('down'))
 
+    const missing: string[] = []
+
     for (const name of reversed) {
       const file = lookup.get(name)
-      if (!file) continue
+      if (!file) {
+        missing.push(name)
+        continue
+      }
       await Migrator._dispatcher?.emit(new MigrationStarted(name, 'down'))
       const schema = this.connection.schema()
       await file.migration.down(schema, this.connection)
       await this.repo.delete(name)
       rolled.push(name)
       await Migrator._dispatcher?.emit(new MigrationEnded(name, 'down'))
+    }
+
+    if (missing.length > 0) {
+      throw new Error(
+        `Migration file(s) not found: ${missing.join(', ')}. Cannot reset without the migration source.`,
+      )
     }
 
     await Migrator._dispatcher?.emit(new MigrationsEnded('down'))
