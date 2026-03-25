@@ -35,7 +35,7 @@ export class UploadedFile {
    * @param options.disk - Storage disk (currently only local filesystem)
    */
   async store(path: string, _options?: { disk?: string }): Promise<string> {
-    const filename = `${Date.now()}_${this.file.name}`
+    const filename = `${Date.now()}_${sanitizeFilename(this.file.name)}`
     const fullPath = `${path}/${filename}`
     const bytes = await this.file.arrayBuffer()
     await Bun.write(fullPath, bytes)
@@ -53,4 +53,27 @@ export class UploadedFile {
   stream(): ReadableStream {
     return this.file.stream()
   }
+}
+
+/**
+ * Sanitize a filename to prevent path traversal attacks.
+ * Strips directory separators and ".." sequences, returning only the basename.
+ */
+function sanitizeFilename(name: string): string {
+  // Extract basename — strip any path separators (Unix and Windows)
+  let safe = name.split('/').pop()!
+  safe = safe.split('\\').pop()!
+
+  // Remove any remaining ".." sequences
+  safe = safe.replace(/\.\./g, '')
+
+  // Remove control characters and null bytes
+  safe = safe.replace(/[\x00-\x1f]/g, '')
+
+  // Fallback if the name is empty after sanitization
+  if (!safe || safe === '.' || safe === '..') {
+    safe = 'unnamed'
+  }
+
+  return safe
 }

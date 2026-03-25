@@ -103,7 +103,7 @@ export class SchemaBuilderImpl implements SchemaBuilder {
   async rename(from: string, to: string): Promise<void> {
     const driver = this.connection.getDriverName()
     if (driver === 'mssql') {
-      await this.connection.statement(`EXEC sp_rename '${from}', '${to}'`)
+      await this.connection.statement(`EXEC sp_rename ${this.quoteTable(from)}, ${this.quoteTable(to)}`)
     } else {
       await this.connection.statement(`ALTER TABLE ${this.quoteTable(from)} RENAME TO ${this.quoteTable(to)}`)
     }

@@ -333,23 +333,24 @@ export class QueryBuilder {
   // ── Aggregates ──────────────────────────────────────────────────────────────
 
   async count(column = '*'): Promise<number> {
-    return this._connection.executeAggregate(this.state, 'count', column)
+    const safeColumn = column === '*' ? '*' : sanitizeColumn(column)
+    return this._connection.executeAggregate(this.state, 'count', safeColumn)
   }
 
   async sum(column: string): Promise<number> {
-    return this._connection.executeAggregate(this.state, 'sum', column)
+    return this._connection.executeAggregate(this.state, 'sum', sanitizeColumn(column))
   }
 
   async avg(column: string): Promise<number> {
-    return this._connection.executeAggregate(this.state, 'avg', column)
+    return this._connection.executeAggregate(this.state, 'avg', sanitizeColumn(column))
   }
 
   async min(column: string): Promise<any> {
-    return this._connection.executeAggregate(this.state, 'min', column)
+    return this._connection.executeAggregate(this.state, 'min', sanitizeColumn(column))
   }
 
   async max(column: string): Promise<any> {
-    return this._connection.executeAggregate(this.state, 'max', column)
+    return this._connection.executeAggregate(this.state, 'max', sanitizeColumn(column))
   }
 
   // ── Writes ──────────────────────────────────────────────────────────────────

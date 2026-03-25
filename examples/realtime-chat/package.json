@@ -1,0 +1,53 @@
+{
+  "name": "@mantiq/example-realtime-chat",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch index.ts",
+    "start": "bun run index.ts",
+    "mantiq": "bun run mantiq.ts",
+    "build": "vite build && vite build --ssr src/ssr.tsx --outDir bootstrap/ssr",
+    "setup": "bun install && bun mantiq migrate && bun mantiq seed && bun run build"
+  },
+  "dependencies": {
+    "@mantiq/auth": "^0.5.0",
+    "@mantiq/cli": "^0.5.0",
+    "@mantiq/core": "^0.5.0",
+    "@mantiq/database": "^0.5.0",
+    "@mantiq/events": "^0.5.0",
+    "@mantiq/filesystem": "^0.5.0",
+    "@mantiq/heartbeat": "^0.5.0",
+    "@mantiq/helpers": "^0.5.0",
+    "@mantiq/logging": "^0.5.0",
+    "@mantiq/mail": "^0.5.0",
+    "@mantiq/notify": "^0.5.0",
+    "@mantiq/queue": "^0.5.0",
+    "@mantiq/realtime": "^0.5.0",
+    "@mantiq/validation": "^0.5.0",
+    "@mantiq/vite": "^0.5.0",
+    "clsx": "^2.1.0",
+    "tailwind-merge": "^2.6.0",
+    "lucide-react": "^0.577.0"
+  },
+  "overrides": {
+    "@mantiq/core": "$@mantiq/core",
+    "@mantiq/database": "$@mantiq/database",
+    "@mantiq/cli": "$@mantiq/cli",
+    "@mantiq/events": "$@mantiq/events",
+    "@mantiq/queue": "$@mantiq/queue",
+    "@mantiq/mail": "$@mantiq/mail"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0",
+    "tailwindcss": "^4.0.0",
+    "@tailwindcss/vite": "^4.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0"
+  }
+}

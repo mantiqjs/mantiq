@@ -1,0 +1,16 @@
+{
+  "src/main.ts": {
+    "file": "assets/main-Co2FuKJs.js",
+    "name": "main",
+    "src": "src/main.ts",
+    "isEntry": true,
+    "css": [
+      "assets/style-DKpXb24I.css"
+    ]
+  },
+  "src/style.css": {
+    "file": "assets/style-DKpXb24I.css",
+    "src": "src/style.css",
+    "isEntry": true
+  }
+}

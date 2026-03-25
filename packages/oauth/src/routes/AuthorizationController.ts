@@ -120,10 +120,21 @@ export class AuthorizationController {
    * Deny the authorization request.
    */
   async deny(request: MantiqRequest): Promise<Response> {
+    const clientId = await request.input('client_id') as string | undefined
     const redirectUri = await request.input('redirect_uri') as string | undefined
     const state = await request.input('state') as string | undefined
 
+    if (!clientId) throw new OAuthError('The client_id parameter is required.', 'invalid_request')
     if (!redirectUri) throw new OAuthError('The redirect_uri parameter is required.', 'invalid_request')
+
+    // Validate redirect URI against client's registered URI (same check as approve)
+    const client = await Client.find(clientId)
+    if (!client) throw new OAuthError('Client not found.', 'invalid_client')
+
+    const allowedRedirect = client.getAttribute('redirect') as string
+    if (allowedRedirect && redirectUri !== allowedRedirect) {
+      throw new OAuthError('Invalid redirect URI.', 'invalid_request')
+    }
 
     const url = new URL(redirectUri)
     url.searchParams.set('error', 'access_denied')
