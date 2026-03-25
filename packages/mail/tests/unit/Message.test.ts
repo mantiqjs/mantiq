@@ -192,4 +192,32 @@ describe('Message', () => {
       ]),
     ).toBe('a@b.com, Charlie <c@d.com>')
   })
+
+  // ── Security: CRLF header injection (#127) ──────────────────────────────────
+
+  test('setHeader() rejects values containing \\r', () => {
+    const msg = new Message()
+    expect(() => msg.setHeader('X-Custom', 'value\rBcc: attacker@evil.com')).toThrow(/CR or LF/)
+  })
+
+  test('setHeader() rejects values containing \\n', () => {
+    const msg = new Message()
+    expect(() => msg.setHeader('X-Custom', 'value\nBcc: attacker@evil.com')).toThrow(/CR or LF/)
+  })
+
+  test('setHeader() rejects values containing \\r\\n', () => {
+    const msg = new Message()
+    expect(() => msg.setHeader('X-Custom', 'value\r\nBcc: attacker@evil.com')).toThrow(/CR or LF/)
+  })
+
+  test('setHeader() rejects keys containing newlines', () => {
+    const msg = new Message()
+    expect(() => msg.setHeader('X-Custom\r\nBcc: attacker@evil.com', 'value')).toThrow(/CR or LF/)
+  })
+
+  test('setHeader() allows normal header values', () => {
+    const msg = new Message()
+    msg.setHeader('X-Request-Id', 'abc-123')
+    expect(msg.headers['X-Request-Id']).toBe('abc-123')
+  })
 })

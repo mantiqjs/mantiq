@@ -77,4 +77,56 @@ describe('ResponseBuilder', () => {
     expect(res.headers.get('location')).toBe('/home')
     expect(res.status).toBe(302)
   })
+
+  // ── Security: open redirect prevention (#122) ──────────────────────────────
+
+  it('redirect: rejects protocol-relative URLs', () => {
+    expect(() => new ResponseBuilder().redirect('//evil.com/steal')).toThrow(/protocol-relative/)
+  })
+
+  it('redirect: rejects javascript: scheme', () => {
+    expect(() => new ResponseBuilder().redirect('javascript:alert(1)')).toThrow(/dangerous scheme/)
+  })
+
+  it('redirect: rejects data: scheme', () => {
+    expect(() => new ResponseBuilder().redirect('data:text/html,<h1>hi</h1>')).toThrow(/dangerous scheme/)
+  })
+})
+
+// ── Security: MantiqResponse.redirect open redirect prevention (#122) ────────
+
+describe('MantiqResponse redirect security', () => {
+  it('allows relative paths', () => {
+    const res = MantiqResponse.redirect('/dashboard')
+    expect(res.headers.get('location')).toBe('/dashboard')
+  })
+
+  it('allows same-origin https URL', () => {
+    const res = MantiqResponse.redirect('https://myapp.com/home')
+    expect(res.headers.get('location')).toBe('https://myapp.com/home')
+  })
+
+  it('rejects protocol-relative URL (//evil.com)', () => {
+    expect(() => MantiqResponse.redirect('//evil.com')).toThrow(/protocol-relative/)
+  })
+
+  it('rejects javascript: scheme', () => {
+    expect(() => MantiqResponse.redirect('javascript:alert(document.cookie)')).toThrow(/dangerous scheme/)
+  })
+
+  it('rejects data: scheme', () => {
+    expect(() => MantiqResponse.redirect('data:text/html,<script>alert(1)</script>')).toThrow(/dangerous scheme/)
+  })
+
+  it('rejects vbscript: scheme', () => {
+    expect(() => MantiqResponse.redirect('vbscript:MsgBox("XSS")')).toThrow(/dangerous scheme/)
+  })
+
+  it('rejects ftp: scheme', () => {
+    expect(() => MantiqResponse.redirect('ftp://evil.com/file')).toThrow(/only http and https/)
+  })
+
+  it('is case-insensitive for dangerous schemes', () => {
+    expect(() => MantiqResponse.redirect('JAVASCRIPT:alert(1)')).toThrow(/dangerous scheme/)
+  })
 })

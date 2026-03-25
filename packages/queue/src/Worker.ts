@@ -112,8 +112,17 @@ export class Worker {
       return
     }
 
-    // Reconstruct the job instance
-    const job = Object.assign(new (JobClass as any)(), payload.data) as Job
+    // Reconstruct the job instance.
+    // Security: skip prototype-pollution keys (__proto__, constructor, prototype)
+    // to prevent untrusted job payloads from polluting Object.prototype.
+    const instance = new (JobClass as any)()
+    if (payload.data && typeof payload.data === 'object') {
+      for (const key of Object.keys(payload.data)) {
+        if (key === '__proto__' || key === 'constructor' || key === 'prototype') continue
+        instance[key] = (payload.data as Record<string, any>)[key]
+      }
+    }
+    const job = instance as Job
     job.queue = payload.queue
     job.connection = payload.connection
     job.tries = payload.tries

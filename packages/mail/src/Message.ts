@@ -64,6 +64,12 @@ export class Message {
   }
 
   setHeader(key: string, value: string): this {
+    // Security: reject CRLF characters to prevent email header injection.
+    // An attacker could inject \r\n to add arbitrary headers (e.g. BCC, CC)
+    // which would allow sending copies of emails to unintended recipients.
+    if (/[\r\n]/.test(key) || /[\r\n]/.test(value)) {
+      throw new Error('Header key and value must not contain CR or LF characters')
+    }
     this.headers[key] = value
     return this
   }
