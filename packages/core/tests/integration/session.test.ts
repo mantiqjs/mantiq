@@ -124,10 +124,10 @@ describe('Session Integration', () => {
       expect(reloaded.all()).toEqual({})
     })
 
-    it('save sets started to false, start sets it to true', async () => {
+    it('save keeps started true, new session starts fresh', async () => {
       expect(session.isStarted()).toBe(true)
       await session.save()
-      expect(session.isStarted()).toBe(false)
+      expect(session.isStarted()).toBe(true)
 
       const session2 = new SessionStore('mantiq_session', handler, session.getId())
       expect(session2.isStarted()).toBe(false)
