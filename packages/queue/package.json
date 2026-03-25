@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/queue",
-  "version": "0.5.21",
+  "version": "0.5.22",
   "description": "Job dispatching, workers, retry logic",
   "type": "module",
   "license": "MIT",
