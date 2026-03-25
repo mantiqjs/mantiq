@@ -76,7 +76,15 @@ export class CorsMiddleware implements Middleware {
   private setOriginHeader(headers: Headers, requestOrigin: string): void {
     const { origin } = this.config
     if (origin === '*') {
-      headers.set('Access-Control-Allow-Origin', '*')
+      if (this.config.credentials) {
+        // CORS spec forbids Access-Control-Allow-Origin: * with credentials.
+        // Reflect the request's Origin header instead; if absent, omit CORS headers entirely.
+        if (!requestOrigin) return
+        headers.set('Access-Control-Allow-Origin', requestOrigin)
+        headers.set('Vary', 'Origin')
+      } else {
+        headers.set('Access-Control-Allow-Origin', '*')
+      }
     } else if (Array.isArray(origin)) {
       if (origin.includes(requestOrigin)) {
         headers.set('Access-Control-Allow-Origin', requestOrigin)

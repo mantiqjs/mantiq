@@ -1,5 +1,5 @@
 import { resolve, join, dirname, relative } from 'node:path'
-import { mkdir, rm, readdir, stat, rename, copyFile, chmod, appendFile } from 'node:fs/promises'
+import { mkdir, rm, readdir, stat, rename, copyFile, chmod, appendFile, realpath } from 'node:fs/promises'
 import type { FilesystemDriver, PutOptions } from '../contracts/FilesystemDriver.ts'
 import { FilesystemError } from '../errors/FilesystemError.ts'
 import { FileNotFoundError } from '../errors/FileNotFoundError.ts'
@@ -18,13 +18,17 @@ export class LocalDriver implements FilesystemDriver {
   // ── Reads ───────────────────────────────────────────────────────────────────
 
   async exists(path: string): Promise<boolean> {
-    return Bun.file(this.fullPath(path)).exists()
+    const fp = this.fullPath(path)
+    const exists = await Bun.file(fp).exists()
+    if (exists) await this.assertRealPathWithinRoot(fp)
+    return exists
   }
 
   async get(path: string): Promise<string | null> {
     const fp = this.fullPath(path)
     const file = Bun.file(fp)
     if (!(await file.exists())) return null
+    await this.assertRealPathWithinRoot(fp)
     return file.text()
   }
 
@@ -32,6 +36,7 @@ export class LocalDriver implements FilesystemDriver {
     const fp = this.fullPath(path)
     const file = Bun.file(fp)
     if (!(await file.exists())) return null
+    await this.assertRealPathWithinRoot(fp)
     return new Uint8Array(await file.arrayBuffer())
   }
 
@@ -39,6 +44,7 @@ export class LocalDriver implements FilesystemDriver {
     const fp = this.fullPath(path)
     const file = Bun.file(fp)
     if (!(await file.exists())) return null
+    await this.assertRealPathWithinRoot(fp)
     return file.stream()
   }
 
@@ -47,6 +53,7 @@ export class LocalDriver implements FilesystemDriver {
   async put(path: string, contents: string | Uint8Array, options?: PutOptions): Promise<void> {
     const fp = this.fullPath(path)
     await mkdir(dirname(fp), { recursive: true })
+    await this.assertRealPathWithinRoot(fp)
     await Bun.write(fp, contents)
 
     const visibility = options?.visibility ?? this.defaultVisibility
@@ -56,6 +63,7 @@ export class LocalDriver implements FilesystemDriver {
   async putStream(path: string, stream: ReadableStream, options?: PutOptions): Promise<void> {
     const fp = this.fullPath(path)
     await mkdir(dirname(fp), { recursive: true })
+    await this.assertRealPathWithinRoot(fp)
     // Consume the stream into a Response to get the full body, then write
     const body = await new Response(stream).arrayBuffer()
     await Bun.write(fp, body)
@@ -67,12 +75,14 @@ export class LocalDriver implements FilesystemDriver {
   async append(path: string, contents: string): Promise<void> {
     const fp = this.fullPath(path)
     await mkdir(dirname(fp), { recursive: true })
+    await this.assertRealPathWithinRoot(fp)
     await appendFile(fp, contents)
   }
 
   async prepend(path: string, contents: string): Promise<void> {
     const fp = this.fullPath(path)
     await mkdir(dirname(fp), { recursive: true })
+    await this.assertRealPathWithinRoot(fp)
     const file = Bun.file(fp)
     const existing = (await file.exists()) ? await file.text() : ''
     await Bun.write(fp, contents + existing)
@@ -88,6 +98,7 @@ export class LocalDriver implements FilesystemDriver {
       const fp = this.fullPath(p)
       try {
         if (await Bun.file(fp).exists()) {
+          await this.assertRealPathWithinRoot(fp)
           await rm(fp)
         } else {
           allDeleted = false
@@ -103,14 +114,18 @@ export class LocalDriver implements FilesystemDriver {
   async copy(from: string, to: string): Promise<void> {
     const fromPath = this.fullPath(from)
     const toPath = this.fullPath(to)
+    await this.assertRealPathWithinRoot(fromPath)
     await mkdir(dirname(toPath), { recursive: true })
+    await this.assertRealPathWithinRoot(toPath)
     await copyFile(fromPath, toPath)
   }
 
   async move(from: string, to: string): Promise<void> {
     const fromPath = this.fullPath(from)
     const toPath = this.fullPath(to)
+    await this.assertRealPathWithinRoot(fromPath)
     await mkdir(dirname(toPath), { recursive: true })
+    await this.assertRealPathWithinRoot(toPath)
     await rename(fromPath, toPath)
   }
 
@@ -256,6 +271,28 @@ export class LocalDriver implements FilesystemDriver {
     const resolved = resolve(this.root, path)
     this.assertWithinRoot(resolved)
     return resolved
+  }
+
+  /**
+   * After an operation that may have followed symlinks, verify the real path
+   * is still within the root. Call this before reading/writing content at a
+   * path that already exists on disk.
+   */
+  private async assertRealPathWithinRoot(filePath: string): Promise<void> {
+    try {
+      const real = await realpath(filePath)
+      const realRoot = await realpath(this.root)
+      if (!real.startsWith(realRoot + '/') && real !== realRoot) {
+        throw new FilesystemError(
+          'Symlink target escapes the disk root — access denied.',
+          { resolved: real, root: realRoot },
+        )
+      }
+    } catch (e: any) {
+      // If it's our own FilesystemError, rethrow; ENOENT means the file doesn't exist yet (safe)
+      if (e instanceof FilesystemError) throw e
+      if (e?.code !== 'ENOENT') throw e
+    }
   }
 
   private assertWithinRoot(resolvedPath: string): void {
