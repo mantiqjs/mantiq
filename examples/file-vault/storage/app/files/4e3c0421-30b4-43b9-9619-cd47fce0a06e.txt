@@ -1,0 +1,7 @@
+TODO List:
+
+[x] Set up file vault
+[x] Create folder structure
+[ ] Upload project assets
+[ ] Share design files with team
+[ ] Review storage quotas

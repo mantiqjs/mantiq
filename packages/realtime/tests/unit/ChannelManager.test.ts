@@ -271,4 +271,48 @@ describe('ChannelManager', () => {
       expect(channels.getSubscribers('news')).toHaveLength(2)
     })
   })
+
+  // ── Security: deny-by-default when no authenticator configured (#118) ───
+
+  describe('deny-by-default for private/presence channels', () => {
+    it('denies private channel when no authorizer registered at all', async () => {
+      const ws = createMockSocket('user1')
+      // Do NOT register any authorizer
+      const result = await channels.subscribe(ws, 'private:secret.data')
+      expect(result).toBe(false)
+      expect(getSent(ws).find((m: any) => m.message?.includes('No authorization'))).toBeTruthy()
+    })
+
+    it('denies presence channel when no authorizer registered at all', async () => {
+      const ws = createMockSocket('user1')
+      // Do NOT register any authorizer
+      const result = await channels.subscribe(ws, 'presence:room.private')
+      expect(result).toBe(false)
+      expect(getSent(ws).find((m: any) => m.message?.includes('No authorization'))).toBeTruthy()
+    })
+
+    it('denies private channel when authorizer exists for different pattern', async () => {
+      const ws = createMockSocket('user1')
+      channels.authorize('orders.*', () => true)
+      // Try a channel that doesn't match the registered pattern
+      const result = await channels.subscribe(ws, 'private:admin.panel')
+      expect(result).toBe(false)
+    })
+
+    it('denies private channel when userId is undefined (unauthenticated)', async () => {
+      const ws = createMockSocket() // no userId
+      channels.authorize('secret.*', () => true)
+      const result = await channels.subscribe(ws, 'private:secret.1')
+      expect(result).toBe(false)
+      expect(getSent(ws).find((m: any) => m.message === 'Authentication required')).toBeTruthy()
+    })
+
+    it('denies presence channel when userId is undefined (unauthenticated)', async () => {
+      const ws = createMockSocket() // no userId
+      channels.authorize('room.*', () => true)
+      const result = await channels.subscribe(ws, 'presence:room.1')
+      expect(result).toBe(false)
+      expect(getSent(ws).find((m: any) => m.message === 'Authentication required')).toBeTruthy()
+    })
+  })
 })

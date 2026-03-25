@@ -1,0 +1,7 @@
+node_modules/
+database/database.sqlite
+database/queue.sqlite
+storage/logs/
+storage/heartbeat/
+storage/app/
+.env.local

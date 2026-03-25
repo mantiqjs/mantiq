@@ -1,0 +1,4 @@
+Welcome to File Vault!
+
+This is a secure file storage system built with MantiqJS.
+Upload, organize, and share your files with confidence.

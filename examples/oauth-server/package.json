@@ -1,0 +1,39 @@
+{
+  "name": "@mantiq/example-oauth-server",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch index.ts",
+    "start": "bun run index.ts",
+    "mantiq": "bun run mantiq.ts",
+    "setup": "bun install && bun mantiq migrate && bun mantiq seed"
+  },
+  "dependencies": {
+    "@mantiq/auth": "^0.5.0",
+    "@mantiq/cli": "^0.5.0",
+    "@mantiq/core": "^0.5.0",
+    "@mantiq/database": "^0.5.0",
+    "@mantiq/events": "^0.5.0",
+    "@mantiq/filesystem": "^0.5.0",
+    "@mantiq/heartbeat": "^0.5.0",
+    "@mantiq/helpers": "^0.5.0",
+    "@mantiq/logging": "^0.5.0",
+    "@mantiq/mail": "^0.5.0",
+    "@mantiq/notify": "^0.5.0",
+    "@mantiq/queue": "^0.5.0",
+    "@mantiq/validation": "^0.5.0"
+  },
+  "overrides": {
+    "@mantiq/core": "$@mantiq/core",
+    "@mantiq/database": "$@mantiq/database",
+    "@mantiq/cli": "$@mantiq/cli",
+    "@mantiq/events": "$@mantiq/events",
+    "@mantiq/queue": "$@mantiq/queue",
+    "@mantiq/mail": "$@mantiq/mail"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "typescript": "^5.7.0"
+  }
+}

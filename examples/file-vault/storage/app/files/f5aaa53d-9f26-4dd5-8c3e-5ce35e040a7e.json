@@ -1,0 +1,11 @@
+{
+  "app": "File Vault",
+  "version": "1.0.0",
+  "features": [
+    "upload",
+    "download",
+    "share",
+    "encrypt"
+  ],
+  "maxFileSize": "50MB"
+}

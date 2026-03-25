@@ -141,4 +141,79 @@ describe('WebhookChannel', () => {
 
     await expect(channel.send(notifiable, notification)).rejects.toThrow(/Webhook request failed/)
   })
+
+  // ── Security: SSRF prevention (#120) ────────────────────────────────────────
+
+  it('rejects localhost URLs', async () => {
+    setupFetchMock()
+    const notifiable = createMockNotifiable()
+    const notification = new TestNotification(['webhook'], {
+      webhook: { url: 'http://localhost/admin', body: {} },
+    })
+    await expect(channel.send(notifiable, notification)).rejects.toThrow(/private\/reserved/)
+  })
+
+  it('rejects 127.x.x.x loopback addresses', async () => {
+    setupFetchMock()
+    const notifiable = createMockNotifiable()
+    const notification = new TestNotification(['webhook'], {
+      webhook: { url: 'http://127.0.0.1/admin', body: {} },
+    })
+    await expect(channel.send(notifiable, notification)).rejects.toThrow(/private\/reserved/)
+  })
+
+  it('rejects 10.x private addresses', async () => {
+    setupFetchMock()
+    const notifiable = createMockNotifiable()
+    const notification = new TestNotification(['webhook'], {
+      webhook: { url: 'http://10.0.0.1/internal', body: {} },
+    })
+    await expect(channel.send(notifiable, notification)).rejects.toThrow(/private\/reserved/)
+  })
+
+  it('rejects 172.16.x.x private addresses', async () => {
+    setupFetchMock()
+    const notifiable = createMockNotifiable()
+    const notification = new TestNotification(['webhook'], {
+      webhook: { url: 'http://172.16.0.1/internal', body: {} },
+    })
+    await expect(channel.send(notifiable, notification)).rejects.toThrow(/private\/reserved/)
+  })
+
+  it('rejects 192.168.x.x private addresses', async () => {
+    setupFetchMock()
+    const notifiable = createMockNotifiable()
+    const notification = new TestNotification(['webhook'], {
+      webhook: { url: 'http://192.168.1.1/admin', body: {} },
+    })
+    await expect(channel.send(notifiable, notification)).rejects.toThrow(/private\/reserved/)
+  })
+
+  it('rejects 169.254.x.x link-local (AWS metadata)', async () => {
+    setupFetchMock()
+    const notifiable = createMockNotifiable()
+    const notification = new TestNotification(['webhook'], {
+      webhook: { url: 'http://169.254.169.254/latest/meta-data/', body: {} },
+    })
+    await expect(channel.send(notifiable, notification)).rejects.toThrow(/private\/reserved/)
+  })
+
+  it('rejects non-http schemes (ftp)', async () => {
+    setupFetchMock()
+    const notifiable = createMockNotifiable()
+    const notification = new TestNotification(['webhook'], {
+      webhook: { url: 'ftp://evil.com/file', body: {} },
+    })
+    await expect(channel.send(notifiable, notification)).rejects.toThrow(/not allowed/)
+  })
+
+  it('allows public URLs', async () => {
+    const { calls } = setupFetchMock()
+    const notifiable = createMockNotifiable()
+    const notification = new TestNotification(['webhook'], {
+      webhook: { url: 'https://hooks.example.com/webhook', body: { ok: true } },
+    })
+    await channel.send(notifiable, notification)
+    expect(calls).toHaveLength(1)
+  })
 })

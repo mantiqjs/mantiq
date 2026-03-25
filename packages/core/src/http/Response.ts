@@ -19,7 +19,36 @@ export class MantiqResponse {
     })
   }
 
+  /**
+   * Validate that a redirect URL is safe.
+   * Security: reject protocol-relative URLs (//evil.com), javascript:, data:,
+   * and other dangerous schemes that could redirect users to malicious sites.
+   * Only relative paths and http(s) URLs on the same origin are allowed.
+   */
+  private static validateRedirectUrl(url: string): void {
+    const trimmed = url.trim()
+
+    // Reject protocol-relative URLs (//evil.com)
+    if (trimmed.startsWith('//')) {
+      throw new Error('Unsafe redirect URL: protocol-relative URLs are not allowed')
+    }
+
+    // Reject dangerous schemes
+    const lower = trimmed.toLowerCase()
+    if (lower.startsWith('javascript:') || lower.startsWith('data:') || lower.startsWith('vbscript:')) {
+      throw new Error('Unsafe redirect URL: dangerous scheme detected')
+    }
+
+    // If it looks like an absolute URL, only allow http(s)
+    if (/^[a-z][a-z0-9+\-.]*:/i.test(trimmed)) {
+      if (!lower.startsWith('http://') && !lower.startsWith('https://')) {
+        throw new Error('Unsafe redirect URL: only http and https schemes are allowed')
+      }
+    }
+  }
+
   static redirect(url: string, status: number = 302): Response {
+    MantiqResponse.validateRedirectUrl(url)
     return new Response(null, {
       status,
       headers: { Location: url },
@@ -100,6 +129,8 @@ export class ResponseBuilder implements MantiqResponseBuilder {
   }
 
   redirect(url: string): Response {
+    // Security: reuse the same URL validation as MantiqResponse.redirect()
+    MantiqResponse['validateRedirectUrl'](url)
     const headers = new Headers({ Location: url, ...this.responseHeaders })
     for (const c of this.cookieStrings) headers.append('Set-Cookie', c)
     return new Response(null, { status: this.statusExplicitlySet ? this.statusCode : 302, headers })

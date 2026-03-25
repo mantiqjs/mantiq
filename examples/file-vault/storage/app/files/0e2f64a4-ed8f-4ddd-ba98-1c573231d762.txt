@@ -1,0 +1,4 @@
+Image Library
+
+This folder is intended for storing image assets.
+Supported formats: PNG, JPG, GIF, SVG, WebP.

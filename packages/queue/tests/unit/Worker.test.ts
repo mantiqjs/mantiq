@@ -206,4 +206,27 @@ describe('Worker', () => {
 
     expect(handledJobs).toEqual(['catch-handler'])
   })
+
+  // ── Security: prototype pollution prevention (#119) ─────────────────────
+
+  test('__proto__ in payload data does not pollute Object.prototype', async () => {
+    const payload = makePayload('SuccessJob', {
+      label: 'proto-test',
+      __proto__: { polluted: true },
+      constructor: { prototype: { pwned: true } },
+      prototype: { hacked: true },
+    })
+    await driver.push(payload, 'default')
+
+    const worker = new Worker(manager, { stopWhenEmpty: true })
+    await worker.run()
+
+    // The job should still run with its normal label data
+    expect(handledJobs).toEqual(['proto-test'])
+
+    // Object.prototype must not be polluted
+    expect(({} as any).polluted).toBeUndefined()
+    expect(({} as any).pwned).toBeUndefined()
+    expect(({} as any).hacked).toBeUndefined()
+  })
 })
