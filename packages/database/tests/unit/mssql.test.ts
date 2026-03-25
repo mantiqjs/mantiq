@@ -705,7 +705,7 @@ describe('SchemaBuilder DDL — MSSQL', () => {
   test('rename uses sp_rename', async () => {
     const conn = mockConn()
     await conn.schema().rename('old_name', 'new_name')
-    expect(conn.statement).toHaveBeenCalledWith("EXEC sp_rename 'old_name', 'new_name'")
+    expect(conn.statement).toHaveBeenCalledWith("EXEC sp_rename [old_name], [new_name]")
   })
 
   // ── hasTable / hasColumn ───────────────────────────────────────────────
