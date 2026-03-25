@@ -1,6 +1,0 @@
-Meeting Notes - Q1 Planning
-
-- Review product roadmap
-- Discuss resource allocation
-- Set quarterly OKRs
-- Schedule follow-up meetings
