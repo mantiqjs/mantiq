@@ -18,6 +18,10 @@ export interface MantiqRequest {
   has(...keys: string[]): boolean
   filled(...keys: string[]): Promise<boolean>
 
+  // ── Body errors ────────────────────────────────────────────────────────
+  hasBodyError(): boolean
+  bodyError(): Error | null
+
   // ── Headers & metadata ───────────────────────────────────────────────────
   header(key: string, defaultValue?: string): string | undefined
   headers(): Record<string, string>

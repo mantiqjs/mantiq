@@ -13,9 +13,9 @@ export class PostgresGrammar extends BaseGrammar {
     return `$${index}`
   }
 
-  override compileInsertGetId(table: string, data: Record<string, any>): { sql: string; bindings: any[] } {
+  override compileInsertGetId(table: string, data: Record<string, any>, idColumn: string = 'id'): { sql: string; bindings: any[] } {
     const { sql, bindings } = this.compileInsert(table, data)
-    return { sql: `${sql} RETURNING id`, bindings }
+    return { sql: `${sql} RETURNING ${this.quoteIdentifier(idColumn)}`, bindings }
   }
 
   override compileTruncate(table: string): string {

@@ -103,6 +103,7 @@ export class MSSQLConnection extends BaseSQLConnection {
     const sql = mssql.default ?? mssql
     const transaction = new sql.Transaction(pool)
     await transaction.begin()
+    let committed = false
     try {
       const txConn: any = {
         _grammar: this._grammar,
@@ -133,10 +134,14 @@ export class MSSQLConnection extends BaseSQLConnection {
       this.applyExecuteMethods(txConn)
       const result = await callback(txConn)
       await transaction.commit()
+      committed = true
       return result
     } catch (e) {
-      await transaction.rollback()
       throw e
+    } finally {
+      if (!committed) {
+        try { await transaction.rollback() } catch { /* rollback best-effort */ }
+      }
     }
   }
 

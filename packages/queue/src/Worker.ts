@@ -203,18 +203,35 @@ export class Worker {
 
   private async runWithTimeout(job: Job, timeoutSeconds: number): Promise<void> {
     const timeoutMs = timeoutSeconds * 1000
+    const controller = new AbortController()
     let timeoutId: ReturnType<typeof setTimeout> | null = null
 
     const timeoutPromise = new Promise<never>((_, reject) => {
       timeoutId = setTimeout(() => {
+        controller.abort()
         reject(new JobTimeoutError(job.constructor.name, timeoutSeconds))
       }, timeoutMs)
     })
 
+    // Pass the abort signal to the job so it can cooperatively cancel
+    job.signal = controller.signal
+
     try {
-      await Promise.race([job.handle(), timeoutPromise])
+      await Promise.race([
+        job.handle().then((result) => {
+          // Job completed — ensure we don't leak the timeout
+          if (timeoutId !== null) clearTimeout(timeoutId)
+          return result
+        }),
+        timeoutPromise,
+      ])
     } finally {
       if (timeoutId !== null) clearTimeout(timeoutId)
+      // Ensure the signal is aborted so any ongoing async work in the job
+      // (e.g. fetch, timers checking signal.aborted) is cancelled
+      if (!controller.signal.aborted) {
+        controller.abort()
+      }
     }
   }
 

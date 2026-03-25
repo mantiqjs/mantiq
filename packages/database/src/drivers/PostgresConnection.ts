@@ -74,7 +74,11 @@ export class PostgresConnection extends BaseSQLConnection {
     const pool = await this.getClient()
     try {
       const result = await pool.query(sql, bindings)
-      return result.rows[0]?.id ?? 0
+      // Return the first column value from the RETURNING clause (supports any column name)
+      const row = result.rows[0]
+      if (!row) return 0
+      const keys = Object.keys(row)
+      return keys.length > 0 ? row[keys[0]!] ?? 0 : 0
     } catch (e: any) {
       throw new QueryError(sql, bindings, e)
     }
@@ -89,7 +93,13 @@ export class PostgresConnection extends BaseSQLConnection {
         _grammar: this._grammar,
         select: async (sql: string, b?: any[]) => { const r = await client.query(sql, b); return r.rows },
         statement: async (sql: string, b?: any[]) => { const r = await client.query(sql, b); return r.rowCount ?? 0 },
-        insertGetId: async (sql: string, b?: any[]) => { const r = await client.query(sql, b); return r.rows[0]?.id ?? 0 },
+        insertGetId: async (sql: string, b?: any[]) => {
+          const r = await client.query(sql, b)
+          const row = r.rows[0]
+          if (!row) return 0
+          const keys = Object.keys(row)
+          return keys.length > 0 ? row[keys[0]!] ?? 0 : 0
+        },
         transaction: (cb: any) => cb(txConn),
         table: (name: string) => new QueryBuilder(txConn, name),
         schema: () => new SchemaBuilderImpl(txConn),

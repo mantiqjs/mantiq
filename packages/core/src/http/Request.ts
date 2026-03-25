@@ -13,6 +13,7 @@ export class MantiqRequest implements MantiqRequestContract {
   private sessionStore: SessionStore | null = null
   private connectionIp: string = '127.0.0.1'
   private trustedProxies: string[] = []
+  private _bodyError: Error | null = null
 
   constructor(
     private readonly bunRequest: Request,
@@ -86,6 +87,20 @@ export class MantiqRequest implements MantiqRequestContract {
   async filled(...keys: string[]): Promise<boolean> {
     const all = await this.input()
     return keys.every((k) => all[k] !== undefined && all[k] !== '' && all[k] !== null)
+  }
+
+  /**
+   * Whether a body parsing error occurred (malformed JSON, wrong content-type, etc.).
+   */
+  hasBodyError(): boolean {
+    return this._bodyError !== null
+  }
+
+  /**
+   * Return the body parsing error, or null if parsing succeeded.
+   */
+  bodyError(): Error | null {
+    return this._bodyError
   }
 
   // ── Headers & metadata ───────────────────────────────────────────────────
@@ -276,8 +291,12 @@ export class MantiqRequest implements MantiqRequestContract {
           }
         }
       }
-    } catch {
-      // Body parsing failed — leave parsedBody as empty object
+    } catch (error) {
+      // Body parsing failed — store the error for inspection
+      this._bodyError = error instanceof Error ? error : new Error(String(error))
+      if (typeof process !== 'undefined' && process.env?.APP_DEBUG === 'true') {
+        console.warn('[Mantiq] Body parse error:', this._bodyError.message)
+      }
     }
   }
 }
