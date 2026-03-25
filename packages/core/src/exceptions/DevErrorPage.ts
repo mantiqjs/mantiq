@@ -10,6 +10,21 @@ import type { MantiqRequest } from '../contracts/Request.ts'
  * - Copy as Markdown button
  * - Source file context when available
  */
+/**
+ * Security: headers that must never appear on the debug page, even in dev mode.
+ * These can contain authentication credentials, session tokens, and CSRF secrets.
+ */
+const SENSITIVE_HEADERS = new Set([
+  'authorization',
+  'cookie',
+  'set-cookie',
+  'x-csrf-token',
+  'x-xsrf-token',
+  'proxy-authorization',
+  'x-api-key',
+  'x-auth-token',
+])
+
 export function renderDevErrorPage(request: MantiqRequest, error: unknown): string {
   const err = error instanceof Error ? error : new Error(String(error))
   const stack = err.stack ?? err.message
@@ -51,8 +66,13 @@ export function renderDevErrorPage(request: MantiqRequest, error: unknown): stri
     })
     .join('')
 
+  // Security: redact sensitive headers to prevent leaking auth tokens,
+  // cookies, and CSRF secrets — even on the dev error page.
   const headersHtml = Object.entries(request.headers())
-    .map(([k, v]) => `<tr><td class="td-key">${escapeHtml(k)}</td><td class="td-val">${escapeHtml(v)}</td></tr>`)
+    .map(([k, v]) => {
+      const redacted = SENSITIVE_HEADERS.has(k.toLowerCase()) ? '********' : v
+      return `<tr><td class="td-key">${escapeHtml(k)}</td><td class="td-val">${escapeHtml(redacted)}</td></tr>`
+    })
     .join('')
 
   const queryString = request.fullUrl().includes('?') ? request.fullUrl().split('?')[1] : ''
@@ -63,14 +83,13 @@ export function renderDevErrorPage(request: MantiqRequest, error: unknown): stri
     }).join('')
     : '<tr><td class="td-val" colspan="2" style="opacity:.5">No query parameters</td></tr>'
 
-  // Markdown for clipboard
+  // Markdown for clipboard — also redact sensitive headers
   const markdown = [
     `# ${err.name}: ${err.message}`,
     '',
     `**Status:** ${statusCode}`,
     `**Method:** ${request.method()}`,
     `**URL:** ${request.fullUrl()}`,
-    `**IP:** ${request.ip()}`,
     `**User Agent:** ${request.userAgent()}`,
     '',
     '## Stack Trace',
@@ -81,7 +100,10 @@ export function renderDevErrorPage(request: MantiqRequest, error: unknown): stri
     '## Request Headers',
     '| Header | Value |',
     '|--------|-------|',
-    ...Object.entries(request.headers()).map(([k, v]) => `| ${k} | ${v} |`),
+    ...Object.entries(request.headers()).map(([k, v]) => {
+      const redacted = SENSITIVE_HEADERS.has(k.toLowerCase()) ? '********' : v
+      return `| ${k} | ${redacted} |`
+    }),
     '',
     `*Bun ${bunVersion} — MantiqJS*`,
   ].join('\n')
@@ -454,7 +476,7 @@ export function renderDevErrorPage(request: MantiqRequest, error: unknown): stri
             <tr><td class="td-key">Method</td><td class="td-val">${escapeHtml(request.method())}</td></tr>
             <tr><td class="td-key">Path</td><td class="td-val">${escapeHtml(request.path())}</td></tr>
             <tr><td class="td-key">Full URL</td><td class="td-val">${escapeHtml(request.fullUrl())}</td></tr>
-            <tr><td class="td-key">IP Address</td><td class="td-val">${escapeHtml(request.ip())}</td></tr>
+            <!-- Security: IP address omitted to prevent leaking client addresses in shared debug output -->
             <tr><td class="td-key">User Agent</td><td class="td-val">${escapeHtml(request.userAgent())}</td></tr>
             <tr><td class="td-key">Expects JSON</td><td class="td-val">${request.expectsJson() ? 'Yes' : 'No'}</td></tr>
             <tr><td class="td-key">Authenticated</td><td class="td-val">${request.isAuthenticated() ? 'Yes' : 'No'}</td></tr>

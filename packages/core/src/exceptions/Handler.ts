@@ -85,6 +85,7 @@ export class DefaultExceptionHandler implements ExceptionHandler {
   ): Response {
     // API routes always get JSON — even in debug mode
     if (request.expectsJson()) {
+      // Security: in production (debug=false), never expose error details
       const body: Record<string, any> = { error: { message: 'Internal Server Error', status: 500 } }
       if (debug && err.stack) {
         body['error']['message'] = err.message

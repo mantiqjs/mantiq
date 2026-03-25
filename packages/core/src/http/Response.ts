@@ -66,15 +66,37 @@ export class MantiqResponse {
     return new Response(stream)
   }
 
+  /**
+   * Security: sanitize Content-Disposition filename to prevent header injection.
+   * - Strip CR/LF to block header injection via newlines
+   * - Escape double quotes to prevent breaking out of the quoted filename
+   * - Strip path separators to prevent directory traversal
+   * - Use RFC 6266 filename* parameter for non-ASCII characters
+   */
+  private static sanitizeFilename(filename: string): string {
+    return filename
+      .replace(/[\r\n]/g, '')       // Strip newlines — prevents header injection
+      .replace(/[/\\]/g, '')        // Strip path separators — prevents traversal
+      .replace(/"/g, '\\"')         // Escape quotes — prevents breaking out of quoted string
+  }
+
   static download(
     content: Uint8Array | string,
     filename: string,
     mimeType?: string,
   ): Response {
+    const sanitized = MantiqResponse.sanitizeFilename(filename)
+
+    // RFC 6266: use filename* with UTF-8 encoding for non-ASCII filenames
+    const isAscii = /^[\x20-\x7E]+$/.test(sanitized)
+    const disposition = isAscii
+      ? `attachment; filename="${sanitized}"`
+      : `attachment; filename="${sanitized}"; filename*=UTF-8''${encodeURIComponent(sanitized)}`
+
     return new Response(content, {
       headers: {
         'Content-Type': mimeType ?? 'application/octet-stream',
-        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Content-Disposition': disposition,
       },
     })
   }

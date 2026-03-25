@@ -39,10 +39,18 @@ export class SecureHeaders implements Middleware {
       }
     }
 
-    // Control what the browser is allowed to load
+    // Control what the browser is allowed to load.
+    // Security: do NOT include 'unsafe-inline' or 'unsafe-eval' — they defeat
+    // the purpose of CSP. Use nonce-based script/style loading instead.
+    // The nonce is generated per-request; pass it to templates via request.cspNonce.
     if (!headers.has('Content-Security-Policy')) {
-      // Permissive default — users should tighten in production
-      headers.set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' ws: wss:")
+      const nonce = crypto.randomUUID().replace(/-/g, '')
+      // Attach nonce to request so templates/views can reference it
+      ;(request as any).cspNonce = nonce
+      headers.set(
+        'Content-Security-Policy',
+        `default-src 'self'; script-src 'self' 'nonce-${nonce}'; style-src 'self' 'nonce-${nonce}'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'self'; form-action 'self'`,
+      )
     }
 
     // Prevent leaking referer to external sites
