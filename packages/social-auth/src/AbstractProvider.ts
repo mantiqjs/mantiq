@@ -51,9 +51,10 @@ export abstract class AbstractProvider implements OAuthProvider {
     if (!this._stateless) {
       const state = crypto.randomUUID()
       url.searchParams.set('state', state)
-      // Store state in session for verification on callback
+      // Security: use provider-specific session key to prevent CSRF cross-contamination
+      // when a user starts OAuth with one provider then switches to another.
       if (request?.session?.()) {
-        request.session().put('_social_auth_state', state)
+        request.session().put(`_social_auth_state_${this.name}`, state)
       }
     }
 
@@ -78,17 +79,19 @@ export abstract class AbstractProvider implements OAuthProvider {
       throw new Error('Authorization code not found in callback')
     }
 
-    // Validate state parameter to prevent CSRF
+    // Validate state parameter to prevent CSRF — provider-specific key
+    // so starting Google login doesn't overwrite GitHub's state (or vice versa).
     if (!this._stateless) {
+      const stateKey = `_social_auth_state_${this.name}`
       const callbackState = getParam('state')
-      const sessionState = request?.session?.()?.get('_social_auth_state') ?? null
+      const sessionState = request?.session?.()?.get(stateKey) ?? null
 
       if (!callbackState || !sessionState || callbackState !== sessionState) {
         throw new Error('Invalid OAuth state — possible CSRF attack. State mismatch.')
       }
 
       // Clear used state
-      request?.session?.()?.forget('_social_auth_state')
+      request?.session?.()?.forget(stateKey)
     }
 
     const tokenData = await this.getAccessToken(code)

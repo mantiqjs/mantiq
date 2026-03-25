@@ -34,7 +34,14 @@ function markdownToHtml(md: string): string {
     const buttonMatch = trimmed.match(/^\[button\s+url="([^"]+)"\](.*?)\[\/button\]$/)
     if (buttonMatch) {
       if (inList) { html += `</${inList}>`; inList = null }
-      html += renderButton(buttonMatch[1]!, buttonMatch[2]!)
+      // Security: sanitize button URL to block javascript:/data:/vbscript: schemes
+      const safeButtonUrl = sanitizeLinkUrl(buttonMatch[1]!)
+      if (safeButtonUrl) {
+        html += renderButton(safeButtonUrl, buttonMatch[2]!)
+      } else {
+        // Dangerous scheme — render as plain text, not a clickable button
+        html += `<p class="email-text" style="margin:12px 0;line-height:1.65;color:#1a1a1a;">${inlineFormatting(buttonMatch[2]!)}</p>`
+      }
       i++
       continue
     }
@@ -122,6 +129,25 @@ function markdownToHtml(md: string): string {
   return html
 }
 
+/**
+ * Security: strip links with dangerous URI schemes (javascript:, data:, vbscript:)
+ * to prevent XSS in rendered email HTML. Only http:, https:, mailto:, and
+ * relative URLs are allowed.
+ */
+function sanitizeLinkUrl(url: string): string | null {
+  const trimmed = url.trim()
+  // Reject dangerous schemes — case-insensitive, ignoring leading whitespace
+  const lower = trimmed.toLowerCase()
+  if (
+    lower.startsWith('javascript:') ||
+    lower.startsWith('data:') ||
+    lower.startsWith('vbscript:')
+  ) {
+    return null
+  }
+  return trimmed
+}
+
 /** Process inline markdown: bold, italic, code, links */
 function inlineFormatting(text: string): string {
   return text
@@ -131,6 +157,13 @@ function inlineFormatting(text: string): string {
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
     // Inline code
     .replace(/`([^`]+)`/g, '<code class="email-code" style="background:#f3f4f6;padding:2px 6px;border-radius:3px;font-size:13px;font-family:\'SF Mono\',ui-monospace,Menlo,monospace;color:#10b981;">$1</code>')
-    // Links
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="email-link" style="color:#10b981;text-decoration:underline;">$1</a>')
+    // Links — sanitize URL to prevent XSS via javascript:/data:/vbscript: schemes
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_match, label: string, href: string) => {
+      const safeUrl = sanitizeLinkUrl(href)
+      if (!safeUrl) {
+        // Security: strip dangerous link, render as plain text only
+        return label
+      }
+      return `<a href="${safeUrl}" class="email-link" style="color:#10b981;text-decoration:underline;">${label}</a>`
+    })
 }
