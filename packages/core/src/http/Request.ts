@@ -58,15 +58,15 @@ export class MantiqRequest implements MantiqRequestContract {
     return this.parsedQuery[key] ?? defaultValue ?? (undefined as any)
   }
 
-  async input(): Promise<Record<string, any>>
-  async input(key: string, defaultValue?: any): Promise<any>
-  async input(key?: string, defaultValue?: any): Promise<any> {
+  async input<T = Record<string, any>>(): Promise<T>
+  async input<T = any>(key: string, defaultValue?: any): Promise<T>
+  async input<T = any>(key?: string, defaultValue?: any): Promise<T> {
     if (!this.parsedBody) {
       await this.parseBody()
     }
     const merged = { ...this.query(), ...this.parsedBody }
-    if (key === undefined) return merged
-    return merged[key] ?? defaultValue
+    if (key === undefined) return merged as T
+    return (merged[key] ?? defaultValue) as T
   }
 
   async only(...keys: string[]): Promise<Record<string, any>> {

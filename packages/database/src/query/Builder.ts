@@ -309,6 +309,7 @@ export class QueryBuilder {
 
   async pluck(column: string): Promise<any[]> {
     const rows = await this.select(column).get()
+    if (!rows || !Array.isArray(rows)) return []
     return rows.map((r) => r[column])
   }
 

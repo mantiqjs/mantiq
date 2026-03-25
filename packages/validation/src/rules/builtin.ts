@@ -227,9 +227,14 @@ export const regex: Rule = {
   name: 'regex',
   validate: (v, field, _data, [pattern]) => {
     if (isEmpty(v)) return true
-    const match = pattern!.match(/^\/(.+)\/([gimsuy]*)$/)
-    const re = match ? new RegExp(match[1]!, match[2]) : new RegExp(pattern!)
-    return re.test(String(v)) || `The ${field} field format is invalid.`
+    try {
+      const match = pattern!.match(/^\/(.+)\/([gimsuy]*)$/)
+      const re = match ? new RegExp(match[1]!, match[2]) : new RegExp(pattern!)
+      return re.test(String(v)) || `The ${field} field format is invalid.`
+    } catch {
+      // Invalid or dangerous regex pattern — treat as validation failure
+      return `The ${field} field format is invalid.`
+    }
   },
 }
 

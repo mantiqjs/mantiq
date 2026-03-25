@@ -11,8 +11,8 @@ export interface MantiqRequest {
   // ── Input ────────────────────────────────────────────────────────────────
   query(key: string, defaultValue?: string): string
   query(): Record<string, string>
-  input(key: string, defaultValue?: any): Promise<any>
-  input(): Promise<Record<string, any>>
+  input<T = any>(key: string, defaultValue?: any): Promise<T>
+  input<T = Record<string, any>>(): Promise<T>
   only(...keys: string[]): Promise<Record<string, any>>
   except(...keys: string[]): Promise<Record<string, any>>
   has(...keys: string[]): boolean
