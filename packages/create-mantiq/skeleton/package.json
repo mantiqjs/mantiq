@@ -9,24 +9,25 @@
     "mantiq": "bun run mantiq.ts"
   },
   "dependencies": {
-    "@mantiq/0,
-    "@mantiq/0,
-    "@mantiq/0,
-    "@mantiq/0,
-    "@mantiq/0,
-    "@mantiq/0,
-    "@mantiq/0,
-    "@mantiq/0,
-    "@mantiq/0,
-    "@mantiq/0,
-    "@mantiq/0,
-    "@mantiq/0,
-    "@mantiq/0,
-    "@mantiq/0,
-    "@mantiq/0,
-    "@mantiq/0
+    "@mantiq/auth": "^0.5.0",
+    "@mantiq/cli": "^0.5.0",
+    "@mantiq/core": "^0.5.0",
+    "@mantiq/database": "^0.5.0",
+    "@mantiq/events": "^0.5.0",
+    "@mantiq/filesystem": "^0.5.0",
+    "@mantiq/heartbeat": "^0.5.0",
+    "@mantiq/helpers": "^0.5.0",
+    "@mantiq/logging": "^0.5.0",
+    "@mantiq/queue": "^0.5.0",
+    "@mantiq/realtime": "^0.5.0",
+    "@mantiq/validation": "^0.5.0",
+    "@mantiq/mail": "^0.5.0",
+    "@mantiq/notify": "^0.5.0",
+    "@mantiq/search": "^0.5.0",
+    "@mantiq/health": "^0.5.0"
   },
   "devDependencies": {
+    "@mantiq/testing": "^0.5.0",
     "bun-types": "latest",
     "typescript": "^5.7.0"
   }
