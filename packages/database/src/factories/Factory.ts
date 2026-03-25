@@ -133,6 +133,15 @@ export abstract class Factory<T extends Model> {
     const tableName = (this.model as any).table as string
     let inserted = 0
 
+    // Use the grammar from the model's connection to quote identifiers
+    // correctly for the target database (backticks for MySQL, double quotes
+    // for Postgres/SQLite, brackets for MSSQL).
+    const grammar = (this.model as any).connection?._grammar as
+      | { quoteIdentifier(name: string): string }
+      | undefined
+    const quote = (name: string) =>
+      grammar ? grammar.quoteIdentifier(name) : `"${name}"`
+
     await connection.transaction(async (conn: any) => {
       while (inserted < total) {
         const chunkSize = Math.min(batchSize, total - inserted)
@@ -144,11 +153,11 @@ export abstract class Factory<T extends Model> {
         }
 
         const columns = Object.keys(rows[0]!)
-        const quotedCols = columns.map((c) => `"${c}"`).join(', ')
+        const quotedCols = columns.map((c) => quote(c)).join(', ')
         const rowPlaceholder = `(${columns.map(() => '?').join(', ')})`
         const allPlaceholders = Array.from({ length: chunkSize }, () => rowPlaceholder).join(', ')
         const bindings = rows.flatMap((r) => columns.map((c) => r[c]))
-        const sql = `INSERT INTO "${tableName}" (${quotedCols}) VALUES ${allPlaceholders}`
+        const sql = `INSERT INTO ${quote(tableName)} (${quotedCols}) VALUES ${allPlaceholders}`
 
         await conn.statement(sql, bindings)
         inserted += chunkSize

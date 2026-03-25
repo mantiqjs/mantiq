@@ -94,33 +94,14 @@ export class Heartbeat {
       this.flushTimer = null
     }
 
-    // Check if queue system is available — if not, write directly (async, fire-and-forget)
-    let queueAvailable = false
-    try {
-      const { getQueueManager } = require('@mantiq/queue')
-      getQueueManager() // throws if not initialized
-      queueAvailable = true
-    } catch {
-      // Queue not available
-    }
-
-    if (queueAvailable) {
-      try {
-        const { dispatch } = require('@mantiq/queue')
-        dispatch(new RecordHeartbeatEntries(entries))
-          .onQueue(this.config.queue.queue)
-          .onConnection(this.config.queue.connection)
-          .send()
-          .catch(() => {
-            this.store.insertEntries(entries).catch(() => { /* swallow */ })
-          })
-      } catch {
-        this.store.insertEntries(entries).catch(() => { /* swallow */ })
+    // Write directly to the dedicated heartbeat SQLite database.
+    // The queue adds unnecessary latency for telemetry — heartbeat has its
+    // own isolated connection so writes don't block the main app database.
+    this.store.insertEntries(entries).catch((e) => {
+      if (process.env.APP_DEBUG === 'true') {
+        console.error('[Heartbeat] Failed to persist entries:', (e as Error)?.message ?? e)
       }
-    } else {
-      // Direct write — async fire-and-forget fallback
-      this.store.insertEntries(entries).catch(() => { /* swallow */ })
-    }
+    })
   }
 
   // ── Pruning ─────────────────────────────────────────────────────────────

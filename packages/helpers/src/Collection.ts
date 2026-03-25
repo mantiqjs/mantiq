@@ -547,9 +547,23 @@ export class LazyCollection<T> implements Iterable<T> {
     })
   }
 
-  /** Take the first N items */
+  /** Take the first N items (positive) or last N items (negative) */
   take(count: number): LazyCollection<T> {
     const source = this.source
+    if (count < 0) {
+      // Negative: take the last |count| items — requires buffering
+      const absCount = -count
+      return new LazyCollection({
+        *[Symbol.iterator]() {
+          const buffer: T[] = []
+          for (const item of source) {
+            buffer.push(item)
+            if (buffer.length > absCount) buffer.shift()
+          }
+          yield* buffer
+        },
+      })
+    }
     return new LazyCollection({
       *[Symbol.iterator]() {
         let taken = 0

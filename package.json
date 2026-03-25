@@ -40,6 +40,6 @@
     "@mantiq/validation": "workspace:*",
     "@mantiq/vite": "workspace:*",
     "@playwright/test": "^1.58.2",
-    "typescript": "^5.7.0"
+    "typescript": "^6.0.2"
   }
 }

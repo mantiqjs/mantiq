@@ -482,7 +482,7 @@ export abstract class Model {
 
       if (ctor.incrementing) {
         const id = await ctor.connection.table(table).insertGetId(this._attributes)
-        this._attributes[ctor.primaryKey] = Number(id)
+        this._attributes[ctor.primaryKey] = ctor.keyType === 'string' ? String(id) : Number(id)
       } else {
         // Non-incrementing (UUID) — id is already set in attributes
         await ctor.connection.table(table).insert(this._attributes)

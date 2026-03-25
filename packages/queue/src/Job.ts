@@ -99,7 +99,8 @@ export abstract class Job {
   }
 
   /**
-   * Calculate the backoff delay for a given attempt number.
+   * Calculate the backoff delay for a given attempt number (1-based).
+   * Attempt 1 = first execution that failed, maps to backoff index 0.
    * @returns delay in seconds
    */
   getBackoffDelay(attempt: number): number {
@@ -107,16 +108,19 @@ export abstract class Job {
 
     if (raw === '0' || raw === '') return 0
 
+    // Clamp to 0-based index (protect against attempt <= 0)
+    const index = Math.max(0, attempt - 1)
+
     // Exponential: 'exponential:30' → 30, 60, 120, 240, ...
     if (raw.startsWith('exponential:')) {
       const base = parseInt(raw.slice('exponential:'.length), 10) || 1
-      return base * Math.pow(2, attempt - 1)
+      return base * Math.pow(2, index)
     }
 
     // Comma-separated: '30,60,120'
     if (raw.includes(',')) {
       const parts = raw.split(',').map((s) => parseInt(s.trim(), 10))
-      return parts[Math.min(attempt - 1, parts.length - 1)] ?? 0
+      return parts[Math.min(index, parts.length - 1)] ?? 0
     }
 
     // Fixed: '30'

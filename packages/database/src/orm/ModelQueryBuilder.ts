@@ -175,7 +175,8 @@ export class ModelQueryBuilder<T> extends QueryBuilder {
 
   override async find(id: number | string): Promise<any> {
     this.applyGlobalScopes()
-    const row = await this.raw().where('id', id).first()
+    const pk = this._modelClass?.primaryKey ?? 'id'
+    const row = await this.raw().where(pk, id).first()
     if (!row) return null
 
     const model = this._hydrate(row)
