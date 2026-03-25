@@ -1,6 +1,7 @@
 import { ModelQueryBuilder } from './ModelQueryBuilder.ts'
 import { ModelNotFoundError } from '../errors/ModelNotFoundError.ts'
 import { ClosureScope, type Scope } from './Scope.ts'
+import { Expression } from '../query/Expression.ts'
 import type { EagerLoadSpec } from './eagerLoad.ts'
 import type { DatabaseConnection } from '../contracts/Connection.ts'
 import type { PaginationResult } from '../contracts/Paginator.ts'
@@ -559,6 +560,110 @@ export abstract class Model {
     return ctor.softDelete && this._attributes[ctor.softDeleteColumn] != null
   }
 
+  // ── Increment / Decrement ───────────────────────────────────────────────
+
+  /**
+   * Increment a column's value by the given amount.
+   * Optionally update additional columns at the same time.
+   *
+   * @example
+   *   await post.increment('views')
+   *   await post.increment('votes', 5)
+   *   await post.increment('votes', 1, { last_voted_at: new Date() })
+   */
+  async increment(column: string, amount = 1, extra: Record<string, any> = {}): Promise<this> {
+    return this.incrementOrDecrement(column, amount, extra, 'increment')
+  }
+
+  /**
+   * Decrement a column's value by the given amount.
+   *
+   * @example
+   *   await post.decrement('stock')
+   *   await post.decrement('balance', 50)
+   */
+  async decrement(column: string, amount = 1, extra: Record<string, any> = {}): Promise<this> {
+    return this.incrementOrDecrement(column, amount, extra, 'decrement')
+  }
+
+  /**
+   * Increment multiple columns at once.
+   *
+   * @example
+   *   await post.incrementEach({ views: 1, shares: 2 })
+   *   await post.incrementEach({ views: 1 }, { last_viewed_at: new Date() })
+   */
+  async incrementEach(columns: Record<string, number>, extra: Record<string, any> = {}): Promise<this> {
+    const ctor = this.constructor as typeof Model
+    if (!ctor.connection || !this._exists) {
+      throw new Error('Cannot increment on a model that has not been persisted.')
+    }
+
+    const table = ctor.table || pluralize(snakeCase(ctor.name))
+    const data: Record<string, any> = {}
+
+    for (const [col, amount] of Object.entries(columns)) {
+      data[col] = new Expression(`${quoteColumn(col)} + ${Number(amount)}`)
+      this._attributes[col] = (Number(this._attributes[col]) || 0) + Number(amount)
+    }
+
+    Object.assign(data, extra)
+    for (const [k, v] of Object.entries(extra)) {
+      this._attributes[k] = v
+    }
+
+    if (ctor.timestamps && 'updated_at' in this._attributes) {
+      const now = new Date()
+      data['updated_at'] = now
+      this._attributes['updated_at'] = now
+    }
+
+    await ctor.connection.table(table)
+      .where(ctor.primaryKey, this.getKey())
+      .update(data)
+
+    this._original = { ...this._attributes }
+    return this
+  }
+
+  private async incrementOrDecrement(
+    column: string,
+    amount: number,
+    extra: Record<string, any>,
+    method: 'increment' | 'decrement',
+  ): Promise<this> {
+    const ctor = this.constructor as typeof Model
+    if (!ctor.connection || !this._exists) {
+      throw new Error('Cannot increment/decrement on a model that has not been persisted.')
+    }
+
+    const table = ctor.table || pluralize(snakeCase(ctor.name))
+    const operator = method === 'increment' ? '+' : '-'
+    const data: Record<string, any> = {
+      [column]: new Expression(`${quoteColumn(column)} ${operator} ${Number(amount)}`),
+      ...extra,
+    }
+
+    if (ctor.timestamps && 'updated_at' in this._attributes) {
+      const now = new Date()
+      data['updated_at'] = now
+      this._attributes['updated_at'] = now
+    }
+
+    await ctor.connection.table(table)
+      .where(ctor.primaryKey, this.getKey())
+      .update(data)
+
+    // Update local state
+    const delta = method === 'increment' ? Number(amount) : -Number(amount)
+    this._attributes[column] = (Number(this._attributes[column]) || 0) + delta
+    for (const [k, v] of Object.entries(extra)) {
+      this._attributes[k] = v
+    }
+    this._original = { ...this._attributes }
+    return this
+  }
+
   // ── Replication ──────────────────────────────────────────────────────────
 
   /**
@@ -791,6 +896,11 @@ function snakeCase(name: string): string {
     .replace(/([a-z])([A-Z])/g, '$1_$2')
     .replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2')
     .toLowerCase()
+}
+
+/** Quote a column name with double quotes for use in raw expressions. */
+function quoteColumn(name: string): string {
+  return `"${name.replace(/"/g, '""')}"`
 }
 
 /** Simple English pluralization for table name derivation. */

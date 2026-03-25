@@ -1,6 +1,7 @@
 import type { CacheStore } from '../contracts/Cache.ts'
 import { join } from 'node:path'
-import { mkdir, rm, readdir } from 'node:fs/promises'
+import { mkdir, rm, readdir, rename } from 'node:fs/promises'
+import { randomBytes } from 'node:crypto'
 
 interface FileCachePayload {
   value: unknown
@@ -94,13 +95,44 @@ export class FileCacheStore implements CacheStore {
   /**
    * Store an item in the cache if the key does not already exist.
    *
-   * Note: File-based storage cannot guarantee atomicity. Between the existence
-   * check and the write, another process could set the key. For truly atomic
-   * add semantics, use the Redis or Memcached cache driver.
+   * Uses write-to-temp + rename to avoid TOCTOU race conditions.
+   * If the key already exists (and is not expired), returns false.
    */
   async add(key: string, value: unknown, ttl?: number): Promise<boolean> {
-    if (await this.has(key)) return false
-    await this.put(key, value, ttl)
+    await this.ensureDirectory()
+
+    const targetPath = this.path(key)
+
+    // Check if key already exists and is not expired
+    const file = Bun.file(targetPath)
+    if (await file.exists()) {
+      try {
+        const payload: FileCachePayload = await file.json()
+        if (payload.expiresAt === null || Date.now() <= payload.expiresAt) {
+          return false
+        }
+        // Expired — fall through to overwrite
+      } catch {
+        // Corrupted file — fall through to overwrite
+      }
+    }
+
+    // Write to a temp file first, then atomically rename into place
+    const tmpPath = join(this.directory, `_tmp_${randomBytes(8).toString('hex')}.cache`)
+    const payload: FileCachePayload = {
+      value,
+      expiresAt: ttl != null ? Date.now() + ttl * 1000 : null,
+    }
+    await Bun.write(tmpPath, JSON.stringify(payload))
+
+    try {
+      await rename(tmpPath, targetPath)
+    } catch {
+      // Cleanup temp file on failure
+      try { await rm(tmpPath) } catch { /* ignore */ }
+      return false
+    }
+
     return true
   }
 

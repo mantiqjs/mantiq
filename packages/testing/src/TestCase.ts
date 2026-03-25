@@ -38,6 +38,9 @@ export class TestCase {
   /** Whether to refresh the database before each test. */
   refreshDatabase = false
 
+  /** Whether to wrap each test in a database transaction that is rolled back after. */
+  usesDatabaseTransactions = false
+
   /** Path to the app's index.ts (defaults to cwd). */
   appPath = process.cwd()
 
@@ -56,6 +59,15 @@ export class TestCase {
       )
       if (this.refreshDatabase) {
         await this.migrateRefresh()
+      }
+      if (this.usesDatabaseTransactions) {
+        await this.beginDatabaseTransaction()
+      }
+    })
+
+    afterEach(async () => {
+      if (this.usesDatabaseTransactions) {
+        await this.rollbackDatabaseTransaction()
       }
     })
 
@@ -250,6 +262,66 @@ export class TestCase {
     return this
   }
 
+  // ── Database transaction helpers ──────────────────────────────────────
+
+  /**
+   * Begin a database transaction. The transaction will be rolled back
+   * in afterEach, so test data never persists.
+   */
+  private async beginDatabaseTransaction(): Promise<void> {
+    const conn = await this.getConnection()
+
+    // We start a transaction that stays open for the duration of the test.
+    // The transaction callback resolves only when we signal rollback.
+    this._txPromise = conn.transaction(async (txConn) => {
+      // Replace the connection used by getConnection() with the transactional one
+      this._connection = txConn
+
+      // Wait until the test completes and rollback is signalled
+      await new Promise<void>((resolve) => {
+        this._txResolve = resolve
+      })
+
+      // Throw to force rollback instead of commit
+      throw new TransactionRollbackError()
+    }).catch((err) => {
+      // Swallow the intentional rollback error
+      if (!(err instanceof TransactionRollbackError)) throw err
+    })
+  }
+
+  /**
+   * Roll back the database transaction started in beforeEach.
+   */
+  private async rollbackDatabaseTransaction(): Promise<void> {
+    if (this._txResolve) {
+      // Signal the transaction callback to finish (which triggers rollback)
+      this._txResolve()
+      this._txResolve = null
+    }
+    if (this._txPromise) {
+      await this._txPromise
+      this._txPromise = null
+    }
+    // Reset connection so next test gets a fresh one
+    this._connection = null
+  }
+
   private _disabledMiddleware: string[] = []
   private _withoutExceptionHandling = false
+
+  /** Resolve/reject pair for the current transaction rollback. */
+  private _txResolve: (() => void) | null = null
+  private _txPromise: Promise<void> | null = null
+}
+
+/**
+ * Sentinel error thrown inside the transaction callback to force a rollback
+ * instead of a commit. Caught and swallowed by beginDatabaseTransaction().
+ */
+class TransactionRollbackError extends Error {
+  constructor() {
+    super('Transaction rolled back by test harness')
+    this.name = 'TransactionRollbackError'
+  }
 }
