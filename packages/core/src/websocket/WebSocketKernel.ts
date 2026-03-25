@@ -94,7 +94,9 @@ export class WebSocketKernel {
       try {
         decrypted[name] = await this.encrypter!.decrypt(value)
       } catch {
-        decrypted[name] = value
+        // Can't decrypt — expired key, tampered, or wrong format.
+        // Don't pass through the encrypted blob; discard it.
+        decrypted[name] = ''
       }
     }
 

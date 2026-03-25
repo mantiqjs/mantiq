@@ -408,9 +408,15 @@ export abstract class Model {
       obj[key] = this.getAttribute(key)
     }
 
-    // Include loaded relations
+    // Include loaded relations — recursively serialize Model instances
     for (const [k, v] of Object.entries(this._relations)) {
-      obj[k] = v
+      if (v instanceof Model) {
+        obj[k] = v.toObject()
+      } else if (Array.isArray(v)) {
+        obj[k] = v.map((item) => (item instanceof Model ? item.toObject() : item))
+      } else {
+        obj[k] = v
+      }
     }
 
     return obj
