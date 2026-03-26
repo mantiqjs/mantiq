@@ -75,21 +75,21 @@ export function renderLayout(options: {
 <body>
   <aside class="sidebar">
     <div class="brand">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
       <span>heartbeat</span>
     </div>
     <nav>${nav}</nav>
     <div class="sidebar-footer">
-      <span class="sidebar-brand-footer"><span style="color:var(--accent)">.</span>mantiq</span>
+      <div class="sidebar-brand-footer">
+        <span class="dot">.</span>mantiq
+      </div>
+      <button class="theme-btn" onclick="toggleTheme()" title="Toggle theme">${ICONS.moon}</button>
     </div>
   </aside>
   <main>
     <div class="topbar">
       <h1 class="page-title">${title}</h1>
-      <div style="display:flex;align-items:center;gap:6px">
-        <button class="refresh-toggle" onclick="toggleAutoRefresh()" title="Toggle auto-refresh (R)">${ICONS.refresh} Auto</button>
-        <button class="theme-btn" onclick="toggleTheme()" title="Toggle theme">${ICONS.moon}</button>
-      </div>
+      <button class="refresh-toggle" onclick="toggleAutoRefresh()" title="Toggle auto-refresh (R)">${ICONS.refresh} Auto</button>
     </div>
     ${content}
   </main>
@@ -208,38 +208,43 @@ body{
   display:flex;flex-direction:column;position:fixed;top:0;bottom:0;z-index:10;
 }
 .brand{
-  padding:16px 16px 12px;font-size:12px;font-weight:700;color:var(--fg-0);
-  display:flex;align-items:center;gap:8px;letter-spacing:-.01em;
-  font-family:var(--mono);
+  padding:18px 16px 14px;font-size:12px;font-weight:700;color:var(--fg-0);
+  display:flex;align-items:center;gap:7px;letter-spacing:-.02em;
+  font-family:var(--mono);border-bottom:1px solid var(--border);
 }
 .brand svg{color:var(--accent)}
-.sidebar nav{padding:0 8px;flex:1;overflow-y:auto}
+.sidebar nav{padding:6px 0;flex:1;overflow-y:auto}
 .nav-section{
   font-size:9px;font-weight:700;color:var(--fg-3);
-  text-transform:uppercase;letter-spacing:.12em;
-  padding:14px 10px 4px;font-family:var(--mono);
+  text-transform:uppercase;letter-spacing:.1em;
+  padding:16px 16px 4px;font-family:var(--mono);
 }
 .sidebar nav a{
   display:flex;align-items:center;gap:8px;
-  padding:6px 10px;border-radius:6px;margin:1px 0;
+  padding:7px 16px;margin:0;
   color:var(--fg-2);text-decoration:none;font-size:11px;font-weight:500;
-  transition:color .15s,background .15s;
+  transition:color .12s;
   font-family:var(--mono);
+  border-left:2px solid transparent;
 }
 .sidebar nav a span{flex:1}
-.sidebar nav a svg{flex-shrink:0;opacity:.4;transition:opacity .15s}
-.sidebar nav a:hover{color:var(--fg-0);background:var(--bg-2)}
-.sidebar nav a:hover svg{opacity:.7}
-.sidebar nav a.active{color:var(--accent);background:var(--bg-2);font-weight:600}
+.sidebar nav a svg{flex-shrink:0;opacity:.35;transition:opacity .12s}
+.sidebar nav a:hover{color:var(--fg-0)}
+.sidebar nav a:hover svg{opacity:.6}
+.sidebar nav a.active{
+  color:var(--accent);font-weight:600;
+  border-left-color:var(--accent);
+}
 .sidebar nav a.active svg{opacity:1;color:var(--accent)}
 .sidebar-footer{
-  border-top:1px solid var(--border);padding:12px 16px;
+  border-top:1px solid var(--border);padding:14px 16px;
   display:flex;align-items:center;justify-content:space-between;
 }
 .sidebar-brand-footer{
-  font-size:11px;font-weight:600;color:var(--fg-3);
-  font-family:var(--mono);letter-spacing:-.01em;
+  font-size:12px;font-weight:700;color:var(--fg-3);
+  font-family:var(--mono);letter-spacing:-.02em;
 }
+.sidebar-brand-footer .dot{color:var(--accent);font-weight:800}
 .theme-btn{
   all:unset;color:var(--fg-3);cursor:pointer;display:flex;align-items:center;
   padding:6px;border-radius:8px;border:1px solid var(--border);
