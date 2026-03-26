@@ -9,6 +9,9 @@ import { LineFormatter } from './formatters/LineFormatter.ts'
 import { JsonFormatter } from './formatters/JsonFormatter.ts'
 
 export class LogManager implements DriverManager<LoggerDriver>, LoggerDriver {
+  /** Hook for observability — called after every log write. */
+  static _onLog: ((level: string, message: string, context: Record<string, any>, channel: string) => void) | null = null
+
   private readonly config: LogConfig
   private readonly channels = new Map<string, LoggerDriver>()
   private readonly customCreators = new Map<string, (config: ChannelConfig) => LoggerDriver>()
@@ -56,16 +59,19 @@ export class LogManager implements DriverManager<LoggerDriver>, LoggerDriver {
 
   log(level: LogLevel, message: string, context?: Record<string, any>): void {
     this.driver().log(level, message, context)
+    if (LogManager._onLog) {
+      try { LogManager._onLog(level, message, context ?? {}, this.getDefaultDriver()) } catch {}
+    }
   }
 
-  emergency(message: string, context?: Record<string, any>): void { this.driver().emergency(message, context) }
-  alert(message: string, context?: Record<string, any>): void { this.driver().alert(message, context) }
-  critical(message: string, context?: Record<string, any>): void { this.driver().critical(message, context) }
-  error(message: string, context?: Record<string, any>): void { this.driver().error(message, context) }
-  warning(message: string, context?: Record<string, any>): void { this.driver().warning(message, context) }
-  notice(message: string, context?: Record<string, any>): void { this.driver().notice(message, context) }
-  info(message: string, context?: Record<string, any>): void { this.driver().info(message, context) }
-  debug(message: string, context?: Record<string, any>): void { this.driver().debug(message, context) }
+  emergency(message: string, context?: Record<string, any>): void { this.log('emergency', message, context) }
+  alert(message: string, context?: Record<string, any>): void { this.log('alert', message, context) }
+  critical(message: string, context?: Record<string, any>): void { this.log('critical', message, context) }
+  error(message: string, context?: Record<string, any>): void { this.log('error', message, context) }
+  warning(message: string, context?: Record<string, any>): void { this.log('warning', message, context) }
+  notice(message: string, context?: Record<string, any>): void { this.log('notice', message, context) }
+  info(message: string, context?: Record<string, any>): void { this.log('info', message, context) }
+  debug(message: string, context?: Record<string, any>): void { this.log('debug', message, context) }
 
   // ── Internal ──────────────────────────────────────────────────────────────
 

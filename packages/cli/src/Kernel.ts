@@ -54,6 +54,9 @@ export class Kernel {
   private discovered = false
   private builtinsRegistered = false
 
+  /** Hook called after each command execution. Set by observability providers. */
+  static _onCommandExecuted: ((data: { name: string; args: Record<string, any>; exitCode: number; duration: number }) => void) | null = null
+
   constructor(public readonly app: any = null) {}
 
   register(command: Command): this {
@@ -202,15 +205,30 @@ export class Kernel {
       return 1
     }
 
+    const start = performance.now()
+    let exitCode = 0
     try {
-      return await command.handle(parsed)
+      exitCode = await command.handle(parsed)
     } catch (e: any) {
+      exitCode = 1
       this.io.error(e.message ?? String(e))
       if (process.env['APP_DEBUG'] === 'true') {
         this.io.line(e.stack ?? '')
       }
-      return 1
     }
+
+    if (Kernel._onCommandExecuted) {
+      try {
+        Kernel._onCommandExecuted({
+          name: parsed.command,
+          args: { ...parsed.flags, _positional: parsed.args },
+          exitCode,
+          duration: performance.now() - start,
+        })
+      } catch { /* observability must never crash CLI */ }
+    }
+
+    return exitCode
   }
 
   private showHelp(_parsed: ParsedArgs): void {
