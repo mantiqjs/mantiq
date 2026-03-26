@@ -58,8 +58,10 @@ export function renderLayout(options: {
   <main>
     <div class="topbar">
       <h1 class="page-title">${title}</h1>
-      <button class="refresh-toggle" onclick="toggleAutoRefresh()" title="Toggle auto-refresh (R)">${ICONS.refresh} Auto</button>
-      <button class="theme-btn" onclick="toggleTheme()" title="Toggle theme">${ICONS.moon}</button>
+      <div style="display:flex;align-items:center;gap:6px">
+        <button class="refresh-toggle" onclick="toggleAutoRefresh()" title="Toggle auto-refresh (R)">${ICONS.refresh} Auto</button>
+        <button class="theme-btn" onclick="toggleTheme()" title="Toggle theme">${ICONS.moon}</button>
+      </div>
     </div>
     ${content}
   </main>

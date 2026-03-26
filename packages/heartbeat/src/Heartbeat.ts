@@ -52,6 +52,11 @@ export class Heartbeat {
     return this.watchers
   }
 
+  /** Count buffered entries of a given type (for widget stats before flush). */
+  getBufferedCount(type: EntryType): number {
+    return this.buffer.filter((e) => e.type === type).length
+  }
+
   // ── Entry Recording ─────────────────────────────────────────────────────
 
   /**

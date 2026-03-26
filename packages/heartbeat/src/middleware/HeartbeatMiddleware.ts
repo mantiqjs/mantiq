@@ -167,7 +167,8 @@ export class HeartbeatMiddleware implements Middleware {
         const totalDuration = performance.now() - startTime
         const totalMemory = Math.abs(process.memoryUsage().rss - startMemory)
         const mem = (totalMemory / 1024 / 1024).toFixed(1)
-        const statsHeader = `${Math.round(totalDuration)}ms;${mem}MB;${response!.status};0q`
+        const queryCount = this.heartbeat.getBufferedCount('query')
+        const statsHeader = `${Math.round(totalDuration)}ms;${mem}MB;${response!.status};${queryCount}q`
 
         try {
           const cloned = response!.clone()
@@ -183,7 +184,7 @@ export class HeartbeatMiddleware implements Middleware {
               duration: totalDuration,
               memory: totalMemory,
               status: response!.status,
-              queries: 0,
+              queries: queryCount,
               dashboardPath: this.heartbeat.config.dashboard.path,
             })
             finalBody = body.replace('</body>', widget + '\n</body>')
