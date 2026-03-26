@@ -2,7 +2,7 @@ import { renderLayout } from '../shared/layout.ts'
 import { statusBadge, methodBadge, durationBadge, timeAgo, escapeHtml, formatBytes } from '../shared/components.ts'
 import { formatDuration } from '../../helpers/timing.ts'
 import type { HeartbeatStore } from '../../storage/HeartbeatStore.ts'
-import type { RequestEntryContent } from '../../contracts/Entry.ts'
+import type { RequestEntryContent, HeartbeatEntry } from '../../contracts/Entry.ts'
 
 const COPY_ICON = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`
 const CHECK_ICON = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
@@ -12,6 +12,13 @@ export async function renderRequestDetailPage(store: HeartbeatStore, uuid: strin
   if (!entry || entry.type !== 'request') return null
 
   const c = JSON.parse(entry.content) as RequestEntryContent
+
+  // Fetch all entries that share this request_id (queries, cache, events, logs, exceptions, etc.)
+  const relatedEntries = entry.request_id
+    ? (await store.getEntries({ requestId: entry.request_id, limit: 200 }))
+        .filter((e) => e.uuid !== entry.uuid)
+    : []
+
   const recorded = new Date(entry.created_at)
   const timeStr = `${recorded.getFullYear()}-${String(recorded.getMonth() + 1).padStart(2, '0')}-${String(recorded.getDate()).padStart(2, '0')} ${String(recorded.getHours()).padStart(2, '0')}:${String(recorded.getMinutes()).padStart(2, '0')}:${String(recorded.getSeconds()).padStart(2, '0')}`
   const requestLine = `${c.method} ${c.url || c.path}`
@@ -102,6 +109,8 @@ export async function renderRequestDetailPage(store: HeartbeatStore, uuid: strin
         ${responseSections.join('')}
       </div>
     </div>
+
+    ${renderRelatedEntries(relatedEntries, basePath)}
 
     <div style="margin-top:14px;font-size:11px;color:var(--fg-3)">${timeAgo(entry.created_at)}</div>
 
@@ -291,4 +300,128 @@ function buildMarkdown(
   }
 
   return lines.join('\n')
+}
+
+// ── Related entries (queries, cache, events, logs, etc.) ─────────────────────
+
+const TYPE_ICONS: Record<string, string> = {
+  query: '⚡',
+  cache: '📦',
+  event: '⚡',
+  exception: '🔴',
+  log: '📝',
+  job: '⚙️',
+  model: '🔷',
+  mail: '✉️',
+  schedule: '⏰',
+}
+
+const TYPE_COLORS: Record<string, string> = {
+  query: '#818cf8',
+  cache: '#34d399',
+  exception: '#f87171',
+  event: '#fbbf24',
+  log: '#94a3b8',
+  job: '#60a5fa',
+  model: '#a78bfa',
+  mail: '#2dd4bf',
+  schedule: '#fb923c',
+}
+
+function renderRelatedEntries(entries: HeartbeatEntry[], _basePath: string): string {
+  if (entries.length === 0) return ''
+
+  const grouped = new Map<string, HeartbeatEntry[]>()
+  for (const e of entries) {
+    const list = grouped.get(e.type) ?? []
+    list.push(e)
+    grouped.set(e.type, list)
+  }
+
+  // Preferred display order
+  const order = ['query', 'exception', 'cache', 'log', 'event', 'job', 'model', 'mail', 'schedule']
+  const sortedTypes = [...grouped.keys()].sort((a, b) => {
+    const ai = order.indexOf(a), bi = order.indexOf(b)
+    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
+  })
+
+  let sections = ''
+  for (const type of sortedTypes) {
+    const list = grouped.get(type)!
+    const color = TYPE_COLORS[type] ?? 'var(--fg-3)'
+    const icon = TYPE_ICONS[type] ?? '•'
+    const label = type.charAt(0).toUpperCase() + type.slice(1) + (list.length > 1 ? 's' : '')
+
+    sections += `<div style="margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+        <span>${icon}</span>
+        <span style="font-weight:600;font-size:12px;color:${color};text-transform:uppercase;letter-spacing:.04em">${escapeHtml(label)}</span>
+        <span style="font-size:11px;color:var(--fg-3)">${list.length}</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        ${list.map((e) => renderRelatedEntry(e, type)).join('')}
+      </div>
+    </div>`
+  }
+
+  return `<div class="card" style="margin-top:16px">
+    <div class="card-title" style="margin-bottom:12px">Request Timeline</div>
+    ${sections}
+  </div>`
+}
+
+function renderRelatedEntry(entry: HeartbeatEntry, type: string): string {
+  const content = JSON.parse(entry.content)
+  const color = TYPE_COLORS[type] ?? 'var(--fg-3)'
+  const ts = new Date(entry.created_at)
+  const time = `${String(ts.getHours()).padStart(2, '0')}:${String(ts.getMinutes()).padStart(2, '0')}:${String(ts.getSeconds()).padStart(2, '0')}.${String(ts.getMilliseconds()).padStart(3, '0')}`
+
+  let summary = ''
+  let detail = ''
+
+  switch (type) {
+    case 'query':
+      summary = escapeHtml(content.sql ?? content.normalized_sql ?? 'SQL query')
+      detail = content.duration != null ? `${content.duration.toFixed(1)}ms` : ''
+      if (content.slow) detail += ' <span style="color:#f87171;font-weight:600">SLOW</span>'
+      if (content.n_plus_one) detail += ' <span style="color:#fbbf24;font-weight:600">N+1</span>'
+      break
+    case 'cache':
+      summary = `${content.event ?? 'operation'} → ${escapeHtml(content.key ?? '')}`
+      break
+    case 'event':
+      summary = escapeHtml(content.event_class ?? content.event ?? 'event')
+      detail = content.listeners_count != null ? `${content.listeners_count} listener${content.listeners_count === 1 ? '' : 's'}` : ''
+      break
+    case 'log':
+      summary = escapeHtml(content.message ?? '')
+      detail = content.level ?? ''
+      break
+    case 'exception':
+      summary = escapeHtml(content.class ?? content.message ?? 'exception')
+      detail = content.file ? escapeHtml(content.file + ':' + (content.line ?? '')) : ''
+      break
+    case 'job':
+      summary = escapeHtml(content.job_name ?? content.job ?? 'job')
+      detail = content.status ?? ''
+      break
+    case 'model':
+      summary = `${content.action ?? 'action'} ${escapeHtml(content.model ?? '')}`
+      detail = content.key ? `#${content.key}` : ''
+      break
+    case 'mail':
+      summary = escapeHtml(content.subject ?? 'email')
+      detail = content.to?.join(', ') ?? ''
+      break
+    default:
+      summary = JSON.stringify(content).slice(0, 80)
+  }
+
+  return `<div style="display:flex;align-items:baseline;gap:8px;padding:5px 8px;background:var(--bg-2);border-radius:4px;font-size:12px">
+    <code style="color:var(--fg-3);font-size:10px;flex-shrink:0">${time}</code>
+    <span style="border-left:2px solid ${color};padding-left:8px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+      <code style="color:var(--fg-1)">${summary}</code>
+    </span>
+    ${detail ? `<span style="color:var(--fg-3);font-size:11px;flex-shrink:0">${detail}</span>` : ''}
+  </div>`
 }

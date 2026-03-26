@@ -95,11 +95,8 @@ export class HeartbeatMiddleware implements Middleware {
     } finally {
       const duration = performance.now() - startTime
 
-      if (this.tracer) {
-        this.tracer.endRequest()
-      }
-
       // Capture response data (must rebuild response so body stays available for upstream middleware)
+      // Record BEFORE ending the trace context so request_id is attached
       if (this.requestWatcher && !error) {
         const responseHeaders = this.captureResponseHeaders(response!)
         const { body: responseBody, size: responseSize, rebuilt } = await this.captureResponseBody(response!)
@@ -138,6 +135,11 @@ export class HeartbeatMiddleware implements Middleware {
 
       // Flush entries (fire-and-forget)
       this.heartbeat.flush()
+
+      // End the trace context AFTER recording — so all entries get the request_id
+      if (this.tracer) {
+        this.tracer.endRequest()
+      }
     }
 
     // Debug mode: attach X-Heartbeat header + inject widget
