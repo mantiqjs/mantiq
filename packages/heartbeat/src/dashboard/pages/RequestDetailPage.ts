@@ -1,5 +1,5 @@
 import { renderLayout } from '../shared/layout.ts'
-import { statusBadge, methodBadge, durationBadge, timeAgo, escapeHtml, formatBytes } from '../shared/components.ts'
+import { statusBadge, methodBadge, durationBadge, timeAgo, escapeHtml, formatBytes, breadcrumbs, collapsibleSection, sqlHighlight, diffView, waterfallChart } from '../shared/components.ts'
 import { formatDuration } from '../../helpers/timing.ts'
 import type { HeartbeatStore } from '../../storage/HeartbeatStore.ts'
 import type { RequestEntryContent, HeartbeatEntry } from '../../contracts/Entry.ts'
@@ -22,6 +22,13 @@ export async function renderRequestDetailPage(store: HeartbeatStore, uuid: strin
   const recorded = new Date(entry.created_at)
   const timeStr = `${recorded.getFullYear()}-${String(recorded.getMonth() + 1).padStart(2, '0')}-${String(recorded.getDate()).padStart(2, '0')} ${String(recorded.getHours()).padStart(2, '0')}:${String(recorded.getMinutes()).padStart(2, '0')}:${String(recorded.getSeconds()).padStart(2, '0')}`
   const requestLine = `${c.method} ${c.url || c.path}`
+
+  // Breadcrumbs
+  const breadcrumbsHtml = breadcrumbs([
+    { label: 'Overview', href: basePath },
+    { label: 'Requests', href: `${basePath}/requests` },
+    { label: `${c.method} ${c.path}` },
+  ])
 
   // Build request tab sections
   const requestSections: string[] = []
@@ -58,8 +65,9 @@ export async function renderRequestDetailPage(store: HeartbeatStore, uuid: strin
   const mdEscaped = md.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$')
 
   const content = `
+    ${breadcrumbsHtml}
+
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-      <a href="${basePath}/requests" style="color:var(--fg-3);text-decoration:none;font-size:13px;display:flex;align-items:center;gap:4px">&larr; <span>Requests</span></a>
       <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
         <button class="copy-btn" onclick="copyMd()" title="Copy full request as Markdown">${COPY_ICON}<span>Copy as Markdown</span></button>
       </div>
@@ -110,7 +118,7 @@ export async function renderRequestDetailPage(store: HeartbeatStore, uuid: strin
       </div>
     </div>
 
-    ${renderRelatedEntries(relatedEntries, basePath)}
+    ${renderRelatedEntries(relatedEntries, c.duration, basePath)}
 
     <div style="margin-top:14px;font-size:11px;color:var(--fg-3)">${timeAgo(entry.created_at)}</div>
 
@@ -305,15 +313,15 @@ function buildMarkdown(
 // ── Related entries (queries, cache, events, logs, etc.) ─────────────────────
 
 const TYPE_ICONS: Record<string, string> = {
-  query: '⚡',
-  cache: '📦',
-  event: '⚡',
-  exception: '🔴',
-  log: '📝',
-  job: '⚙️',
-  model: '🔷',
-  mail: '✉️',
-  schedule: '⏰',
+  query: '&#9889;',
+  cache: '&#128230;',
+  event: '&#9889;',
+  exception: '&#128308;',
+  log: '&#128221;',
+  job: '&#9881;',
+  model: '&#128311;',
+  mail: '&#9993;',
+  schedule: '&#9200;',
 }
 
 const TYPE_COLORS: Record<string, string> = {
@@ -328,7 +336,7 @@ const TYPE_COLORS: Record<string, string> = {
   schedule: '#fb923c',
 }
 
-function renderRelatedEntries(entries: HeartbeatEntry[], _basePath: string): string {
+function renderRelatedEntries(entries: HeartbeatEntry[], requestDuration: number, _basePath: string): string {
   if (entries.length === 0) return ''
 
   const grouped = new Map<string, HeartbeatEntry[]>()
@@ -345,29 +353,71 @@ function renderRelatedEntries(entries: HeartbeatEntry[], _basePath: string): str
     return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
   })
 
+  // Build waterfall chart data from all related entries
+  const requestStartTs = entries.length > 0
+    ? Math.min(...entries.map((e) => e.created_at), entries[0]!.created_at)
+    : 0
+
+  const waterfallItems: Array<{ label: string; start: number; end: number; color: string }> = []
+
+  for (const entry of entries) {
+    const content = JSON.parse(entry.content)
+    const type = entry.type
+    const color = TYPE_COLORS[type] ?? 'var(--fg-3)'
+    const startOffset = entry.created_at - requestStartTs
+    let duration = 0
+
+    if (type === 'query' && typeof content.duration === 'number') {
+      duration = content.duration
+    } else if (type === 'job' && typeof content.duration === 'number') {
+      duration = content.duration
+    } else if (type === 'cache' && typeof content.duration === 'number') {
+      duration = content.duration
+    } else {
+      duration = 0.5 // minimal width for entries without duration
+    }
+
+    let label: string = type
+    if (type === 'query') label = 'SQL'
+    else if (type === 'cache') label = `cache:${content.event ?? content.operation ?? 'op'}`
+    else if (type === 'exception') label = content.class ?? 'exception'
+    else if (type === 'event') label = content.event_class ?? 'event'
+    else if (type === 'model') label = `${content.action ?? 'model'} ${content.model ?? ''}`
+
+    waterfallItems.push({ label, start: startOffset, end: startOffset + duration, color })
+  }
+
+  const waterfallHtml = waterfallItems.length > 0
+    ? `<div class="card mb" style="margin-top:16px">
+        <div class="card-title" style="margin-bottom:12px">Waterfall Timeline</div>
+        ${waterfallChart(waterfallItems, requestDuration)}
+      </div>`
+    : ''
+
   let sections = ''
   for (const type of sortedTypes) {
     const list = grouped.get(type)!
     const color = TYPE_COLORS[type] ?? 'var(--fg-3)'
-    const icon = TYPE_ICONS[type] ?? '•'
+    const icon = TYPE_ICONS[type] ?? '&bull;'
     const label = type.charAt(0).toUpperCase() + type.slice(1) + (list.length > 1 ? 's' : '')
 
-    sections += `<div style="margin-bottom:12px">
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
-        <span>${icon}</span>
-        <span style="font-weight:600;font-size:12px;color:${color};text-transform:uppercase;letter-spacing:.04em">${escapeHtml(label)}</span>
-        <span style="font-size:11px;color:var(--fg-3)">${list.length}</span>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:4px">
-        ${list.map((e) => renderRelatedEntry(e, type)).join('')}
-      </div>
+    const entriesHtml = `<div style="display:flex;flex-direction:column;gap:4px">
+      ${list.map((e) => renderRelatedEntry(e, type)).join('')}
     </div>`
+
+    sections += collapsibleSection(
+      `${icon} ${label}`,
+      list.length,
+      color,
+      entriesHtml,
+    )
   }
 
-  return `<div class="card" style="margin-top:16px">
-    <div class="card-title" style="margin-bottom:12px">Request Timeline</div>
-    ${sections}
-  </div>`
+  return `${waterfallHtml}
+    <div class="card" style="margin-top:16px">
+      <div class="card-title" style="margin-bottom:12px">Request Timeline</div>
+      ${sections}
+    </div>`
 }
 
 function renderRelatedEntry(entry: HeartbeatEntry, type: string): string {
@@ -381,38 +431,79 @@ function renderRelatedEntry(entry: HeartbeatEntry, type: string): string {
 
   switch (type) {
     case 'query':
-      summary = escapeHtml(content.sql ?? content.normalized_sql ?? 'SQL query')
+      // Use sqlHighlight for query SQL display
+      summary = sqlHighlight(content.sql ?? content.normalized_sql ?? 'SQL query')
       detail = content.duration != null ? `${content.duration.toFixed(1)}ms` : ''
       if (content.slow) detail += ' <span style="color:#f87171;font-weight:600">SLOW</span>'
       if (content.n_plus_one) detail += ' <span style="color:#fbbf24;font-weight:600">N+1</span>'
+      return `<div style="padding:5px 8px;background:var(--bg-2);border-radius:4px;font-size:12px">
+        <div style="display:flex;align-items:baseline;gap:8px">
+          <code style="color:var(--fg-3);font-size:10px;flex-shrink:0">${time}</code>
+          <span style="border-left:2px solid ${color};padding-left:8px;flex:1;overflow:hidden">
+            ${summary}
+          </span>
+          ${detail ? `<span style="color:var(--fg-3);font-size:11px;flex-shrink:0">${detail}</span>` : ''}
+        </div>
+      </div>`
+
+    case 'cache': {
+      const op = content.event ?? content.operation ?? 'operation'
+      const isHit = op === 'hit'
+      const isMiss = op === 'miss'
+      const indicator = isHit
+        ? '<span style="color:#34d399;font-weight:700" title="Cache Hit">&#10003;</span>'
+        : isMiss
+          ? '<span style="color:#f87171;font-weight:700" title="Cache Miss">&#10007;</span>'
+          : ''
+      summary = `${indicator} ${op} &rarr; ${escapeHtml(content.key ?? '')}`
       break
-    case 'cache':
-      summary = `${content.event ?? 'operation'} → ${escapeHtml(content.key ?? '')}`
-      break
+    }
+
     case 'event':
       summary = escapeHtml(content.event_class ?? content.event ?? 'event')
       detail = content.listeners_count != null ? `${content.listeners_count} listener${content.listeners_count === 1 ? '' : 's'}` : ''
       break
+
     case 'log':
       summary = escapeHtml(content.message ?? '')
       detail = content.level ?? ''
       break
+
     case 'exception':
       summary = escapeHtml(content.class ?? content.message ?? 'exception')
       detail = content.file ? escapeHtml(content.file + ':' + (content.line ?? '')) : ''
       break
+
     case 'job':
       summary = escapeHtml(content.job_name ?? content.job ?? 'job')
       detail = content.status ?? ''
       break
-    case 'model':
+
+    case 'model': {
       summary = `${content.action ?? 'action'} ${escapeHtml(content.model ?? '')}`
       detail = content.key ? `#${content.key}` : ''
+      // Use diffView for model change entries
+      if (content.changes && Object.keys(content.changes).length > 0) {
+        const diffHtml = diffView(content.changes)
+        return `<div style="padding:5px 8px;background:var(--bg-2);border-radius:4px;font-size:12px">
+          <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">
+            <code style="color:var(--fg-3);font-size:10px;flex-shrink:0">${time}</code>
+            <span style="border-left:2px solid ${color};padding-left:8px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+              <code style="color:var(--fg-1)">${summary}</code>
+            </span>
+            ${detail ? `<span style="color:var(--fg-3);font-size:11px;flex-shrink:0">${detail}</span>` : ''}
+          </div>
+          <div style="padding-left:22px">${diffHtml}</div>
+        </div>`
+      }
       break
+    }
+
     case 'mail':
       summary = escapeHtml(content.subject ?? 'email')
       detail = content.to?.join(', ') ?? ''
       break
+
     default:
       summary = JSON.stringify(content).slice(0, 80)
   }

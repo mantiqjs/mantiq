@@ -5,6 +5,7 @@ export { HeartbeatServiceProvider } from './HeartbeatServiceProvider.ts'
 // ── Contracts ───────────────────────────────────────────────────────────────
 export type {
   EntryType,
+  OriginType,
   PendingEntry,
   HeartbeatEntry,
   RequestEntryContent,
@@ -16,6 +17,7 @@ export type {
   ModelEntryContent,
   LogEntryContent,
   ScheduleEntryContent,
+  CommandEntryContent,
   SpanStatus,
   StoredSpan,
   ExceptionGroup,
@@ -44,6 +46,7 @@ export { ModelWatcher } from './watchers/ModelWatcher.ts'
 export { LogWatcher } from './watchers/LogWatcher.ts'
 export { ScheduleWatcher } from './watchers/ScheduleWatcher.ts'
 export { MailWatcher } from './watchers/MailWatcher.ts'
+export { CommandWatcher } from './watchers/CommandWatcher.ts'
 
 // ── Widget ──────────────────────────────────────────────────────────────────
 export { renderWidget } from './widget/DebugWidget.ts'
@@ -85,6 +88,12 @@ export { HeartbeatFake } from './testing/HeartbeatFake.ts'
 
 // ── Dashboard ───────────────────────────────────────────────────────────────
 export { DashboardController } from './dashboard/DashboardController.ts'
+export { renderLogsPage } from './dashboard/pages/LogsPage.ts'
+export { renderModelsPage } from './dashboard/pages/ModelsPage.ts'
+export { renderSchedulesPage } from './dashboard/pages/SchedulesPage.ts'
+export { renderCommandsPage } from './dashboard/pages/CommandsPage.ts'
+export { renderCommandDetailPage } from './dashboard/pages/CommandDetailPage.ts'
+export { renderNotificationsPage } from './dashboard/pages/NotificationsPage.ts'
 
 // ── Middleware ──────────────────────────────────────────────────────────
 export { HeartbeatMiddleware } from './middleware/HeartbeatMiddleware.ts'

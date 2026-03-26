@@ -15,6 +15,8 @@ export class HeartbeatFake {
       content,
       tags,
       requestId: null,
+      originType: 'standalone',
+      originId: null,
       createdAt: Date.now(),
     })
   }
@@ -27,6 +29,10 @@ export class HeartbeatFake {
 
   forType(type: EntryType): PendingEntry[] {
     return this.entries.filter((e) => e.type === type)
+  }
+
+  forOrigin(originType: string, originId: string): Array<{ type: string; content: Record<string, any>; tags?: string[] | undefined }> {
+    return this.entries.filter((e) => e.originType === originType && e.originId === originId)
   }
 
   hasRecorded(type: EntryType, match?: string | RegExp): boolean {

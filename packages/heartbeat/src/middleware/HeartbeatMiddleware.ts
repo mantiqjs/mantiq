@@ -102,6 +102,20 @@ export class HeartbeatMiddleware implements Middleware {
         const { body: responseBody, size: responseSize, rebuilt } = await this.captureResponseBody(response!)
         if (rebuilt) response = rebuilt
 
+        // Try to extract route metadata
+        let middlewareList: string[] = []
+        let controllerName: string | null = null
+        let routeName: string | null = null
+
+        try {
+          const route = (request as any).route?.() ?? (request as any)._matchedRoute
+          if (route) {
+            middlewareList = route.middleware ?? route._middleware ?? []
+            controllerName = route.controller ?? route.action ?? null
+            routeName = route.name ?? null
+          }
+        } catch { /* route info not available */ }
+
         this.requestWatcher.recordRequest({
           method: request.method(),
           path: request.path(),
@@ -109,9 +123,9 @@ export class HeartbeatMiddleware implements Middleware {
           status: response!.status,
           duration,
           ip: request.ip(),
-          middleware: [],
-          controller: null,
-          routeName: null,
+          middleware: middlewareList,
+          controller: controllerName,
+          routeName,
           memoryUsage: process.memoryUsage().rss - startMemory,
           requestHeaders,
           requestQuery,

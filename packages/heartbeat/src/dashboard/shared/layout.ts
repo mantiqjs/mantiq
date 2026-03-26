@@ -21,6 +21,11 @@ export function renderLayout(options: {
     { key: 'events', label: 'Events', icon: ICONS.zap },
     { key: 'mail', label: 'Mail', icon: ICONS.mail },
     { key: 'performance', label: 'Performance', icon: ICONS.activity },
+    { key: 'logs', label: 'Logs', icon: ICONS.file },
+    { key: 'models', label: 'Models', icon: ICONS.cube },
+    { key: 'schedules', label: 'Schedules', icon: ICONS.clock },
+    { key: 'commands', label: 'Commands', icon: ICONS.terminal },
+    { key: 'notifications', label: 'Notifications', icon: ICONS.bell },
   ]
 
   const nav = pages
@@ -53,6 +58,7 @@ export function renderLayout(options: {
   <main>
     <div class="topbar">
       <h1 class="page-title">${title}</h1>
+      <button class="refresh-toggle" onclick="toggleAutoRefresh()" title="Toggle auto-refresh (R)">${ICONS.refresh} Auto</button>
       <button class="theme-btn" onclick="toggleTheme()" title="Toggle theme">${ICONS.moon}</button>
     </div>
     ${content}
@@ -70,6 +76,23 @@ export function renderLayout(options: {
       document.documentElement.setAttribute('data-theme',n);
       localStorage.setItem('hb-theme',n);
     }
+    var _autoRefresh = false;
+    var _refreshTimer = null;
+    function toggleAutoRefresh() {
+      _autoRefresh = !_autoRefresh;
+      var btn = document.querySelector('.refresh-toggle');
+      if (btn) btn.classList.toggle('active', _autoRefresh);
+      if (_autoRefresh) {
+        _refreshTimer = setInterval(function() { location.reload(); }, 5000);
+      } else {
+        clearInterval(_refreshTimer);
+        _refreshTimer = null;
+      }
+    }
+    document.addEventListener('keydown', function(e) {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.key === 'r') toggleAutoRefresh();
+    });
   </script>
 </body>
 </html>`
@@ -88,6 +111,12 @@ const ICONS = {
   activity: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,
   mail: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`,
   moon: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`,
+  file: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
+  cube: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`,
+  clock: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+  terminal: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>`,
+  bell: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
+  refresh: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>`,
 }
 
 // ── CSS ──────────────────────────────────────────────────────────────────────
@@ -248,4 +277,58 @@ tbody tr:hover td{background:var(--bg-2)}
 .flex-row{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
 .mt{margin-top:14px}
 .mb{margin-bottom:14px}
+
+/* Pagination */
+.pagination { display:flex; gap:4px; align-items:center; margin-top:16px; justify-content:center }
+.pagination a, .pagination span { padding:4px 10px; border-radius:4px; font-size:12px; text-decoration:none; color:var(--fg-2); border:1px solid var(--border) }
+.pagination a:hover { background:var(--bg-2); color:var(--fg-1) }
+.pagination .active { background:var(--accent); color:#fff; border-color:var(--accent) }
+.pagination .disabled { opacity:0.4; pointer-events:none }
+
+/* Filter bar */
+.filter-bar { display:flex; gap:8px; align-items:center; margin-bottom:16px; flex-wrap:wrap }
+.filter-bar input, .filter-bar select { background:var(--bg-1); border:1px solid var(--border); border-radius:6px; padding:6px 10px; font-size:12px; color:var(--fg-1); outline:none }
+.filter-bar input:focus, .filter-bar select:focus { border-color:var(--accent) }
+.filter-bar input { min-width:200px }
+.filter-bar select { min-width:100px }
+
+/* Breadcrumbs */
+.breadcrumbs { display:flex; gap:6px; align-items:center; font-size:12px; color:var(--fg-3); margin-bottom:12px }
+.breadcrumbs a { color:var(--fg-2); text-decoration:none }
+.breadcrumbs a:hover { color:var(--accent) }
+.breadcrumbs .sep { color:var(--fg-3) }
+
+/* Collapsible */
+.collapsible { border:1px solid var(--border); border-radius:8px; overflow:hidden; margin-bottom:8px }
+.collapsible-header { display:flex; align-items:center; gap:8px; padding:10px 14px; cursor:pointer; background:var(--bg-1); user-select:none }
+.collapsible-header:hover { background:var(--bg-2) }
+.collapsible-header .chevron { transition:transform .15s; font-size:10px; color:var(--fg-3) }
+.collapsible-header.open .chevron { transform:rotate(90deg) }
+.collapsible-body { padding:0 14px 10px; display:none }
+.collapsible-body.open { display:block }
+
+/* Waterfall chart */
+.waterfall { display:flex; flex-direction:column; gap:3px }
+.waterfall-row { display:flex; align-items:center; gap:8px; font-size:11px }
+.waterfall-label { width:100px; text-align:right; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--fg-2); flex-shrink:0 }
+.waterfall-track { flex:1; height:16px; background:var(--bg-1); border-radius:3px; position:relative; overflow:hidden }
+.waterfall-bar { position:absolute; height:100%; border-radius:3px; min-width:2px }
+.waterfall-dur { width:60px; text-align:right; color:var(--fg-3); flex-shrink:0 }
+
+/* SQL highlighting */
+.sql-kw { color:#c084fc; font-weight:600 }
+.sql-str { color:#34d399 }
+.sql-num { color:#fbbf24 }
+.sql-fn { color:#60a5fa }
+
+/* Auto-refresh toggle */
+.refresh-toggle { background:none; border:1px solid var(--border); border-radius:6px; padding:4px 8px; cursor:pointer; color:var(--fg-3); font-size:11px; display:flex; align-items:center; gap:4px }
+.refresh-toggle:hover { border-color:var(--fg-3) }
+.refresh-toggle.active { border-color:var(--accent); color:var(--accent); background:rgba(52,211,153,0.08) }
+
+/* Empty state */
+.empty-state { text-align:center; padding:48px 24px; color:var(--fg-3) }
+.empty-state .icon { font-size:32px; margin-bottom:12px; opacity:0.5 }
+.empty-state .title { font-size:14px; font-weight:600; color:var(--fg-2); margin-bottom:4px }
+.empty-state .desc { font-size:12px }
 `

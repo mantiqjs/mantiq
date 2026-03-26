@@ -42,6 +42,8 @@ export class EventWatcher extends Watcher {
     const content: EventEntryContent = {
       event_class: eventClass,
       listeners_count: 0, // populated by the dispatcher if available
+      payload: null,
+      listeners: [],
     }
 
     this.record('event', content, [eventClass])

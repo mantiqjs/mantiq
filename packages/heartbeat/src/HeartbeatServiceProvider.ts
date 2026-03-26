@@ -21,6 +21,7 @@ import { ModelWatcher } from './watchers/ModelWatcher.ts'
 import { LogWatcher } from './watchers/LogWatcher.ts'
 import { MailWatcher } from './watchers/MailWatcher.ts'
 import { ScheduleWatcher } from './watchers/ScheduleWatcher.ts'
+import { CommandWatcher } from './watchers/CommandWatcher.ts'
 import { CreateHeartbeatTables } from './migrations/CreateHeartbeatTables.ts'
 import { DashboardController } from './dashboard/DashboardController.ts'
 import { HeartbeatMiddleware } from './middleware/HeartbeatMiddleware.ts'
@@ -220,6 +221,7 @@ export class HeartbeatServiceProvider extends ServiceProvider {
       ['log', new LogWatcher()],
       ['mail', new MailWatcher()],
       ['schedule', new ScheduleWatcher()],
+      ['command', new CommandWatcher()],
     ]
 
     const on = eventBus.on.bind(eventBus)

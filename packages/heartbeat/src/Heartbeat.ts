@@ -1,5 +1,5 @@
 import type { HeartbeatConfig } from './contracts/HeartbeatConfig.ts'
-import type { EntryType, PendingEntry } from './contracts/Entry.ts'
+import type { EntryType, PendingEntry, OriginType } from './contracts/Entry.ts'
 import type { Watcher } from './contracts/Watcher.ts'
 import { HeartbeatStore } from './storage/HeartbeatStore.ts'
 import { RecordHeartbeatEntries } from './jobs/RecordHeartbeatEntries.ts'
@@ -69,6 +69,8 @@ export class Heartbeat {
       content,
       tags,
       requestId: this._tracer?.currentRequestId() ?? null,
+      originType: this._tracer?.currentOriginType() ?? 'standalone',
+      originId: this._tracer?.currentRequestId() ?? null,
       createdAt: Date.now(),
     }
 
