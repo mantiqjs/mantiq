@@ -4,8 +4,9 @@ export default {
 <h2>Introduction</h2>
 <p>
   Routes define how your application responds to incoming HTTP requests. In MantiqJS, routes are defined
-  in two files: <code>routes/web.ts</code> for browser-facing routes and <code>routes/api.ts</code> for
-  API endpoints. Both files export a function that receives a <code>Router</code> instance.
+  in the <code>routes/</code> directory: <code>routes/web.ts</code> for browser-facing routes and
+  <code>routes/api.ts</code> for API endpoints. The <code>Discoverer</code> automatically loads these
+  files and applies the appropriate middleware group based on the filename.
 </p>
 
 <pre><code class="language-typescript">// routes/web.ts
@@ -16,15 +17,41 @@ export default function (router: Router) {
   router.get('/', [HomeController, 'index'])
 }</code></pre>
 
-<pre><code class="language-typescript">// routes/api.ts
+<pre><code class="language-typescript">// routes/api.ts &mdash; the /api prefix is added automatically by the Discoverer
 import type { Router } from '@mantiq/core'
 import { MantiqResponse } from '@mantiq/core'
 
 export default function (router: Router) {
-  router.get('/api/ping', () =&gt; {
+  router.get('/ping', () =&gt; {
     return MantiqResponse.json({ status: 'ok' })
   })
+  // Accessible at /api/ping
 }</code></pre>
+
+<p>
+  API routes do not need a manual <code>/api</code> prefix. The Discoverer automatically adds it
+  based on the filename <code>routes/api.ts</code>. Similarly, <code>routes/web.ts</code> routes get
+  the <code>web</code> middleware group and <code>routes/api.ts</code> routes get the <code>api</code>
+  middleware group.
+</p>
+
+<h2>Middleware Groups</h2>
+<p>
+  Middleware groups are configured in <code>config/app.ts</code>. The Discoverer applies them
+  automatically based on the route filename:
+</p>
+
+<pre><code class="language-typescript">// config/app.ts
+middlewareGroups: {
+  web: ['cors', 'encrypt.cookies', 'session', 'csrf'],
+  api: ['cors', 'throttle'],
+}</code></pre>
+
+<p>
+  The <code>web</code> group includes stateful middleware (sessions, CSRF, cookies) for browser
+  requests. The <code>api</code> group includes stateless middleware (CORS, rate limiting) for
+  API endpoints.
+</p>
 
 <h2>Available HTTP Methods</h2>
 <p>
@@ -53,14 +80,13 @@ router.any('/webhook', [WebhookController, 'handle'])</code></pre>
 <h2>Route Actions</h2>
 <p>
   A route action defines what happens when the route matches. MantiqJS supports two forms of route actions:
-  <strong>controller pairs</strong> and <strong>closures</strong>.
+  <strong>controller tuples</strong> and <strong>closures</strong>.
 </p>
 
-<h3>Controller Pairs</h3>
+<h3>Controller Tuples</h3>
 <p>
-  The recommended approach for non-trivial routes. Pass a tuple of the controller class and the
-  method name as a string. The controller is resolved from the IoC container, so constructor
-  dependencies are automatically injected.
+  The recommended approach for non-trivial routes. Pass a tuple of <code>[ControllerClass, 'methodName']</code>.
+  The controller is resolved from the IoC container, so constructor dependencies are automatically injected.
 </p>
 
 <pre><code class="language-typescript">import { UserController } from '../app/Http/Controllers/UserController.ts'
@@ -174,15 +200,15 @@ route('users.show', { id: 42 }, true)     // 'http://localhost:3000/users/42'</c
   <li><code>as</code> — A name prefix prepended to route names (e.g., <code>'admin.'</code>).</li>
 </ul>
 
-<pre><code class="language-typescript">router.group({ prefix: '/api/v2', as: 'api.v2.', middleware: ['throttle:60,1'] }, (router) =&gt; {
+<pre><code class="language-typescript">router.group({ prefix: '/v2', as: 'v2.', middleware: ['throttle:60,1'] }, (router) =&gt; {
   router.get('/users', [ApiUserController, 'index']).name('users.index')
-  // Full name: 'api.v2.users.index'
-  // Full path: '/api/v2/users'
+  // Full name: 'v2.users.index'
+  // Full path: '/v2/users'
 })</code></pre>
 
 <h3>Nested Groups</h3>
-<pre><code class="language-typescript">router.group({ prefix: '/api', middleware: ['api'] }, (router) =&gt; {
-  router.group({ prefix: '/v1', as: 'v1.' }, (router) =&gt; {
+<pre><code class="language-typescript">router.group({ prefix: '/v1', as: 'v1.' }, (router) =&gt; {
+  router.group({ prefix: '/admin', middleware: ['auth'] }, (router) =&gt; {
     router.get('/users', [UserController, 'index']).name('users.index')
   })
 })</code></pre>
@@ -228,7 +254,8 @@ route('users.show', { id: 42 }, true)     // 'http://localhost:3000/users/42'</c
 
 <h2>Route Middleware</h2>
 <p>
-  Middleware can be assigned to individual routes or to every route in a group. Pass one or more
+  In addition to middleware groups applied automatically by the Discoverer, middleware can be
+  assigned to individual routes or to every route in a group. Pass one or more
   middleware aliases to the <code>.middleware()</code> method.
 </p>
 
@@ -261,15 +288,16 @@ router.bind('user', async (value: string) =&gt; {
 
 <h2>Listing Routes</h2>
 <p>
-  To inspect all registered routes at runtime, call <code>router.routes()</code>. This returns
+  To inspect all registered routes, use the CLI command:
+</p>
+
+<pre><code class="language-bash">bun mantiq route:list</code></pre>
+
+<p>
+  You can also inspect routes programmatically by calling <code>router.routes()</code>. This returns
   an array of <code>RouteDefinition</code> objects with method, path, action, name, middleware,
   and constraint information.
 </p>
-
-<pre><code class="language-typescript">const allRoutes = router.routes()
-for (const r of allRoutes) {
-  console.log(\`\${r.method} \${r.path} \${r.name ?? '(unnamed)'}\`)
-}</code></pre>
 
 <h2>Route Resolution</h2>
 <p>

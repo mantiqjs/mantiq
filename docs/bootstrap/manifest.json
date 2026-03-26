@@ -1,0 +1,19 @@
+{
+  "providers": [
+    "app/Providers/AppServiceProvider.ts",
+    "app/Providers/ViteServiceProvider.ts"
+  ],
+  "commands": [],
+  "routes": [
+    "routes/channels.ts",
+    "routes/console.ts",
+    "routes/web.ts"
+  ],
+  "models": [],
+  "policies": [],
+  "middleware": [],
+  "observers": [],
+  "listeners": [],
+  "jobs": [],
+  "timestamp": 1774551313697
+}

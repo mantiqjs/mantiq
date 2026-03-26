@@ -5,33 +5,36 @@ export default {
 <p>MantiqJS includes a full-featured Active Record ORM inspired by Laravel's Eloquent. Each database table has a corresponding <code>Model</code> class that provides a rich API for querying and manipulating data. Models handle CRUD operations, type casting, mass assignment protection, soft deletes, and serialization out of the box.</p>
 
 <h2>Defining Models</h2>
-<p>To create a model, extend the <code>Model</code> base class from <code>@mantiq/database</code>. At minimum, set the <code>table</code> property to match your database table name:</p>
+<p>To create a model, extend the <code>Model</code> base class from <code>@mantiq/database</code>. By convention, the table name is inferred from the class name (pluralized and lowercased), so you do not need to set it explicitly:</p>
 
 <pre><code class="language-typescript">import { Model } from '@mantiq/database'
 
-class User extends Model {
-  static override table = 'users'
+export class Post extends Model {
+  static override fillable = ['title', 'body', 'author_id']
+  static override hidden = ['internal_notes']
 }
 </code></pre>
 
 <p>You can also generate a model using the CLI:</p>
 
-<pre><code class="language-bash">bun mantiq make:model User
+<pre><code class="language-bash">bun mantiq make:model Post
+
+# Create a model with a migration
+bun mantiq make:model Post --migration
 </code></pre>
 
 <h2>Model Configuration</h2>
-<p>Models are configured through static properties. These can be overridden in your subclass:</p>
+<p>Models are configured through static properties. These use convention over configuration &mdash; the defaults work for most cases:</p>
 
-<pre><code class="language-typescript">class User extends Model {
-  static override table = 'users'
-  static override primaryKey = 'id'          // default: 'id'
-  static override timestamps = true          // default: true (manages created_at/updated_at)
-  static override softDelete = false         // default: false
-  static override softDeleteColumn = 'deleted_at' // default: 'deleted_at'
+<pre><code class="language-typescript">import { Model } from '@mantiq/database'
+
+export class User extends Model {
+  // Table name is inferred as 'users' by convention
+  // Primary key defaults to 'id'
+  // Timestamps default to true (manages created_at/updated_at)
 
   static override fillable: string[] = ['name', 'email', 'password']
-  static override guarded: string[] = ['id']
-  static override hidden: string[] = ['password']
+  static override hidden: string[] = ['password', 'remember_token']
 
   static override casts: Record&lt;string, CastType&gt; = {
     is_active: 'boolean',
@@ -41,16 +44,39 @@ class User extends Model {
 }
 </code></pre>
 
+<p>You can override any default if your table does not follow conventions:</p>
+
+<pre><code class="language-typescript">class LegacyUser extends Model {
+  static override table = 'tbl_users'     // non-standard table name
+  static override primaryKey = 'user_id'  // non-standard primary key
+  static override timestamps = false      // no created_at/updated_at
+}
+</code></pre>
+
 <h3>Mass Assignment: fillable &amp; guarded</h3>
 <p>The <code>fillable</code> array defines which attributes can be set through mass assignment methods like <code>fill()</code> and <code>create()</code>. The <code>guarded</code> array defines attributes that are never mass-assignable. By default, <code>id</code> is guarded.</p>
 <p>If <code>fillable</code> is non-empty, only listed attributes are assignable. If <code>fillable</code> is empty, all attributes except those in <code>guarded</code> are assignable.</p>
 
 <p>Never leave both <code>fillable</code> and <code>guarded</code> empty in a production model &mdash; this would allow mass assignment of every column, including sensitive fields like <code>is_admin</code>.</p>
 
+<h2>The User Model</h2>
+<p>The User model uses the <code>AuthenticatableModel</code> mixin from <code>@mantiq/auth</code> to add authentication support. This mixin provides default implementations for all authentication methods:</p>
+
+<pre><code class="language-typescript">import { AuthenticatableModel } from '@mantiq/auth'
+import { Model } from '@mantiq/database'
+
+export class User extends AuthenticatableModel(Model) {
+  static override fillable = ['name', 'email', 'password']
+  static override hidden = ['password', 'remember_token']
+}
+</code></pre>
+
+<p>The <code>AuthenticatableModel</code> mixin provides <code>getAuthIdentifier()</code>, <code>getAuthPassword()</code>, <code>getRememberToken()</code>, <code>setRememberToken()</code>, and API token methods (<code>createToken()</code>, <code>tokenCan()</code>) automatically, using conventional column names (<code>id</code>, <code>password</code>, <code>remember_token</code>).</p>
+
 <h2>Creating Records</h2>
 <p>Create a new record using the static <code>create()</code> method or by instantiating, filling, and saving:</p>
 
-<pre><code class="language-typescript">// Static create — inserts and returns the saved model
+<pre><code class="language-typescript">// Static create &mdash; inserts and returns the saved model
 const user = await User.create({
   name: 'Alice',
   email: 'alice@example.com',
@@ -62,7 +88,7 @@ const user = new User()
 user.fill({ name: 'Bob', email: 'bob@example.com' })
 await user.save()
 
-// Update or create — finds existing record or creates a new one
+// Update or create &mdash; finds existing record or creates a new one
 const user = await User.updateOrCreate(
   { email: 'alice@example.com' },         // search conditions
   { name: 'Alice Smith', password: '...' } // data to set
@@ -125,12 +151,47 @@ await user.delete()
 await User.where('created_at', '&lt;', cutoffDate).delete()
 </code></pre>
 
+<h2>Relationships</h2>
+<p>Models support four relationship types. Define them as methods on your model class:</p>
+
+<pre><code class="language-typescript">import { Model } from '@mantiq/database'
+
+export class Post extends Model {
+  static override fillable = ['title', 'body', 'user_id']
+
+  // A post belongs to a user
+  author() {
+    return this.belongsTo(User, 'user_id')
+  }
+
+  // A post has many comments
+  comments() {
+    return this.hasMany(Comment, 'post_id')
+  }
+}
+
+export class User extends Model {
+  // A user has many posts
+  posts() {
+    return this.hasMany(Post, 'user_id')
+  }
+
+  // A user has one profile
+  profile() {
+    return this.hasOne(Profile, 'user_id')
+  }
+
+  // A user belongs to many roles
+  roles() {
+    return this.belongsToMany(Role, 'user_roles', 'user_id', 'role_id')
+  }
+}
+</code></pre>
+
 <h2>Query Scopes</h2>
 <p>Query scopes let you encapsulate common query constraints into reusable static methods. Define a method prefixed with <code>scope</code> on your model:</p>
 
 <pre><code class="language-typescript">class User extends Model {
-  static override table = 'users'
-
   static scopeActive(query: ModelQueryBuilder&lt;User&gt;) {
     return query.where('is_active', true)
   }
@@ -140,7 +201,7 @@ await User.where('created_at', '&lt;', cutoffDate).delete()
   }
 }
 
-// Usage — the scope prefix is dropped and the first letter lowercased
+// Usage &mdash; the scope prefix is dropped and the first letter lowercased
 const activeUsers = await User.active().get()
 const admins = await User.role('admin').get()
 </code></pre>
@@ -149,13 +210,12 @@ const admins = await User.role('admin').get()
 <p>When <code>softDelete</code> is enabled, calling <code>delete()</code> sets the <code>deleted_at</code> column instead of removing the row. All queries automatically exclude soft-deleted records.</p>
 
 <pre><code class="language-typescript">class Post extends Model {
-  static override table = 'posts'
   static override softDelete = true
 }
 
 const post = await Post.findOrFail(1)
 
-// Soft delete — sets deleted_at to the current timestamp
+// Soft delete &mdash; sets deleted_at to the current timestamp
 await post.delete()
 post.isTrashed()  // true
 
@@ -198,8 +258,6 @@ await post.forceDelete()
 <p>Define custom getters and setters by following the naming convention <code>get&lt;Key&gt;Attribute</code> and <code>set&lt;Key&gt;Attribute</code>:</p>
 
 <pre><code class="language-typescript">class User extends Model {
-  static override table = 'users'
-
   getFullNameAttribute(): string {
     return \`\${this.get('first_name')} \${this.get('last_name')}\`
   }
@@ -222,10 +280,10 @@ user.setAttribute('password', 'secret')  // stored as hash
 
 const user = await User.findOrFail(1)
 
-// Plain object — excludes hidden attributes, applies casts, includes loaded relations
+// Plain object &mdash; excludes hidden attributes, applies casts, includes loaded relations
 const obj = user.toObject()
 
-// Equivalent to toObject() — used by JSON.stringify()
+// Equivalent to toObject() &mdash; used by JSON.stringify()
 const json = user.toJSON()
 </code></pre>
 

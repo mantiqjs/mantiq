@@ -5,82 +5,146 @@ export default {
 
 <p>
   A freshly created MantiqJS application follows a well-defined directory structure inspired
-  by Laravel. Every file has a clear purpose and a conventional location. While MantiqJS does
-  not enforce these locations rigidly &mdash; you can organise your code however you like &mdash;
-  following the conventions means the CLI generators, auto-discovery, and documentation all
-  work seamlessly.
+  by Laravel. Every file has a clear purpose and a conventional location. The <code>Discoverer</code>
+  auto-discovers providers, routes, models, middleware, commands, and other classes from these
+  conventional directories, so following the structure means everything works seamlessly without
+  manual registration.
 </p>
 
-<pre><code class="language-bash">my-app/
-  app/
-    Http/
-      Controllers/
-      Middleware/
-    Models/
-    Providers/
-  config/
-    app.ts
-    auth.ts
-    database.ts
-    vite.ts
-  database/
-    migrations/
-    seeders/
-    factories/
-  routes/
-    web.ts
-    api.ts
-  src/                  # Frontend (if using a starter kit)
-    components/
-    pages/
-    main.tsx
-    style.css
-  public/               # Static assets served directly
-  storage/              # Application storage (logs, cache, sessions)
-  .env                  # Environment variables
-  index.ts              # Application bootstrap
-  mantiq.ts             # CLI entry point
-  vite.config.ts        # Vite configuration (if using a starter kit)
-  tsconfig.json         # TypeScript configuration
-  package.json</code></pre>
+<div class="dir-tree">
+  <div class="dir-root">my-app</div>
+  <div class="dir-group">
+    <div class="dir-folder" data-open>
+      <span class="dir-icon">📁</span> app
+      <div class="dir-children">
+        <div class="dir-folder"><span class="dir-icon">📁</span> Console/Commands <span class="dir-desc">Custom CLI commands</span></div>
+        <div class="dir-folder" data-open>
+          <span class="dir-icon">📁</span> Http
+          <div class="dir-children">
+            <div class="dir-folder"><span class="dir-icon">📁</span> Controllers <span class="dir-desc">Request handlers</span></div>
+            <div class="dir-folder"><span class="dir-icon">📁</span> Middleware <span class="dir-desc">Custom middleware</span></div>
+          </div>
+        </div>
+        <div class="dir-folder"><span class="dir-icon">📁</span> Jobs <span class="dir-desc">Queued jobs</span></div>
+        <div class="dir-folder"><span class="dir-icon">📁</span> Listeners <span class="dir-desc">Event listeners</span></div>
+        <div class="dir-folder"><span class="dir-icon">📁</span> Models <span class="dir-desc">ORM model classes</span></div>
+        <div class="dir-folder"><span class="dir-icon">📁</span> Observers <span class="dir-desc">Model observers</span></div>
+        <div class="dir-folder"><span class="dir-icon">📁</span> Policies <span class="dir-desc">Authorization policies</span></div>
+        <div class="dir-folder"><span class="dir-icon">📁</span> Providers <span class="dir-desc">Service providers</span></div>
+      </div>
+    </div>
+    <div class="dir-folder">
+      <span class="dir-icon">📁</span> bootstrap
+      <div class="dir-children">
+        <div class="dir-file"><span class="dir-icon">📄</span> manifest.json <span class="dir-desc">Auto-discovery cache</span></div>
+      </div>
+    </div>
+    <div class="dir-folder" data-open>
+      <span class="dir-icon">📁</span> config <span class="dir-badge">17 files</span>
+      <div class="dir-children">
+        <div class="dir-file"><span class="dir-icon ts">TS</span> app.ts <span class="dir-desc">Name, env, port, middlewareGroups</span></div>
+        <div class="dir-file"><span class="dir-icon ts">TS</span> auth.ts <span class="dir-desc">Guards &amp; user providers</span></div>
+        <div class="dir-file"><span class="dir-icon ts">TS</span> broadcasting.ts <span class="dir-desc">Realtime driver config</span></div>
+        <div class="dir-file"><span class="dir-icon ts">TS</span> database.ts <span class="dir-desc">SQLite, Postgres, MySQL, MSSQL, Mongo</span></div>
+        <div class="dir-file"><span class="dir-icon ts">TS</span> session.ts <span class="dir-desc">Session driver &amp; cookie</span></div>
+        <div class="dir-file dim"><span class="dir-icon ts">TS</span> cache, cors, filesystem, hashing, heartbeat, logging, mail, notify, queue, search, services, vite</div>
+      </div>
+    </div>
+    <div class="dir-folder" data-open>
+      <span class="dir-icon">📁</span> database
+      <div class="dir-children">
+        <div class="dir-folder"><span class="dir-icon">📁</span> migrations <span class="dir-desc">Schema migration files</span></div>
+        <div class="dir-folder"><span class="dir-icon">📁</span> seeders <span class="dir-desc">Database seeder classes</span></div>
+        <div class="dir-folder"><span class="dir-icon">📁</span> factories <span class="dir-desc">Model factory classes</span></div>
+      </div>
+    </div>
+    <div class="dir-folder" data-open>
+      <span class="dir-icon">📁</span> routes
+      <div class="dir-children">
+        <div class="dir-file"><span class="dir-icon ts">TS</span> web.ts <span class="dir-desc">Browser routes — <code>web</code> middleware group</span></div>
+        <div class="dir-file"><span class="dir-icon ts">TS</span> api.ts <span class="dir-desc">API routes — auto <code>/api</code> prefix</span></div>
+        <div class="dir-file"><span class="dir-icon ts">TS</span> channels.ts <span class="dir-desc">Broadcast channel authorization</span></div>
+        <div class="dir-file"><span class="dir-icon ts">TS</span> console.ts <span class="dir-desc">Scheduled tasks</span></div>
+      </div>
+    </div>
+    <div class="dir-folder">
+      <span class="dir-icon">📁</span> src <span class="dir-desc">Frontend (starter kit)</span>
+      <div class="dir-children">
+        <div class="dir-folder"><span class="dir-icon">📁</span> components</div>
+        <div class="dir-folder"><span class="dir-icon">📁</span> pages</div>
+        <div class="dir-file"><span class="dir-icon tsx">TSX</span> main.tsx</div>
+        <div class="dir-file"><span class="dir-icon css">CSS</span> style.css</div>
+      </div>
+    </div>
+    <div class="dir-folder"><span class="dir-icon">📁</span> public <span class="dir-desc">Static assets</span></div>
+    <div class="dir-folder"><span class="dir-icon">📁</span> storage <span class="dir-desc">Logs, cache, uploads</span></div>
+  </div>
+  <div class="dir-group dir-root-files">
+    <div class="dir-file"><span class="dir-icon env">ENV</span> .env <span class="dir-desc">Environment variables</span></div>
+    <div class="dir-file highlight"><span class="dir-icon ts">TS</span> index.ts <span class="dir-desc">Application bootstrap</span></div>
+    <div class="dir-file highlight"><span class="dir-icon ts">TS</span> mantiq.ts <span class="dir-desc">CLI entry point</span></div>
+    <div class="dir-file"><span class="dir-icon ts">TS</span> vite.config.ts <span class="dir-desc">Vite bundler config</span></div>
+    <div class="dir-file"><span class="dir-icon">📄</span> tsconfig.json</div>
+    <div class="dir-file"><span class="dir-icon">📄</span> package.json</div>
+  </div>
+</div>
 
 <h2>The Root Directory</h2>
 
 <h3>index.ts</h3>
 <p>
   The application bootstrap file. This is the entry point for your HTTP server. It creates the
-  <code>Application</code> instance, registers service providers, configures the HTTP kernel
-  and middleware, loads routes, and starts the server. The file uses an
-  <code>import.meta.main</code> guard so the CLI can import it without starting the HTTP server:
+  <code>Application</code> instance, uses the <code>Discoverer</code> to auto-discover providers and routes,
+  bootstraps the application, and starts the server:
 </p>
 
-<pre><code class="language-typescript">const app = await Application.create(import.meta.dir, 'config')
-await app.registerProviders([CoreServiceProvider, DatabaseServiceProvider])
-await app.bootProviders()
+<pre><code class="language-typescript">import { Application, CoreServiceProvider, HttpKernel, RouterImpl, Discoverer } from '@mantiq/core'
 
-const kernel = app.make(HttpKernel)
+const app = await Application.create(import.meta.dir, 'config')
+
+const discoverer = new Discoverer(import.meta.dir)
+const isDev = process.env['APP_ENV'] !== 'production'
+const manifest = await discoverer.resolve(isDev)
+const userProviders = await discoverer.loadProviders(manifest)
+
+await app.bootstrap([CoreServiceProvider], userProviders)
+
 const router = app.make(RouterImpl)
-
-// ... configure middleware and routes ...
+await discoverer.loadRoutes(manifest, router)
 
 export default app
 
 if (import.meta.main) {
+  const kernel = app.make(HttpKernel)
   await kernel.start()
 }</code></pre>
+
+<p>
+  The <code>import.meta.main</code> guard ensures the server only starts when the file is
+  executed directly, so the CLI can import the application bootstrap without starting the
+  HTTP server.
+</p>
 
 <h3>mantiq.ts</h3>
 <p>
   The CLI entry point. When you run <code>bun mantiq &lt;command&gt;</code>, Bun executes this
   file. It imports the application bootstrap (which registers all providers and routes), then
-  hands control to the CLI kernel:
+  hands control to the auto-discovering CLI kernel:
 </p>
 
-<pre><code class="language-typescript">import app from './index.ts'
+<pre><code class="language-typescript">#!/usr/bin/env bun
+await import('./index.ts')
+
 import { Kernel } from '@mantiq/cli'
 
-const cli = new Kernel(app)
-await cli.handle(process.argv.slice(2))</code></pre>
+const kernel = new Kernel()
+const code = await kernel.run()
+process.exit(code)</code></pre>
+
+<p>
+  The <code>Kernel</code> constructor takes no arguments &mdash; it auto-discovers built-in commands
+  and any custom commands in <code>app/Console/Commands/</code>.
+</p>
 
 <h3>.env</h3>
 <p>
@@ -99,70 +163,61 @@ await cli.handle(process.argv.slice(2))</code></pre>
 
 <p>
   The <code>app/</code> directory contains the core application code &mdash; your controllers,
-  middleware, models, and service providers. This is where most of your day-to-day development
-  happens.
+  middleware, models, service providers, commands, jobs, and listeners. The Discoverer scans
+  these directories automatically.
 </p>
 
 <h3>app/Http/Controllers/</h3>
 <p>
   Controllers handle incoming HTTP requests and return responses. Each controller is a class
-  with methods that correspond to route actions:
+  with methods referenced by the tuple syntax in route files:
 </p>
 
 <pre><code class="language-typescript">import type { MantiqRequest } from '@mantiq/core'
+import { MantiqResponse } from '@mantiq/core'
 
 export class UserController {
   async index(request: MantiqRequest): Promise&lt;Response&gt; {
     const users = await User.all()
-    return Response.json(users.map(u =&gt; u.toObject()))
+    return MantiqResponse.json({ data: users })
   }
 
   async show(request: MantiqRequest): Promise&lt;Response&gt; {
     const user = await User.findOrFail(request.param('id'))
-    return Response.json(user.toObject())
+    return MantiqResponse.json({ data: user })
   }
 }</code></pre>
 
 <h3>app/Http/Middleware/</h3>
 <p>
   Custom middleware classes that intercept requests before they reach your controllers.
-  Middleware can inspect, modify, or reject requests, and can also perform post-response
-  processing:
+  The Discoverer auto-discovers middleware from this directory.
 </p>
-
-<pre><code class="language-typescript">import type { Middleware, NextFunction } from '@mantiq/core'
-import type { MantiqRequest } from '@mantiq/core'
-
-export class LogRequestsMiddleware implements Middleware {
-  async handle(request: MantiqRequest, next: NextFunction): Promise&lt;Response&gt; {
-    console.log(\`\${request.method()} \${request.path()}\`)
-    return next()
-  }
-}</code></pre>
 
 <h3>app/Models/</h3>
 <p>
-  ORM model classes. Each model maps to a database table and provides methods for querying,
-  creating, updating, and deleting records:
+  ORM model classes. Each model maps to a database table. The Discoverer auto-discovers models
+  for features like auto-binding route model parameters.
 </p>
 
 <pre><code class="language-typescript">import { Model } from '@mantiq/database'
 
-export class User extends Model {
-  static override table = 'users'
-  static override fillable = ['name', 'email', 'password']
-  static override hidden = ['password']
-  static override casts = {
-    created_at: 'datetime',
-    is_admin: 'boolean',
-  }
+export class Post extends Model {
+  static override fillable = ['title', 'body', 'user_id']
 }</code></pre>
 
 <h3>app/Providers/</h3>
 <p>
-  Application-level service providers. The most common is a custom <code>DatabaseServiceProvider</code>
-  that registers your database connection configuration. You can create additional providers
-  to register application-specific services in the container.
+  Application-level service providers. The Discoverer auto-discovers files matching
+  <code>*ServiceProvider.ts</code> in this directory and registers them alongside the
+  framework providers. You can create additional providers to register application-specific
+  services in the container.
+</p>
+
+<h3>app/Console/Commands/</h3>
+<p>
+  Custom CLI commands. The Discoverer auto-discovers files matching <code>*Command.ts</code>
+  and makes them available through <code>bun mantiq</code>.
 </p>
 
 <h2>The config Directory</h2>
@@ -173,26 +228,27 @@ export class User extends Model {
   and <code>config/database.ts</code> as <code>config('database.default')</code>.
 </p>
 
-<h3>config/app.ts</h3>
 <p>
-  Application-level settings: name, environment, debug mode, encryption key, URL, and port.
+  The skeleton generates 17 config files covering all framework subsystems:
+  <code>app</code>, <code>auth</code>, <code>broadcasting</code>, <code>cache</code>,
+  <code>cors</code>, <code>database</code>, <code>filesystem</code>, <code>hashing</code>,
+  <code>heartbeat</code>, <code>logging</code>, <code>mail</code>, <code>notify</code>,
+  <code>queue</code>, <code>search</code>, <code>services</code>, <code>session</code>,
+  and <code>vite</code>.
 </p>
 
-<h3>config/auth.ts</h3>
+<h3>config/app.ts</h3>
 <p>
-  Authentication configuration: default guard, guard definitions, and user provider settings.
+  Application-level settings: name, environment, debug mode, encryption key, URL, port,
+  base path, and <code>middlewareGroups</code> that define which middleware runs for web
+  and API routes.
 </p>
 
 <h3>config/database.ts</h3>
 <p>
   Database connection configuration: default connection name and connection definitions for
-  SQLite, PostgreSQL, MySQL, MSSQL, or MongoDB.
-</p>
-
-<h3>config/vite.ts</h3>
-<p>
-  Vite integration settings: entry points, build output directory, manifest path, and dev
-  server URL.
+  SQLite, PostgreSQL, MySQL, MSSQL, and MongoDB, with support for read/write splitting and
+  connection pooling.
 </p>
 
 <h2>The database Directory</h2>
@@ -253,8 +309,8 @@ export class UserFactory extends Factory&lt;User&gt; {
 
 <h3>routes/web.ts</h3>
 <p>
-  Web routes for your application. These routes typically use session-based middleware
-  (cookies, CSRF protection, sessions) and return HTML responses or Vite-rendered pages:
+  Web routes for your application. The Discoverer automatically applies the <code>web</code>
+  middleware group (sessions, CSRF, cookies) to all routes in this file:
 </p>
 
 <pre><code class="language-typescript">import type { Router } from '@mantiq/core'
@@ -267,22 +323,34 @@ export default function (router: Router) {
 
 <h3>routes/api.ts</h3>
 <p>
-  API routes, typically grouped under a <code>/api</code> prefix. These routes are usually
-  stateless and return JSON responses:
+  API routes. The Discoverer automatically applies the <code>api</code> middleware group and
+  adds the <code>/api</code> prefix to all routes in this file. You do not need to add the
+  prefix manually:
 </p>
 
 <pre><code class="language-typescript">import type { Router } from '@mantiq/core'
 import { UserController } from '../app/Http/Controllers/UserController.ts'
 
 export default function (router: Router) {
-  router.group({ prefix: '/api' }, (r) =&gt; {
-    r.get('/users', [UserController, 'index'])
-    r.post('/users', [UserController, 'store'])
-    r.get('/users/:id', [UserController, 'show'])
-    r.put('/users/:id', [UserController, 'update'])
-    r.delete('/users/:id', [UserController, 'destroy'])
-  })
+  // These routes are accessible at /api/users, /api/users/:id, etc.
+  router.get('/users', [UserController, 'index'])
+  router.post('/users', [UserController, 'store'])
+  router.get('/users/:id', [UserController, 'show'])
+  router.put('/users/:id', [UserController, 'update'])
+  router.delete('/users/:id', [UserController, 'destroy'])
 }</code></pre>
+
+<h3>routes/channels.ts</h3>
+<p>
+  Broadcast channel authorization callbacks. Define which users can subscribe to private
+  and presence channels for realtime features.
+</p>
+
+<h3>routes/console.ts</h3>
+<p>
+  Scheduled tasks and console-only commands. Define recurring tasks using the
+  <code>schedule</code> helper.
+</p>
 
 <h2>The src Directory</h2>
 

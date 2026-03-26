@@ -43,6 +43,43 @@ export class UserController {
     const user = await User.create(data)
     return MantiqResponse.json({ data: user }, 201)
   }
+
+  async update(request: MantiqRequest): Promise&lt;Response&gt; {
+    const id = request.param('id')
+    const user = await User.findOrFail(id)
+    const data = await request.only('name', 'email')
+    await user.update(data)
+    return MantiqResponse.json({ data: user })
+  }
+
+  async destroy(request: MantiqRequest): Promise&lt;Response&gt; {
+    const id = request.param('id')
+    await User.destroy(id)
+    return MantiqResponse.noContent()
+  }
+}</code></pre>
+
+<h2>Request Data</h2>
+<p>
+  Use <code>request.input()</code> to read body data and <code>request.param()</code> to read route
+  parameters. The <code>request.only()</code> method extracts specific fields from the request body.
+</p>
+
+<pre><code class="language-typescript">async store(request: MantiqRequest): Promise&lt;Response&gt; {
+  // Read a single field from the request body
+  const name = await request.input('name')
+  const email = await request.input('email')
+
+  // Read a route parameter
+  const id = request.param('id')
+
+  // Read specific fields from the body
+  const data = await request.only('name', 'email', 'password')
+
+  // Read all input data
+  const allData = await request.input()
+
+  // ...
 }</code></pre>
 
 <h2>Registering Controllers in Routes</h2>
@@ -154,37 +191,37 @@ import { MantiqResponse } from '@mantiq/core'
 import { Post } from '../../Models/Post.ts'
 
 export class PostController {
-  /** GET /posts — List all posts */
+  /** GET /posts &mdash; List all posts */
   async index(request: MantiqRequest): Promise&lt;Response&gt; {
     const posts = await Post.all()
     return MantiqResponse.json({ data: posts })
   }
 
-  /** GET /posts/create — Show the create form */
+  /** GET /posts/create &mdash; Show the create form */
   async create(request: MantiqRequest): Promise&lt;Response&gt; {
     return MantiqResponse.html('&lt;form&gt;...&lt;/form&gt;')
   }
 
-  /** POST /posts — Store a new post */
+  /** POST /posts &mdash; Store a new post */
   async store(request: MantiqRequest): Promise&lt;Response&gt; {
     const data = await request.only('title', 'body')
     const post = await Post.create(data)
     return MantiqResponse.json({ data: post }, 201)
   }
 
-  /** GET /posts/:post — Show a single post */
+  /** GET /posts/:post &mdash; Show a single post */
   async show(request: MantiqRequest): Promise&lt;Response&gt; {
     const post = await Post.find(request.param('post'))
     return MantiqResponse.json({ data: post })
   }
 
-  /** GET /posts/:post/edit — Show the edit form */
+  /** GET /posts/:post/edit &mdash; Show the edit form */
   async edit(request: MantiqRequest): Promise&lt;Response&gt; {
     const post = await Post.find(request.param('post'))
     return MantiqResponse.html(\`&lt;form&gt;...editing \${post.title}...&lt;/form&gt;\`)
   }
 
-  /** PUT/PATCH /posts/:post — Update an existing post */
+  /** PUT/PATCH /posts/:post &mdash; Update an existing post */
   async update(request: MantiqRequest): Promise&lt;Response&gt; {
     const post = await Post.find(request.param('post'))
     const data = await request.only('title', 'body')
@@ -192,7 +229,7 @@ export class PostController {
     return MantiqResponse.json({ data: post })
   }
 
-  /** DELETE /posts/:post — Delete a post */
+  /** DELETE /posts/:post &mdash; Delete a post */
   async destroy(request: MantiqRequest): Promise&lt;Response&gt; {
     await Post.destroy(request.param('post'))
     return MantiqResponse.noContent()
@@ -230,7 +267,7 @@ router.group({ prefix: '/admin', middleware: ['auth', 'admin'] }, (router) =&gt;
   router.get('/users', [UserController, 'index'])
 })
 
-router.group({ prefix: '/api/v1' }, (router) =&gt; {
+router.group({ prefix: '/v1' }, (router) =&gt; {
   router.apiResource('posts', PostController)
 })</code></pre>
 

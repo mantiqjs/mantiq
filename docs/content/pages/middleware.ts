@@ -53,7 +53,7 @@ export class LogRequestMiddleware implements Middleware {
   The position of <code>await next()</code> determines when your logic runs relative to the route handler.
 </p>
 
-<pre><code class="language-typescript">// Before middleware — runs BEFORE the route handler
+<pre><code class="language-typescript">// Before middleware &mdash; runs BEFORE the route handler
 export class BeforeMiddleware implements Middleware {
   async handle(request: MantiqRequest, next: NextFunction): Promise&lt;Response&gt; {
     // Your logic here (e.g., check authentication)
@@ -61,7 +61,7 @@ export class BeforeMiddleware implements Middleware {
   }
 }
 
-// After middleware — runs AFTER the route handler
+// After middleware &mdash; runs AFTER the route handler
 export class AfterMiddleware implements Middleware {
   async handle(request: MantiqRequest, next: NextFunction): Promise&lt;Response&gt; {
     const response = await next()
@@ -84,61 +84,48 @@ export class AfterMiddleware implements Middleware {
   }
 }</code></pre>
 
-<h2>Registering Middleware</h2>
+<h2>Middleware Groups</h2>
 
-<h3>Middleware Aliases</h3>
 <p>
-  Before middleware can be referenced by name in routes, it must be registered as an alias with the
-  HTTP kernel. This is typically done in your application's bootstrap file or a service provider.
+  Middleware groups bundle several middleware aliases under a single name. Groups are configured
+  in <code>config/app.ts</code> and are automatically applied by the Discoverer based on the route
+  filename.
 </p>
 
-<pre><code class="language-typescript">import { AuthenticateMiddleware } from './app/Http/Middleware/Authenticate.ts'
-import { AdminMiddleware } from './app/Http/Middleware/Admin.ts'
-import { ThrottleMiddleware } from './app/Http/Middleware/Throttle.ts'
+<pre><code class="language-typescript">// config/app.ts
+export default {
+  // ...other config
 
-kernel.registerMiddleware('auth', AuthenticateMiddleware)
-kernel.registerMiddleware('admin', AdminMiddleware)
-kernel.registerMiddleware('throttle', ThrottleMiddleware)</code></pre>
+  middlewareGroups: {
+    web: ['cors', 'encrypt.cookies', 'session', 'csrf'],
+    api: ['cors', 'throttle'],
+  },
+}</code></pre>
 
-<h3>Global Middleware</h3>
+<h3>How Groups Are Applied</h3>
 <p>
-  Global middleware runs on every HTTP request, before route-specific middleware is resolved.
-  Set the global middleware stack via <code>kernel.setGlobalMiddleware()</code>.
+  The Discoverer automatically maps route files to middleware groups:
+</p>
+<ul>
+  <li><code>routes/web.ts</code> &rarr; all routes receive the <code>web</code> middleware group</li>
+  <li><code>routes/api.ts</code> &rarr; all routes receive the <code>api</code> middleware group (and the <code>/api</code> prefix)</li>
+</ul>
+
+<p>
+  The <code>web</code> group includes stateful middleware for browser-facing routes: CORS headers,
+  cookie encryption, session management, and CSRF protection. The <code>api</code> group includes
+  stateless middleware for API endpoints: CORS headers and rate limiting.
 </p>
 
-<pre><code class="language-typescript">kernel.setGlobalMiddleware([
-  'cors',
-  'encrypt-cookies',
-  'start-session',
-  'csrf',
-  'trim-strings',
-])</code></pre>
-
 <p>
-  Global middleware aliases must also be registered with <code>registerMiddleware()</code>.
-  The order in the array determines execution order &mdash; the first middleware in the list
-  runs first on the way in and last on the way out.
+  You do not need to manually register these groups or apply them in your route files. The
+  Discoverer handles it automatically based on convention.
 </p>
 
-<h3>Middleware Groups</h3>
+<h2>Route Middleware</h2>
 <p>
-  Middleware groups allow you to bundle several middleware aliases under a single name.
-  The kernel provides built-in <code>web</code> and <code>api</code> groups that you can customise.
-</p>
-
-<pre><code class="language-typescript">kernel.registerMiddlewareGroup('web', [
-  'encrypt-cookies',
-  'start-session',
-  'csrf',
-])
-
-kernel.registerMiddlewareGroup('api', [
-  'throttle:60,1',
-])</code></pre>
-
-<h3>Route Middleware</h3>
-<p>
-  Assign middleware to individual routes using the <code>.middleware()</code> method on a route definition.
+  In addition to group-level middleware, you can assign middleware to individual routes using the
+  <code>.middleware()</code> method on a route definition.
 </p>
 
 <pre><code class="language-typescript">router.get('/dashboard', [DashboardController, 'index']).middleware('auth')
@@ -210,6 +197,12 @@ router.get('/api/data', handler).middleware('throttle:60,1')</code></pre>
 
 <h2>Writing Custom Middleware</h2>
 <p>
+  Generate a new middleware class with the CLI:
+</p>
+
+<pre><code class="language-bash">bun mantiq make:middleware EnsureIsAdmin</code></pre>
+
+<p>
   Here is a complete example of an authentication middleware that checks for a valid session user:
 </p>
 
@@ -231,13 +224,9 @@ export class AuthenticateMiddleware implements Middleware {
   }
 }</code></pre>
 
-<p>Then register and use it:</p>
+<p>Then use it on routes:</p>
 
-<pre><code class="language-typescript">// Register the alias
-kernel.registerMiddleware('auth', AuthenticateMiddleware)
-
-// Use on routes
-router.get('/profile', [ProfileController, 'show']).middleware('auth')</code></pre>
+<pre><code class="language-typescript">router.get('/profile', [ProfileController, 'show']).middleware('auth')</code></pre>
 
 <h2>Built-in Middleware</h2>
 <p>MantiqJS ships with several middleware classes out of the box:</p>
@@ -279,10 +268,27 @@ router.get('/profile', [ProfileController, 'show']).middleware('auth')</code></p
   runs globally so your controllers always receive clean input.
 </p>
 
+<h2>Available Middleware Aliases</h2>
 <p>
-  The order of global middleware matters. Cookie encryption should run before session handling,
-  and session handling before CSRF verification. A typical order is:
-  CorsMiddleware, EncryptCookies, StartSession, VerifyCsrfToken, TrimStrings.
+  The following aliases are available for use in middleware groups and route definitions:
+</p>
+<ul>
+  <li><code>cors</code> &mdash; CorsMiddleware</li>
+  <li><code>encrypt.cookies</code> &mdash; EncryptCookies</li>
+  <li><code>session</code> &mdash; StartSession</li>
+  <li><code>csrf</code> &mdash; VerifyCsrfToken</li>
+  <li><code>throttle</code> &mdash; ThrottleMiddleware (parameterised)</li>
+  <li><code>auth</code> &mdash; Authenticate</li>
+  <li><code>guest</code> &mdash; RedirectIfAuthenticated</li>
+  <li><code>trim</code> &mdash; TrimStrings</li>
+  <li><code>static</code> &mdash; ServeStaticFiles</li>
+  <li><code>heartbeat</code> &mdash; Heartbeat debug toolbar</li>
+</ul>
+
+<p>
+  The order of middleware within a group matters. Cookie encryption should run before session handling,
+  and session handling before CSRF verification. The default <code>web</code> group order is:
+  CorsMiddleware, EncryptCookies, StartSession, VerifyCsrfToken.
 </p>
 `
 }

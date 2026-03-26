@@ -9,7 +9,7 @@ export default {
 
 <ul>
   <li>
-    <strong>Bun 1.0 or later</strong> &mdash; MantiqJS is built on the Bun runtime and uses
+    <strong>Bun 1.1.0 or later</strong> &mdash; MantiqJS is built on the Bun runtime and uses
     Bun-specific APIs. Install it from <a href="https://bun.sh">bun.sh</a>:
     <pre><code class="language-bash">curl -fsSL https://bun.sh/install | bash</code></pre>
   </li>
@@ -23,7 +23,7 @@ export default {
 <p>Verify your Bun installation:</p>
 
 <pre><code class="language-bash">bun --version
-# 1.x.x</code></pre>
+# Should be 1.1.0 or later</code></pre>
 
 <h2>Creating a New Project</h2>
 
@@ -188,8 +188,9 @@ APP_ENV=production bun run index.ts</code></pre>
 <h2>CLI Overview</h2>
 
 <p>
-  MantiqJS includes a CLI tool accessed through the <code>mantiq.ts</code> entry point. Here are
-  the most commonly used commands:
+  MantiqJS includes a CLI tool with 37 built-in commands, accessed through the <code>mantiq.ts</code>
+  entry point. The CLI kernel uses auto-discovery, so you do not need to register commands manually.
+  Here are the most commonly used commands:
 </p>
 
 <pre><code class="language-bash"># Database
@@ -210,13 +211,14 @@ bun mantiq make:factory UserFactory # Create a model factory
 
 # Utilities
 bun mantiq route:list           # List all registered routes
-bun mantiq serve                # Start the development server</code></pre>
+bun mantiq serve                # Start the development server
+bun mantiq key:generate         # Generate encryption key</code></pre>
 
 <h2>Monorepo Development</h2>
 
 <p>
   If you are contributing to MantiqJS itself or working with the framework source, the project
-  uses a monorepo structure managed with Bun workspaces:
+  uses a monorepo structure with 21 packages managed with Bun workspaces:
 </p>
 
 <pre><code class="language-bash">git clone https://github.com/mantiqjs/mantiq.git
@@ -228,11 +230,10 @@ bun install</code></pre>
 </p>
 
 <pre><code class="language-bash"># Run tests for a specific package
-cd packages/core
-bun test
+bun test packages/core/
 
 # Run all tests
-bun test --recursive</code></pre>
+bun run test</code></pre>
 
 <p>Now that your project is running, read the <a href="/docs/directory-structure">Directory Structure</a> guide to understand what each file and folder does.</p>
 `
