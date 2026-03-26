@@ -11,28 +11,56 @@ export function renderLayout(options: {
 }): string {
   const { title, activePage, basePath, content } = options
 
-  const pages = [
-    { key: 'overview', label: 'Overview', icon: ICONS.grid },
-    { key: 'requests', label: 'Requests', icon: ICONS.arrow },
-    { key: 'queries', label: 'Queries', icon: ICONS.db },
-    { key: 'exceptions', label: 'Exceptions', icon: ICONS.alert },
-    { key: 'jobs', label: 'Jobs', icon: ICONS.layers },
-    { key: 'cache', label: 'Cache', icon: ICONS.box },
-    { key: 'events', label: 'Events', icon: ICONS.zap },
-    { key: 'mail', label: 'Mail', icon: ICONS.mail },
-    { key: 'performance', label: 'Performance', icon: ICONS.activity },
-    { key: 'logs', label: 'Logs', icon: ICONS.file },
-    { key: 'models', label: 'Models', icon: ICONS.cube },
-    { key: 'schedules', label: 'Schedules', icon: ICONS.clock },
-    { key: 'commands', label: 'Commands', icon: ICONS.terminal },
-    { key: 'notifications', label: 'Notifications', icon: ICONS.bell },
+  const sections = [
+    {
+      label: '',
+      items: [
+        { key: 'overview', label: 'Overview', icon: ICONS.grid },
+        { key: 'performance', label: 'Performance', icon: ICONS.activity },
+      ],
+    },
+    {
+      label: 'Inspect',
+      items: [
+        { key: 'requests', label: 'Requests', icon: ICONS.arrow },
+        { key: 'queries', label: 'Queries', icon: ICONS.db },
+        { key: 'exceptions', label: 'Exceptions', icon: ICONS.alert },
+        { key: 'logs', label: 'Logs', icon: ICONS.file },
+      ],
+    },
+    {
+      label: 'Services',
+      items: [
+        { key: 'jobs', label: 'Jobs', icon: ICONS.layers },
+        { key: 'cache', label: 'Cache', icon: ICONS.box },
+        { key: 'events', label: 'Events', icon: ICONS.zap },
+        { key: 'mail', label: 'Mail', icon: ICONS.mail },
+        { key: 'notifications', label: 'Notifications', icon: ICONS.bell },
+      ],
+    },
+    {
+      label: 'System',
+      items: [
+        { key: 'models', label: 'Models', icon: ICONS.cube },
+        { key: 'schedules', label: 'Schedules', icon: ICONS.clock },
+        { key: 'commands', label: 'Commands', icon: ICONS.terminal },
+      ],
+    },
   ]
 
-  const nav = pages
-    .map((p) => {
-      const cls = p.key === activePage ? ' class="active"' : ''
-      const href = p.key === 'overview' ? basePath : `${basePath}/${p.key}`
-      return `<a href="${href}"${cls}>${p.icon}<span>${p.label}</span></a>`
+  const nav = sections
+    .map((section) => {
+      const heading = section.label
+        ? `<div class="nav-section">${section.label}</div>`
+        : ''
+      const links = section.items
+        .map((p) => {
+          const cls = p.key === activePage ? ' class="active"' : ''
+          const href = p.key === 'overview' ? basePath : `${basePath}/${p.key}`
+          return `<a href="${href}"${cls}>${p.icon}<span>${p.label}</span></a>`
+        })
+        .join('\n        ')
+      return heading + links
     })
     .join('\n        ')
 
@@ -176,43 +204,41 @@ body{
 
 /* ── Sidebar ─────────────────────────────────────────────────────────────── */
 .sidebar{
-  width:220px;background:var(--bg-1);border-right:1px solid var(--border);
+  width:200px;background:var(--bg-0);border-right:1px solid var(--border);
   display:flex;flex-direction:column;position:fixed;top:0;bottom:0;z-index:10;
 }
 .brand{
-  padding:20px 18px;font-size:13px;font-weight:700;color:var(--accent);
-  display:flex;align-items:center;gap:10px;letter-spacing:-.02em;
+  padding:16px 16px 12px;font-size:12px;font-weight:700;color:var(--fg-0);
+  display:flex;align-items:center;gap:8px;letter-spacing:-.01em;
   font-family:var(--mono);
 }
 .brand svg{color:var(--accent)}
-.sidebar nav{padding:8px 10px;flex:1;overflow-y:auto}
+.sidebar nav{padding:0 8px;flex:1;overflow-y:auto}
+.nav-section{
+  font-size:9px;font-weight:700;color:var(--fg-3);
+  text-transform:uppercase;letter-spacing:.12em;
+  padding:14px 10px 4px;font-family:var(--mono);
+}
 .sidebar nav a{
-  display:flex;align-items:center;gap:10px;
-  padding:8px 12px;border-radius:var(--radius);margin:2px 0;
-  color:var(--fg-3);text-decoration:none;font-size:12px;font-weight:500;
-  transition:all .2s cubic-bezier(.4,0,.2,1);
-  border:1px solid transparent;
+  display:flex;align-items:center;gap:8px;
+  padding:6px 10px;border-radius:6px;margin:1px 0;
+  color:var(--fg-2);text-decoration:none;font-size:11px;font-weight:500;
+  transition:color .15s,background .15s;
   font-family:var(--mono);
 }
 .sidebar nav a span{flex:1}
-.sidebar nav a svg{flex-shrink:0;opacity:.5;transition:all .2s}
-.sidebar nav a:hover{
-  color:var(--fg-1);background:var(--bg-2);
-  border-color:transparent;
-}
-.sidebar nav a:hover svg{opacity:.9;color:var(--accent)}
-.sidebar nav a.active{
-  color:var(--accent-text);background:var(--bg-2);
-  border-color:var(--border-2);font-weight:600;
-}
+.sidebar nav a svg{flex-shrink:0;opacity:.4;transition:opacity .15s}
+.sidebar nav a:hover{color:var(--fg-0);background:var(--bg-2)}
+.sidebar nav a:hover svg{opacity:.7}
+.sidebar nav a.active{color:var(--accent);background:var(--bg-2);font-weight:600}
 .sidebar nav a.active svg{opacity:1;color:var(--accent)}
 .sidebar-footer{
-  border-top:1px solid var(--border);padding:14px 18px;
+  border-top:1px solid var(--border);padding:12px 16px;
   display:flex;align-items:center;justify-content:space-between;
 }
 .sidebar-brand-footer{
-  font-size:11px;font-weight:600;color:var(--fg-3);opacity:.5;
-  font-family:var(--mono);letter-spacing:.02em;
+  font-size:11px;font-weight:600;color:var(--fg-3);
+  font-family:var(--mono);letter-spacing:-.01em;
 }
 .theme-btn{
   all:unset;color:var(--fg-3);cursor:pointer;display:flex;align-items:center;
@@ -223,7 +249,7 @@ body{
 
 /* ── Main ────────────────────────────────────────────────────────────────── */
 main{
-  margin-left:220px;flex:1;padding:28px 32px;max-width:1200px;position:relative;
+  margin-left:200px;flex:1;padding:24px 28px;max-width:1200px;position:relative;
   animation:fadeIn .3s ease-out;
 }
 .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
