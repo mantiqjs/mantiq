@@ -95,15 +95,26 @@ export class HeartbeatMiddleware implements Middleware {
     } finally {
       const duration = performance.now() - startTime
 
-      if (this.tracer) {
-        this.tracer.endRequest()
-      }
-
       // Capture response data (must rebuild response so body stays available for upstream middleware)
+      // Record BEFORE ending the trace context so request_id is attached
       if (this.requestWatcher && !error) {
         const responseHeaders = this.captureResponseHeaders(response!)
         const { body: responseBody, size: responseSize, rebuilt } = await this.captureResponseBody(response!)
         if (rebuilt) response = rebuilt
+
+        // Try to extract route metadata
+        let middlewareList: string[] = []
+        let controllerName: string | null = null
+        let routeName: string | null = null
+
+        try {
+          const route = (request as any).route?.() ?? (request as any)._matchedRoute
+          if (route) {
+            middlewareList = route.middleware ?? route._middleware ?? []
+            controllerName = route.controller ?? route.action ?? null
+            routeName = route.name ?? null
+          }
+        } catch { /* route info not available */ }
 
         this.requestWatcher.recordRequest({
           method: request.method(),
@@ -112,9 +123,9 @@ export class HeartbeatMiddleware implements Middleware {
           status: response!.status,
           duration,
           ip: request.ip(),
-          middleware: [],
-          controller: null,
-          routeName: null,
+          middleware: middlewareList,
+          controller: controllerName,
+          routeName,
           memoryUsage: process.memoryUsage().rss - startMemory,
           requestHeaders,
           requestQuery,
@@ -138,6 +149,11 @@ export class HeartbeatMiddleware implements Middleware {
 
       // Flush entries (fire-and-forget)
       this.heartbeat.flush()
+
+      // End the trace context AFTER recording — so all entries get the request_id
+      if (this.tracer) {
+        this.tracer.endRequest()
+      }
     }
 
     // Debug mode: attach X-Heartbeat header + inject widget
@@ -151,7 +167,8 @@ export class HeartbeatMiddleware implements Middleware {
         const totalDuration = performance.now() - startTime
         const totalMemory = Math.abs(process.memoryUsage().rss - startMemory)
         const mem = (totalMemory / 1024 / 1024).toFixed(1)
-        const statsHeader = `${Math.round(totalDuration)}ms;${mem}MB;${response!.status};0q`
+        const queryCount = this.heartbeat.getBufferedCount('query')
+        const statsHeader = `${Math.round(totalDuration)}ms;${mem}MB;${response!.status};${queryCount}q`
 
         try {
           const cloned = response!.clone()
@@ -167,7 +184,7 @@ export class HeartbeatMiddleware implements Middleware {
               duration: totalDuration,
               memory: totalMemory,
               status: response!.status,
-              queries: 0,
+              queries: queryCount,
               dashboardPath: this.heartbeat.config.dashboard.path,
             })
             finalBody = body.replace('</body>', widget + '\n</body>')

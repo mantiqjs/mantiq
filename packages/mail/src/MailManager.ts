@@ -23,6 +23,9 @@ import { SesTransport } from './drivers/SesTransport.ts'
  *   await manager.driver('resend').send(message)
  */
 export class MailManager {
+  /** Hook for observability — called after every mail send. */
+  static _onMailSent: ((data: { to: string[]; subject: string; mailer: string; duration: number; queued: boolean }) => void) | null = null
+
   private config: MailConfig
   private drivers = new Map<string, MailTransport>()
   private customDrivers = new Map<string, () => MailTransport>()

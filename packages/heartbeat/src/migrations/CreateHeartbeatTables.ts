@@ -10,6 +10,8 @@ export class CreateHeartbeatTables extends Migration {
         table.uuid('uuid').unique()
         table.string('type', 50)
         table.string('request_id', 255).nullable()
+        table.string('origin_type', 20).default('standalone')
+        table.string('origin_id', 255).nullable()
         table.text('content')
         table.text('tags').default('[]')
         table.bigInteger('created_at')
@@ -17,6 +19,7 @@ export class CreateHeartbeatTables extends Migration {
         table.index('type')
         table.index('request_id')
         table.index(['type', 'created_at'])
+        table.index(['origin_type', 'origin_id'])
       })
     }
 
@@ -69,6 +72,17 @@ export class CreateHeartbeatTables extends Migration {
 
         table.primary('fingerprint')
       })
+    }
+
+    // Backfill origin columns for existing installations
+    if (await schema.hasTable('heartbeat_entries')) {
+      if (!(await schema.hasColumn('heartbeat_entries', 'origin_type'))) {
+        await schema.table('heartbeat_entries', (table) => {
+          table.string('origin_type', 20).default('standalone')
+          table.string('origin_id', 255).nullable()
+          table.index(['origin_type', 'origin_id'])
+        })
+      }
     }
   }
 

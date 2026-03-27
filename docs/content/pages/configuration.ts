@@ -19,14 +19,27 @@ export default {
 <h2>Configuration Files</h2>
 
 <p>
-  A typical MantiqJS application has the following config files:
+  A MantiqJS skeleton generates 17 configuration files covering all framework subsystems:
 </p>
 
 <pre><code class="language-bash">config/
-  app.ts          # Application name, env, debug, key, URL, port
-  auth.ts         # Authentication guards and user providers
-  database.ts     # Database connections
-  vite.ts         # Vite entry points and build settings</code></pre>
+  app.ts              # Application name, env, debug, key, URL, port, middlewareGroups
+  auth.ts             # Authentication guards and user providers
+  broadcasting.ts     # Broadcast driver (bun, redis, log, null)
+  cache.ts            # Cache stores (memory, file, null)
+  cors.ts             # CORS allowed origins, methods, headers
+  database.ts         # Database connections (SQLite, PostgreSQL, MySQL, MSSQL, MongoDB)
+  filesystem.ts       # File storage disks (local, s3)
+  hashing.ts          # Password hashing algorithm (bcrypt, argon2)
+  heartbeat.ts        # Development debug toolbar settings
+  logging.ts          # Log channels and drivers
+  mail.ts             # Email transport settings (SMTP, SES)
+  notify.ts           # Notification channels (mail, database, broadcast)
+  queue.ts            # Queue connections (sync, database, redis)
+  search.ts           # Search engine settings (Meilisearch, Elasticsearch, Typesense)
+  services.ts         # Third-party service credentials
+  session.ts          # Session driver and options (memory, file, cookie)
+  vite.ts             # Vite entry points, build directory, manifest path</code></pre>
 
 <p>
   Here is a complete example of <code>config/app.ts</code>:
@@ -41,7 +54,19 @@ export default {
   key: env('APP_KEY', ''),
   url: env('APP_URL', 'http://localhost:3000'),
   port: Number(env('APP_PORT', '3000')),
+  basePath: import.meta.dir + '/..',
+
+  middlewareGroups: {
+    web: ['cors', 'encrypt.cookies', 'session', 'csrf'],
+    api: ['cors', 'throttle'],
+  },
 }</code></pre>
+
+<p>
+  The <code>middlewareGroups</code> property defines which middleware is applied automatically
+  by the Discoverer based on the route filename. Routes in <code>routes/web.ts</code> get the
+  <code>web</code> group, and routes in <code>routes/api.ts</code> get the <code>api</code> group.
+</p>
 
 <p>
   And <code>config/database.ts</code>:
@@ -63,7 +88,7 @@ export default {
       host: env('DB_HOST', '127.0.0.1'),
       port: Number(env('DB_PORT', '5432')),
       database: env('DB_DATABASE', 'mantiq'),
-      username: env('DB_USERNAME', 'root'),
+      user: env('DB_USERNAME', 'postgres'),
       password: env('DB_PASSWORD', ''),
     },
   },
@@ -302,23 +327,17 @@ if (config('app.debug')) {         // Read from config everywhere else
   the <code>config/</code> directory:
 </p>
 
-<pre><code class="language-typescript">// config/mail.ts
+<pre><code class="language-typescript">// config/payments.ts
 import { env } from '@mantiq/core'
 
 export default {
-  default: env('MAIL_DRIVER', 'smtp'),
-
-  from: {
-    address: env('MAIL_FROM_ADDRESS', 'hello@example.com'),
-    name: env('MAIL_FROM_NAME', 'MantiqJS'),
-  },
+  default: env('PAYMENT_DRIVER', 'stripe'),
 
   drivers: {
-    smtp: {
-      host: env('MAIL_HOST', 'smtp.mailgun.org'),
-      port: Number(env('MAIL_PORT', '587')),
-      username: env('MAIL_USERNAME', ''),
-      password: env('MAIL_PASSWORD', ''),
+    stripe: {
+      key: env('STRIPE_KEY', ''),
+      secret: env('STRIPE_SECRET', ''),
+      webhook_secret: env('STRIPE_WEBHOOK_SECRET', ''),
     },
   },
 }</code></pre>
@@ -327,8 +346,7 @@ export default {
   Access it with the <code>config()</code> helper using the filename as the top-level key:
 </p>
 
-<pre><code class="language-typescript">config('mail.default')              // 'smtp'
-config('mail.from.address')         // 'hello@example.com'
-config('mail.drivers.smtp.host')    // 'smtp.mailgun.org'</code></pre>
+<pre><code class="language-typescript">config('payments.default')              // 'stripe'
+config('payments.drivers.stripe.key')   // the Stripe key</code></pre>
 `
 }

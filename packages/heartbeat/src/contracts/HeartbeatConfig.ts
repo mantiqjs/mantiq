@@ -24,6 +24,7 @@ export interface HeartbeatConfig {
     log: { enabled: boolean; level: string }
     schedule: { enabled: boolean }
     mail: { enabled: boolean }
+    command: { enabled: boolean }
   }
   tracing: { enabled: boolean; propagate: boolean }
   sampling: { rate: number; always_sample_errors: boolean }
@@ -57,6 +58,7 @@ export const DEFAULT_CONFIG: HeartbeatConfig = {
     log:       { enabled: true, level: 'debug' },
     schedule:  { enabled: true },
     mail:      { enabled: true },
+    command:   { enabled: true },
   },
   tracing: { enabled: true, propagate: true },
   sampling: { rate: 1.0, always_sample_errors: true },

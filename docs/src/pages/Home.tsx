@@ -1,239 +1,465 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useCallback } from 'react'
+import { motion, useScroll, useTransform } from 'motion/react'
 import {
-  Github, Copy, Check, ArrowRight, Sparkles,
+  Sparkles,
+  Copy,
+  Check,
+  ArrowRight,
+  Box,
+  Route,
+  Database,
+  Shield,
+  CheckCircle,
+  Zap,
+  Terminal,
+  Layers,
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { TooltipProvider } from '@/components/ui/tooltip'
-import { ThemeToggle } from '@/components/layout/theme-toggle'
+import { Header } from '@/components/Header.tsx'
+import { SearchDialog } from '@/components/SearchDialog.tsx'
 
-interface HomeProps {
-  navigate: (href: string) => void
-}
+const features = [
+  {
+    icon: Box,
+    title: 'IoC Container',
+    description: 'Dependency injection with auto-resolution, singleton/transient bindings, and full type safety.',
+  },
+  {
+    icon: Route,
+    title: 'Expressive Routing',
+    description: 'Route groups, parameter constraints, resource routes, named routes, and middleware stacks.',
+  },
+  {
+    icon: Database,
+    title: 'Eloquent-Style ORM',
+    description: 'Models with relationships, eager loading, soft deletes, casts, and a fluent query builder.',
+  },
+  {
+    icon: Shield,
+    title: 'Authentication',
+    description: 'Session and token guards, user providers, middleware protection, and auth helpers.',
+  },
+  {
+    icon: CheckCircle,
+    title: 'Validation',
+    description: '46 built-in rules, custom rule classes, FormRequest for controller-level validation.',
+  },
+  {
+    icon: Zap,
+    title: 'Built on Bun',
+    description: 'Native Bun.serve, bun:sqlite, fast startup. No Node.js polyfills or compatibility layers.',
+  },
+  {
+    icon: Terminal,
+    title: 'CLI Tooling',
+    description: '37 Artisan-style commands for code generation, migrations, seeding, and development.',
+  },
+  {
+    icon: Layers,
+    title: 'Vite + SSR',
+    description: 'First-class Vite integration with HMR, React/Vue/Svelte SSR, and asset management.',
+  },
+]
 
-// Typing animation — uses a ref so Prism doesn't conflict with React
-function TypedCode() {
-  const codeRef = useRef<HTMLElement>(null)
-  const [visibleLines, setVisibleLines] = useState(0)
-  const [done, setDone] = useState(false)
-  const lines = [
-    `import { Application } from '@mantiq/core'`,
-    ``,
-    `const app = await Application.create(import.meta.dir)`,
-    ``,
-    `router.get('/users/:id', [UserController, 'show'])`,
-    ``,
-    `const admins = await User.where('role', 'admin').get()`,
-    ``,
-    `const data = await validate(request, {`,
-    `  email: 'required|email|unique:users',`,
-    `})`,
-  ]
+const codeTabs = [
+  {
+    label: 'Routing',
+    file: 'routes/api.ts',
+    lines: [
+      { text: "import type { Router } from", hl: " '@mantiq/core'" },
+      { text: "import { PostController } from", hl: " '../app/Http/Controllers/PostController.ts'" },
+      { text: '' },
+      { text: 'export default function (router: Router) {', hl: '' },
+      { text: "  router.get('/posts',", hl: " [PostController, 'index'])" },
+      { text: "  router.post('/posts',", hl: " [PostController, 'store']).middleware('auth')" },
+      { text: "  router.get('/posts/:id',", hl: " [PostController, 'show'])" },
+      { text: "    .", hl: "whereNumber('id')" },
+      { text: '}', hl: '' },
+    ],
+  },
+  {
+    label: 'Model',
+    file: 'app/Models/User.ts',
+    lines: [
+      { text: "import { Model } from", hl: " '@mantiq/database'" },
+      { text: "import { AuthenticatableModel } from", hl: " '@mantiq/auth'" },
+      { text: '' },
+      { text: 'export class User extends', hl: ' AuthenticatableModel(Model)' },
+      { text: ' {', hl: '' },
+      { text: "  static override fillable =", hl: " ['name', 'email', 'password']" },
+      { text: "  static override hidden =", hl: " ['password', 'remember_token']" },
+      { text: '}', hl: '' },
+    ],
+  },
+  {
+    label: 'Controller',
+    file: 'app/Http/Controllers/PostController.ts',
+    lines: [
+      { text: "import type { MantiqRequest } from", hl: " '@mantiq/core'" },
+      { text: "import { json } from", hl: " '@mantiq/core'" },
+      { text: "import { Post } from", hl: " '../../Models/Post.ts'" },
+      { text: '' },
+      { text: 'export class PostController {', hl: '' },
+      { text: '  async index(request: MantiqRequest) {', hl: '' },
+      { text: '    const posts = await', hl: " Post.query().orderBy('id', 'desc').get()" },
+      { text: '    return', hl: ' json({ data: posts })' },
+      { text: '  }', hl: '' },
+      { text: '}', hl: '' },
+    ],
+  },
+  {
+    label: 'Validation',
+    file: 'app/Http/Requests/StorePostRequest.ts',
+    lines: [
+      { text: "import { FormRequest } from", hl: " '@mantiq/validation'" },
+      { text: '' },
+      { text: 'export class StorePostRequest extends FormRequest {', hl: '' },
+      { text: '  override rules() {', hl: '' },
+      { text: '    return {', hl: '' },
+      { text: "      title:", hl: " 'required|string|min:3|max:200'," },
+      { text: "      body:", hl: " 'required|string'," },
+      { text: "      email:", hl: " 'required|email|unique:users'," },
+      { text: '    }', hl: '' },
+      { text: '  }', hl: '' },
+      { text: '}', hl: '' },
+    ],
+  },
+  {
+    label: 'Migration',
+    file: 'database/migrations/001_create_posts.ts',
+    lines: [
+      { text: "import { Migration } from", hl: " '@mantiq/database'" },
+      { text: '' },
+      { text: 'export default class extends Migration {', hl: '' },
+      { text: '  override async up(schema) {', hl: '' },
+      { text: "    await schema.create('posts', (t) => {", hl: '' },
+      { text: '      t.id()', hl: '' },
+      { text: "      t.string('title', 200)", hl: '' },
+      { text: "      t.text('body')", hl: '' },
+      { text: "      t.integer('user_id')", hl: '' },
+      { text: '      t.timestamps()', hl: '' },
+      { text: '    })', hl: '' },
+      { text: '  }', hl: '' },
+      { text: '}', hl: '' },
+    ],
+  },
+  {
+    label: 'Realtime',
+    file: 'routes/channels.ts',
+    lines: [
+      { text: "import { realtime } from", hl: " '@mantiq/realtime'" },
+      { text: '' },
+      { text: 'export default function () {', hl: '' },
+      { text: '  const ws =', hl: ' realtime()' },
+      { text: '' },
+      { text: "  ws.channels.authorize('room.*',", hl: ' async (userId, channel) => {' },
+      { text: "    const roomId = channel.split('.')[1]", hl: '' },
+      { text: '    return await', hl: ' isMember(userId, roomId)' },
+      { text: '  })', hl: '' },
+      { text: '}', hl: '' },
+    ],
+  },
+]
 
-  useEffect(() => {
-    if (visibleLines >= lines.length) {
-      setDone(true)
-      return
-    }
-    const timer = setTimeout(() => setVisibleLines((v) => v + 1), 100)
-    return () => clearTimeout(timer)
-  }, [visibleLines, lines.length])
-
-  // Write to DOM directly via ref — avoids React managing these text nodes
-  useEffect(() => {
-    const el = codeRef.current
-    if (!el) return
-    el.textContent = lines.slice(0, visibleLines).join('\n')
-  }, [visibleLines])
-
-  // Highlight only once, when typing is done
-  useEffect(() => {
-    if (!done || !codeRef.current) return
-    if (typeof (window as any).Prism !== 'undefined') {
-      ;(window as any).Prism.highlightElement(codeRef.current)
-    }
-  }, [done])
+function CodeShowcase() {
+  const [activeTab, setActiveTab] = useState(0)
+  const tab = codeTabs[activeTab]!
 
   return (
-    <div className="rounded-lg border overflow-hidden">
-      <div className="flex items-center gap-1.5 px-4 py-2.5 border-b bg-muted/50">
-        <div className="w-2.5 h-2.5 rounded-full bg-foreground/10" />
-        <div className="w-2.5 h-2.5 rounded-full bg-foreground/10" />
-        <div className="w-2.5 h-2.5 rounded-full bg-foreground/10" />
-        <span className="ml-2 text-[0.6875rem] text-muted-foreground font-mono">index.ts</span>
+    <section className="relative px-6 py-12 lg:py-16">
+      <div className="mx-auto max-w-3xl">
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-100px' }}
+          transition={{ duration: 0.6 }}
+          className="overflow-hidden rounded-2xl border border-border bg-zinc-950 shadow-2xl shadow-black/20 dark:border-zinc-800"
+        >
+          {/* Tab bar */}
+          <div className="flex items-center gap-0 border-b border-zinc-800 overflow-x-auto">
+            <div className="flex items-center gap-1.5 px-4 py-3 border-r border-zinc-800">
+              <div className="h-2.5 w-2.5 rounded-full bg-zinc-700" />
+              <div className="h-2.5 w-2.5 rounded-full bg-zinc-700" />
+              <div className="h-2.5 w-2.5 rounded-full bg-zinc-700" />
+            </div>
+            {codeTabs.map((t, i) => (
+              <button
+                key={t.label}
+                onClick={() => setActiveTab(i)}
+                className={`relative px-4 py-3 text-xs font-medium transition-colors whitespace-nowrap ${
+                  i === activeTab
+                    ? 'text-emerald-400 bg-zinc-900/50'
+                    : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                {t.label}
+                {i === activeTab && (
+                  <motion.div
+                    layoutId="code-tab-indicator"
+                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-emerald-400"
+                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  />
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Filename */}
+          <div className="px-5 pt-3 pb-0">
+            <span className="text-[11px] text-zinc-600 font-mono">{tab.file}</span>
+          </div>
+
+          {/* Code */}
+          <div className="overflow-x-auto px-5 py-3 min-h-[260px]">
+            <pre className="!m-0 !border-0 !bg-transparent !p-0">
+              <code className="text-[13px] leading-[1.8]">
+                {tab.lines.map((line, i) => (
+                  <motion.div
+                    key={`${activeTab}-${i}`}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.2, delay: i * 0.03 }}
+                    className="whitespace-pre"
+                  >
+                    {line.text === '' ? (
+                      '\n'
+                    ) : line.text.startsWith('//') ? (
+                      <span className="text-zinc-600">{line.text}</span>
+                    ) : (
+                      <>
+                        <span className="text-zinc-400">{line.text}</span>
+                        {line.hl && <span className="text-emerald-400">{line.hl}</span>}
+                      </>
+                    )}
+                  </motion.div>
+                ))}
+              </code>
+            </pre>
+          </div>
+        </motion.div>
       </div>
-      <pre className="!m-0 !rounded-none !border-0">
-        <code ref={codeRef} className="language-typescript !text-[0.8125rem] !leading-[1.8] block p-5" />
-      </pre>
-    </div>
+    </section>
   )
+}
+
+interface HomeProps {
+  appName?: string
+  navigate: (href: string) => void
 }
 
 export default function Home({ navigate }: HomeProps) {
   const [copied, setCopied] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const { scrollYProgress } = useScroll()
+  const heroY = useTransform(scrollYProgress, [0, 0.3], [0, -60])
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.25], [1, 0])
 
-  const copyInstall = () => {
+  const handleCopy = useCallback(() => {
     navigator.clipboard.writeText('bun create mantiq my-app')
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
-  }
+  }, [])
 
   return (
-    <TooltipProvider>
-      <div className="min-h-screen">
-        {/* Header */}
-        <header className="fixed top-0 left-0 right-0 z-50 border-b bg-background/80 backdrop-blur-xl">
-          <div className="mx-auto max-w-5xl flex items-center justify-between h-14 px-6">
-            <a
-              href="/"
-              className="flex items-center gap-2 text-foreground no-underline"
-              onClick={(e) => { e.preventDefault(); navigate('/') }}
-            >
-              <span className="text-xl font-semibold tracking-tight"><span className="text-primary">.</span>mantiq</span>
-            </a>
-            <nav className="flex items-center gap-1">
-              <Button variant="ghost" size="sm" asChild>
-                <a href="/docs/introduction">Docs</a>
-              </Button>
-              <Button variant="ghost" size="sm" asChild>
-                <a href="https://github.com/mantiqjs/mantiq" target="_blank" rel="noopener">
-                  <Github className="h-4 w-4 mr-1.5" /> GitHub
-                </a>
-              </Button>
-              <ThemeToggle />
-            </nav>
-          </div>
-        </header>
+    <div className="gradient-bg min-h-screen">
+      <Header onSearchOpen={() => setSearchOpen(true)} variant="home" />
 
-        <main className="pt-14">
-          {/* ── Hero ────────────────────────────────────────────── */}
-          <section className="relative">
-            <div className="mx-auto max-w-5xl px-6">
-              <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center py-20 lg:py-28">
-                {/* Left: copy */}
-                <div>
-                  <Badge
-                    variant="outline"
-                    className="mb-5 text-xs border-primary/30 text-primary"
-                  >
-                    <Sparkles className="h-3 w-3 mr-1.5" /> v0.1.0
-                  </Badge>
-
-                  <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-foreground mb-5 leading-[1.1]">
-                    The framework
-                    <br />
-                    for <span className="font-mono text-primary">Bun</span>.
-                  </h1>
-
-                  <p className="text-base text-muted-foreground leading-relaxed mb-8 max-w-md">
-                    MantiqJS is a batteries-included TypeScript framework inspired by{' '}
-                    <a href="https://laravel.com" target="_blank" rel="noopener" className="text-primary hover:underline">Laravel</a>.
-                    Auth, ORM, queues, realtime, validation, mail, CLI &mdash; all built in, zero config.
-                  </p>
-
-                  {/* Install */}
-                  <div className="flex flex-col sm:flex-row items-start gap-3 mb-8">
-                    <button
-                      onClick={copyInstall}
-                      className="inline-flex items-center gap-3 px-4 py-2.5 rounded-lg border bg-muted/50 hover:bg-muted transition-colors cursor-pointer font-mono text-sm"
-                    >
-                      <span className="text-muted-foreground select-none">$</span>
-                      <span className="text-foreground">bun create mantiq my-app</span>
-                      {copied ? (
-                        <Check className="h-3.5 w-3.5 text-primary" />
-                      ) : (
-                        <Copy className="h-3.5 w-3.5 text-muted-foreground" />
-                      )}
-                    </button>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <Button className="gap-2" asChild>
-                      <a href="/docs/introduction">
-                        Get Started <ArrowRight className="h-4 w-4" />
-                      </a>
-                    </Button>
-                    <Button variant="ghost" asChild>
-                      <a href="/docs/installation">Installation</a>
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Right: code */}
-                <div className="lg:pl-4">
-                  <TypedCode />
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* ── What's inside ───────────────────────────────────── */}
-          <section className="border-t">
-            <div className="mx-auto max-w-5xl px-6 py-20">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-10">
-                What&rsquo;s inside
-              </p>
-
-              <div className="grid sm:grid-cols-2 gap-x-16 gap-y-8">
-                {[
-                  ['@mantiq/core', 'IoC container, router, middleware, HTTP kernel, config, sessions, caching, encryption, hashing.'],
-                  ['@mantiq/database', 'Active Record ORM, query builder, migrations, seeders, factories. SQLite, Postgres, MySQL, MSSQL, MongoDB.'],
-                  ['@mantiq/auth', 'Session & request guards, remember-me, database user provider, 4 middleware.'],
-                  ['@mantiq/validation', '40+ built-in rules, FormRequest, async database rules, custom extensions.'],
-                  ['@mantiq/cli', '26 commands. Generators, migrations, REPL (tinker), dev server.'],
-                  ['@mantiq/queue', 'Job dispatching with 5 drivers. Chains, batches, scheduling, retries.'],
-                  ['@mantiq/realtime', 'WebSocket server with channels, presence, authorization. SSE fallback.'],
-                  ['@mantiq/mail', '8 transports: SMTP, SES, SendGrid, Mailgun, Postmark, Resend. Markdown emails.'],
-                ].map(([name, desc]) => (
-                  <div key={name} className="group">
-                    <h3 className="font-mono text-sm font-semibold text-foreground mb-1.5 group-hover:text-primary transition-colors">
-                      {name}
-                    </h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-12 pt-8 border-t flex items-center gap-2 text-sm text-muted-foreground">
-                <span>+ 8 more packages:</span>
-                {['events', 'filesystem', 'logging', 'notify', 'helpers', 'vite', 'heartbeat', 'create-mantiq'].map((p) => (
-                  <code key={p} className="text-xs px-1.5 py-0.5 rounded bg-muted font-mono">{p}</code>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* ── CTA ─────────────────────────────────────────────── */}
-          <section className="border-t">
-            <div className="mx-auto max-w-3xl px-6 py-20 text-center">
-              <h2 className="text-2xl font-bold text-foreground mb-3">Ready to build?</h2>
-              <p className="text-muted-foreground mb-8 max-w-md mx-auto text-sm">
-                Scaffold a full app in seconds &mdash; auth, database, frontend, and CLI included.
-              </p>
-              <div className="flex items-center justify-center gap-3">
-                <Button className="gap-2" asChild>
-                  <a href="/docs/introduction">
-                    Read the Docs <ArrowRight className="h-4 w-4" />
-                  </a>
-                </Button>
-                <Button variant="outline" className="gap-2" asChild>
-                  <a href="https://github.com/mantiqjs/mantiq" target="_blank" rel="noopener">
-                    <Github className="h-4 w-4" /> GitHub
-                  </a>
-                </Button>
-              </div>
-            </div>
-          </section>
-
-          {/* Footer */}
-          <footer className="border-t py-8 px-6">
-            <div className="mx-auto max-w-5xl flex items-center justify-between text-xs text-muted-foreground">
-              <span>MantiqJS &mdash; MIT License</span>
-              <span>Built with MantiqJS</span>
-            </div>
-          </footer>
-        </main>
+      {/* Floating gradient orbs */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div
+          className="animate-float absolute -left-32 -top-32 h-96 w-96 rounded-full opacity-[0.07] dark:opacity-10"
+          style={{ background: 'radial-gradient(circle, #10b981 0%, transparent 70%)' }}
+        />
+        <div
+          className="animate-float-slow absolute -right-24 top-1/4 h-[30rem] w-[30rem] rounded-full opacity-[0.04] dark:opacity-[0.07]"
+          style={{ background: 'radial-gradient(circle, #6366f1 0%, transparent 70%)' }}
+        />
+        <div
+          className="animate-float-slower absolute bottom-0 left-1/3 h-80 w-80 rounded-full opacity-[0.04] dark:opacity-[0.07]"
+          style={{ background: 'radial-gradient(circle, #f59e0b 0%, transparent 70%)' }}
+        />
       </div>
-    </TooltipProvider>
+
+      {/* Hero Section */}
+      <motion.section
+        style={{ y: heroY, opacity: heroOpacity }}
+        className="relative flex flex-col items-center justify-center px-6 pt-32 pb-20 lg:pt-40 lg:pb-24"
+      >
+        <div className="mx-auto max-w-4xl text-center">
+          {/* Badge */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary">
+              <Sparkles className="h-3 w-3" />
+              TypeScript framework for Bun
+            </span>
+          </motion.div>
+
+          {/* Headline */}
+          <h1 className="mt-8 text-5xl font-bold tracking-tight sm:text-6xl lg:text-7xl">
+            {['The', 'framework', 'for'].map((word, i) => (
+              <motion.span
+                key={word}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.15 + i * 0.1 }}
+                className="mr-[0.3em] inline-block text-foreground"
+              >
+                {word}
+              </motion.span>
+            ))}
+            <motion.span
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.45 }}
+              className="inline-block bg-gradient-to-r from-primary to-emerald-400 bg-clip-text text-transparent"
+            >
+              Bun.
+            </motion.span>
+          </h1>
+
+          {/* Subtitle */}
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+            className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground sm:text-xl"
+          >
+            A batteries-included, Laravel-inspired TypeScript web framework.
+            Routing, ORM, auth, validation, and CLI &mdash; all out of the box.
+          </motion.p>
+
+          {/* Install command */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.75 }}
+            className="mt-8 flex justify-center"
+          >
+            <button
+              onClick={handleCopy}
+              className="group flex items-center gap-3 rounded-xl border border-border bg-card px-5 py-3 font-mono text-sm transition-all hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5"
+            >
+              <span className="text-muted-foreground">$</span>
+              <span className="text-foreground">bun create mantiq my-app</span>
+              <span className="text-muted-foreground transition-colors group-hover:text-primary">
+                {copied ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
+              </span>
+            </button>
+          </motion.div>
+
+          {/* CTA buttons */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.9 }}
+            className="mt-8 flex flex-wrap justify-center gap-3"
+          >
+            <a
+              href="/docs/introduction"
+              className="group inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/25 active:scale-[0.98]"
+            >
+              Get Started
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </a>
+            <a
+              href="https://github.com/mantiqjs/mantiq"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl border border-border px-6 py-2.5 text-sm font-medium text-foreground transition-all hover:scale-[1.02] hover:bg-muted active:scale-[0.98]"
+            >
+              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd"/>
+              </svg>
+              GitHub
+            </a>
+          </motion.div>
+        </div>
+
+      </motion.section>
+
+      {/* Code Showcase Section */}
+      <CodeShowcase />
+
+      {/* Features Grid */}
+      <section className="relative px-6 py-12 lg:py-16">
+        <div className="mx-auto max-w-6xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="mb-10 text-center"
+          >
+            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+              Everything you need
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              A complete toolkit for building production-ready applications.
+            </p>
+          </motion.div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {features.map((feature, i) => (
+              <motion.div
+                key={feature.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: i * 0.06 }}
+                className="group rounded-2xl border border-border bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5"
+              >
+                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
+                  <feature.icon className="h-5 w-5" />
+                </div>
+                <h3 className="mb-2 text-sm font-semibold text-foreground">{feature.title}</h3>
+                <p className="text-[13px] leading-relaxed text-muted-foreground">{feature.description}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <motion.footer
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5 }}
+        className="border-t border-border px-6 py-8"
+      >
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 sm:flex-row">
+          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+            <span className="font-semibold text-foreground">
+              <span className="text-primary">.</span>mantiq
+            </span>
+            <span className="mx-2">&middot;</span>
+            The TypeScript framework for Bun
+          </div>
+          <div className="flex items-center gap-6 text-sm text-muted-foreground">
+            <a href="/docs/introduction" className="transition-colors hover:text-foreground">
+              Docs
+            </a>
+            <a
+              href="https://github.com/mantiqjs/mantiq"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-colors hover:text-foreground"
+            >
+              GitHub
+            </a>
+          </div>
+        </div>
+      </motion.footer>
+
+      <SearchDialog
+        isOpen={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        entries={[]}
+        navigate={navigate}
+      />
+    </div>
   )
 }

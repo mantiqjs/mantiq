@@ -1,11 +1,13 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { Span } from './Span.ts'
 import { generateTraceId, generateSpanId, parseTraceparent } from './TraceContext.ts'
+import type { OriginType } from '../contracts/Entry.ts'
 import type { HeartbeatStore } from '../storage/HeartbeatStore.ts'
 
 interface TraceState {
   traceId: string
   requestId: string
+  originType: OriginType
   spanStack: Span[]
 }
 
@@ -39,6 +41,7 @@ export class Tracer {
     this.ctx.enterWith({
       traceId,
       requestId,
+      originType: 'request',
       spanStack: [],
     })
   }
@@ -49,6 +52,35 @@ export class Tracer {
   endRequest(): void {
     this.ctx.disable()
     this.ctx = new AsyncLocalStorage<TraceState>()
+  }
+
+  /**
+   * Start a new command trace context.
+   * Should be called at the beginning of each CLI command execution.
+   */
+  startCommand(commandId: string): void {
+    const traceId = generateTraceId()
+
+    this.ctx.enterWith({
+      traceId,
+      requestId: commandId,
+      originType: 'command',
+      spanStack: [],
+    })
+  }
+
+  /**
+   * End the current command trace context.
+   */
+  endCommand(): void {
+    this.endRequest()
+  }
+
+  /**
+   * Get the current origin type, if inside a trace context.
+   */
+  currentOriginType(): OriginType | null {
+    return this.ctx.getStore()?.originType ?? null
   }
 
   /**

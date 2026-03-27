@@ -3,7 +3,7 @@ export default {
   content: `
 <h2>Introduction</h2>
 
-<p>The <code>@mantiq/database</code> package provides a complete data layer for MantiqJS applications. It includes a fluent query builder, schema builder, migrations, an Active Record ORM, seeders, and factories. Multiple database drivers are supported out of the box.</p>
+<p>The <code>@mantiq/database</code> package provides a complete data layer for MantiqJS applications. It includes a fluent query builder, schema builder, migrations, an Active Record ORM, seeders, and factories. Five database drivers are supported out of the box.</p>
 
 <h3>Supported Drivers</h3>
 
@@ -15,6 +15,7 @@ export default {
     <tr><td><strong>SQLite</strong></td><td>Built-in (<code>bun:sqlite</code>)</td><td>Zero-dependency. Perfect for development and single-server deployments.</td></tr>
     <tr><td><strong>PostgreSQL</strong></td><td><code>pg</code></td><td>Full-featured. Recommended for production applications.</td></tr>
     <tr><td><strong>MySQL</strong></td><td><code>mysql2</code></td><td>Widely supported. Compatible with MariaDB.</td></tr>
+    <tr><td><strong>MSSQL</strong></td><td><code>tedious</code></td><td>Microsoft SQL Server support with encryption and connection pooling.</td></tr>
     <tr><td><strong>MongoDB</strong></td><td><code>mongodb</code></td><td>Document database support via a separate <code>mongo()</code> connection method.</td></tr>
   </tbody>
 </table>
@@ -28,11 +29,12 @@ export default {
 # Install the driver for your database (SQLite is built-in)
 bun add pg          # PostgreSQL
 bun add mysql2      # MySQL / MariaDB
+bun add tedious     # MSSQL (Microsoft SQL Server)
 bun add mongodb     # MongoDB</code></pre>
 
 <h2>Configuration</h2>
 
-<p>Database connections are configured in <code>config/database.ts</code>. You can define multiple connections and specify a default.</p>
+<p>Database connections are configured in <code>config/database.ts</code>. You can define multiple connections and specify a default. The skeleton includes all five driver configurations as comments that you can uncomment as needed.</p>
 
 <pre><code class="language-typescript">// config/database.ts
 import { env } from '@mantiq/core'
@@ -51,8 +53,13 @@ export default {
       host: env('DB_HOST', '127.0.0.1'),
       port: Number(env('DB_PORT', '5432')),
       database: env('DB_DATABASE', 'mantiq'),
-      user: env('DB_USERNAME', 'root'),
+      user: env('DB_USERNAME', 'postgres'),
       password: env('DB_PASSWORD', ''),
+      ssl: env('DB_SSL', 'false') === 'true',
+      pool: {
+        min: Number(env('DB_POOL_MIN', '2')),
+        max: Number(env('DB_POOL_MAX', '10')),
+      },
     },
 
     mysql: {
@@ -62,6 +69,31 @@ export default {
       database: env('DB_DATABASE', 'mantiq'),
       user: env('DB_USERNAME', 'root'),
       password: env('DB_PASSWORD', ''),
+      pool: {
+        min: Number(env('DB_POOL_MIN', '2')),
+        max: Number(env('DB_POOL_MAX', '10')),
+      },
+    },
+
+    mssql: {
+      driver: 'mssql' as const,
+      host: env('DB_HOST', '127.0.0.1'),
+      port: Number(env('DB_PORT', '1433')),
+      database: env('DB_DATABASE', 'mantiq'),
+      user: env('DB_USERNAME', 'sa'),
+      password: env('DB_PASSWORD', ''),
+      encrypt: env('DB_ENCRYPT', 'true') === 'true',
+      trustServerCertificate: env('DB_TRUST_CERT', 'false') === 'true',
+      pool: {
+        min: Number(env('DB_POOL_MIN', '2')),
+        max: Number(env('DB_POOL_MAX', '10')),
+      },
+    },
+
+    mongodb: {
+      driver: 'mongodb' as const,
+      uri: env('MONGODB_URL', 'mongodb://127.0.0.1:27017'),
+      database: env('DB_DATABASE', 'mantiq'),
     },
   },
 }</code></pre>
@@ -79,11 +111,21 @@ DB_DATABASE=database/database.sqlite
 # DB_PORT=5432
 # DB_DATABASE=myapp
 # DB_USERNAME=postgres
+# DB_PASSWORD=secret
+
+# Or for MSSQL:
+# DB_CONNECTION=mssql
+# DB_HOST=127.0.0.1
+# DB_PORT=1433
+# DB_DATABASE=myapp
+# DB_USERNAME=sa
 # DB_PASSWORD=secret</code></pre>
 
 <h2>Service Provider</h2>
 
-<p>Register the <code>DatabaseServiceProvider</code> (or create one) to bind the <code>DatabaseManager</code> in the application container. Here is a typical setup:</p>
+<p>The <code>DatabaseServiceProvider</code> is auto-discovered by the Discoverer and registered automatically. It reads connection configuration from <code>config/database.ts</code> and manages connections to all five supported databases.</p>
+
+<p>If you need custom database setup, you can register your own provider in <code>app/Providers/</code>:</p>
 
 <pre><code class="language-typescript">import { ServiceProvider } from '@mantiq/core'
 import { DatabaseManager, Model } from '@mantiq/database'
@@ -102,19 +144,6 @@ export class DatabaseServiceProvider extends ServiceProvider {
   }
 }</code></pre>
 
-<p>The <code>@mantiq/database</code> package also exports a <code>createDatabaseManager()</code> factory function and a <code>setupModels()</code> helper if you prefer to set things up without a service provider:</p>
-
-<pre><code class="language-typescript">import { createDatabaseManager, setupModels } from '@mantiq/database'
-
-const manager = createDatabaseManager({
-  default: 'sqlite',
-  connections: {
-    sqlite: { driver: 'sqlite', database: 'database/database.sqlite' },
-  },
-})
-
-setupModels(manager)</code></pre>
-
 <h2>The DatabaseManager</h2>
 
 <p>The <code>DatabaseManager</code> manages all database connections. It lazily creates connections on first use and caches them for subsequent calls.</p>
@@ -126,6 +155,7 @@ const connection = manager.connection()
 
 // Get a named connection
 const pgConnection = manager.connection('postgres')
+const mssqlConnection = manager.connection('mssql')
 
 // Shorthand: query a table on the default connection
 const users = await manager.table('users').get()
@@ -155,13 +185,13 @@ const logs = await db('postgres').table('audit_logs').get()</code></pre>
 
 <pre><code class="language-typescript">const connection = db()
 
-// SELECT queries — returns an array of row objects
+// SELECT queries &mdash; returns an array of row objects
 const users = await connection.select(
   'SELECT * FROM users WHERE active = ?',
   [true]
 )
 
-// INSERT/UPDATE/DELETE — returns the number of affected rows
+// INSERT/UPDATE/DELETE &mdash; returns the number of affected rows
 const affected = await connection.statement(
   'UPDATE users SET active = ? WHERE last_login &lt; ?',
   [false, '2025-01-01']
@@ -208,7 +238,7 @@ const id = await connection.insertGetId(
     <tr><td><code>transaction(callback)</code></td><td>Run a callback inside a database transaction.</td></tr>
     <tr><td><code>table(name)</code></td><td>Start a query builder for the given table.</td></tr>
     <tr><td><code>schema()</code></td><td>Access the schema builder for DDL operations.</td></tr>
-    <tr><td><code>getDriverName()</code></td><td>Returns the driver name (<code>'sqlite'</code>, <code>'postgres'</code>, <code>'mysql'</code>).</td></tr>
+    <tr><td><code>getDriverName()</code></td><td>Returns the driver name (<code>'sqlite'</code>, <code>'postgres'</code>, <code>'mysql'</code>, <code>'mssql'</code>).</td></tr>
   </tbody>
 </table>
 
@@ -223,8 +253,8 @@ export default {
     // ... SQL connections
     mongodb: {
       driver: 'mongodb' as const,
-      uri: env('MONGO_URI', 'mongodb://localhost:27017'),
-      database: env('MONGO_DATABASE', 'mantiq'),
+      uri: env('MONGODB_URL', 'mongodb://127.0.0.1:27017'),
+      database: env('DB_DATABASE', 'mantiq'),
     },
   },
 }
@@ -232,6 +262,22 @@ export default {
 // Usage
 const mongo = manager.mongo('mongodb')
 const docs = await mongo.collection('users').find({ active: true })</code></pre>
+
+<h2>Read/Write Splitting</h2>
+
+<p>For production deployments with read replicas, PostgreSQL, MySQL, and MSSQL connections support read/write splitting:</p>
+
+<pre><code class="language-typescript">postgres: {
+  driver: 'postgres' as const,
+  host: env('DB_HOST', '127.0.0.1'),
+  // ...other config
+  read: {
+    host: [env('DB_READ_HOST_1', '127.0.0.1'), env('DB_READ_HOST_2', '127.0.0.1')],
+  },
+  write: {
+    host: env('DB_WRITE_HOST', '127.0.0.1'),
+  },
+}</code></pre>
 
 <h2>Error Handling</h2>
 

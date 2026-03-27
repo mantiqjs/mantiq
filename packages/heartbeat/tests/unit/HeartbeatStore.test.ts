@@ -17,9 +17,9 @@ describe('HeartbeatStore', () => {
   describe('insertEntries', () => {
     it('bulk-inserts entries in a transaction', async () => {
       const entries: PendingEntry[] = [
-        { type: 'request', content: { method: 'GET', path: '/' }, requestId: 'req-1', createdAt: Date.now() },
-        { type: 'query', content: { sql: 'SELECT 1' }, requestId: 'req-1', createdAt: Date.now() },
-        { type: 'exception', content: { class: 'Error' }, requestId: null, createdAt: Date.now() },
+        { type: 'request', content: { method: 'GET', path: '/' }, requestId: 'req-1', originType: 'request', originId: 'req-1', createdAt: Date.now() },
+        { type: 'query', content: { sql: 'SELECT 1' }, requestId: 'req-1', originType: 'request', originId: 'req-1', createdAt: Date.now() },
+        { type: 'exception', content: { class: 'Error' }, requestId: null, originType: 'standalone', originId: null, createdAt: Date.now() },
       ]
 
       await store.insertEntries(entries)
@@ -34,9 +34,9 @@ describe('HeartbeatStore', () => {
   describe('getEntries', () => {
     it('queries with type filter', async () => {
       await store.insertEntries([
-        { type: 'request', content: { path: '/a' }, requestId: null, createdAt: 1000 },
-        { type: 'request', content: { path: '/b' }, requestId: null, createdAt: 2000 },
-        { type: 'query', content: { sql: 'x' }, requestId: null, createdAt: 3000 },
+        { type: 'request', content: { path: '/a' }, requestId: null, originType: 'standalone', originId: null, createdAt: 1000 },
+        { type: 'request', content: { path: '/b' }, requestId: null, originType: 'standalone', originId: null, createdAt: 2000 },
+        { type: 'query', content: { sql: 'x' }, requestId: null, originType: 'standalone', originId: null, createdAt: 3000 },
       ])
 
       const requests = await store.getEntries({ type: 'request' })
@@ -48,9 +48,9 @@ describe('HeartbeatStore', () => {
 
     it('supports pagination', async () => {
       await store.insertEntries([
-        { type: 'request', content: { i: 1 }, requestId: null, createdAt: 1000 },
-        { type: 'request', content: { i: 2 }, requestId: null, createdAt: 2000 },
-        { type: 'request', content: { i: 3 }, requestId: null, createdAt: 3000 },
+        { type: 'request', content: { i: 1 }, requestId: null, originType: 'standalone', originId: null, createdAt: 1000 },
+        { type: 'request', content: { i: 2 }, requestId: null, originType: 'standalone', originId: null, createdAt: 2000 },
+        { type: 'request', content: { i: 3 }, requestId: null, originType: 'standalone', originId: null, createdAt: 3000 },
       ])
 
       const page = await store.getEntries({ limit: 2, offset: 0 })
@@ -62,9 +62,9 @@ describe('HeartbeatStore', () => {
 
     it('filters by requestId', async () => {
       await store.insertEntries([
-        { type: 'request', content: { a: 1 }, requestId: 'req-1', createdAt: 1000 },
-        { type: 'query', content: { b: 2 }, requestId: 'req-1', createdAt: 2000 },
-        { type: 'query', content: { c: 3 }, requestId: 'req-2', createdAt: 3000 },
+        { type: 'request', content: { a: 1 }, requestId: 'req-1', originType: 'request', originId: 'req-1', createdAt: 1000 },
+        { type: 'query', content: { b: 2 }, requestId: 'req-1', originType: 'request', originId: 'req-1', createdAt: 2000 },
+        { type: 'query', content: { c: 3 }, requestId: 'req-2', originType: 'request', originId: 'req-2', createdAt: 3000 },
       ])
 
       const entries = await store.getEntries({ requestId: 'req-1' })
@@ -75,7 +75,7 @@ describe('HeartbeatStore', () => {
   describe('getEntry', () => {
     it('retrieves entry by UUID', async () => {
       await store.insertEntries([
-        { type: 'request', content: { test: true }, requestId: null, createdAt: Date.now() },
+        { type: 'request', content: { test: true }, requestId: null, originType: 'standalone', originId: null, createdAt: Date.now() },
       ])
 
       const all = await store.getEntries()
@@ -151,8 +151,8 @@ describe('HeartbeatStore', () => {
     it('deletes entries older than retention', async () => {
       const old = Date.now() - 100_000_000
       await store.insertEntries([
-        { type: 'request', content: { old: true }, requestId: null, createdAt: old },
-        { type: 'request', content: { new: true }, requestId: null, createdAt: Date.now() },
+        { type: 'request', content: { old: true }, requestId: null, originType: 'standalone', originId: null, createdAt: old },
+        { type: 'request', content: { new: true }, requestId: null, originType: 'standalone', originId: null, createdAt: Date.now() },
       ])
 
       const deleted = await store.prune(1000) // 1000 seconds retention

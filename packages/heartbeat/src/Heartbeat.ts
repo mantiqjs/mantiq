@@ -1,5 +1,5 @@
 import type { HeartbeatConfig } from './contracts/HeartbeatConfig.ts'
-import type { EntryType, PendingEntry } from './contracts/Entry.ts'
+import type { EntryType, PendingEntry, OriginType } from './contracts/Entry.ts'
 import type { Watcher } from './contracts/Watcher.ts'
 import { HeartbeatStore } from './storage/HeartbeatStore.ts'
 import { RecordHeartbeatEntries } from './jobs/RecordHeartbeatEntries.ts'
@@ -52,6 +52,11 @@ export class Heartbeat {
     return this.watchers
   }
 
+  /** Count buffered entries of a given type (for widget stats before flush). */
+  getBufferedCount(type: EntryType): number {
+    return this.buffer.filter((e) => e.type === type).length
+  }
+
   // ── Entry Recording ─────────────────────────────────────────────────────
 
   /**
@@ -69,6 +74,8 @@ export class Heartbeat {
       content,
       tags,
       requestId: this._tracer?.currentRequestId() ?? null,
+      originType: this._tracer?.currentOriginType() ?? 'standalone',
+      originId: this._tracer?.currentRequestId() ?? null,
       createdAt: Date.now(),
     }
 

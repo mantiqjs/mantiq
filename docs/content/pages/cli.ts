@@ -2,7 +2,7 @@ export default {
   title: 'CLI Commands',
   content: `
 <h2>Introduction</h2>
-<p>MantiqJS includes a powerful CLI tool powered by the <code>@mantiq/cli</code> package. It provides commands for generating boilerplate, managing database migrations, seeding data, starting the development server, and more. You can also write your own custom commands.</p>
+<p>MantiqJS includes a powerful CLI tool powered by the <code>@mantiq/cli</code> package. It provides 37 built-in commands for generating boilerplate, managing database migrations, seeding data, starting the development server, and more. The CLI kernel uses auto-discovery, so you do not need to manually register commands.</p>
 
 <h2>Running Commands</h2>
 <p>All commands are invoked through the <code>mantiq</code> entry point using Bun:</p>
@@ -16,6 +16,21 @@ export default {
 </code></pre>
 
 <p>The help output groups commands by prefix (e.g., all <code>make:*</code> commands together, all <code>migrate:*</code> commands together) for easy browsing.</p>
+
+<h2>The Auto-Discovering Kernel</h2>
+<p>The CLI kernel (<code>mantiq.ts</code>) uses auto-discovery. You do not need to manually register any commands:</p>
+
+<pre><code class="language-typescript">#!/usr/bin/env bun
+await import('./index.ts')
+
+import { Kernel } from '@mantiq/cli'
+
+const kernel = new Kernel()
+const code = await kernel.run()
+process.exit(code)
+</code></pre>
+
+<p>The <code>Kernel</code> constructor takes no arguments. It automatically registers all built-in commands and discovers any custom commands in <code>app/Console/Commands/</code>.</p>
 
 <h2>Generator Commands</h2>
 <p>Generator commands scaffold new files with the correct boilerplate, saving you from writing repetitive code by hand.</p>
@@ -34,7 +49,7 @@ bun mantiq make:model Post --migration
 <p>Create a new controller class:</p>
 
 <pre><code class="language-bash">bun mantiq make:controller UserController
-# Creates: app/Controllers/UserController.ts
+# Creates: app/Http/Controllers/UserController.ts
 
 bun mantiq make:controller PostController --resource
 # Creates a controller with index, show, store, update, destroy methods
@@ -68,7 +83,7 @@ bun mantiq make:migration add_avatar_to_users
 <p>Create a new middleware class:</p>
 
 <pre><code class="language-bash">bun mantiq make:middleware EnsureIsAdmin
-# Creates: app/Middleware/EnsureIsAdmin.ts
+# Creates: app/Http/Middleware/EnsureIsAdmin.ts
 </code></pre>
 
 <h3>make:request</h3>
@@ -77,6 +92,47 @@ bun mantiq make:migration add_avatar_to_users
 <pre><code class="language-bash">bun mantiq make:request StorePostRequest
 # Creates: app/Requests/StorePostRequest.ts
 </code></pre>
+
+<h3>make:event</h3>
+<p>Create a new event class:</p>
+
+<pre><code class="language-bash">bun mantiq make:event OrderShipped
+# Creates: app/Events/OrderShipped.ts
+</code></pre>
+
+<h3>make:listener</h3>
+<p>Create a new event listener:</p>
+
+<pre><code class="language-bash">bun mantiq make:listener SendShipmentNotification
+# Creates: app/Listeners/SendShipmentNotification.ts
+</code></pre>
+
+<h3>make:job</h3>
+<p>Create a new queued job:</p>
+
+<pre><code class="language-bash">bun mantiq make:job ProcessPayment
+# Creates: app/Jobs/ProcessPayment.ts
+</code></pre>
+
+<h3>make:command</h3>
+<p>Create a new CLI command:</p>
+
+<pre><code class="language-bash">bun mantiq make:command SendReminders
+# Creates: app/Console/Commands/SendRemindersCommand.ts
+</code></pre>
+
+<h3>More Generators</h3>
+<p>Additional generator commands include:</p>
+<ul>
+  <li><code>make:provider</code> &mdash; Create a new service provider</li>
+  <li><code>make:policy</code> &mdash; Create a new authorization policy</li>
+  <li><code>make:observer</code> &mdash; Create a new model observer</li>
+  <li><code>make:rule</code> &mdash; Create a new validation rule</li>
+  <li><code>make:exception</code> &mdash; Create a new exception class</li>
+  <li><code>make:mail</code> &mdash; Create a new mailable class</li>
+  <li><code>make:notification</code> &mdash; Create a new notification class</li>
+  <li><code>make:test</code> &mdash; Create a new test file</li>
+</ul>
 
 <h2>Database Commands</h2>
 <p>These commands manage your database schema through the migration system.</p>
@@ -150,31 +206,48 @@ bun mantiq serve --port=8080
 # Shows: Method | URI | Name | Controller | Middleware
 </code></pre>
 
-<p>This is useful for debugging routing issues and verifying that your routes are registered correctly.</p>
+<h3>key:generate</h3>
+<p>Generate a new application encryption key:</p>
 
-<h3>tinker</h3>
-<p>Open an interactive REPL with your application bootstrapped:</p>
-
-<pre><code class="language-bash">bun mantiq tinker
-# Opens a REPL with access to your models, helpers, and services
+<pre><code class="language-bash">bun mantiq key:generate
+# Generates a random APP_KEY and writes it to .env
 </code></pre>
 
-<p>Tinker boots the full application (container, config, providers) so you can interact with your models and services directly:</p>
+<h3>config:cache / config:clear</h3>
+<p>Cache or clear the configuration for production:</p>
 
-<pre><code class="language-typescript">// Inside tinker
-&gt; const users = await User.all()
-&gt; users.length
-42
-&gt; await User.create({ name: 'Test', email: 'test@example.com', password: '...' })
+<pre><code class="language-bash">bun mantiq config:cache
+# Writes bootstrap/cache/config.json
+
+bun mantiq config:clear
+# Removes the cached config file
 </code></pre>
+
+<h3>schema:generate</h3>
+<p>Generate TypeScript interfaces from your database schema:</p>
+
+<pre><code class="language-bash">bun mantiq schema:generate
+# Generates TypeScript interfaces from the current database schema
+</code></pre>
+
+<h3>Other Utility Commands</h3>
+<ul>
+  <li><code>about</code> &mdash; Display information about the application</li>
+  <li><code>tinker</code> &mdash; Open an interactive REPL with the application bootstrapped</li>
+  <li><code>cache:clear</code> &mdash; Clear the application cache</li>
+  <li><code>storage:link</code> &mdash; Create the symbolic link for public storage</li>
+  <li><code>down</code> &mdash; Put the application into maintenance mode</li>
+  <li><code>up</code> &mdash; Bring the application out of maintenance mode</li>
+</ul>
 
 <h2>Writing Custom Commands</h2>
-<p>Create custom commands by extending the <code>Command</code> base class:</p>
+<p>Create custom commands by extending the <code>Command</code> base class. Place them in <code>app/Console/Commands/</code> and the Discoverer will register them automatically:</p>
 
-<pre><code class="language-typescript">import { Command } from '@mantiq/cli'
+<pre><code class="language-typescript">// app/Console/Commands/SendRemindersCommand.ts
+import { Command } from '@mantiq/cli'
 import type { ParsedArgs } from '@mantiq/cli'
 
-class SendRemindersCommand extends Command {
+export class SendRemindersCommand extends Command {
   override name = 'reminders:send'
   override description = 'Send pending reminders to users'
   override usage = 'reminders:send [--force]'
@@ -204,20 +277,10 @@ class SendRemindersCommand extends Command {
 }
 </code></pre>
 
-<h3>Registering Custom Commands</h3>
-<p>Register your commands in the CLI kernel:</p>
+<p>Or generate the boilerplate with:</p>
 
-<pre><code class="language-typescript">import { Kernel } from '@mantiq/cli'
-
-const kernel = new Kernel(app)
-
-kernel.registerAll([
-  new SendRemindersCommand(),
-  new GenerateReportCommand(),
-  // ... other custom commands
-])
-
-await kernel.run()
+<pre><code class="language-bash">bun mantiq make:command SendReminders
+# Creates: app/Console/Commands/SendRemindersCommand.ts
 </code></pre>
 
 <h2>The Command Base Class</h2>
@@ -226,7 +289,7 @@ await kernel.run()
 <table>
   <thead><tr><th>Property/Method</th><th>Description</th></tr></thead>
   <tbody>
-    <tr><td><code>name</code></td><td>The command name used to invoke it (e.g., <code>make:model</code>)</td></tr>
+    <tr><td><code>name</code></td><td>The command name used to invoke it (e.g., <code>reminders:send</code>)</td></tr>
     <tr><td><code>description</code></td><td>Short description shown in the help listing</td></tr>
     <tr><td><code>usage</code> (optional)</td><td>Usage hint with argument placeholders</td></tr>
     <tr><td><code>handle(args)</code></td><td>The command logic. Returns an exit code (0 = success).</td></tr>
@@ -239,6 +302,7 @@ await kernel.run()
 <pre><code class="language-typescript">this.io.line('Regular output')
 this.io.heading('Section Title')
 this.io.error('Something went wrong')
+this.io.success('Operation completed')
 this.io.newLine()
 this.io.twoColumn('Key', 'Value', 20)  // padded two-column layout
 this.io.green('Success text')

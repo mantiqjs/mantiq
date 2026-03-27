@@ -10,6 +10,17 @@ export class EventWatcher extends Watcher {
   private static readonly INTERNAL_PREFIXES = [
     'RecordHeartbeatEntries',
     'HeartbeatMetrics',
+    'QueryExecuted',
+    'TransactionBeginning',
+    'TransactionCommitted',
+    'TransactionRolledBack',
+    'MigrationStarted',
+    'MigrationEnded',
+    'RouteMatched',
+    'CacheHit',
+    'CacheMissed',
+    'KeyWritten',
+    'KeyForgotten',
   ]
 
   override register(_on: (eventClass: any, handler: (event: any) => void) => void, onAny: (handler: (event: any) => void) => void): void {
@@ -31,6 +42,8 @@ export class EventWatcher extends Watcher {
     const content: EventEntryContent = {
       event_class: eventClass,
       listeners_count: 0, // populated by the dispatcher if available
+      payload: null,
+      listeners: [],
     }
 
     this.record('event', content, [eventClass])

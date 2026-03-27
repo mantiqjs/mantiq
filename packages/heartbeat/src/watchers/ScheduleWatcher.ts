@@ -25,6 +25,7 @@ export class ScheduleWatcher extends Watcher {
       expression: data.expression,
       duration: data.duration,
       status: data.status,
+      output: null,
     }
 
     const tags: string[] = [data.status]

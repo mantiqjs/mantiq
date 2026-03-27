@@ -1,8 +1,9 @@
 import './style.css'
-import { createRoot } from 'react-dom/client'
+import { hydrateRoot, createRoot } from 'react-dom/client'
 import { MantiqApp } from './App.tsx'
 import { pages } from './pages.ts'
 
 const root = document.getElementById('app')!
-root.innerHTML = ''
-createRoot(root).render(<MantiqApp pages={pages} />)
+const app = <MantiqApp pages={pages} />
+
+root.innerHTML.trim() ? hydrateRoot(root, app) : createRoot(root).render(app)

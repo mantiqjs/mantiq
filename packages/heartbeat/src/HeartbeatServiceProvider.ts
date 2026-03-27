@@ -21,6 +21,7 @@ import { ModelWatcher } from './watchers/ModelWatcher.ts'
 import { LogWatcher } from './watchers/LogWatcher.ts'
 import { MailWatcher } from './watchers/MailWatcher.ts'
 import { ScheduleWatcher } from './watchers/ScheduleWatcher.ts'
+import { CommandWatcher } from './watchers/CommandWatcher.ts'
 import { CreateHeartbeatTables } from './migrations/CreateHeartbeatTables.ts'
 import { DashboardController } from './dashboard/DashboardController.ts'
 import { HeartbeatMiddleware } from './middleware/HeartbeatMiddleware.ts'
@@ -113,6 +114,9 @@ export class HeartbeatServiceProvider extends ServiceProvider {
     try {
       this.registerMiddleware(heartbeat, tracer, requestWatcher, metrics)
     } catch { /* HttpKernel not available */ }
+
+    // Wire external package hooks (CLI, logging, mail)
+    this.wireExternalWatchers(heartbeat, tracer)
 
     // Register dashboard routes
     if (config.dashboard.enabled) {
@@ -220,6 +224,7 @@ export class HeartbeatServiceProvider extends ServiceProvider {
       ['log', new LogWatcher()],
       ['mail', new MailWatcher()],
       ['schedule', new ScheduleWatcher()],
+      ['command', new CommandWatcher()],
     ]
 
     const on = eventBus.on.bind(eventBus)
@@ -239,5 +244,66 @@ export class HeartbeatServiceProvider extends ServiceProvider {
     }
 
     return requestWatcher
+  }
+
+  /**
+   * Wire the CLI command kernel to record command executions.
+   * Sets a static hook on @mantiq/cli Kernel so every command run
+   * creates a trace context and records a 'command' entry.
+   */
+  private wireExternalWatchers(heartbeat: Heartbeat, tracer: Tracer): void {
+    // ── CLI commands ──────────────────────────────────────────────────────
+    try {
+      const { Kernel } = require('@mantiq/cli')
+      const commandWatcher = heartbeat.getWatchers().find((w) => w instanceof CommandWatcher) as CommandWatcher | undefined
+      if (commandWatcher) {
+        Kernel._onCommandExecuted = (data: { name: string; args: Record<string, any>; exitCode: number; duration: number }) => {
+          const commandId = crypto.randomUUID()
+          tracer.startCommand(commandId)
+          commandWatcher.recordCommand({
+            name: data.name,
+            arguments: data.args,
+            options: {},
+            exit_code: data.exitCode,
+            duration: data.duration,
+            output: null,
+          })
+          heartbeat.flush()
+          tracer.endCommand()
+        }
+      }
+    } catch { /* @mantiq/cli not installed */ }
+
+    // ── Logging ───────────────────────────────────────────────────────────
+    try {
+      const { LogManager } = require('@mantiq/logging')
+      const logWatcher = heartbeat.getWatchers().find((w) => w instanceof LogWatcher) as LogWatcher | undefined
+      if (logWatcher) {
+        LogManager._onLog = (level: string, message: string, context: Record<string, any>, channel: string) => {
+          logWatcher.recordLog(level, message, context, channel)
+        }
+      }
+    } catch { /* @mantiq/logging not installed */ }
+
+    // ── Mail ──────────────────────────────────────────────────────────────
+    try {
+      const { MailManager } = require('@mantiq/mail')
+      const mailWatcher = heartbeat.getWatchers().find((w) => w instanceof MailWatcher) as MailWatcher | undefined
+      if (mailWatcher) {
+        MailManager._onMailSent = (data: { to: string[]; subject: string; mailer: string; duration: number; queued: boolean }) => {
+          mailWatcher.recordMail({
+            to: data.to,
+            subject: data.subject,
+            from: '',
+            mailer: data.mailer,
+            html: null,
+            text: null,
+            attachments: [],
+            duration: data.duration,
+            queued: data.queued,
+          })
+        }
+      }
+    } catch { /* @mantiq/mail not installed */ }
   }
 }

@@ -12,6 +12,9 @@ export type EntryType =
   | 'log'
   | 'schedule'
   | 'mail'
+  | 'command'
+
+export type OriginType = 'request' | 'command' | 'schedule' | 'job' | 'standalone'
 
 /**
  * A raw pending entry before it's persisted — pushed by watchers into the buffer.
@@ -21,6 +24,8 @@ export interface PendingEntry {
   content: Record<string, any>
   tags?: string[] | undefined
   requestId: string | null
+  originType: OriginType
+  originId: string | null
   createdAt: number
 }
 
@@ -32,6 +37,8 @@ export interface HeartbeatEntry {
   uuid: string
   type: EntryType
   request_id: string | null
+  origin_type: string
+  origin_id: string | null
   content: string
   tags: string
   created_at: number
@@ -103,6 +110,8 @@ export interface JobEntryContent {
 export interface EventEntryContent {
   event_class: string
   listeners_count: number
+  payload: Record<string, any> | null
+  listeners: string[]
 }
 
 export interface ModelEntryContent {
@@ -124,6 +133,16 @@ export interface ScheduleEntryContent {
   expression: string
   duration: number
   status: 'success' | 'error'
+  output: string | null
+}
+
+export interface CommandEntryContent {
+  name: string
+  arguments: Record<string, any>
+  options: Record<string, any>
+  exit_code: number
+  duration: number
+  output: string | null
 }
 
 export interface MailEntryContent {

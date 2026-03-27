@@ -4,29 +4,29 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun run --watch index.ts",
+    "dev": "bun run dev:backend & bun run dev:frontend & wait",
+    "dev:backend": "bun run --watch index.ts",
+    "dev:frontend": "bunx vite --clearScreen false",
     "start": "bun run index.ts",
-    "dev:frontend": "vite",
     "build": "vite build && vite build --ssr src/ssr.tsx --outDir bootstrap/ssr"
   },
   "dependencies": {
-    "@mantiq/core": "workspace:*",
-    "@mantiq/vite": "workspace:*",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.0",
-    "lucide-react": "^0.460.0",
-    "radix-ui": "^1.4.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "tailwind-merge": "^2.6.0"
+    "@mantiq/core": "^0.5.22",
+    "@mantiq/vite": "^0.5.22",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "motion": "^12.0.0",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.5.0",
+    "lucide-react": "^1.7.0"
   },
   "devDependencies": {
     "bun-types": "latest",
-    "typescript": "^5.7.0",
-    "vite": "^8.0.0",
+    "typescript": "^5.9.3",
+    "vite": "^6.0.0",
+    "@vitejs/plugin-react": "^4.0.0",
     "tailwindcss": "^4.0.0",
     "@tailwindcss/vite": "^4.0.0",
-    "@vitejs/plugin-react": "^6.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0"
   }

@@ -24,6 +24,37 @@ export default {
   service in the application has already been registered and is available for resolution.
 </p>
 
+<h2>Auto-Discovery</h2>
+
+<p>
+  The <code>Discoverer</code> automatically discovers service providers from the
+  <code>app/Providers/</code> directory. Any file matching the pattern <code>*ServiceProvider.ts</code>
+  is loaded and registered alongside the framework providers. You do not need to manually
+  list your providers in the bootstrap file.
+</p>
+
+<p>
+  The bootstrap file (<code>index.ts</code>) uses the Discoverer to load providers:
+</p>
+
+<pre><code class="language-typescript">import { Application, CoreServiceProvider, Discoverer } from '@mantiq/core'
+
+const app = await Application.create(import.meta.dir, 'config')
+
+const discoverer = new Discoverer(import.meta.dir)
+const isDev = process.env['APP_ENV'] !== 'production'
+const manifest = await discoverer.resolve(isDev)
+const userProviders = await discoverer.loadProviders(manifest)
+
+// Framework providers are listed explicitly; user providers are auto-discovered
+await app.bootstrap([CoreServiceProvider], userProviders)</code></pre>
+
+<p>
+  Framework providers like <code>CoreServiceProvider</code> are passed as the first argument
+  to <code>app.bootstrap()</code>. User providers discovered from <code>app/Providers/</code>
+  are passed as the second argument and are registered after the framework providers.
+</p>
+
 <h2>Writing a Service Provider</h2>
 
 <p>
@@ -59,6 +90,11 @@ export class MailServiceProvider extends ServiceProvider {
     mailer.registerTemplateEngine(new HandlebarsEngine())
   }
 }</code></pre>
+
+<p>
+  Place this file in <code>app/Providers/MailServiceProvider.ts</code> and the Discoverer
+  will automatically pick it up.
+</p>
 
 <h2>The register() Method</h2>
 
@@ -109,48 +145,6 @@ override register(): void {
   Both <code>register()</code> and <code>boot()</code> can be synchronous or asynchronous
   (returning a <code>Promise</code>). The application awaits each method before proceeding.
 </p>
-
-<h2>Registering Providers</h2>
-
-<p>
-  Providers are registered in your application&rsquo;s bootstrap file (<code>index.ts</code>):
-</p>
-
-<pre><code class="language-typescript">import { Application, CoreServiceProvider } from '@mantiq/core'
-import { DatabaseServiceProvider } from '@mantiq/database'
-import { AuthServiceProvider } from '@mantiq/auth'
-import { ViteServiceProvider } from '@mantiq/vite'
-import { AppServiceProvider } from './app/Providers/AppServiceProvider.ts'
-
-const app = await Application.create(import.meta.dir, 'config')
-
-// Phase 1: Register all providers (calls register() on each)
-await app.registerProviders([
-  CoreServiceProvider,
-  DatabaseServiceProvider,
-  AuthServiceProvider,
-  ViteServiceProvider,
-  AppServiceProvider,         // Your application provider
-])
-
-// Phase 2: Boot all providers (calls boot() on each)
-await app.bootProviders()</code></pre>
-
-<p>
-  The order matters: providers are registered in the order they appear in the array, and
-  booted in the same order. Place framework providers first, then your application providers.
-</p>
-
-<h3>Dynamic Provider Registration</h3>
-
-<p>
-  You can register a provider after the application has booted using
-  <code>app.register()</code>. The provider&rsquo;s <code>register()</code> and
-  <code>boot()</code> methods are called immediately:
-</p>
-
-<pre><code class="language-typescript">await app.register(PluginServiceProvider)
-// register() and boot() have both been called</code></pre>
 
 <h2>Deferred Providers</h2>
 
@@ -271,11 +265,17 @@ export class QueueServiceProvider extends ServiceProvider {
 <h2>Creating an Application Provider</h2>
 
 <p>
-  Here is a complete example of an application service provider that registers custom services,
-  configures middleware groups, and sets up application routes:
+  Generate a new provider with the CLI:
 </p>
 
-<pre><code class="language-typescript">import { ServiceProvider, ConfigRepository, HttpKernel, RouterImpl } from '@mantiq/core'
+<pre><code class="language-bash">bun mantiq make:provider AppServiceProvider</code></pre>
+
+<p>
+  Here is a complete example of an application service provider that registers custom services:
+</p>
+
+<pre><code class="language-typescript">// app/Providers/AppServiceProvider.ts
+import { ServiceProvider, ConfigRepository } from '@mantiq/core'
 
 export class AppServiceProvider extends ServiceProvider {
   override register(): void {
@@ -297,20 +297,16 @@ export class AppServiceProvider extends ServiceProvider {
   }
 
   override boot(): void {
-    const kernel = this.app.make(HttpKernel)
-
-    // Register middleware groups
-    kernel.registerMiddlewareGroup('web', [
-      'encrypt.cookies',
-      'session',
-      'csrf',
-    ])
-
-    kernel.registerMiddlewareGroup('api', [
-      'throttle:60,1',
-    ])
+    // Perform initialization that depends on other services
+    const notifier = this.app.make(NotificationService)
+    notifier.registerChannel('sms', new SmsChannel())
   }
 }</code></pre>
+
+<p>
+  Place this in <code>app/Providers/AppServiceProvider.ts</code> and the Discoverer will
+  automatically register it.
+</p>
 
 <h2>The Provider Lifecycle Timeline</h2>
 
@@ -322,16 +318,22 @@ export class AppServiceProvider extends ServiceProvider {
    - Config loaded from config/ directory
    - ConfigRepository bound as instance
 
-2. app.registerProviders([...])
-   For each provider (in order):
+2. Discoverer.resolve()
+   - Scans app/Providers/ for *ServiceProvider.ts files
+   - Scans routes/, app/Console/Commands/, app/Models/, etc.
+   - Builds or loads cached manifest
+
+3. app.bootstrap(frameworkProviders, userProviders)
+   For each provider (framework first, then user):
    - If deferred: index its provides() bindings, skip registration
    - If not deferred: call register()
-
-3. app.bootProviders()
-   For each registered (non-deferred) provider:
+   Then for each registered (non-deferred) provider:
    - Call boot()
 
-4. Application is ready
+4. discoverer.loadRoutes()
+   - Imports route files and applies middleware groups by filename
+
+5. Application is ready
    - HTTP kernel can start handling requests
    - Deferred providers load on first use</code></pre>
 
@@ -354,7 +356,7 @@ export class AppServiceProvider extends ServiceProvider {
   <li>
     <strong>One provider per concern.</strong> Instead of a giant AppServiceProvider, consider
     splitting into focused providers: <code>PaymentServiceProvider</code>,
-    <code>NotificationServiceProvider</code>, etc.
+    <code>NotificationServiceProvider</code>, etc. The Discoverer will pick them all up.
   </li>
   <li>
     <strong>Use singletons for stateful services.</strong> Database managers, cache stores,
