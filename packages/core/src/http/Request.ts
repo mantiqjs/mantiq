@@ -211,6 +211,10 @@ export class MantiqRequest implements MantiqRequestContract {
     this.routeParams = params
   }
 
+  setRouteParam(key: string, value: any): void {
+    this.routeParams[key] = value
+  }
+
   // ── Session ──────────────────────────────────────────────────────────────
 
   session(): SessionStore {

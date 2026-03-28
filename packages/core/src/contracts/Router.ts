@@ -21,6 +21,7 @@ export interface RouteMatch {
   params: Record<string, any>
   middleware: string[]
   routeName?: string | undefined
+  bindings?: Map<string, { model: any; key: string }>
 }
 
 export interface RouteDefinition {
@@ -60,4 +61,5 @@ export interface RouterRoute {
   whereNumber(param: string): this
   whereAlpha(param: string): this
   whereUuid(param: string): this
+  bind(param: string, model: any, key?: string): this
 }

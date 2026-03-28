@@ -160,12 +160,43 @@ export class RouterImpl implements RouterContract {
       const result = RouteMatcher.match(route, pathname)
       if (result) {
         RouterImpl._dispatcher?.emit(new RouteMatched(route.routeName, route.action, request))
-        return {
+
+        // Merge route-level bindings with router-level bindings (route-level takes precedence)
+        const bindings = new Map<string, { model: any; key: string }>()
+
+        // Add router-level model bindings (model class → where('id', value).first())
+        for (const [param, ModelClass] of this.modelBindings) {
+          if (result.params[param] !== undefined) {
+            bindings.set(param, { model: ModelClass, key: 'id' })
+          }
+        }
+
+        // Add router-level custom bindings (resolver function)
+        for (const [param, resolver] of this.customBindings) {
+          if (result.params[param] !== undefined) {
+            bindings.set(param, { model: resolver, key: '__custom__' })
+          }
+        }
+
+        // Route-level bindings override router-level
+        for (const [param, binding] of route.bindings) {
+          if (result.params[param] !== undefined) {
+            bindings.set(param, binding)
+          }
+        }
+
+        const match: RouteMatch = {
           action: route.action,
           params: result.params,
           middleware: route.middlewareList,
           routeName: route.routeName,
         }
+
+        if (bindings.size > 0) {
+          match.bindings = bindings
+        }
+
+        return match
       }
     }
 

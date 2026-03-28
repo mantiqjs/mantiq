@@ -1,9 +1,15 @@
 import type { HttpMethod, RouteAction, RouterRoute } from '../contracts/Router.ts'
 
+export interface RouteBinding {
+  model: any
+  key: string
+}
+
 export class Route implements RouterRoute {
   public routeName?: string
   public middlewareList: string[] = []
   public wheres: Record<string, RegExp> = {}
+  public bindings = new Map<string, RouteBinding>()
 
   constructor(
     public readonly methods: HttpMethod[],
@@ -36,5 +42,10 @@ export class Route implements RouterRoute {
 
   whereUuid(param: string): this {
     return this.where(param, /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
+  }
+
+  bind(param: string, model: any, key = 'id'): this {
+    this.bindings.set(param, { model, key })
+    return this
   }
 }
