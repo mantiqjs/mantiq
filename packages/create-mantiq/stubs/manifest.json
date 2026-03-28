@@ -1538,6 +1538,86 @@
           "target": "src/pages/account/preferences.tsx"
         }
       ]
+    },
+    "svelte": {
+      "files": [
+        {
+          "stub": "src/lib/utils.ts.stub",
+          "target": "src/lib/utils.ts"
+        },
+        {
+          "stub": "src/style.css.stub",
+          "target": "src/style.css"
+        },
+        {
+          "stub": "src/lib/components/layout/authenticated-layout.svelte.stub",
+          "target": "src/lib/components/layout/authenticated-layout.svelte"
+        },
+        {
+          "stub": "src/lib/components/layout/app-sidebar.svelte.stub",
+          "target": "src/lib/components/layout/app-sidebar.svelte"
+        },
+        {
+          "stub": "src/lib/components/layout/nav-user.svelte.stub",
+          "target": "src/lib/components/layout/nav-user.svelte"
+        },
+        {
+          "stub": "src/lib/components/layout/header.svelte.stub",
+          "target": "src/lib/components/layout/header.svelte"
+        },
+        {
+          "stub": "src/lib/components/layout/main.svelte.stub",
+          "target": "src/lib/components/layout/main.svelte"
+        },
+        {
+          "stub": "src/lib/components/layout/top-nav.svelte.stub",
+          "target": "src/lib/components/layout/top-nav.svelte"
+        },
+        {
+          "stub": "src/lib/components/layout/theme-toggle.svelte.stub",
+          "target": "src/lib/components/layout/theme-toggle.svelte"
+        },
+        {
+          "stub": "src/lib/components/layout/nav-group.svelte.stub",
+          "target": "src/lib/components/layout/nav-group.svelte"
+        },
+        {
+          "stub": "src/lib/components/layout/sidebar-data.ts.stub",
+          "target": "src/lib/components/layout/sidebar-data.ts"
+        },
+        {
+          "stub": "src/pages/Dashboard.svelte.stub",
+          "target": "src/pages/Dashboard.svelte"
+        },
+        {
+          "stub": "src/pages/Users.svelte.stub",
+          "target": "src/pages/Users.svelte"
+        },
+        {
+          "stub": "src/pages/Login.svelte.stub",
+          "target": "src/pages/Login.svelte"
+        },
+        {
+          "stub": "src/pages/Register.svelte.stub",
+          "target": "src/pages/Register.svelte"
+        },
+        {
+          "stub": "src/pages/account/Layout.svelte.stub",
+          "target": "src/pages/account/Layout.svelte"
+        },
+        {
+          "stub": "src/pages/account/Profile.svelte.stub",
+          "target": "src/pages/account/Profile.svelte"
+        },
+        {
+          "stub": "src/pages/account/Security.svelte.stub",
+          "target": "src/pages/account/Security.svelte"
+        },
+        {
+          "stub": "src/pages/account/Preferences.svelte.stub",
+          "target": "src/pages/account/Preferences.svelte"
+        }
+      ]
     }
   },
   "auth": {
@@ -1585,6 +1665,18 @@
           {
             "stub": "src/pages/account/preferences.tsx.stub",
             "target": "src/pages/account/preferences.tsx"
+          }
+        ]
+      },
+      "svelte": {
+        "files": [
+          {
+            "stub": "src/pages.ts.stub",
+            "target": "src/pages.ts"
+          },
+          {
+            "stub": "src/App.svelte.stub",
+            "target": "src/App.svelte"
           }
         ]
       }
@@ -1650,6 +1742,18 @@
         {
           "stub": "src/pages/Users.tsx.stub",
           "target": "src/pages/Users.tsx"
+        }
+      ]
+    },
+    "svelte": {
+      "files": [
+        {
+          "stub": "src/pages.ts.stub",
+          "target": "src/pages.ts"
+        },
+        {
+          "stub": "src/App.svelte.stub",
+          "target": "src/App.svelte"
         }
       ]
     }

@@ -1,0 +1,104 @@
+<script lang="ts">
+  import NavGroup from './nav-group.svelte'
+  import NavUser from './nav-user.svelte'
+  import { sidebarData } from './sidebar-data'
+  import { PanelLeft } from 'lucide-svelte'
+
+  let {
+    user,
+    appName,
+    activePath,
+    navigate,
+    onLogout,
+    open = $bindable(true),
+    mobileOpen = $bindable(false),
+  }: {
+    user: { name: string; email: string; role?: string }
+    appName: string
+    activePath: string
+    navigate: (href: string) => void
+    onLogout: () => void
+    open: boolean
+    mobileOpen: boolean
+  } = $props()
+</script>
+
+<!-- Desktop sidebar -->
+<aside
+  class="fixed inset-y-0 left-0 z-20 hidden lg:flex flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 {open ? 'w-64' : 'w-16'}"
+>
+  <!-- Header -->
+  <div class="flex h-14 items-center gap-3 border-b border-sidebar-border px-4">
+    <button
+      type="button"
+      onclick={() => navigate('/dashboard')}
+      class="flex items-center gap-3 overflow-hidden"
+    >
+      <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground text-xs font-bold">
+        M
+      </div>
+      {#if open}
+        <div class="grid text-left text-sm leading-tight">
+          <span class="truncate font-semibold">{appName}</span>
+          <span class="truncate text-xs text-muted-foreground">Admin Panel</span>
+        </div>
+      {/if}
+    </button>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+    {#each sidebarData as group}
+      <NavGroup {group} {activePath} {navigate} collapsed={!open} />
+    {/each}
+  </nav>
+
+  <!-- Footer -->
+  <div class="border-t border-sidebar-border p-3">
+    <NavUser {user} {navigate} {onLogout} collapsed={!open} />
+  </div>
+
+  <!-- Rail toggle -->
+  <button
+    type="button"
+    onclick={() => open = !open}
+    class="absolute -right-3 top-20 flex h-6 w-6 items-center justify-center rounded-full border border-sidebar-border bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent"
+    aria-label={open ? 'Collapse sidebar' : 'Expand sidebar'}
+  >
+    <PanelLeft class="h-3.5 w-3.5" />
+  </button>
+</aside>
+
+<!-- Mobile sidebar -->
+<aside
+  class="fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-transform duration-200 lg:hidden {mobileOpen ? 'translate-x-0' : '-translate-x-full'}"
+>
+  <!-- Header -->
+  <div class="flex h-14 items-center gap-3 border-b border-sidebar-border px-4">
+    <button
+      type="button"
+      onclick={() => navigate('/dashboard')}
+      class="flex items-center gap-3"
+    >
+      <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground text-xs font-bold">
+        M
+      </div>
+      <div class="grid text-left text-sm leading-tight">
+        <span class="truncate font-semibold">{appName}</span>
+        <span class="truncate text-xs text-muted-foreground">Admin Panel</span>
+      </div>
+    </button>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+    {#each sidebarData as group}
+      <NavGroup {group} {activePath} {navigate} collapsed={false} />
+    {/each}
+  </nav>
+
+  <!-- Footer -->
+  <div class="border-t border-sidebar-border p-3">
+    <NavUser {user} {navigate} {onLogout} collapsed={false} />
+  </div>
+</aside>

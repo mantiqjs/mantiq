@@ -1,0 +1,66 @@
+<script lang="ts">
+  import { onMount, onDestroy } from 'svelte'
+  import { cn } from '$lib/utils'
+  import ThemeToggle from './theme-toggle.svelte'
+  import { Menu, Search } from 'lucide-svelte'
+  import type { Snippet } from 'svelte'
+
+  let {
+    fixed = false,
+    navigate,
+    children,
+    class: className,
+  }: {
+    fixed?: boolean
+    navigate?: (href: string) => void
+    children?: Snippet
+    class?: string
+  } = $props()
+
+  let offset = $state(0)
+
+  function onScroll() {
+    offset = document.body.scrollTop || document.documentElement.scrollTop
+  }
+
+  onMount(() => {
+    document.addEventListener('scroll', onScroll, { passive: true })
+  })
+
+  onDestroy(() => {
+    if (typeof window !== 'undefined') {
+      document.removeEventListener('scroll', onScroll)
+    }
+  })
+</script>
+
+<header
+  class={cn(
+    'flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear',
+    fixed && 'sticky top-0 z-10 bg-background',
+    offset > 10 && fixed ? 'border-b' : '',
+    className,
+  )}
+>
+  <div class="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
+    <!-- Mobile menu trigger (dispatches custom event) -->
+    <button
+      type="button"
+      class="inline-flex h-8 w-8 items-center justify-center rounded-md text-sm font-medium hover:bg-accent lg:hidden"
+      onclick={() => {
+        const evt = new CustomEvent('toggle-mobile-sidebar', { bubbles: true })
+        document.dispatchEvent(evt)
+      }}
+      aria-label="Toggle sidebar"
+    >
+      <Menu class="h-4 w-4" />
+    </button>
+    <div class="mx-1 hidden h-4 w-px bg-border md:block"></div>
+    {#if children}
+      {@render children()}
+    {/if}
+    <div class="ms-auto flex items-center gap-2">
+      <ThemeToggle />
+    </div>
+  </div>
+</header>

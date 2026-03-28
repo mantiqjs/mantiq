@@ -1,0 +1,99 @@
+<script lang="ts">
+  import { cn } from '$lib/utils'
+  import { Menu } from 'lucide-svelte'
+
+  interface TopNavLink {
+    title: string
+    href: string
+    isActive?: boolean
+    disabled?: boolean
+  }
+
+  let {
+    links,
+    onLinkClick,
+    class: className,
+  }: {
+    links: TopNavLink[]
+    onLinkClick?: (href: string) => void
+    class?: string
+  } = $props()
+
+  let mobileOpen = $state(false)
+
+  function handleClick(e: MouseEvent, href: string) {
+    if (onLinkClick) {
+      e.preventDefault()
+      onLinkClick(href)
+    }
+  }
+
+  function handleClickOutside(e: MouseEvent) {
+    const target = e.target as HTMLElement
+    if (!target.closest('[data-top-nav]')) {
+      mobileOpen = false
+    }
+  }
+
+  $effect(() => {
+    if (mobileOpen) {
+      document.addEventListener('click', handleClickOutside, true)
+      return () => document.removeEventListener('click', handleClickOutside, true)
+    }
+  })
+</script>
+
+<!-- Desktop navigation -->
+<nav
+  class={cn(
+    'hidden items-center gap-4 md:flex lg:gap-6',
+    className,
+  )}
+>
+  {#each links as link}
+    <a
+      href={link.href}
+      onclick={(e: MouseEvent) => handleClick(e, link.href)}
+      class={cn(
+        'text-sm font-medium transition-colors hover:text-primary',
+        link.isActive ? 'text-foreground' : 'text-muted-foreground',
+        link.disabled && 'pointer-events-none opacity-50',
+      )}
+    >
+      {link.title}
+    </a>
+  {/each}
+</nav>
+
+<!-- Mobile navigation -->
+<div class="relative md:hidden" data-top-nav>
+  <button
+    type="button"
+    onclick={() => mobileOpen = !mobileOpen}
+    class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-input bg-background text-sm hover:bg-accent"
+    aria-label="Toggle navigation"
+  >
+    <Menu class="h-4 w-4" />
+  </button>
+  {#if mobileOpen}
+    <div class="absolute left-0 top-full z-50 mt-1 w-48 rounded-md border border-border bg-popover p-1 shadow-lg">
+      {#each links as link}
+        <button
+          type="button"
+          disabled={link.disabled}
+          onclick={(e: MouseEvent) => {
+            mobileOpen = false
+            if (onLinkClick) onLinkClick(link.href)
+          }}
+          class={cn(
+            'flex w-full items-center rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-accent',
+            !link.isActive && 'text-muted-foreground',
+            link.disabled && 'pointer-events-none opacity-50',
+          )}
+        >
+          {link.title}
+        </button>
+      {/each}
+    </div>
+  {/if}
+</div>

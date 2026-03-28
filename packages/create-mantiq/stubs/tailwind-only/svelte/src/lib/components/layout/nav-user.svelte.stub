@@ -1,0 +1,104 @@
+<script lang="ts">
+  import {
+    ChevronsUpDown,
+    LogOut,
+    User,
+    Settings,
+  } from 'lucide-svelte'
+
+  let {
+    user,
+    navigate,
+    onLogout,
+    collapsed = false,
+  }: {
+    user: { name: string; email: string; role?: string }
+    navigate: (href: string) => void
+    onLogout: () => void
+    collapsed?: boolean
+  } = $props()
+
+  let menuOpen = $state(false)
+
+  function getInitials(name: string) {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
+  }
+
+  function handleClickOutside(e: MouseEvent) {
+    const target = e.target as HTMLElement
+    if (!target.closest('[data-nav-user-menu]')) {
+      menuOpen = false
+    }
+  }
+
+  $effect(() => {
+    if (menuOpen) {
+      document.addEventListener('click', handleClickOutside, true)
+      return () => document.removeEventListener('click', handleClickOutside, true)
+    }
+  })
+</script>
+
+<div class="relative" data-nav-user-menu>
+  <button
+    type="button"
+    onclick={() => menuOpen = !menuOpen}
+    class="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-sm hover:bg-sidebar-accent transition-colors"
+  >
+    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-xs font-semibold">
+      {getInitials(user.name)}
+    </div>
+    {#if !collapsed}
+      <div class="grid flex-1 text-left text-sm leading-tight">
+        <span class="truncate font-semibold">{user.name}</span>
+        <span class="truncate text-xs text-muted-foreground">{user.email}</span>
+      </div>
+      <ChevronsUpDown class="ml-auto h-4 w-4 text-muted-foreground" />
+    {/if}
+  </button>
+
+  {#if menuOpen}
+    <div class="absolute bottom-full left-0 mb-1 w-56 rounded-lg border border-border bg-popover p-1 shadow-lg z-50">
+      <div class="flex items-center gap-2 px-2 py-1.5 text-sm">
+        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-xs font-semibold">
+          {getInitials(user.name)}
+        </div>
+        <div class="grid flex-1 text-left text-sm leading-tight">
+          <span class="truncate font-semibold">{user.name}</span>
+          <span class="truncate text-xs text-muted-foreground">{user.email}</span>
+        </div>
+      </div>
+      <div class="my-1 h-px bg-border"></div>
+      <button
+        type="button"
+        onclick={() => { menuOpen = false; navigate('/account/profile') }}
+        class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent transition-colors"
+      >
+        <User class="h-4 w-4" />
+        Account
+      </button>
+      <button
+        type="button"
+        onclick={() => { menuOpen = false; navigate('/account/preferences') }}
+        class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent transition-colors"
+      >
+        <Settings class="h-4 w-4" />
+        Settings
+      </button>
+      <div class="my-1 h-px bg-border"></div>
+      <button
+        type="button"
+        onclick={() => { menuOpen = false; onLogout() }}
+        class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-destructive hover:bg-accent transition-colors"
+      >
+        <LogOut class="h-4 w-4" />
+        Sign out
+      </button>
+    </div>
+  {/if}
+</div>

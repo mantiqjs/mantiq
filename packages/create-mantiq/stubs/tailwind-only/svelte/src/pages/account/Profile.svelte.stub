@@ -1,0 +1,76 @@
+<script lang="ts">
+  import AccountLayout from './Layout.svelte'
+
+  let {
+    appName,
+    currentUser = null,
+    navigate,
+  }: {
+    appName?: string
+    currentUser?: { id: number; name: string; email: string } | null
+    navigate: (href: string) => void
+    [key: string]: any
+  } = $props()
+
+  let name = $state((() => currentUser?.name ?? '')())
+  let email = $state((() => currentUser?.email ?? '')())
+  let saving = $state(false)
+  let saved = $state(false)
+
+  async function handleSave(e: SubmitEvent) {
+    e.preventDefault()
+    saving = true
+    await new Promise(r => setTimeout(r, 500))
+    saving = false
+    saved = true
+    setTimeout(() => saved = false, 3000)
+  }
+</script>
+
+<AccountLayout {appName} {currentUser} {navigate} activePath="/account/profile">
+  <div class="space-y-6">
+    <div>
+      <h3 class="text-lg font-medium">Profile</h3>
+      <p class="text-sm text-muted-foreground">
+        This is how others will see you on the site.
+      </p>
+    </div>
+    <form onsubmit={handleSave} class="space-y-6">
+      <div class="space-y-2">
+        <label for="name" class="text-sm font-medium leading-none">Name</label>
+        <input
+          id="name"
+          bind:value={name}
+          class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+        />
+        <p class="text-xs text-muted-foreground">
+          This is your public display name.
+        </p>
+      </div>
+      <div class="space-y-2">
+        <label for="email" class="text-sm font-medium leading-none">Email</label>
+        <input
+          id="email"
+          type="email"
+          bind:value={email}
+          class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+        />
+        <p class="text-xs text-muted-foreground">
+          Your email address is used for notifications.
+        </p>
+      </div>
+      <div class="flex items-center gap-3">
+        <button
+          type="submit"
+          disabled={saving}
+          class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
+        >
+          {saving ? 'Saving...' : 'Update profile'}
+        </button>
+        {#if saved}
+          <span class="text-sm text-muted-foreground">Saved.</span>
+        {/if}
+      </div>
+    </form>
+  </div>
+</AccountLayout>

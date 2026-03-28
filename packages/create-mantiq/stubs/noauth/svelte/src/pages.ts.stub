@@ -1,0 +1,7 @@
+import Dashboard from './pages/Dashboard.svelte'
+import Users from './pages/Users.svelte'
+
+export const pages: Record<string, any> = {
+  Dashboard,
+  Users,
+}
