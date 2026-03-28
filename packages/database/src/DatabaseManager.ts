@@ -31,13 +31,78 @@ export type ConnectionConfig = SQLConfig | MongoConfig
 export interface DatabaseConfig {
   default?: string | undefined
   connections: Record<string, ConnectionConfig>
+  /** Threshold in ms above which a query is considered slow. Set to 0 or null to disable. */
+  slowQueryThreshold?: number | null | undefined
+}
+
+// ── Query Log ─────────────────────────────────────────────────────────────────
+
+export interface QueryLogEntry {
+  sql: string
+  bindings: any[]
+  duration: number
+  connection: string
+  timestamp: Date
 }
 
 export class DatabaseManager {
   private sqlConnections = new Map<string, DatabaseConnection>()
   private mongoConnections = new Map<string, MongoConnection>()
 
-  constructor(private readonly config: DatabaseConfig) {}
+  // ── Query logging state ─────────────────────────────────────────────────
+  private _queryLog: QueryLogEntry[] = []
+  private _loggingEnabled = false
+  private _slowQueryThreshold: number | null
+
+  constructor(private readonly config: DatabaseConfig) {
+    this._slowQueryThreshold = config.slowQueryThreshold ?? null
+  }
+
+  // ── Query Logging API ───────────────────────────────────────────────────
+
+  /** Enable query logging. All subsequent queries will be recorded. */
+  enableQueryLog(): void {
+    this._loggingEnabled = true
+  }
+
+  /** Disable query logging. Existing log entries are preserved. */
+  disableQueryLog(): void {
+    this._loggingEnabled = false
+  }
+
+  /** Returns all recorded query log entries. */
+  getQueryLog(): QueryLogEntry[] {
+    return [...this._queryLog]
+  }
+
+  /** Clear all recorded query log entries. */
+  flushQueryLog(): void {
+    this._queryLog = []
+  }
+
+  /**
+   * Record a query in the log (if logging is enabled) and check for slow queries.
+   * This is called by connection drivers after executing a query.
+   */
+  logQuery(sql: string, bindings: any[], duration: number, connection: string): void {
+    if (this._loggingEnabled) {
+      this._queryLog.push({ sql, bindings, duration, connection, timestamp: new Date() })
+    }
+
+    if (this._slowQueryThreshold != null && this._slowQueryThreshold > 0 && duration > this._slowQueryThreshold) {
+      console.warn(
+        `[mantiq/database] Slow query detected (${duration.toFixed(1)}ms > ${this._slowQueryThreshold}ms) on connection "${connection}": ${sql}`,
+      )
+    }
+  }
+
+  /** Get or set the slow query threshold (in ms). Pass null to disable. */
+  slowQueryThreshold(value?: number | null): number | null {
+    if (value !== undefined) {
+      this._slowQueryThreshold = value
+    }
+    return this._slowQueryThreshold
+  }
 
   /** Get a SQL DatabaseConnection by name */
   connection(name?: string): DatabaseConnection {
