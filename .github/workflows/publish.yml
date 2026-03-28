@@ -1,18 +1,12 @@
 name: Publish
 
 on:
-  # Auto-publish on every push to master (auto-bumps version from commits)
   push:
     branches: [master]
+    paths: ['package.json']
 
-  # Manual trigger for selective/dry-run publishes
   workflow_dispatch:
     inputs:
-      bump:
-        description: 'Version bump type (auto reads commits, or force a specific bump)'
-        type: choice
-        options: [auto, patch, minor, major, skip]
-        default: auto
       packages:
         description: 'Packages to publish (comma-separated, or "all")'
         required: true
@@ -33,7 +27,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -42,99 +35,41 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Determine version bump
-        id: bump
+      - name: Check version
+        id: check
         run: |
-          CURRENT=$(jq -r .version package.json)
+          VERSION=$(jq -r .version package.json)
           PUBLISHED=$(npm view mantiqjs version 2>/dev/null || echo "0.0.0")
-          BUMP_INPUT="${{ github.event.inputs.bump || 'auto' }}"
-
-          echo "current=$CURRENT" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "published=$PUBLISHED" >> $GITHUB_OUTPUT
 
-          if [ "$BUMP_INPUT" = "skip" ]; then
-            echo "type=skip" >> $GITHUB_OUTPUT
-            echo "  Skipping version bump"
-            exit 0
-          fi
-
-          if [ "$BUMP_INPUT" != "auto" ]; then
-            echo "type=$BUMP_INPUT" >> $GITHUB_OUTPUT
-            echo "  Forced bump: $BUMP_INPUT"
-            exit 0
-          fi
-
-          # Auto-detect from commit messages since last publish tag
-          LAST_TAG=$(git tag -l 'v*' --sort=-v:refname | head -1)
-          if [ -z "$LAST_TAG" ]; then
-            RANGE="HEAD~20..HEAD"
+          if [ "$VERSION" = "$PUBLISHED" ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "  Version $VERSION already on npm — skipping"
           else
-            RANGE="$LAST_TAG..HEAD"
+            echo "skip=false" >> $GITHUB_OUTPUT
+            echo "  Will publish $VERSION (npm has $PUBLISHED)"
           fi
 
-          COMMITS=$(git log "$RANGE" --pretty=format:"%s" 2>/dev/null || git log --oneline -20 --pretty=format:"%s")
-
-          HAS_BREAKING=$(echo "$COMMITS" | grep -c '!:' || true)
-          HAS_FEAT=$(echo "$COMMITS" | grep -c '^feat' || true)
-          HAS_FIX=$(echo "$COMMITS" | grep -c '^fix\|^chore\|^style\|^refactor\|^perf\|^docs' || true)
-
-          if [ "$HAS_BREAKING" -gt 0 ]; then
-            echo "type=major" >> $GITHUB_OUTPUT
-            echo "  Auto-detected: major (breaking changes)"
-          elif [ "$HAS_FEAT" -gt 0 ]; then
-            echo "type=minor" >> $GITHUB_OUTPUT
-            echo "  Auto-detected: minor (new features)"
-          elif [ "$HAS_FIX" -gt 0 ]; then
-            echo "type=patch" >> $GITHUB_OUTPUT
-            echo "  Auto-detected: patch (fixes/chores)"
-          else
-            echo "type=skip" >> $GITHUB_OUTPUT
-            echo "  No conventional commits found — skipping"
+      - name: Tag release
+        if: steps.check.outputs.skip != 'true' || github.event_name == 'workflow_dispatch'
+        run: |
+          VERSION=$(jq -r .version package.json)
+          if ! git rev-parse "v$VERSION" >/dev/null 2>&1; then
+            git tag "v$VERSION"
+            git push origin "v$VERSION" 2>/dev/null || true
           fi
-
-      - name: Bump version
-        if: steps.bump.outputs.type != 'skip'
-        id: version
-        run: |
-          CURRENT=$(jq -r .version package.json)
-          TYPE="${{ steps.bump.outputs.type }}"
-
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
-
-          case "$TYPE" in
-            major) MAJOR=$((MAJOR+1)); MINOR=0; PATCH=0 ;;
-            minor) MINOR=$((MINOR+1)); PATCH=0 ;;
-            patch) PATCH=$((PATCH+1)) ;;
-          esac
-
-          NEW="$MAJOR.$MINOR.$PATCH"
-          echo "new=$NEW" >> $GITHUB_OUTPUT
-          echo "  $CURRENT → $NEW ($TYPE)"
-
-          # Update all package.json files
-          bun run version:set "$NEW"
-
-      - name: Commit version bump
-        if: steps.bump.outputs.type != 'skip'
-        run: |
-          NEW="${{ steps.version.outputs.new }}"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "chore: release v$NEW" --allow-empty
-          git tag "v$NEW"
-          git push origin master --tags
 
       - name: Setup npm auth
-        if: steps.bump.outputs.type != 'skip'
+        if: steps.check.outputs.skip != 'true' || github.event_name == 'workflow_dispatch'
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
 
       - name: Publish packages
-        if: steps.bump.outputs.type != 'skip'
+        if: steps.check.outputs.skip != 'true' || github.event_name == 'workflow_dispatch'
         run: |
           PACKAGES="${{ github.event.inputs.packages || 'all' }}"
           DRY_RUN="${{ github.event.inputs.dry-run || 'false' }}"
-          VERSION="${{ steps.version.outputs.new }}"
+          VERSION=$(jq -r .version package.json)
 
           PUBLISHED=0
           SKIPPED=0
@@ -147,13 +82,13 @@ jobs:
             local published=$(npm view "$name" version 2>/dev/null || echo "0.0.0")
 
             if [ "$version" = "$published" ]; then
-              echo "  $name@$version — already published"
+              echo "  $name@$version — already on npm"
               SKIPPED=$((SKIPPED+1))
               return
             fi
 
             if [ "$DRY_RUN" = "true" ]; then
-              echo "  $name@$version — dry run (would publish)"
+              echo "  $name@$version — dry run"
               PUBLISHED=$((PUBLISHED+1))
             else
               echo "  $name@$version — publishing..."
