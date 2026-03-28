@@ -7,6 +7,7 @@ export type { NotifyConfig, SmsConfig, SlackConfig, TelegramConfig, WhatsAppConf
 export { Notification } from './Notification.ts'
 export type { SlackMessage, BroadcastPayload, SmsPayload, WebhookPayload } from './Notification.ts'
 export { NotificationManager } from './NotificationManager.ts'
+export type { DeliveryLogEntry } from './NotificationManager.ts'
 
 // ── Channels ─────────────────────────────────────────────────────────────────
 export { MailChannel } from './channels/MailChannel.ts'

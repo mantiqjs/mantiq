@@ -4,6 +4,7 @@ import type { NotifyConfig } from './contracts/NotifyConfig.ts'
 import { DEFAULT_CONFIG } from './contracts/NotifyConfig.ts'
 import { Notification } from './Notification.ts'
 import { NotifyError } from './errors/NotifyError.ts'
+import { NotificationSent, NotificationFailed } from './events/NotificationEvents.ts'
 import { MailChannel } from './channels/MailChannel.ts'
 import { DatabaseChannel } from './channels/DatabaseChannel.ts'
 import { BroadcastChannel } from './channels/BroadcastChannel.ts'
@@ -27,10 +28,22 @@ import { FirebaseChannel } from './channels/FirebaseChannel.ts'
  *   await notify().send(user, new OrderShipped(order))
  *   await notify().send([user1, user2], new OrderShipped(order))
  */
+export interface DeliveryLogEntry {
+  id: string
+  notification: string
+  channel: string
+  recipient: string
+  status: 'sent' | 'failed'
+  sentAt: Date
+  error?: string | undefined
+}
+
 export class NotificationManager {
   private _channels = new Map<string, NotificationChannel>()
   private _factories = new Map<string, () => NotificationChannel>()
   private config: NotifyConfig
+  private _deliveryLog: DeliveryLogEntry[] = []
+  private _eventObservers: ((event: NotificationSent | NotificationFailed) => void)[] = []
 
   constructor(config?: Partial<NotifyConfig>) {
     this.config = { ...DEFAULT_CONFIG, ...config }
@@ -53,19 +66,91 @@ export class NotificationManager {
     }
   }
 
-  /** Send immediately, bypassing queue */
+  /** Send immediately, bypassing queue. Uses retry for each channel. */
   async sendNow(notifiable: Notifiable, notification: Notification, channelNames?: string[]): Promise<void> {
     const channels = channelNames ?? notification.via(notifiable)
 
     for (const channelName of channels) {
       try {
         const channel = this.channel(channelName)
-        await channel.send(notifiable, notification)
+        await this.sendWithRetry(notifiable, notification, channel, 3)
       } catch (err) {
         // Log but don't fail other channels
         console.error(`[Mantiq] Notification channel "${channelName}" failed:`, (err as Error).message)
       }
     }
+  }
+
+  /**
+   * Send a notification through a channel with retry logic.
+   * Records delivery status and emits events.
+   */
+  async sendWithRetry(
+    notifiable: Notifiable,
+    notification: Notification,
+    channel: NotificationChannel,
+    maxRetries: number = 1,
+  ): Promise<void> {
+    let lastError: Error | undefined
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        await channel.send(notifiable, notification)
+
+        // Success — record and emit
+        this._deliveryLog.push({
+          id: notification.id,
+          notification: notification.constructor.name,
+          channel: channel.name,
+          recipient: String(notifiable.getKey()),
+          status: 'sent',
+          sentAt: new Date(),
+        })
+
+        this.emitEvent(new NotificationSent(notifiable, notification, channel.name))
+        return
+      } catch (err) {
+        lastError = err as Error
+      }
+    }
+
+    // All retries exhausted — record failure and emit
+    this._deliveryLog.push({
+      id: notification.id,
+      notification: notification.constructor.name,
+      channel: channel.name,
+      recipient: String(notifiable.getKey()),
+      status: 'failed',
+      sentAt: new Date(),
+      error: lastError?.message,
+    })
+
+    this.emitEvent(new NotificationFailed(notifiable, notification, channel.name, lastError!))
+    throw lastError!
+  }
+
+  // ── Delivery Log ──────────────────────────────────────────────────────
+
+  /** Get all delivery log entries. */
+  deliveryLog(): DeliveryLogEntry[] {
+    return [...this._deliveryLog]
+  }
+
+  /** Get deliveries for a specific notification ID. */
+  deliveriesFor(notificationId: string): DeliveryLogEntry[] {
+    return this._deliveryLog.filter((e) => e.id === notificationId)
+  }
+
+  /** Clear the delivery log. */
+  clearDeliveryLog(): void {
+    this._deliveryLog = []
+  }
+
+  // ── Delivery Events ───────────────────────────────────────────────────
+
+  /** Register an observer for delivery events. */
+  onDeliveryEvent(observer: (event: NotificationSent | NotificationFailed) => void): void {
+    this._eventObservers.push(observer)
   }
 
   /** Get a channel by name */
@@ -123,6 +208,16 @@ export class NotificationManager {
     if (ch?.imessage) this._factories.set('imessage', () => new IMessageChannel(ch.imessage!))
     if (ch?.rcs) this._factories.set('rcs', () => new RcsChannel(ch.rcs!))
     if (ch?.firebase) this._factories.set('firebase', () => new FirebaseChannel(ch.firebase!))
+  }
+
+  private emitEvent(event: NotificationSent | NotificationFailed): void {
+    for (const observer of this._eventObservers) {
+      try {
+        observer(event)
+      } catch {
+        // Observer errors must not break delivery
+      }
+    }
   }
 
   private async queueNotification(notifiable: Notifiable, notification: Notification): Promise<void> {
