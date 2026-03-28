@@ -57,6 +57,20 @@ export class HttpKernel {
   }
 
   /**
+   * Check whether a middleware alias has been registered.
+   */
+  hasMiddleware(alias: string): boolean {
+    return alias in this.middlewareAliases
+  }
+
+  /**
+   * Return all registered middleware alias names.
+   */
+  getRegisteredAliases(): string[] {
+    return Object.keys(this.middlewareAliases)
+  }
+
+  /**
    * Middleware registered by packages that run before the app's global middleware.
    * Separate from globalMiddleware so setGlobalMiddleware() doesn't overwrite them.
    */

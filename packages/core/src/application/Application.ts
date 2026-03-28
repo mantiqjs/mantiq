@@ -210,9 +210,62 @@ export class Application extends ContainerImpl {
     coreProviders: Constructor<ServiceProvider>[] = [],
     userProviders: Constructor<ServiceProvider>[] = [],
   ): Promise<void> {
+    this.validateEnvironment()
     const packageProviders = await this.discoverPackageProviders()
     await this.registerProviders([...coreProviders, ...packageProviders, ...userProviders])
     await this.bootProviders()
+  }
+
+  /**
+   * Validate environment variables on startup.
+   * Called at the beginning of bootstrap() to catch misconfigurations early.
+   *
+   * Checks:
+   * - APP_ENV must be set
+   * - APP_KEY format (if set): must start with 'base64:' and decode to exactly 32 bytes
+   * - Warns if APP_DEBUG=true in production
+   */
+  validateEnvironment(): void {
+    // APP_ENV must be set
+    if (!process.env['APP_ENV']) {
+      throw new Error(
+        'APP_ENV is not set. Set it in your .env file (e.g., APP_ENV=local).',
+      )
+    }
+
+    // Validate APP_KEY format when present
+    const appKey = process.env['APP_KEY']
+    if (appKey) {
+      if (!appKey.startsWith('base64:')) {
+        throw new Error(
+          'APP_KEY must start with "base64:". Generate one with: bun mantiq key:generate',
+        )
+      }
+
+      try {
+        const decoded = Buffer.from(appKey.slice(7), 'base64')
+        if (decoded.length !== 32) {
+          throw new Error(
+            `APP_KEY must decode to exactly 32 bytes (got ${decoded.length}). ` +
+            'Generate one with: bun mantiq key:generate',
+          )
+        }
+      } catch (e) {
+        if (e instanceof Error && e.message.startsWith('APP_KEY must')) {
+          throw e
+        }
+        throw new Error(
+          'APP_KEY contains invalid base64 data. Generate one with: bun mantiq key:generate',
+        )
+      }
+    }
+
+    // Warn on APP_DEBUG=true in production
+    if (process.env['APP_ENV'] === 'production' && process.env['APP_DEBUG'] === 'true') {
+      console.warn(
+        '[Mantiq] WARNING: APP_DEBUG=true in production. This may expose sensitive data.',
+      )
+    }
   }
 
   // ── Provider lifecycle ────────────────────────────────────────────────────

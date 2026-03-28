@@ -125,6 +125,29 @@ export class CoreServiceProvider extends ServiceProvider {
       kernel.registerMiddlewareGroup(name, middleware)
     }
 
+    // ── Boot-time convention validation ────────────────────────────────────
+    // Validate that all aliases referenced by middleware groups are registered
+    for (const [group, aliases] of Object.entries(middlewareGroups)) {
+      for (const alias of aliases) {
+        const name = alias.split(':')[0]!
+        if (!kernel.hasMiddleware(name)) {
+          throw new Error(
+            `Middleware group '${group}' references unknown alias '${name}'.\n` +
+            `Registered aliases: ${kernel.getRegisteredAliases().join(', ')}`,
+          )
+        }
+      }
+    }
+
+    // Validate APP_KEY when encrypt.cookies middleware is active
+    const needsKey = Object.values(middlewareGroups).flat().includes('encrypt.cookies')
+    if (needsKey && !appKey) {
+      throw new Error(
+        'APP_KEY is required when encrypt.cookies middleware is active.\n' +
+        'Generate one with: bun mantiq key:generate',
+      )
+    }
+
     // Legacy: if app.middleware is set, apply as global middleware (backward compat)
     const globalMiddleware = configRepo.get('app.middleware', []) as string[]
     if (globalMiddleware.length > 0) {
