@@ -8,6 +8,9 @@ import type { PaginationResult } from '../contracts/Paginator.ts'
 
 type CastType = 'int' | 'float' | 'boolean' | 'string' | 'json' | 'date' | 'datetime' | 'array'
 
+/** A named scope function that receives a query builder and optional arguments. */
+export type ScopeFunction<T extends Model = Model> = (query: ModelQueryBuilder<T>, ...args: any[]) => void
+
 export interface ModelStatic<T extends Model> {
   new (): T
   connection: DatabaseConnection | null
@@ -18,6 +21,9 @@ export interface ModelStatic<T extends Model> {
   fillable: string[]
   guarded: string[]
   hidden: string[]
+  appends: string[]
+  visible: string[]
+  scopes: Record<string, ScopeFunction<any>>
   casts: Record<string, CastType>
   timestamps: boolean
   softDelete: boolean
@@ -64,6 +70,9 @@ export abstract class Model {
   static fillable: string[] = []
   static guarded: string[] = ['id']
   static hidden: string[] = []
+  static appends: string[] = []
+  static visible: string[] = []
+  static scopes: Record<string, ScopeFunction<any>> = {}
   static casts: Record<string, CastType> = {}
   static timestamps = true
   static softDelete = false
@@ -87,6 +96,13 @@ export abstract class Model {
   protected _original: Record<string, any> = {}
   protected _exists = false
   protected _relations: Record<string, any> = {}
+
+  /** Per-instance serialization overrides */
+  private _onlyFields: string[] | null = null
+  private _exceptFields: string[] | null = null
+  private _instanceAppends: string[] | null = null
+  private _instanceVisible: string[] | null = null
+  private _instanceHidden: string[] | null = null
 
   // ── Query API (static methods) ────────────────────────────────────────────
 
@@ -340,7 +356,8 @@ export abstract class Model {
     if (key in this._relations) return this._relations[key]
 
     // Check for custom getter (get<Key>Attribute pattern)
-    const getterName = `get${key.charAt(0).toUpperCase() + key.slice(1)}Attribute` as keyof this
+    // Converts snake_case to StudlyCase: full_name → getFullNameAttribute
+    const getterName = `get${studlyCase(key)}Attribute` as keyof this
     if (typeof this[getterName] === 'function') {
       return (this[getterName] as any)(rawValue)
     }
@@ -355,8 +372,9 @@ export abstract class Model {
   setAttribute(key: string, value: any): this {
     const ctor = this.constructor as typeof Model
 
-    // Check for custom setter
-    const setterName = `set${key.charAt(0).toUpperCase() + key.slice(1)}Attribute` as keyof this
+    // Check for custom setter (set<Key>Attribute pattern)
+    // Converts snake_case to StudlyCase: full_name → setFullNameAttribute
+    const setterName = `set${studlyCase(key)}Attribute` as keyof this
     if (typeof this[setterName] === 'function') {
       ;(this[setterName] as any)(value)
       return this
@@ -400,24 +418,139 @@ export abstract class Model {
     return this.isDirty(key)
   }
 
+  // ── Serialization Control ──────────────────────────────────────────────────
+
+  /**
+   * Specify which fields to include in toObject(). Overrides visible/hidden.
+   *
+   * @example
+   *   user.only('id', 'name').toObject()
+   */
+  only(...fields: string[]): this {
+    this._onlyFields = fields
+    return this
+  }
+
+  /**
+   * Specify which fields to exclude from toObject(). Works alongside hidden.
+   *
+   * @example
+   *   user.except('password', 'secret').toObject()
+   */
+  except(...fields: string[]): this {
+    this._exceptFields = fields
+    return this
+  }
+
+  /**
+   * Add computed attributes to this instance's serialization.
+   * The model must have a matching `get<Key>Attribute()` accessor.
+   *
+   * @example
+   *   user.append('full_name').toObject()
+   */
+  append(...keys: string[]): this {
+    this._instanceAppends = [
+      ...(this._instanceAppends ?? []),
+      ...keys,
+    ]
+    return this
+  }
+
+  /**
+   * Make the given fields visible on this instance, overriding
+   * the static `hidden` list for those fields.
+   *
+   * @example
+   *   user.makeVisible('email', 'phone').toObject()
+   */
+  makeVisible(...fields: string[]): this {
+    this._instanceVisible = [
+      ...(this._instanceVisible ?? []),
+      ...fields,
+    ]
+    return this
+  }
+
+  /**
+   * Make the given fields hidden on this instance, adding to
+   * the static `hidden` list for this instance.
+   *
+   * @example
+   *   user.makeHidden('email').toObject()
+   */
+  makeHidden(...fields: string[]): this {
+    this._instanceHidden = [
+      ...(this._instanceHidden ?? []),
+      ...fields,
+    ]
+    return this
+  }
+
   toObject(): Record<string, any> {
     const ctor = this.constructor as typeof Model
     const obj: Record<string, any> = {}
 
-    for (const key of Object.keys(this._attributes)) {
-      if (ctor.hidden.includes(key)) continue
-      obj[key] = this.getAttribute(key)
+    // Determine which fields to include
+    if (this._onlyFields) {
+      // only() takes absolute precedence — include only these fields
+      for (const key of this._onlyFields) {
+        obj[key] = this.getAttribute(key)
+      }
+    } else {
+      // Build the effective hidden set
+      const hiddenSet = new Set(ctor.hidden)
+
+      // Instance-level makeVisible removes from hidden
+      if (this._instanceVisible) {
+        for (const f of this._instanceVisible) hiddenSet.delete(f)
+      }
+
+      // Instance-level makeHidden adds to hidden
+      if (this._instanceHidden) {
+        for (const f of this._instanceHidden) hiddenSet.add(f)
+      }
+
+      // Instance-level except() adds to hidden
+      if (this._exceptFields) {
+        for (const f of this._exceptFields) hiddenSet.add(f)
+      }
+
+      // If static visible is set, only include those fields
+      if (ctor.visible.length > 0) {
+        for (const key of ctor.visible) {
+          if (hiddenSet.has(key)) continue
+          if (key in this._attributes) {
+            obj[key] = this.getAttribute(key)
+          }
+        }
+      } else {
+        for (const key of Object.keys(this._attributes)) {
+          if (hiddenSet.has(key)) continue
+          obj[key] = this.getAttribute(key)
+        }
+      }
+
+      // Include loaded relations — recursively serialize Model instances
+      for (const [k, v] of Object.entries(this._relations)) {
+        if (hiddenSet.has(k)) continue
+        if (v instanceof Model) {
+          obj[k] = v.toObject()
+        } else if (Array.isArray(v)) {
+          obj[k] = v.map((item) => (item instanceof Model ? item.toObject() : item))
+        } else {
+          obj[k] = v
+        }
+      }
     }
 
-    // Include loaded relations — recursively serialize Model instances
-    for (const [k, v] of Object.entries(this._relations)) {
-      if (v instanceof Model) {
-        obj[k] = v.toObject()
-      } else if (Array.isArray(v)) {
-        obj[k] = v.map((item) => (item instanceof Model ? item.toObject() : item))
-      } else {
-        obj[k] = v
-      }
+    // Append computed attributes (static + instance-level)
+    const appendKeys = new Set([
+      ...ctor.appends,
+      ...(this._instanceAppends ?? []),
+    ])
+    for (const key of appendKeys) {
+      obj[key] = this.getAttribute(key)
     }
 
     return obj
@@ -911,6 +1044,14 @@ function snakeCase(name: string): string {
 /** Quote a column name with double quotes for use in raw expressions. */
 function quoteColumn(name: string): string {
   return `"${name.replace(/"/g, '""')}"`
+}
+
+/** Convert a snake_case or camelCase key to StudlyCase for accessor lookup. */
+function studlyCase(key: string): string {
+  return key
+    .split(/[-_]/)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join('')
 }
 
 /** Simple English pluralization for table name derivation. */
