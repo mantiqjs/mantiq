@@ -4,11 +4,10 @@ export { TestClient } from './TestClient.ts'
 export { TestResponse } from './TestResponse.ts'
 
 // ── Fakes ────────────────────────────────────────────────────────────────────
-// Import fakes from their respective packages:
-//   import { EventFake } from '@mantiq/events'
-//   import { QueueFake } from '@mantiq/queue'
-//   import { MailFake } from '@mantiq/mail'
-//   import { NotificationFake } from '@mantiq/notify'
-//   import { HttpFake } from '@mantiq/helpers'
-//   import { SearchFake } from '@mantiq/search'
-//   import { RealtimeFake } from '@mantiq/realtime'
+// Re-export fakes from their respective packages for convenient single-import.
+export { EventFake } from '@mantiq/events'
+export { QueueFake } from '@mantiq/queue'
+export { MailFake } from '@mantiq/mail'
+export { NotificationFake } from '@mantiq/notify'
+export { HttpFake } from '@mantiq/helpers'
+export { RealtimeFake } from '@mantiq/realtime'
