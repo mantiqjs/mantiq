@@ -11,6 +11,7 @@ import { EncryptCookies } from '../middleware/EncryptCookies.ts'
 import { VerifyCsrfToken } from '../middleware/VerifyCsrfToken.ts'
 import { ThrottleRequests } from '../rateLimit/ThrottleRequests.ts'
 import { SecureHeaders } from '../middleware/SecureHeaders.ts'
+import { TimeoutMiddleware } from '../middleware/TimeoutMiddleware.ts'
 import { ROUTER } from '../helpers/route.ts'
 import { ENCRYPTER } from '../helpers/encrypt.ts'
 import { AesEncrypter } from '../encryption/Encrypter.ts'
@@ -82,6 +83,7 @@ export class CoreServiceProvider extends ServiceProvider {
     // Rate limiting — zero-config, uses shared in-memory store
     this.app.singleton(ThrottleRequests, () => new ThrottleRequests())
     this.app.singleton(SecureHeaders, () => new SecureHeaders())
+    this.app.bind(TimeoutMiddleware, () => new TimeoutMiddleware())
 
     // HTTP kernel — singleton, depends on Router + ExceptionHandler + WsKernel
     this.app.singleton(HttpKernel, (c) => {
@@ -113,6 +115,7 @@ export class CoreServiceProvider extends ServiceProvider {
     kernel.registerMiddleware('session', StartSession)
     kernel.registerMiddleware('csrf', VerifyCsrfToken)
     kernel.registerMiddleware('secure-headers', SecureHeaders)
+    kernel.registerMiddleware('timeout', TimeoutMiddleware)
 
     // Register middleware groups from config
     const configRepo = this.app.make(ConfigRepository)
@@ -123,6 +126,29 @@ export class CoreServiceProvider extends ServiceProvider {
 
     for (const [name, middleware] of Object.entries(middlewareGroups)) {
       kernel.registerMiddlewareGroup(name, middleware)
+    }
+
+    // ── Boot-time convention validation ────────────────────────────────────
+    // Validate that all aliases referenced by middleware groups are registered
+    for (const [group, aliases] of Object.entries(middlewareGroups)) {
+      for (const alias of aliases) {
+        const name = alias.split(':')[0]!
+        if (!kernel.hasMiddleware(name)) {
+          throw new Error(
+            `Middleware group '${group}' references unknown alias '${name}'.\n` +
+            `Registered aliases: ${kernel.getRegisteredAliases().join(', ')}`,
+          )
+        }
+      }
+    }
+
+    // Validate APP_KEY when encrypt.cookies middleware is active
+    const needsKey = Object.values(middlewareGroups).flat().includes('encrypt.cookies')
+    if (needsKey && !appKey) {
+      throw new Error(
+        'APP_KEY is required when encrypt.cookies middleware is active.\n' +
+        'Generate one with: bun mantiq key:generate',
+      )
     }
 
     // Legacy: if app.middleware is set, apply as global middleware (backward compat)

@@ -201,7 +201,8 @@ describe('NotificationManager', () => {
 
       await manager.send(notifiable, notification)
 
-      expect(failingSend).toHaveBeenCalledTimes(1)
+      // sendNow retries 3 times per channel before moving on
+      expect(failingSend).toHaveBeenCalledTimes(3)
       expect(successSend).toHaveBeenCalledTimes(1)
     })
   })

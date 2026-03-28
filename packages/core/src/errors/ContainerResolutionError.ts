@@ -1,4 +1,5 @@
 import { MantiqError } from './MantiqError.ts'
+import { ErrorCodes } from './ErrorCodes.ts'
 
 export class ContainerResolutionError extends MantiqError {
   constructor(
@@ -8,6 +9,8 @@ export class ContainerResolutionError extends MantiqError {
   ) {
     super(
       `Cannot resolve ${String(abstract)}: ${reason}.${details ? ' ' + details : ''}`,
+      undefined,
+      ErrorCodes.CONTAINER_RESOLUTION,
     )
   }
 }

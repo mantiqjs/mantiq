@@ -3,7 +3,7 @@ import { ModelNotFoundError } from '../errors/ModelNotFoundError.ts'
 import { eagerLoadRelations, type EagerLoadSpec, normalizeEagerLoads } from './eagerLoad.ts'
 import type { Model } from './Model.ts'
 import type { DatabaseConnection } from '../contracts/Connection.ts'
-import type { PaginationResult } from '../contracts/Paginator.ts'
+import type { PaginationResult, CursorPaginationResult } from '../contracts/Paginator.ts'
 
 export class ModelQueryBuilder<T> extends QueryBuilder {
   private _eagerLoads: string[] = []
@@ -130,6 +130,27 @@ export class ModelQueryBuilder<T> extends QueryBuilder {
     }
   }
 
+  // ── Named Scopes ───────────────────────────────────────────────────────────
+
+  /**
+   * Apply a named scope defined on the model class via `static scopes`.
+   *
+   * @example
+   *   await Post.query().scope('published').scope('recent').get()
+   *   await Post.query().scope('byAuthor', 42).get()
+   */
+  scope(name: string, ...args: any[]): this {
+    if (!this._modelClass) {
+      throw new Error('Cannot apply scope: no model class set on this query builder.')
+    }
+    const scopes = this._modelClass.scopes
+    if (!scopes || typeof scopes[name] !== 'function') {
+      throw new Error(`Scope [${name}] is not defined on model [${this._modelClass.table || this._modelClass.name}].`)
+    }
+    scopes[name](this, ...args)
+    return this
+  }
+
   // ── Hydrating read methods ─────────────────────────────────────────────────
 
   override async get(): Promise<T[]> {
@@ -214,6 +235,56 @@ export class ModelQueryBuilder<T> extends QueryBuilder {
     const from = total === 0 ? 0 : (currentPage - 1) * perPage + 1
     const to = Math.min(from + data.length - 1, total)
     return { data, total, perPage, currentPage, lastPage, from, to, hasMore: currentPage < lastPage }
+  }
+
+  override async cursorPaginate(options: {
+    perPage?: number
+    cursor?: string | number | null
+    cursorColumn?: string
+    direction?: 'asc' | 'desc'
+  } = {}): Promise<CursorPaginationResult<T>> {
+    const { perPage = 15, cursor = null, cursorColumn = 'id', direction = 'desc' } = options
+
+    this.applyGlobalScopes()
+
+    const originalLimit = this.state.limitValue
+    const originalOffset = this.state.offsetValue
+    const originalOrders = [...this.state.orders]
+    const originalWheres = [...this.state.wheres]
+
+    try {
+      if (cursor != null) {
+        this.state.wheres.push({
+          type: 'basic',
+          boolean: 'and',
+          column: cursorColumn,
+          operator: direction === 'desc' ? '<' : '>',
+          value: cursor,
+        })
+      }
+
+      this.state.orders = [{ column: cursorColumn, direction }]
+      this.state.limitValue = perPage + 1
+      this.state.offsetValue = null
+
+      const results = await this.get()
+
+      const hasMore = results.length > perPage
+      if (hasMore) results.pop()
+
+      return {
+        data: results,
+        next_cursor: hasMore ? (results[results.length - 1] as any)?._attributes?.[cursorColumn] ?? (results[results.length - 1] as any)?.[cursorColumn] ?? null : null,
+        prev_cursor: cursor ?? null,
+        per_page: perPage,
+        has_more: hasMore,
+      }
+    } finally {
+      this.state.limitValue = originalLimit
+      this.state.offsetValue = originalOffset
+      this.state.orders = originalOrders
+      this.state.wheres = originalWheres
+    }
   }
 
   // ── Aggregates: delegate to raw QB to bypass hydration ────────────────────

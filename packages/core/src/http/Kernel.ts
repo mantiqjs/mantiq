@@ -57,6 +57,20 @@ export class HttpKernel {
   }
 
   /**
+   * Check whether a middleware alias has been registered.
+   */
+  hasMiddleware(alias: string): boolean {
+    return alias in this.middlewareAliases
+  }
+
+  /**
+   * Return all registered middleware alias names.
+   */
+  getRegisteredAliases(): string[] {
+    return Object.keys(this.middlewareAliases)
+  }
+
+  /**
    * Middleware registered by packages that run before the app's global middleware.
    * Separate from globalMiddleware so setGlobalMiddleware() doesn't overwrite them.
    */
@@ -203,10 +217,52 @@ export class HttpKernel {
   // ── Private ───────────────────────────────────────────────────────────────
 
   /**
+   * Resolve route model bindings.
+   * Replaces raw parameter values (e.g. '42') with model instances.
+   * Returns a 404 response if any bound model is not found.
+   */
+  private async resolveBindings(
+    match: RouteMatch,
+    request: MantiqRequestContract,
+  ): Promise<Response | null> {
+    if (!match.bindings || match.bindings.size === 0) return null
+
+    for (const [param, { model, key }] of match.bindings) {
+      const value = request.param(param)
+      if (value === undefined) continue
+
+      let instance: any
+
+      if (key === '__custom__') {
+        // Custom resolver function (from router.bind())
+        instance = await model(String(value))
+      } else {
+        // Model class with .where().first()
+        instance = await model.where(key, value).first()
+      }
+
+      if (!instance) {
+        return new Response(
+          JSON.stringify({ error: `${param} not found.` }),
+          { status: 404, headers: { 'Content-Type': 'application/json' } },
+        )
+      }
+
+      request.setRouteParam(param, instance)
+    }
+
+    return null
+  }
+
+  /**
    * Call the route action (controller method or closure).
    * Converts the return value to a Response.
    */
   private async callAction(match: RouteMatch, request: MantiqRequestContract): Promise<Response> {
+    // Resolve model bindings before calling the action
+    const bindingError = await this.resolveBindings(match, request)
+    if (bindingError) return bindingError
+
     const action = match.action
 
     let result: any

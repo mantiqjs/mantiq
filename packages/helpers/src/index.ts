@@ -19,6 +19,9 @@ export type { HttpResponse, HttpError, HttpMiddleware, RetryConfig } from './Htt
 export { HttpFake } from './HttpFake.ts'
 export type { StubResponse, StubHandler } from './HttpFake.ts'
 
+// ── Async (class-based) ─────────────────────────────────────────
+export { Parallel } from './async/Parallel.ts'
+
 // ── Async utilities ──────────────────────────────────────────────
 export {
   parseDuration,

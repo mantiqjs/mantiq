@@ -1,0 +1,71 @@
+{
+  "name": "@mantiq/ai",
+  "version": "0.5.23",
+  "description": "AI integration — OpenAI, Anthropic, Gemini, Ollama, Azure OpenAI, Bedrock, embeddings, RAG, agents, tool calling",
+  "type": "module",
+  "license": "MIT",
+  "author": "Abdullah Khan",
+  "homepage": "https://github.com/mantiqjs/mantiq/tree/main/packages/ai",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mantiqjs/mantiq.git",
+    "directory": "packages/ai"
+  },
+  "bugs": {
+    "url": "https://github.com/mantiqjs/mantiq/issues"
+  },
+  "keywords": [
+    "mantiq",
+    "mantiqjs",
+    "bun",
+    "typescript",
+    "framework",
+    "ai",
+    "openai",
+    "anthropic",
+    "gemini",
+    "ollama",
+    "rag",
+    "agents",
+    "embeddings"
+  ],
+  "engines": {
+    "bun": ">=1.1.0"
+  },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "bun": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "files": [
+    "src/",
+    "package.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "bun build ./src/index.ts --outdir ./dist --target bun --packages=external",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "typescript": "^5.7.0",
+    "@mantiq/core": "workspace:*",
+    "@mantiq/cli": "workspace:*"
+  },
+  "optionalDependencies": {
+    "@mantiq/database": "^0.5.0",
+    "@mantiq/queue": "^0.5.0"
+  },
+  "peerDependencies": {
+    "@mantiq/core": "^0.5.0"
+  },
+  "mantiq": {
+    "provider": "AIServiceProvider"
+  }
+}

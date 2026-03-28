@@ -2,11 +2,17 @@ import { ModelQueryBuilder } from './ModelQueryBuilder.ts'
 import { ModelNotFoundError } from '../errors/ModelNotFoundError.ts'
 import { ClosureScope, type Scope } from './Scope.ts'
 import { Expression } from '../query/Expression.ts'
+import { MorphOneRelation } from './relations/MorphOneRelation.ts'
+import { MorphManyRelation } from './relations/MorphManyRelation.ts'
+import { MorphToRelation } from './relations/MorphToRelation.ts'
 import type { EagerLoadSpec } from './eagerLoad.ts'
 import type { DatabaseConnection } from '../contracts/Connection.ts'
 import type { PaginationResult } from '../contracts/Paginator.ts'
 
 type CastType = 'int' | 'float' | 'boolean' | 'string' | 'json' | 'date' | 'datetime' | 'array'
+
+/** A named scope function that receives a query builder and optional arguments. */
+export type ScopeFunction<T extends Model = Model> = (query: ModelQueryBuilder<T>, ...args: any[]) => void
 
 export interface ModelStatic<T extends Model> {
   new (): T
@@ -18,11 +24,15 @@ export interface ModelStatic<T extends Model> {
   fillable: string[]
   guarded: string[]
   hidden: string[]
+  appends: string[]
+  visible: string[]
+  scopes: Record<string, ScopeFunction<any>>
   casts: Record<string, CastType>
   timestamps: boolean
   softDelete: boolean
   softDeleteColumn: string
   _fireEvent: ((model: Model, event: string) => Promise<boolean>) | null
+  _morphMap: Record<string, ModelStatic<any>>
   _globalScopes: Map<string, Scope>
   _booted: Set<typeof Model>
   addGlobalScope(name: string, scope: Scope | ((builder: ModelQueryBuilder<T>, model: typeof Model) => void)): void
@@ -33,6 +43,9 @@ export interface ModelStatic<T extends Model> {
   bootIfNotBooted(): void
   ensureOwnGlobalScopes(): void
   withoutEvents<R>(callback: () => Promise<R> | R): Promise<R>
+  morphMap(map: Record<string, ModelStatic<any>>): void
+  getMorphType(): string
+  observe(observer: any): void
   // Methods
   query(): ModelQueryBuilder<T>
   all(): Promise<T[]>
@@ -64,6 +77,9 @@ export abstract class Model {
   static fillable: string[] = []
   static guarded: string[] = ['id']
   static hidden: string[] = []
+  static appends: string[] = []
+  static visible: string[] = []
+  static scopes: Record<string, ScopeFunction<any>> = {}
   static casts: Record<string, CastType> = {}
   static timestamps = true
   static softDelete = false
@@ -74,6 +90,14 @@ export abstract class Model {
    * Returns false if a cancellable event was cancelled.
    */
   static _fireEvent: ((model: Model, event: string) => Promise<boolean>) | null = null
+
+  /**
+   * Map of morph type aliases to model constructors.
+   * Used by `morphTo()` to resolve a type string (e.g. 'Post') back to its model class.
+   *
+   * Register mappings via `Model.morphMap({ Post: PostModel, Video: VideoModel })`.
+   */
+  static _morphMap: Record<string, ModelStatic<any>> = {}
 
   /** Per-class global scope registry. */
   static _globalScopes = new Map<string, Scope>()
@@ -87,6 +111,13 @@ export abstract class Model {
   protected _original: Record<string, any> = {}
   protected _exists = false
   protected _relations: Record<string, any> = {}
+
+  /** Per-instance serialization overrides */
+  private _onlyFields: string[] | null = null
+  private _exceptFields: string[] | null = null
+  private _instanceAppends: string[] | null = null
+  private _instanceVisible: string[] | null = null
+  private _instanceHidden: string[] | null = null
 
   // ── Query API (static methods) ────────────────────────────────────────────
 
@@ -284,7 +315,7 @@ export abstract class Model {
   /**
    * Scope support: calling a static method named `scope<Name>` on the class
    * allows `Model.<name>()` as a shorthand.
-   * e.g., `static scopeActive(query) { ... }` → `User.active()`
+   * e.g., `static scopeActive(query) { ... }` -> `User.active()`
    *
    * This is implemented via a static method that proxies unknown calls.
    */
@@ -340,7 +371,8 @@ export abstract class Model {
     if (key in this._relations) return this._relations[key]
 
     // Check for custom getter (get<Key>Attribute pattern)
-    const getterName = `get${key.charAt(0).toUpperCase() + key.slice(1)}Attribute` as keyof this
+    // Converts snake_case to StudlyCase: full_name → getFullNameAttribute
+    const getterName = `get${studlyCase(key)}Attribute` as keyof this
     if (typeof this[getterName] === 'function') {
       return (this[getterName] as any)(rawValue)
     }
@@ -355,8 +387,9 @@ export abstract class Model {
   setAttribute(key: string, value: any): this {
     const ctor = this.constructor as typeof Model
 
-    // Check for custom setter
-    const setterName = `set${key.charAt(0).toUpperCase() + key.slice(1)}Attribute` as keyof this
+    // Check for custom setter (set<Key>Attribute pattern)
+    // Converts snake_case to StudlyCase: full_name → setFullNameAttribute
+    const setterName = `set${studlyCase(key)}Attribute` as keyof this
     if (typeof this[setterName] === 'function') {
       ;(this[setterName] as any)(value)
       return this
@@ -400,24 +433,139 @@ export abstract class Model {
     return this.isDirty(key)
   }
 
+  // ── Serialization Control ──────────────────────────────────────────────────
+
+  /**
+   * Specify which fields to include in toObject(). Overrides visible/hidden.
+   *
+   * @example
+   *   user.only('id', 'name').toObject()
+   */
+  only(...fields: string[]): this {
+    this._onlyFields = fields
+    return this
+  }
+
+  /**
+   * Specify which fields to exclude from toObject(). Works alongside hidden.
+   *
+   * @example
+   *   user.except('password', 'secret').toObject()
+   */
+  except(...fields: string[]): this {
+    this._exceptFields = fields
+    return this
+  }
+
+  /**
+   * Add computed attributes to this instance's serialization.
+   * The model must have a matching `get<Key>Attribute()` accessor.
+   *
+   * @example
+   *   user.append('full_name').toObject()
+   */
+  append(...keys: string[]): this {
+    this._instanceAppends = [
+      ...(this._instanceAppends ?? []),
+      ...keys,
+    ]
+    return this
+  }
+
+  /**
+   * Make the given fields visible on this instance, overriding
+   * the static `hidden` list for those fields.
+   *
+   * @example
+   *   user.makeVisible('email', 'phone').toObject()
+   */
+  makeVisible(...fields: string[]): this {
+    this._instanceVisible = [
+      ...(this._instanceVisible ?? []),
+      ...fields,
+    ]
+    return this
+  }
+
+  /**
+   * Make the given fields hidden on this instance, adding to
+   * the static `hidden` list for this instance.
+   *
+   * @example
+   *   user.makeHidden('email').toObject()
+   */
+  makeHidden(...fields: string[]): this {
+    this._instanceHidden = [
+      ...(this._instanceHidden ?? []),
+      ...fields,
+    ]
+    return this
+  }
+
   toObject(): Record<string, any> {
     const ctor = this.constructor as typeof Model
     const obj: Record<string, any> = {}
 
-    for (const key of Object.keys(this._attributes)) {
-      if (ctor.hidden.includes(key)) continue
-      obj[key] = this.getAttribute(key)
+    // Determine which fields to include
+    if (this._onlyFields) {
+      // only() takes absolute precedence — include only these fields
+      for (const key of this._onlyFields) {
+        obj[key] = this.getAttribute(key)
+      }
+    } else {
+      // Build the effective hidden set
+      const hiddenSet = new Set(ctor.hidden)
+
+      // Instance-level makeVisible removes from hidden
+      if (this._instanceVisible) {
+        for (const f of this._instanceVisible) hiddenSet.delete(f)
+      }
+
+      // Instance-level makeHidden adds to hidden
+      if (this._instanceHidden) {
+        for (const f of this._instanceHidden) hiddenSet.add(f)
+      }
+
+      // Instance-level except() adds to hidden
+      if (this._exceptFields) {
+        for (const f of this._exceptFields) hiddenSet.add(f)
+      }
+
+      // If static visible is set, only include those fields
+      if (ctor.visible.length > 0) {
+        for (const key of ctor.visible) {
+          if (hiddenSet.has(key)) continue
+          if (key in this._attributes) {
+            obj[key] = this.getAttribute(key)
+          }
+        }
+      } else {
+        for (const key of Object.keys(this._attributes)) {
+          if (hiddenSet.has(key)) continue
+          obj[key] = this.getAttribute(key)
+        }
+      }
+
+      // Include loaded relations — recursively serialize Model instances
+      for (const [k, v] of Object.entries(this._relations)) {
+        if (hiddenSet.has(k)) continue
+        if (v instanceof Model) {
+          obj[k] = v.toObject()
+        } else if (Array.isArray(v)) {
+          obj[k] = v.map((item) => (item instanceof Model ? item.toObject() : item))
+        } else {
+          obj[k] = v
+        }
+      }
     }
 
-    // Include loaded relations — recursively serialize Model instances
-    for (const [k, v] of Object.entries(this._relations)) {
-      if (v instanceof Model) {
-        obj[k] = v.toObject()
-      } else if (Array.isArray(v)) {
-        obj[k] = v.map((item) => (item instanceof Model ? item.toObject() : item))
-      } else {
-        obj[k] = v
-      }
+    // Append computed attributes (static + instance-level)
+    const appendKeys = new Set([
+      ...ctor.appends,
+      ...(this._instanceAppends ?? []),
+    ])
+    for (const key of appendKeys) {
+      obj[key] = this.getAttribute(key)
     }
 
     return obj
@@ -484,7 +632,7 @@ export abstract class Model {
         const id = await ctor.connection.table(table).insertGetId(this._attributes)
         this._attributes[ctor.primaryKey] = ctor.keyType === 'string' ? String(id) : Number(id)
       } else {
-        // Non-incrementing (UUID) — id is already set in attributes
+        // Non-incrementing (UUID) -- id is already set in attributes
         await ctor.connection.table(table).insert(this._attributes)
       }
       this._original = { ...this._attributes }
@@ -562,44 +710,20 @@ export abstract class Model {
 
   // ── Increment / Decrement ───────────────────────────────────────────────
 
-  /**
-   * Increment a column's value by the given amount.
-   * Optionally update additional columns at the same time.
-   *
-   * @example
-   *   await post.increment('views')
-   *   await post.increment('votes', 5)
-   *   await post.increment('votes', 1, { last_voted_at: new Date() })
-   */
   async increment(column: string, amount = 1, extra: Record<string, any> = {}): Promise<this> {
     return this.incrementOrDecrement(column, amount, extra, 'increment')
   }
 
-  /**
-   * Decrement a column's value by the given amount.
-   *
-   * @example
-   *   await post.decrement('stock')
-   *   await post.decrement('balance', 50)
-   */
   async decrement(column: string, amount = 1, extra: Record<string, any> = {}): Promise<this> {
     return this.incrementOrDecrement(column, amount, extra, 'decrement')
   }
 
-  /**
-   * Increment multiple columns at once.
-   *
-   * @example
-   *   await post.incrementEach({ views: 1, shares: 2 })
-   *   await post.incrementEach({ views: 1 }, { last_viewed_at: new Date() })
-   */
   async incrementEach(columns: Record<string, number>, extra: Record<string, any> = {}): Promise<this> {
     const ctor = this.constructor as typeof Model
     if (!ctor.connection || !this._exists) {
       throw new Error('Cannot increment on a model that has not been persisted.')
     }
 
-    // updating (cancellable)
     if (await this.fireModelEvent('updating') === false) return this
 
     const table = ctor.table || pluralize(snakeCase(ctor.name))
@@ -642,7 +766,6 @@ export abstract class Model {
       throw new Error('Cannot increment/decrement on a model that has not been persisted.')
     }
 
-    // updating (cancellable)
     if (await this.fireModelEvent('updating') === false) return this
 
     const table = ctor.table || pluralize(snakeCase(ctor.name))
@@ -662,7 +785,6 @@ export abstract class Model {
       .where(ctor.primaryKey, this.getKey())
       .update(data)
 
-    // Update local state
     const delta = method === 'increment' ? Number(amount) : -Number(amount)
     this._attributes[column] = (Number(this._attributes[column]) || 0) + delta
     for (const [k, v] of Object.entries(extra)) {
@@ -676,14 +798,6 @@ export abstract class Model {
 
   // ── Replication ──────────────────────────────────────────────────────────
 
-  /**
-   * Create an unsaved copy of this model, optionally excluding certain attributes.
-   * The clone has no primary key and _exists = false, so save() will INSERT.
-   *
-   * @example
-   *   const copy = user.replicate()               // all fillable attributes
-   *   const copy = user.replicate(['email'])       // exclude email
-   */
   replicate(except?: string[]): this {
     const ctor = this.constructor as typeof Model
     const clone = new (this.constructor as any)() as this
@@ -705,14 +819,6 @@ export abstract class Model {
 
   // ── Event control ────────────────────────────────────────────────────────
 
-  /**
-   * Execute a callback with model events disabled for this model class.
-   *
-   * @example
-   *   await User.withoutEvents(async () => {
-   *     await User.create({ name: 'Seed User' })
-   *   })
-   */
   static async withoutEvents<R>(callback: () => Promise<R> | R): Promise<R> {
     const previous = this._fireEvent
     this._fireEvent = null
@@ -721,6 +827,50 @@ export abstract class Model {
     } finally {
       this._fireEvent = previous
     }
+  }
+
+  /**
+   * Define a mapping of morph type aliases to model constructors.
+   * This allows `morphTo()` to resolve a type string back to a model class.
+   *
+   * @example
+   *   Model.morphMap({
+   *     'Post': Post,
+   *     'Video': Video,
+   *   })
+   */
+  static morphMap(map: Record<string, ModelStatic<any>>): void {
+    Object.assign(this._morphMap, map)
+  }
+
+  /**
+   * Get the morph type alias for this model class.
+   * Defaults to the class name if no explicit alias is registered.
+   */
+  static getMorphType(): string {
+    for (const [alias, ModelClass] of Object.entries(this._morphMap)) {
+      if (ModelClass === this) return alias
+    }
+    return this.name
+  }
+
+  /**
+   * Register an observer for this model class.
+   *
+   * This method is a convenience that delegates to the events system.
+   * It is available when `@mantiq/events` is installed and `bootModelEvents()`
+   * has been called (which happens automatically via EventServiceProvider).
+   *
+   * If the events package is not installed, this method does nothing.
+   *
+   * @example
+   *   User.observe(UserObserver)
+   *   User.observe(new UserObserver())
+   */
+  static observe(_observer: any): void {
+    // bootModelEvents() from @mantiq/events dynamically adds the real observe()
+    // method to the Model class. If it hasn't been called, this is a no-op.
+    // The real implementation overwrites this method.
   }
 
   // ── Relations ─────────────────────────────────────────────────────────────
@@ -770,6 +920,56 @@ export abstract class Model {
     const fk = foreignKey ?? `${snakeCase(ctor.name)}_id`
     const rk = relatedKey ?? `${snakeCase(relatedCtor.name)}_id`
     return new BelongsToManyRelation<R>(related, this._attributes[ctor.primaryKey], pivot, fk, rk)
+  }
+
+  // ── Polymorphic Relations ─────────────────────────────────────────────────
+
+  protected morphOne<R extends Model>(related: ModelStatic<R>, name: string) {
+    const ctor = this.constructor as typeof Model
+    const morphType = ctor.getMorphType()
+    const lk = ctor.primaryKey
+    return new MorphOneRelation<R>(related, this._attributes[lk], morphType, name)
+  }
+
+  protected morphMany<R extends Model>(related: ModelStatic<R>, name: string) {
+    const ctor = this.constructor as typeof Model
+    const morphType = ctor.getMorphType()
+    const lk = ctor.primaryKey
+    return new MorphManyRelation<R>(related, this._attributes[lk], morphType, name)
+  }
+
+  protected morphTo<R extends Model>(name: string, morphMap?: Record<string, ModelStatic<any>>) {
+    const typeColumn = `${name}_type`
+    const idColumn = `${name}_id`
+    const morphType = this._attributes[typeColumn]
+    const morphId = this._attributes[idColumn]
+    const resolvedMap = { ...(this.constructor as typeof Model)._morphMap, ...morphMap }
+
+    const ownerKey = (() => {
+      const RelatedModelClass = resolvedMap[morphType]
+      if (RelatedModelClass) return (RelatedModelClass as typeof Model).primaryKey
+      return 'id'
+    })()
+
+    return new MorphToRelation<R>(morphType, morphId, ownerKey, resolvedMap)
+  }
+
+  protected morphToMany<R extends Model>(
+    related: ModelStatic<R>,
+    name: string,
+    pivotTable?: string,
+    foreignKey?: string,
+    relatedKey?: string,
+  ) {
+    const ctor = this.constructor as typeof Model
+    const relatedCtor = related as typeof Model
+    const morphType = ctor.getMorphType()
+    const pivot = pivotTable ?? `${snakeCase(relatedCtor.name)}ables`
+    const fk = foreignKey ?? `${name}_id`
+    const rk = relatedKey ?? `${snakeCase(relatedCtor.name)}_id`
+    const lk = ctor.primaryKey
+
+    return new MorphToManyRelation<R>(related, this._attributes[lk], morphType, name, pivot, fk, rk)
   }
 
   // ── Private helpers ────────────────────────────────────────────────────────
@@ -899,6 +1099,58 @@ export class BelongsToManyRelation<T extends Model> {
   }
 }
 
+export class MorphToManyRelation<T extends Model> {
+  constructor(
+    private readonly related: ModelStatic<T>,
+    private readonly parentId: any,
+    private readonly morphType: string,
+    private readonly morphName: string,
+    private readonly pivotTable: string,
+    private readonly foreignKey: string,
+    private readonly relatedKey: string,
+  ) {}
+
+  async get(): Promise<T[]> {
+    const ctor = this.related as typeof Model
+    if (!ctor.connection) return []
+
+    const pivotRows = await ctor.connection.table(this.pivotTable)
+      .where(`${this.morphName}_type`, this.morphType)
+      .where(this.foreignKey, this.parentId)
+      .pluck(this.relatedKey)
+
+    if (!pivotRows.length) return []
+    return this.related.whereIn(ctor.primaryKey, pivotRows).get()
+  }
+
+  async attach(ids: any[]): Promise<void> {
+    const ctor = this.related as typeof Model
+    if (!ctor.connection) return
+    for (const id of ids) {
+      await ctor.connection.table(this.pivotTable).insert({
+        [`${this.morphName}_type`]: this.morphType,
+        [this.foreignKey]: this.parentId,
+        [this.relatedKey]: id,
+      })
+    }
+  }
+
+  async detach(ids?: any[]): Promise<void> {
+    const ctor = this.related as typeof Model
+    if (!ctor.connection) return
+    let q = ctor.connection.table(this.pivotTable)
+      .where(`${this.morphName}_type`, this.morphType)
+      .where(this.foreignKey, this.parentId)
+    if (ids) q = q.whereIn(this.relatedKey, ids)
+    await q.delete()
+  }
+
+  async sync(ids: any[]): Promise<void> {
+    await this.detach()
+    await this.attach(ids)
+  }
+}
+
 // ── Utility ────────────────────────────────────────────────────────────────────
 
 function snakeCase(name: string): string {
@@ -911,6 +1163,14 @@ function snakeCase(name: string): string {
 /** Quote a column name with double quotes for use in raw expressions. */
 function quoteColumn(name: string): string {
   return `"${name.replace(/"/g, '""')}"`
+}
+
+/** Convert a snake_case or camelCase key to StudlyCase for accessor lookup. */
+function studlyCase(key: string): string {
+  return key
+    .split(/[-_]/)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join('')
 }
 
 /** Simple English pluralization for table name derivation. */

@@ -162,6 +162,7 @@ jobs:
           ES_HOST: http://127.0.0.1:9200
           ALGOLIA_APP_ID: ${{ secrets.ALGOLIA_APP_ID }}
           ALGOLIA_API_KEY: ${{ secrets.ALGOLIA_API_KEY }}
+          SKIP_OLLAMA: "1"
         run: bun run test:ci
 
   typecheck:
@@ -179,6 +180,53 @@ jobs:
 
       - name: Typecheck all packages
         run: bun run typecheck
+
+  ai-test:
+    name: AI Integration Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Cache Ollama models
+        uses: actions/cache@v4
+        with:
+          path: ~/.ollama/models
+          key: ollama-models-tinyllama-allminilm-v1
+
+      - name: Install and start Ollama
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+          ollama serve &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:11434/api/tags && break || sleep 2
+          done
+
+      - name: Pull models
+        run: |
+          ollama pull tinyllama
+          ollama pull all-minilm
+
+      - name: Run AI unit tests
+        run: bun test packages/ai/tests/unit/
+
+      - name: Run AI integration tests
+        env:
+          OLLAMA_HOST: http://127.0.0.1
+          OLLAMA_PORT: 11434
+          OLLAMA_CHAT_MODEL: tinyllama
+          OLLAMA_EMBED_MODEL: all-minilm
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: bun test packages/ai/tests/integration/
 
   build:
     name: Build
@@ -222,7 +270,7 @@ jobs:
           bun ${{ github.workspace }}/packages/create-mantiq/src/index.ts test-app $KIT_FLAG --yes --no-git
           # Link local workspace packages instead of published npm versions
           cd test-app
-          for pkg in core database auth cli validation helpers filesystem logging events queue realtime heartbeat vite mail notify search health oauth social-auth testing; do
+          for pkg in core database auth cli validation helpers filesystem logging events queue realtime heartbeat vite mail notify search health oauth social-auth testing ai; do
             PKG_DIR="${{ github.workspace }}/packages/$pkg"
             if [ -d "$PKG_DIR" ]; then
               rm -rf "node_modules/@mantiq/$pkg"

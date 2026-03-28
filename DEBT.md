@@ -243,8 +243,14 @@ Server-driven admin panel using React + shadcn/ui. Define Resources in TypeScrip
 - [ ] **P2** SPA routing — Inertia-style (server-driven page resolution)
 - [ ] **P2** Example apps (auth, admin, kitchen-sink tiers)
 
-## Infrastructure (P2)
+## Infrastructure (P1)
 
+- [ ] **P1** Refactor CI into per-package workflows for better isolation and faster feedback
+  - Each package gets two workflows: `<package>_unit.yml` (unit tests + typecheck) and `<package>_integration.yml` (integration tests with services)
+  - Use `paths` filter so only affected packages run: `on: push: paths: ['packages/database/**']`
+  - Shared jobs (build, scaffold, e2e) stay in the main `ci.yml`
+  - Benefits: parallel execution, faster PR feedback, clearer failure attribution, per-package secrets (e.g., AI keys only in `ai_integration.yml`)
+  - Current monolithic `ci.yml` has 6 jobs and 10 service containers — too slow and opaque when one package breaks
 - [ ] **P2** NPM_TOKEN for auto-publish on merge
 - [ ] **P2** Branch protection rules
 - [ ] **P2** Automated version bumping (changesets)
@@ -295,9 +301,9 @@ Server-driven admin panel using React + shadcn/ui. Define Resources in TypeScrip
 | @mantiq/testing | TestCase, TestClient, TestResponse — 18 unit tests, 73% Laravel parity |
 | Playground app | playground/react-app with workspace:* linking for local testing |
 
-## Published Packages (21) — v0.5.19
+## Published Packages (22) — v0.5.23
 
-All packages at unified version 0.5.19 on `latest` tag.
+All packages at unified version 0.5.23 on `latest` tag.
 
 | # | Package | Description |
 |---|---------|-------------|
@@ -322,3 +328,4 @@ All packages at unified version 0.5.19 on `latest` tag.
 | 19 | `@mantiq/social-auth` | Social login, 8 providers |
 | 20 | `@mantiq/testing` | TestCase, TestClient, TestResponse, DB + auth assertions |
 | 21 | `create-mantiq` | Skeleton scaffold, 4 kits (React, Vue, Svelte, API-only) |
+| 22 | `@mantiq/ai` | Multi-provider AI: chat, vision, images, audio, embeddings, RAG, agents |

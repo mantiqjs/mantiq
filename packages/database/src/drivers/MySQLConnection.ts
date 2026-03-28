@@ -46,34 +46,50 @@ export class MySQLConnection extends BaseSQLConnection {
     return this.pool
   }
 
-  async select(sql: string, bindings: any[] = []): Promise<Record<string, any>[]> {
-    const pool = await this.getPool()
-    try {
-      const [rows] = await pool.query(sql, bindings)
-      return rows as Record<string, any>[]
-    } catch (e: any) {
-      throw new QueryError(sql, bindings, e)
+  override async reconnect(): Promise<void> {
+    if (this.pool) {
+      try { await this.pool.end() } catch { /* best-effort */ }
+      this.pool = null
     }
+  }
+
+  async select(sql: string, bindings: any[] = []): Promise<Record<string, any>[]> {
+    return this.withReconnect(async () => {
+      const pool = await this.getPool()
+      try {
+        const [rows] = await pool.query(sql, bindings)
+        return rows as Record<string, any>[]
+      } catch (e: any) {
+        if (this.isLostConnection(e)) throw e
+        throw new QueryError(sql, bindings, e)
+      }
+    })
   }
 
   async statement(sql: string, bindings: any[] = []): Promise<number> {
-    const pool = await this.getPool()
-    try {
-      const [result] = await pool.query(sql, bindings)
-      return (result as any).affectedRows ?? 0
-    } catch (e: any) {
-      throw new QueryError(sql, bindings, e)
-    }
+    return this.withReconnect(async () => {
+      const pool = await this.getPool()
+      try {
+        const [result] = await pool.query(sql, bindings)
+        return (result as any).affectedRows ?? 0
+      } catch (e: any) {
+        if (this.isLostConnection(e)) throw e
+        throw new QueryError(sql, bindings, e)
+      }
+    })
   }
 
   async insertGetId(sql: string, bindings: any[] = []): Promise<number | bigint> {
-    const pool = await this.getPool()
-    try {
-      const [result] = await pool.query(sql, bindings)
-      return (result as any).insertId ?? 0
-    } catch (e: any) {
-      throw new QueryError(sql, bindings, e)
-    }
+    return this.withReconnect(async () => {
+      const pool = await this.getPool()
+      try {
+        const [result] = await pool.query(sql, bindings)
+        return (result as any).insertId ?? 0
+      } catch (e: any) {
+        if (this.isLostConnection(e)) throw e
+        throw new QueryError(sql, bindings, e)
+      }
+    })
   }
 
   async transaction<T>(callback: (connection: DatabaseConnection) => Promise<T>): Promise<T> {
