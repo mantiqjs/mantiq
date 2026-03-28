@@ -1459,7 +1459,7 @@
     }
   },
   "tailwind-only": {
-    "vue": {
+    "react": {
       "files": [
         {
           "stub": "src/style.css.stub",
@@ -1470,102 +1470,186 @@
           "target": "src/lib/utils.ts"
         },
         {
-          "stub": "src/components/layout/AuthenticatedLayout.vue.stub",
-          "target": "src/components/layout/AuthenticatedLayout.vue"
+          "stub": "src/components/layout/authenticated-layout.tsx.stub",
+          "target": "src/components/layout/authenticated-layout.tsx"
         },
         {
-          "stub": "src/components/layout/AppSidebar.vue.stub",
-          "target": "src/components/layout/AppSidebar.vue"
+          "stub": "src/components/layout/app-sidebar.tsx.stub",
+          "target": "src/components/layout/app-sidebar.tsx"
         },
         {
-          "stub": "src/components/layout/NavUser.vue.stub",
-          "target": "src/components/layout/NavUser.vue"
+          "stub": "src/components/layout/nav-user.tsx.stub",
+          "target": "src/components/layout/nav-user.tsx"
         },
         {
-          "stub": "src/components/layout/Header.vue.stub",
-          "target": "src/components/layout/Header.vue"
+          "stub": "src/components/layout/header.tsx.stub",
+          "target": "src/components/layout/header.tsx"
         },
         {
-          "stub": "src/components/layout/Main.vue.stub",
-          "target": "src/components/layout/Main.vue"
+          "stub": "src/components/layout/main.tsx.stub",
+          "target": "src/components/layout/main.tsx"
         },
         {
-          "stub": "src/components/layout/TopNav.vue.stub",
-          "target": "src/components/layout/TopNav.vue"
+          "stub": "src/components/layout/top-nav.tsx.stub",
+          "target": "src/components/layout/top-nav.tsx"
         },
         {
-          "stub": "src/components/layout/ThemeToggle.vue.stub",
-          "target": "src/components/layout/ThemeToggle.vue"
+          "stub": "src/components/layout/theme-toggle.tsx.stub",
+          "target": "src/components/layout/theme-toggle.tsx"
         },
         {
-          "stub": "src/components/layout/NavGroup.vue.stub",
-          "target": "src/components/layout/NavGroup.vue"
+          "stub": "src/components/layout/nav-group.tsx.stub",
+          "target": "src/components/layout/nav-group.tsx"
         },
         {
           "stub": "src/components/layout/sidebar-data.ts.stub",
           "target": "src/components/layout/sidebar-data.ts"
         },
         {
-          "stub": "src/pages/Dashboard.vue.stub",
-          "target": "src/pages/Dashboard.vue"
+          "stub": "src/pages/Dashboard.tsx.stub",
+          "target": "src/pages/Dashboard.tsx"
         },
         {
-          "stub": "src/pages/Users.vue.stub",
-          "target": "src/pages/Users.vue"
+          "stub": "src/pages/Users.tsx.stub",
+          "target": "src/pages/Users.tsx"
         },
         {
-          "stub": "src/pages/Login.vue.stub",
-          "target": "src/pages/Login.vue"
+          "stub": "src/pages/Login.tsx.stub",
+          "target": "src/pages/Login.tsx"
         },
         {
-          "stub": "src/pages/Register.vue.stub",
-          "target": "src/pages/Register.vue"
+          "stub": "src/pages/Register.tsx.stub",
+          "target": "src/pages/Register.tsx"
         },
         {
-          "stub": "src/pages/account/Layout.vue.stub",
-          "target": "src/pages/account/layout.vue"
+          "stub": "src/pages/account/layout.tsx.stub",
+          "target": "src/pages/account/layout.tsx"
         },
         {
-          "stub": "src/pages/account/Profile.vue.stub",
-          "target": "src/pages/account/profile.vue"
+          "stub": "src/pages/account/profile.tsx.stub",
+          "target": "src/pages/account/profile.tsx"
         },
         {
-          "stub": "src/pages/account/Security.vue.stub",
-          "target": "src/pages/account/security.vue"
+          "stub": "src/pages/account/security.tsx.stub",
+          "target": "src/pages/account/security.tsx"
         },
         {
-          "stub": "src/pages/account/Preferences.vue.stub",
-          "target": "src/pages/account/preferences.vue"
+          "stub": "src/pages/account/preferences.tsx.stub",
+          "target": "src/pages/account/preferences.tsx"
         }
       ]
     }
   },
   "auth": {
     "web": {
-      "vue": {
+      "files": [
+        {
+          "stub": "app/Http/Controllers/AuthController.ts.stub",
+          "target": "app/Http/Controllers/AuthController.ts"
+        },
+        {
+          "stub": "app/Http/Controllers/PageController.ts.stub",
+          "target": "app/Http/Controllers/PageController.ts"
+        },
+        {
+          "stub": "routes/web.ts.stub",
+          "target": "routes/web.ts"
+        },
+        {
+          "stub": "tests/feature/auth.test.ts.stub",
+          "target": "tests/feature/auth.test.ts"
+        }
+      ],
+      "react": {
         "files": [
           {
-            "stub": "src/pages.ts.stub",
-            "target": "src/pages.ts"
+            "stub": "src/pages/Login.tsx.stub",
+            "target": "src/pages/Login.tsx"
           },
           {
-            "stub": "src/App.vue.stub",
-            "target": "src/App.vue"
+            "stub": "src/pages/Register.tsx.stub",
+            "target": "src/pages/Register.tsx"
+          },
+          {
+            "stub": "src/pages/account/layout.tsx.stub",
+            "target": "src/pages/account/layout.tsx"
+          },
+          {
+            "stub": "src/pages/account/profile.tsx.stub",
+            "target": "src/pages/account/profile.tsx"
+          },
+          {
+            "stub": "src/pages/account/security.tsx.stub",
+            "target": "src/pages/account/security.tsx"
+          },
+          {
+            "stub": "src/pages/account/preferences.tsx.stub",
+            "target": "src/pages/account/preferences.tsx"
           }
         ]
       }
+    },
+    "shared": {
+      "files": [
+        {
+          "stub": "app/Http/Requests/LoginRequest.ts.stub",
+          "target": "app/Http/Requests/LoginRequest.ts"
+        },
+        {
+          "stub": "app/Http/Requests/RegisterRequest.ts.stub",
+          "target": "app/Http/Requests/RegisterRequest.ts"
+        }
+      ]
+    },
+    "api": {
+      "files": [
+        {
+          "stub": "routes/api.ts.stub",
+          "target": "routes/api.ts"
+        },
+        {
+          "stub": "app/Http/Controllers/ApiAuthController.ts.stub",
+          "target": "app/Http/Controllers/ApiAuthController.ts"
+        },
+        {
+          "stub": "tests/feature/token-auth.test.ts.stub",
+          "target": "tests/feature/token-auth.test.ts"
+        }
+      ]
     }
   },
   "noauth": {
-    "vue": {
+    "files": [
+      {
+        "stub": "routes/web.ts.stub",
+        "target": "routes/web.ts"
+      },
+      {
+        "stub": "routes/api.ts.stub",
+        "target": "routes/api.ts"
+      },
+      {
+        "stub": "app/Http/Controllers/PageController.ts.stub",
+        "target": "app/Http/Controllers/PageController.ts"
+      },
+      {
+        "stub": "app/Models/User.ts.stub",
+        "target": "app/Models/User.ts"
+      },
+      {
+        "stub": "database/migrations/001_create_users_table.ts.stub",
+        "target": "database/migrations/001_create_users_table.ts"
+      }
+    ],
+    "react": {
       "files": [
         {
-          "stub": "src/pages.ts.stub",
-          "target": "src/pages.ts"
+          "stub": "src/pages/Dashboard.tsx.stub",
+          "target": "src/pages/Dashboard.tsx"
         },
         {
-          "stub": "src/App.vue.stub",
-          "target": "src/App.vue"
+          "stub": "src/pages/Users.tsx.stub",
+          "target": "src/pages/Users.tsx"
         }
       ]
     }

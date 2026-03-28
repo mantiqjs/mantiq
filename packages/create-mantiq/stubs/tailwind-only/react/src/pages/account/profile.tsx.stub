@@ -1,0 +1,67 @@
+import { useState } from 'react'
+import { AccountLayout } from './layout.tsx'
+
+interface ProfileProps {
+  appName?: string
+  currentUser?: { id: number; name: string; email: string } | null
+  navigate: (href: string) => void
+  [key: string]: any
+}
+
+export default function Profile({ appName, currentUser, navigate }: ProfileProps) {
+  const [name, setName] = useState(currentUser?.name ?? '')
+  const [email, setEmail] = useState(currentUser?.email ?? '')
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSaving(true)
+    await new Promise(r => setTimeout(r, 500))
+    setSaving(false)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 3000)
+  }
+
+  return (
+    <AccountLayout appName={appName} currentUser={currentUser} navigate={navigate} activePath="/account/profile">
+      <div className="space-y-6">
+        <div>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-50">Profile</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            This is how others will see you on the site.
+          </p>
+        </div>
+        <form onSubmit={handleSave} className="space-y-6">
+          <div className="space-y-2">
+            <label htmlFor="name" className="text-sm font-medium text-gray-900 dark:text-gray-50">Name</label>
+            <input
+              id="name"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none ring-emerald-500 transition focus:border-emerald-500 focus:ring-2 dark:border-gray-700 dark:bg-gray-900"
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400">This is your public display name.</p>
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="email" className="text-sm font-medium text-gray-900 dark:text-gray-50">Email</label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none ring-emerald-500 transition focus:border-emerald-500 focus:ring-2 dark:border-gray-700 dark:bg-gray-900"
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400">Your email address is used for notifications.</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button type="submit" disabled={saving} className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-50">
+              {saving ? 'Saving...' : 'Update profile'}
+            </button>
+            {saved && <span className="text-sm text-gray-500 dark:text-gray-400">Saved.</span>}
+          </div>
+        </form>
+      </div>
+    </AccountLayout>
+  )
+}

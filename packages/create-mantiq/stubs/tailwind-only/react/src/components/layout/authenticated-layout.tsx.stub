@@ -1,0 +1,57 @@
+import { useState, useCallback, createContext, useContext } from 'react'
+import { post } from '@/lib/api'
+import { AppSidebar } from './app-sidebar'
+
+const SidebarContext = createContext<{ toggle: () => void }>({ toggle: () => {} })
+
+export function useSidebarToggle() {
+  return useContext(SidebarContext)
+}
+
+interface AuthenticatedLayoutProps {
+  children: React.ReactNode
+  currentUser?: { name: string; email: string; role?: string } | null
+  appName?: string
+  navigate: (href: string) => void
+  activePath: string
+}
+
+export function AuthenticatedLayout({
+  children,
+  currentUser,
+  appName = 'Mantiq',
+  navigate,
+  activePath,
+}: AuthenticatedLayoutProps) {
+  const [collapsed, setCollapsed] = useState(false)
+
+  const handleLogout = useCallback(async () => {
+    await post('/logout', {})
+    navigate('/login')
+  }, [navigate])
+
+  const user = currentUser ?? { name: 'User', email: 'user@example.com' }
+
+  return (
+    <SidebarContext.Provider value={{ toggle: () => setCollapsed((c) => !c) }}>
+      <div className="flex min-h-screen">
+        {/* Sidebar — hidden on mobile, visible on md+ */}
+        <div className="hidden md:block">
+          <AppSidebar
+            user={user}
+            appName={appName}
+            activePath={activePath}
+            navigate={navigate}
+            onLogout={handleLogout}
+            collapsed={collapsed}
+          />
+        </div>
+
+        {/* Main content */}
+        <div className="flex flex-1 flex-col">
+          {children}
+        </div>
+      </div>
+    </SidebarContext.Provider>
+  )
+}

@@ -216,12 +216,34 @@ if (kit) {
       'tests/feature/auth.test.ts',
     ])
 
+    // Targets that tailwind-only stubs will override — skip from shadcn kit
+    const tailwindOnlyManifest = manifest['tailwind-only']?.[kit]
+    const tailwindOverrideTargets = new Set<string>()
+    if (ui === 'tailwind' && tailwindOnlyManifest?.files) {
+      for (const { target } of tailwindOnlyManifest.files) {
+        tailwindOverrideTargets.add(target)
+      }
+    }
+
     // Kit-specific stubs (src/, vite.config.ts, etc.)
     if (kitManifest?.files) {
       for (const { stub, target } of kitManifest.files) {
         // Skip components.json when ui === 'tailwind'
         if (ui === 'tailwind' && stub === 'components.json.stub') continue
+        // Skip files that will be overridden by tailwind-only stubs
+        if (ui === 'tailwind' && tailwindOverrideTargets.has(target)) continue
         const src = resolve(stubsDir, kit, stub)
+        const dest = resolve(projectDir, target)
+        mkdirSync(dirname(dest), { recursive: true })
+        await Bun.write(dest, Bun.file(src))
+        fileCount++
+      }
+    }
+
+    // Tailwind-only overlay: replace shadcn-dependent components with plain Tailwind versions
+    if (ui === 'tailwind' && tailwindOnlyManifest?.files) {
+      for (const { stub, target } of tailwindOnlyManifest.files) {
+        const src = resolve(stubsDir, 'tailwind-only', kit, stub)
         const dest = resolve(projectDir, target)
         mkdirSync(dirname(dest), { recursive: true })
         await Bun.write(dest, Bun.file(src))
@@ -251,6 +273,30 @@ if (kit) {
         }
         await Bun.write(dest, content)
         fileCount++
+      }
+    }
+
+    // Noauth overlay: replace auth-aware routes/controllers/models when auth === 'none'
+    if (auth === 'none') {
+      const noauthManifest = manifest.noauth
+      if (noauthManifest?.files) {
+        for (const { stub, target } of noauthManifest.files) {
+          const src = resolve(stubsDir, 'noauth', stub)
+          if (existsSync(src)) {
+            const dest = resolve(projectDir, target)
+            mkdirSync(dirname(dest), { recursive: true })
+            let content = await Bun.file(src).text()
+            // Apply shared placeholders
+            if (sharedManifest?.placeholders) {
+              for (const [key, values] of Object.entries(sharedManifest.placeholders)) {
+                const value = (values as Record<string, string>)[kit!] ?? ''
+                content = content.replaceAll(key, value)
+              }
+            }
+            await Bun.write(dest, content)
+            fileCount++
+          }
+        }
       }
     }
   }
@@ -287,6 +333,26 @@ if (kit) {
       mkdirSync(dirname(dest), { recursive: true })
       await Bun.write(dest, Bun.file(src))
       fileCount++
+    }
+  }
+
+  // Noauth overlay for API-only
+  if (auth === 'none') {
+    const manifestPath = resolve(stubsDir, 'manifest.json')
+    if (existsSync(manifestPath)) {
+      const manifest = JSON.parse(await Bun.file(manifestPath).text())
+      const noauthManifest = manifest.noauth
+      if (noauthManifest?.files) {
+        for (const { stub, target } of noauthManifest.files) {
+          const src = resolve(stubsDir, 'noauth', stub)
+          if (existsSync(src)) {
+            const dest = resolve(projectDir, target)
+            mkdirSync(dirname(dest), { recursive: true })
+            await Bun.write(dest, Bun.file(src))
+            fileCount++
+          }
+        }
+      }
     }
   }
 }

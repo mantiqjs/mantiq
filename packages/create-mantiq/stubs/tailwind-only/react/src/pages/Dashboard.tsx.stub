@@ -1,0 +1,205 @@
+import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
+import { Header } from '@/components/layout/header'
+import { Main } from '@/components/layout/main'
+import { TopNav } from '@/components/layout/top-nav'
+
+interface DashboardProps {
+  appName?: string
+  currentUser?: { id: number; name: string; email: string; role: string } | null
+  navigate: (href: string) => void
+  [key: string]: any
+}
+
+const topNav = [
+  { title: 'Overview', href: '/dashboard', isActive: true },
+  { title: 'Sales', href: '/dashboard', isActive: false, disabled: true },
+  { title: 'Tickets', href: '/dashboard', isActive: false, disabled: true },
+  { title: 'Performance', href: '/dashboard', isActive: false, disabled: true },
+]
+
+const recentSales = [
+  { name: 'Olivia Martin', email: 'olivia.martin@email.com', amount: '+$1,999.00' },
+  { name: 'Jackson Lee', email: 'jackson.lee@email.com', amount: '+$39.00' },
+  { name: 'Isabella Nguyen', email: 'isabella.nguyen@email.com', amount: '+$299.00' },
+  { name: 'William Kim', email: 'will@email.com', amount: '+$99.00' },
+  { name: 'Sofia Davis', email: 'sofia.davis@email.com', amount: '+$39.00' },
+]
+
+function getInitials(name: string) {
+  return name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+}
+
+function OverviewChart() {
+  const bars = [40, 30, 55, 45, 70, 60, 80, 50, 65, 45, 75, 55]
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const maxH = 160
+  const barW = 32
+  const gap = 48
+  const svgW = bars.length * gap
+  const svgH = maxH + 30
+
+  return (
+    <svg
+      viewBox={`0 0 ${svgW} ${svgH}`}
+      className="h-[350px] w-full"
+      preserveAspectRatio="none"
+    >
+      {bars.map((h, i) => {
+        const barH = (h / 100) * maxH
+        return (
+          <g key={i}>
+            <rect
+              x={i * gap + (gap - barW) / 2}
+              y={maxH - barH}
+              width={barW}
+              height={barH}
+              rx={4}
+              className="fill-gray-900/15 dark:fill-gray-50/15"
+            />
+            <text
+              x={i * gap + gap / 2}
+              y={maxH + 18}
+              textAnchor="middle"
+              className="fill-gray-500 text-[10px] dark:fill-gray-400"
+            >
+              {months[i]}
+            </text>
+          </g>
+        )
+      })}
+    </svg>
+  )
+}
+
+export default function Dashboard({
+  appName = 'Mantiq',
+  currentUser,
+  navigate,
+}: DashboardProps) {
+  return (
+    <AuthenticatedLayout
+      currentUser={currentUser}
+      appName={appName}
+      navigate={navigate}
+      activePath="/dashboard"
+    >
+      <Header navigate={navigate}>
+        <TopNav links={topNav} onLinkClick={navigate} />
+      </Header>
+      <Main>
+        <div className="space-y-4">
+          {/* Page title row */}
+          <div className="flex items-center justify-between">
+            <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">Dashboard</h2>
+            <button
+              type="button"
+              disabled
+              className="inline-flex items-center gap-2 rounded-md border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-500 opacity-50 dark:border-gray-700 dark:text-gray-400"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+              </svg>
+              Download
+            </button>
+          </div>
+
+          {/* Content */}
+          <div className="space-y-4">
+            {/* Stat cards */}
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {/* Total Revenue */}
+              <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-950">
+                <div className="flex items-center justify-between pb-2">
+                  <h3 className="text-sm font-medium text-gray-900 dark:text-gray-50">Total Revenue</h3>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" className="h-4 w-4 text-gray-500 dark:text-gray-400">
+                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                  </svg>
+                </div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-gray-50">$45,231.89</div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">+20.1% from last month</p>
+              </div>
+
+              {/* Subscriptions */}
+              <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-950">
+                <div className="flex items-center justify-between pb-2">
+                  <h3 className="text-sm font-medium text-gray-900 dark:text-gray-50">Subscriptions</h3>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" className="h-4 w-4 text-gray-500 dark:text-gray-400">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+                  </svg>
+                </div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-gray-50">+2,350</div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">+180.1% from last month</p>
+              </div>
+
+              {/* Sales */}
+              <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-950">
+                <div className="flex items-center justify-between pb-2">
+                  <h3 className="text-sm font-medium text-gray-900 dark:text-gray-50">Sales</h3>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" className="h-4 w-4 text-gray-500 dark:text-gray-400">
+                    <rect width="20" height="14" x="2" y="5" rx="2" /><path d="M2 10h20" />
+                  </svg>
+                </div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-gray-50">+12,234</div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">+19% from last month</p>
+              </div>
+
+              {/* Active Now */}
+              <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-950">
+                <div className="flex items-center justify-between pb-2">
+                  <h3 className="text-sm font-medium text-gray-900 dark:text-gray-50">Active Now</h3>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" className="h-4 w-4 text-gray-500 dark:text-gray-400">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                  </svg>
+                </div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-gray-50">+573</div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">+201 since last hour</p>
+              </div>
+            </div>
+
+            {/* Bottom row: chart + recent sales */}
+            <div className="grid gap-4 lg:grid-cols-7">
+              {/* Chart card */}
+              <div className="rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950 lg:col-span-4">
+                <div className="p-6 pb-2">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-50">Overview</h3>
+                </div>
+                <div className="p-6 pt-0 pl-2">
+                  <OverviewChart />
+                </div>
+              </div>
+
+              {/* Recent sales card */}
+              <div className="rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950 lg:col-span-3">
+                <div className="p-6 pb-2">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-50">Recent Sales</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">You made 265 sales this month.</p>
+                </div>
+                <div className="p-6 pt-0">
+                  <div className="space-y-8">
+                    {recentSales.map((sale) => (
+                      <div key={sale.email} className="flex items-center">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                          {getInitials(sale.name)}
+                        </div>
+                        <div className="ml-4 space-y-1">
+                          <p className="text-sm font-medium leading-none text-gray-900 dark:text-gray-50">{sale.name}</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">{sale.email}</p>
+                        </div>
+                        <div className="ml-auto font-medium text-gray-900 dark:text-gray-50">{sale.amount}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Main>
+    </AuthenticatedLayout>
+  )
+}

@@ -1,0 +1,91 @@
+import { useState } from 'react'
+import { AccountLayout } from './layout.tsx'
+
+interface SecurityProps {
+  appName?: string
+  currentUser?: { id: number; name: string; email: string } | null
+  navigate: (href: string) => void
+  [key: string]: any
+}
+
+export default function Security({ appName, currentUser, navigate }: SecurityProps) {
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    if (newPassword.length < 8) { setError('Password must be at least 8 characters.'); return }
+    if (newPassword !== confirmPassword) { setError('Passwords do not match.'); return }
+    setSaving(true)
+    await new Promise(r => setTimeout(r, 500))
+    setSaving(false)
+    setSaved(true)
+    setCurrentPassword('')
+    setNewPassword('')
+    setConfirmPassword('')
+    setTimeout(() => setSaved(false), 3000)
+  }
+
+  return (
+    <AccountLayout appName={appName} currentUser={currentUser} navigate={navigate} activePath="/account/security">
+      <div className="space-y-8">
+        <div>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-50">Security</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Manage your password and security settings.
+          </p>
+        </div>
+
+        {/* Change Password */}
+        <form onSubmit={handleSave} className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="current" className="text-sm font-medium text-gray-900 dark:text-gray-50">Current password</label>
+            <input id="current" type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} autoComplete="current-password" className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none ring-emerald-500 transition focus:border-emerald-500 focus:ring-2 dark:border-gray-700 dark:bg-gray-900" />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="new" className="text-sm font-medium text-gray-900 dark:text-gray-50">New password</label>
+            <input id="new" type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} autoComplete="new-password" className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none ring-emerald-500 transition focus:border-emerald-500 focus:ring-2 dark:border-gray-700 dark:bg-gray-900" />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="confirm" className="text-sm font-medium text-gray-900 dark:text-gray-50">Confirm password</label>
+            <input id="confirm" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} autoComplete="new-password" className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none ring-emerald-500 transition focus:border-emerald-500 focus:ring-2 dark:border-gray-700 dark:bg-gray-900" />
+          </div>
+          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+          <div className="flex items-center gap-3">
+            <button type="submit" disabled={saving} className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-50">
+              {saving ? 'Saving...' : 'Update password'}
+            </button>
+            {saved && <span className="text-sm text-gray-500 dark:text-gray-400">Password updated.</span>}
+          </div>
+        </form>
+
+        {/* 2FA */}
+        <div className="space-y-3">
+          <div>
+            <h4 className="text-sm font-medium text-gray-900 dark:text-gray-50">Two-factor authentication</h4>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Add an additional layer of security to your account.</p>
+          </div>
+          <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
+            <h5 className="text-sm font-medium text-gray-900 dark:text-gray-50">Authenticator app</h5>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Use an authenticator app to generate one-time codes.</p>
+            <button type="button" disabled className="mt-3 rounded-md border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-500 opacity-50 dark:border-gray-700 dark:text-gray-400">Enable 2FA</button>
+          </div>
+        </div>
+
+        {/* Delete Account */}
+        <div className="space-y-3">
+          <div>
+            <h4 className="text-sm font-medium text-gray-900 dark:text-gray-50">Delete account</h4>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Permanently remove your account and all associated data. This action cannot be undone.</p>
+          </div>
+          <button type="button" disabled className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white opacity-50">Delete account</button>
+        </div>
+      </div>
+    </AccountLayout>
+  )
+}

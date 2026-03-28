@@ -1,0 +1,5 @@
+import { Model } from '@mantiq/database'
+
+export class User extends Model {
+  static override fillable = ['name', 'email']
+}

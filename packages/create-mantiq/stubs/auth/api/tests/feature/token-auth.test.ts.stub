@@ -1,0 +1,69 @@
+import { describe, test, expect } from 'bun:test'
+import { TestCase } from '@mantiq/testing'
+
+const t = new TestCase()
+t.refreshDatabase = true
+t.setup()
+
+const user = {
+  name: 'API User',
+  email: 'api@example.com',
+  password: 'password123',
+}
+
+describe('Token Authentication', () => {
+  test('can register and receive a token', async () => {
+    const res = await t.client.post('/api/register', user)
+    res.assertCreated()
+    await res.assertJsonHasKey('token')
+    const data = await res.json()
+    expect(data.token).toContain('|')
+  })
+
+  test('can login and receive a token', async () => {
+    await t.client.post('/api/register', user)
+    const res = await t.client.post('/api/login', {
+      email: user.email,
+      password: user.password,
+    })
+    res.assertOk()
+    await res.assertJsonHasKey('token')
+  })
+
+  test('cannot login with wrong credentials', async () => {
+    await t.client.post('/api/register', user)
+    const res = await t.client.post('/api/login', {
+      email: user.email,
+      password: 'wrong',
+    })
+    res.assertUnauthorized()
+  })
+
+  test('can access protected route with bearer token', async () => {
+    const regRes = await t.client.post('/api/register', user)
+    const { token } = await regRes.json()
+
+    t.client.withToken(token)
+    const res = await t.client.get('/api/user')
+    res.assertOk()
+    await res.assertJsonPath('user.email', user.email)
+  })
+
+  test('cannot access protected route without token', async () => {
+    const res = await t.client.get('/api/user')
+    res.assertUnauthorized()
+  })
+
+  test('can logout (revoke token)', async () => {
+    const regRes = await t.client.post('/api/register', user)
+    const { token } = await regRes.json()
+
+    t.client.withToken(token)
+    const logoutRes = await t.client.post('/api/logout')
+    logoutRes.assertOk()
+
+    // Token should be revoked
+    const userRes = await t.client.get('/api/user')
+    userRes.assertUnauthorized()
+  })
+})
