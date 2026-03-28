@@ -130,6 +130,27 @@ export class ModelQueryBuilder<T> extends QueryBuilder {
     }
   }
 
+  // ── Named Scopes ───────────────────────────────────────────────────────────
+
+  /**
+   * Apply a named scope defined on the model class via `static scopes`.
+   *
+   * @example
+   *   await Post.query().scope('published').scope('recent').get()
+   *   await Post.query().scope('byAuthor', 42).get()
+   */
+  scope(name: string, ...args: any[]): this {
+    if (!this._modelClass) {
+      throw new Error('Cannot apply scope: no model class set on this query builder.')
+    }
+    const scopes = this._modelClass.scopes
+    if (!scopes || typeof scopes[name] !== 'function') {
+      throw new Error(`Scope [${name}] is not defined on model [${this._modelClass.table || this._modelClass.name}].`)
+    }
+    scopes[name](this, ...args)
+    return this
+  }
+
   // ── Hydrating read methods ─────────────────────────────────────────────────
 
   override async get(): Promise<T[]> {

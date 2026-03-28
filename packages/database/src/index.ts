@@ -68,6 +68,7 @@ export { MigrationRepository } from './migrations/MigrationRepository.ts'
 
 // ── ORM ───────────────────────────────────────────────────────────────────────
 export { Model } from './orm/Model.ts'
+export type { ScopeFunction } from './orm/Model.ts'
 export type { Scope } from './orm/Scope.ts'
 export { ClosureScope } from './orm/Scope.ts'
 export {
