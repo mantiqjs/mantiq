@@ -12,7 +12,7 @@ export class HttpError extends MantiqError {
     message: string,
     public readonly headers?: Record<string, string>,
     context?: Record<string, any>,
-    errorCode?: ErrorCode,
+    errorCode?: ErrorCode | string,
   ) {
     super(message, context, errorCode ?? ErrorCodes.HTTP_ERROR)
   }

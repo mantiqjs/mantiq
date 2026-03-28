@@ -310,9 +310,7 @@ async function eagerLoadBelongsToMany<T extends Model>(
 // ── MorphOne eager loading ──────────────────────────────────────────────────
 
 async function eagerLoadMorphOne<T extends Model>(
-  models: T[],
-  relationName: string,
-  sampleRelation: any,
+  models: T[], relationName: string, sampleRelation: any,
   constraint: ((query: ModelQueryBuilder<any>) => void) | null,
 ): Promise<void> {
   const related = sampleRelation['related'] as ModelStatic<any>
@@ -320,33 +318,22 @@ async function eagerLoadMorphOne<T extends Model>(
   const morphName = sampleRelation['morphName'] as string
   const ctor = models[0]!.constructor as typeof Model
   const localKey = ctor.primaryKey
-
   const parentIds = models.map((m) => (m as any)._attributes[localKey]).filter((id) => id != null)
   if (!parentIds.length) return
-
-  let query = related.query()
-    .where(`${morphName}_type`, morphType)
-    .whereIn(`${morphName}_id`, parentIds)
+  let query = related.query().where(`${morphName}_type`, morphType).whereIn(`${morphName}_id`, parentIds)
   if (constraint) constraint(query)
-
   const results = await query.get()
   const resultMap = new Map<any, any>()
-  for (const result of results) {
-    resultMap.set((result as any)._attributes[`${morphName}_id`], result)
-  }
-
+  for (const result of results) resultMap.set((result as any)._attributes[`${morphName}_id`], result)
   for (const model of models) {
-    const parentId = (model as any)._attributes[localKey]
-    ;(model as any)._relations[relationName] = resultMap.get(parentId) ?? null
+    ;(model as any)._relations[relationName] = resultMap.get((model as any)._attributes[localKey]) ?? null
   }
 }
 
 // ── MorphMany eager loading ─────────────────────────────────────────────────
 
 async function eagerLoadMorphMany<T extends Model>(
-  models: T[],
-  relationName: string,
-  sampleRelation: any,
+  models: T[], relationName: string, sampleRelation: any,
   constraint: ((query: ModelQueryBuilder<any>) => void) | null,
 ): Promise<void> {
   const related = sampleRelation['related'] as ModelStatic<any>
@@ -354,15 +341,10 @@ async function eagerLoadMorphMany<T extends Model>(
   const morphName = sampleRelation['morphName'] as string
   const ctor = models[0]!.constructor as typeof Model
   const localKey = ctor.primaryKey
-
   const parentIds = models.map((m) => (m as any)._attributes[localKey]).filter((id) => id != null)
   if (!parentIds.length) return
-
-  let query = related.query()
-    .where(`${morphName}_type`, morphType)
-    .whereIn(`${morphName}_id`, parentIds)
+  let query = related.query().where(`${morphName}_type`, morphType).whereIn(`${morphName}_id`, parentIds)
   if (constraint) constraint(query)
-
   const results = await query.get()
   const resultMap = new Map<any, any[]>()
   for (const result of results) {
@@ -370,28 +352,19 @@ async function eagerLoadMorphMany<T extends Model>(
     if (!resultMap.has(fkValue)) resultMap.set(fkValue, [])
     resultMap.get(fkValue)!.push(result)
   }
-
   for (const model of models) {
-    const parentId = (model as any)._attributes[localKey]
-    ;(model as any)._relations[relationName] = resultMap.get(parentId) ?? []
+    ;(model as any)._relations[relationName] = resultMap.get((model as any)._attributes[localKey]) ?? []
   }
 }
 
 // ── MorphTo eager loading ───────────────────────────────────────────────────
 
 async function eagerLoadMorphTo<T extends Model>(
-  models: T[],
-  relationName: string,
-  sampleRelation: any,
+  models: T[], relationName: string, sampleRelation: any,
 ): Promise<void> {
   const morphMap = sampleRelation['morphMap'] as Record<string, ModelStatic<any>>
-
-  // Determine the morph name from the relation name
-  const morphName = relationName
-  const typeColumn = `${morphName}_type`
-  const idColumn = `${morphName}_id`
-
-  // Group models by their morph type
+  const typeColumn = `${relationName}_type`
+  const idColumn = `${relationName}_id`
   const groupedByType = new Map<string, T[]>()
   for (const model of models) {
     const type = (model as any)._attributes[typeColumn]
@@ -399,57 +372,36 @@ async function eagerLoadMorphTo<T extends Model>(
     if (!groupedByType.has(type)) groupedByType.set(type, [])
     groupedByType.get(type)!.push(model)
   }
-
-  // For each type, load the related models in a single query
   for (const [type, typeModels] of groupedByType) {
     const RelatedModel = morphMap[type]
     if (!RelatedModel) {
-      for (const model of typeModels) {
-        ;(model as any)._relations[relationName] = null
-      }
+      for (const model of typeModels) (model as any)._relations[relationName] = null
       continue
     }
-
     const relatedCtor = RelatedModel as typeof Model
     const ownerKey = relatedCtor.primaryKey
-    const ids = typeModels
-      .map((m) => (m as any)._attributes[idColumn])
-      .filter((id) => id != null)
+    const ids = typeModels.map((m) => (m as any)._attributes[idColumn]).filter((id) => id != null)
     const uniqueIds = [...new Set(ids)]
-
     if (!uniqueIds.length) {
-      for (const model of typeModels) {
-        ;(model as any)._relations[relationName] = null
-      }
+      for (const model of typeModels) (model as any)._relations[relationName] = null
       continue
     }
-
     const results = await RelatedModel.whereIn(ownerKey, uniqueIds).get()
     const resultMap = new Map<any, any>()
-    for (const result of results) {
-      resultMap.set((result as any)._attributes[ownerKey], result)
-    }
-
+    for (const result of results) resultMap.set((result as any)._attributes[ownerKey], result)
     for (const model of typeModels) {
-      const morphId = (model as any)._attributes[idColumn]
-      ;(model as any)._relations[relationName] = resultMap.get(morphId) ?? null
+      ;(model as any)._relations[relationName] = resultMap.get((model as any)._attributes[idColumn]) ?? null
     }
   }
-
-  // Set null for models without a type
   for (const model of models) {
-    if (!(relationName in (model as any)._relations)) {
-      ;(model as any)._relations[relationName] = null
-    }
+    if (!(relationName in (model as any)._relations)) (model as any)._relations[relationName] = null
   }
 }
 
 // ── MorphToMany eager loading ───────────────────────────────────────────────
 
 async function eagerLoadMorphToMany<T extends Model>(
-  models: T[],
-  relationName: string,
-  sampleRelation: any,
+  models: T[], relationName: string, sampleRelation: any,
   constraint: ((query: ModelQueryBuilder<any>) => void) | null,
 ): Promise<void> {
   const related = sampleRelation['related'] as ModelStatic<any>
@@ -461,49 +413,30 @@ async function eagerLoadMorphToMany<T extends Model>(
   const relatedCtor = related as typeof Model
   const ctor = models[0]!.constructor as typeof Model
   const localKey = ctor.primaryKey
-
   if (!relatedCtor.connection) return
-
   const parentIds = models.map((m) => (m as any)._attributes[localKey]).filter((id) => id != null)
   if (!parentIds.length) return
-
-  // Step 1: Get all pivot rows for these parent IDs and morph type
   const pivotRows = await relatedCtor.connection.table(pivotTable)
-    .where(`${morphName}_type`, morphType)
-    .whereIn(foreignKey, parentIds)
-    .get()
-
+    .where(`${morphName}_type`, morphType).whereIn(foreignKey, parentIds).get()
   if (!pivotRows.length) {
-    for (const model of models) {
-      ;(model as any)._relations[relationName] = []
-    }
+    for (const model of models) (model as any)._relations[relationName] = []
     return
   }
-
-  // Step 2: Get all related models
   const relatedIds = [...new Set(pivotRows.map((r) => r[relatedKey]))]
   let query = related.query().whereIn(relatedCtor.primaryKey, relatedIds)
   if (constraint) constraint(query)
-
   const results = await query.get()
   const resultMap = new Map<any, any>()
-  for (const result of results) {
-    resultMap.set((result as any)._attributes[relatedCtor.primaryKey], result)
-  }
-
-  // Step 3: Build parent -> related[] mapping via pivot
+  for (const result of results) resultMap.set((result as any)._attributes[relatedCtor.primaryKey], result)
   const parentRelatedMap = new Map<any, any[]>()
   for (const pivot of pivotRows) {
     const parentId = pivot[foreignKey]
-    const relId = pivot[relatedKey]
-    const relModel = resultMap.get(relId)
+    const relModel = resultMap.get(pivot[relatedKey])
     if (!relModel) continue
     if (!parentRelatedMap.has(parentId)) parentRelatedMap.set(parentId, [])
     parentRelatedMap.get(parentId)!.push(relModel)
   }
-
   for (const model of models) {
-    const parentId = (model as any)._attributes[localKey]
-    ;(model as any)._relations[relationName] = parentRelatedMap.get(parentId) ?? []
+    ;(model as any)._relations[relationName] = parentRelatedMap.get((model as any)._attributes[localKey]) ?? []
   }
 }

@@ -10,7 +10,7 @@ import { ModelNotFoundError } from '../../errors/ModelNotFoundError.ts'
  * @example
  *   class Comment extends Model {
  *     commentable() {
- *       return this.morphTo()
+ *       return this.morphTo('commentable', { Post, Video })
  *     }
  *   }
  *   // Comment table has `commentable_type` and `commentable_id` columns

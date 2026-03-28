@@ -88,7 +88,6 @@ export class PostgresConnection extends BaseSQLConnection {
       const pool = await this.getClient()
       try {
         const result = await pool.query(sql, bindings)
-        // Return the first column value from the RETURNING clause (supports any column name)
         const row = result.rows[0]
         if (!row) return 0
         const keys = Object.keys(row)
