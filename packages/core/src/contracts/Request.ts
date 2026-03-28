@@ -42,6 +42,7 @@ export interface MantiqRequest {
   param(key: string, defaultValue?: any): any
   params(): Record<string, any>
   setRouteParams(params: Record<string, any>): void
+  setRouteParam(key: string, value: any): void
 
   // ── Session ──────────────────────────────────────────────────────────────
   session(): SessionStore
