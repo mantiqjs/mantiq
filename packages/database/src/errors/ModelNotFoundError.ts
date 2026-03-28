@@ -1,4 +1,4 @@
-import { MantiqError } from '@mantiq/core'
+import { MantiqError, ErrorCodes } from '@mantiq/core'
 
 export class ModelNotFoundError extends MantiqError {
   constructor(
@@ -9,6 +9,8 @@ export class ModelNotFoundError extends MantiqError {
       id !== undefined
         ? `No ${modelName} found with ID ${id}.`
         : `No ${modelName} matching the given conditions.`,
+      undefined,
+      ErrorCodes.MODEL_NOT_FOUND,
     )
   }
 }

@@ -22,10 +22,34 @@
   "peerDependencies": {
     "@mantiq/core": "^0.5.0",
     "@mantiq/database": "^0.5.0",
-    "@mantiq/auth": "^0.5.0"
+    "@mantiq/auth": "^0.5.0",
+    "@mantiq/events": "^0.5.0",
+    "@mantiq/queue": "^0.5.0",
+    "@mantiq/mail": "^0.5.0",
+    "@mantiq/notify": "^0.5.0",
+    "@mantiq/helpers": "^0.5.0",
+    "@mantiq/realtime": "^0.5.0"
   },
   "peerDependenciesMeta": {
     "@mantiq/auth": {
+      "optional": true
+    },
+    "@mantiq/events": {
+      "optional": true
+    },
+    "@mantiq/queue": {
+      "optional": true
+    },
+    "@mantiq/mail": {
+      "optional": true
+    },
+    "@mantiq/notify": {
+      "optional": true
+    },
+    "@mantiq/helpers": {
+      "optional": true
+    },
+    "@mantiq/realtime": {
       "optional": true
     }
   },

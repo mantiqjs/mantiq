@@ -6,6 +6,33 @@ import { QueryBuilder } from '../query/Builder.ts'
 import { Expression } from '../query/Expression.ts'
 
 /**
+ * Known error messages that indicate the database connection has been lost.
+ * When detected, the connection will automatically attempt to reconnect
+ * and retry the query once before throwing.
+ */
+const LOST_CONNECTION_MESSAGES = [
+  'server has gone away',
+  'no connection to the server',
+  'lost connection',
+  'is dead or not enabled',
+  'error while sending',
+  'decryption failed or bad record mac',
+  'server closed the connection unexpectedly',
+  'ssl connection has been closed unexpectedly',
+  'error writing data to the connection',
+  'resource deadlock avoided',
+  'transaction is not active',
+  'connection was killed',
+  'connection reset',
+  'econnreset',
+  'econnrefused',
+  'epipe',
+  'etimedout',
+  'broken pipe',
+  'connection timed out',
+]
+
+/**
  * Abstract base for all SQL connections. Provides `executeXxx()` methods
  * by compiling QueryState via Grammar and delegating to the raw SQL methods
  * that each driver must implement.
@@ -20,6 +47,40 @@ export abstract class BaseSQLConnection implements DatabaseConnection {
   abstract transaction<T>(callback: (connection: DatabaseConnection) => Promise<T>): Promise<T>
   abstract schema(): SchemaBuilder
   abstract getDriverName(): string
+
+  /**
+   * Reconnect the underlying database connection.
+   * Override in subclasses to close and re-establish the connection.
+   */
+  async reconnect(): Promise<void> {
+    // Default is a no-op. Subclasses with connection pools (MySQL, Postgres, MSSQL)
+    // can override to destroy and recreate the pool.
+  }
+
+  /**
+   * Check if an error indicates the database connection has been lost.
+   */
+  protected isLostConnection(err: any): boolean {
+    const message = String(err?.message ?? '').toLowerCase()
+    return LOST_CONNECTION_MESSAGES.some((msg) => message.includes(msg))
+  }
+
+  /**
+   * Run a callback with automatic reconnection on lost connection errors.
+   * If the first attempt fails with a lost connection error, reconnects
+   * and retries once.
+   */
+  protected async withReconnect<T>(callback: () => Promise<T>): Promise<T> {
+    try {
+      return await callback()
+    } catch (err: any) {
+      if (this.isLostConnection(err)) {
+        await this.reconnect()
+        return await callback()
+      }
+      throw err
+    }
+  }
 
   getTablePrefix(): string {
     return ''

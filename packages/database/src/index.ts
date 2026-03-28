@@ -75,7 +75,11 @@ export {
   HasManyRelation,
   BelongsToRelation,
   BelongsToManyRelation,
+  MorphToManyRelation,
 } from './orm/Model.ts'
+export { MorphOneRelation } from './orm/relations/MorphOneRelation.ts'
+export { MorphManyRelation } from './orm/relations/MorphManyRelation.ts'
+export { MorphToRelation } from './orm/relations/MorphToRelation.ts'
 export type { ModelStatic } from './orm/Model.ts'
 export { ModelQueryBuilder } from './orm/ModelQueryBuilder.ts'
 export type { Override, ColumnTypeMap, ColumnType } from './types/Schema.ts'
