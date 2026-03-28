@@ -24,6 +24,8 @@ export { Event, Listener } from './contracts/EventDispatcher.ts'
 export type { WebSocketHandler, WebSocketContext } from './websocket/WebSocketContext.ts'
 
 // ── Errors ────────────────────────────────────────────────────────────────────
+export { ErrorCodes } from './errors/ErrorCodes.ts'
+export type { ErrorCode } from './errors/ErrorCodes.ts'
 export { MantiqError } from './errors/MantiqError.ts'
 export { HttpError } from './errors/HttpError.ts'
 export { NotFoundError } from './errors/NotFoundError.ts'

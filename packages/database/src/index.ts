@@ -1,7 +1,7 @@
 // ── Contracts ────────────────────────────────────────────────────────────────
 export type { DatabaseConnection } from './contracts/Connection.ts'
 export type { Grammar } from './contracts/Grammar.ts'
-export type { PaginationResult } from './contracts/Paginator.ts'
+export type { PaginationResult, CursorPaginationResult } from './contracts/Paginator.ts'
 export type {
   MongoDatabaseConnection,
   MongoCollectionContract,
@@ -75,7 +75,11 @@ export {
   HasManyRelation,
   BelongsToRelation,
   BelongsToManyRelation,
+  MorphToManyRelation,
 } from './orm/Model.ts'
+export { MorphOneRelation } from './orm/relations/MorphOneRelation.ts'
+export { MorphManyRelation } from './orm/relations/MorphManyRelation.ts'
+export { MorphToRelation } from './orm/relations/MorphToRelation.ts'
 export type { ModelStatic } from './orm/Model.ts'
 export { ModelQueryBuilder } from './orm/ModelQueryBuilder.ts'
 export type { Override, ColumnTypeMap, ColumnType } from './types/Schema.ts'
@@ -92,7 +96,7 @@ export { Faker } from './factories/Faker.ts'
 
 // ── Database Manager ──────────────────────────────────────────────────────────
 export { DatabaseManager } from './DatabaseManager.ts'
-export type { DatabaseConfig, ConnectionConfig, SQLConfig } from './DatabaseManager.ts'
+export type { DatabaseConfig, ConnectionConfig, SQLConfig, QueryLogEntry } from './DatabaseManager.ts'
 export type { MongoConfig as MongoConnectionConfig } from './DatabaseManager.ts'
 
 // ── Bootstrap helpers ─────────────────────────────────────────────────────────

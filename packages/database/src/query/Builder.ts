@@ -1,7 +1,7 @@
 import { Expression } from './Expression.ts'
 import { ModelNotFoundError } from '../errors/ModelNotFoundError.ts'
 import { applyMacros } from '@mantiq/core'
-import type { PaginationResult } from '../contracts/Paginator.ts'
+import type { PaginationResult, CursorPaginationResult } from '../contracts/Paginator.ts'
 import type { DatabaseConnection } from '../contracts/Connection.ts'
 
 export type Operator = '=' | '!=' | '<>' | '<' | '>' | '<=' | '>=' | 'like' | 'not like' | 'in' | 'not in'
@@ -405,6 +405,36 @@ export class QueryBuilder {
     const from = total === 0 ? 0 : (currentPage - 1) * perPage + 1
     const to = Math.min(from + data.length - 1, total)
     return { data, total, perPage, currentPage, lastPage, from, to, hasMore: currentPage < lastPage }
+  }
+
+  async cursorPaginate(options: {
+    perPage?: number
+    cursor?: string | number | null
+    cursorColumn?: string
+    direction?: 'asc' | 'desc'
+  } = {}): Promise<CursorPaginationResult<any>> {
+    const { perPage = 15, cursor = null, cursorColumn = 'id', direction = 'desc' } = options
+
+    const query = this.clone()
+    if (cursor != null) {
+      query.where(cursorColumn, direction === 'desc' ? '<' : '>', cursor)
+    }
+
+    const results = await query
+      .orderBy(cursorColumn, direction)
+      .limit(perPage + 1)
+      .get()
+
+    const hasMore = results.length > perPage
+    if (hasMore) results.pop()
+
+    return {
+      data: results,
+      next_cursor: hasMore ? results[results.length - 1]?.[cursorColumn] ?? null : null,
+      prev_cursor: cursor ?? null,
+      per_page: perPage,
+      has_more: hasMore,
+    }
   }
 
   // ── Utilities ───────────────────────────────────────────────────────────────
