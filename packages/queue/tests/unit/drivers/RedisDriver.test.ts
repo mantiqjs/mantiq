@@ -98,7 +98,7 @@ describe('RedisDriver', () => {
     const id = await driver.push(makePayload(), 'default')
     expect(typeof id).toBe('string')
     expect(client.lpush).toHaveBeenCalledTimes(1)
-    const [key, serialized] = client.lpush.mock.calls[0]!
+    const [key, serialized] = client.lpush.mock.calls[0]! as any[]
     expect(key).toBe('mantiq_queue:default')
     const parsed = JSON.parse(serialized)
     expect(parsed.payload.jobName).toBe('TestJob')
@@ -108,7 +108,7 @@ describe('RedisDriver', () => {
     await driver.push(makePayload(), 'default', 30)
     expect(client.zadd).toHaveBeenCalledTimes(1)
     expect(client.lpush).not.toHaveBeenCalled()
-    const [key] = client.zadd.mock.calls[0]!
+    const [key] = client.zadd.mock.calls[0]! as any[]
     expect(key).toBe('mantiq_queue:default:delayed')
   })
 
@@ -162,7 +162,7 @@ describe('RedisDriver', () => {
 
     await driver.pop('default')
     expect(client.hset).toHaveBeenCalledTimes(1)
-    const [key] = client.hset.mock.calls[0]!
+    const [key] = client.hset.mock.calls[0]! as any[]
     expect(key).toBe('mantiq_queue:default:reserved')
   })
 
@@ -226,7 +226,7 @@ describe('RedisDriver', () => {
       createdAt: 0,
     }
     await driver.release(job, 60)
-    const [, score] = client.zadd.mock.calls[0]!
+    const [, score] = client.zadd.mock.calls[0]! as any[]
     expect(score).toBeGreaterThanOrEqual(now + 60)
   })
 
@@ -245,7 +245,7 @@ describe('RedisDriver', () => {
     await driver.fail(job, new Error('boom'))
     expect(client.hdel).toHaveBeenCalled()
     expect(client.lpush).toHaveBeenCalledTimes(1)
-    const [key, serialized] = client.lpush.mock.calls[0]!
+    const [key, serialized] = client.lpush.mock.calls[0]! as any[]
     expect(key).toBe('mantiq_queue:_failed')
     const parsed = JSON.parse(serialized)
     expect(parsed.exception).toContain('boom')
@@ -263,7 +263,7 @@ describe('RedisDriver', () => {
     }
     const err = new TypeError('type mismatch')
     await driver.fail(job, err)
-    const [, serialized] = client.lpush.mock.calls[0]!
+    const [, serialized] = client.lpush.mock.calls[0]! as any[]
     const parsed = JSON.parse(serialized)
     expect(parsed.exception).toContain('TypeError')
     expect(parsed.exception).toContain('type mismatch')
@@ -331,7 +331,7 @@ describe('RedisDriver', () => {
     const batch = makeBatch()
     await driver.createBatch(batch)
     expect(client.set).toHaveBeenCalledTimes(1)
-    const [key, value] = client.set.mock.calls[0]!
+    const [key, value] = client.set.mock.calls[0]! as any[]
     expect(key).toBe('mantiq_queue:batch:batch-1')
     expect(JSON.parse(value).name).toBe('test-batch')
   })
@@ -354,7 +354,7 @@ describe('RedisDriver', () => {
   test('updateBatchProgress() uses Lua eval for atomic increment', async () => {
     const batch = makeBatch()
     const updated = { ...batch, processedJobs: 1, failedJobs: 0 }
-    client.eval.mockImplementation(async () => JSON.stringify(updated))
+    client.eval.mockImplementation(async () => JSON.stringify(updated) as any)
     const result = await driver.updateBatchProgress('batch-1', 1, 0)
     expect(client.eval).toHaveBeenCalledTimes(1)
     expect(result!.processedJobs).toBe(1)

@@ -78,7 +78,7 @@ describe('Helpers boundary edge cases', () => {
   // ── Arr.get deep nested ──────────────────────────────────────────────
 
   test('Arr.get({a:{b:{c:1}}}, "a.b.c") returns 1', () => {
-    expect(Arr.get({ a: { b: { c: 1 } } }, 'a.b.c')).toBe(1)
+    expect(Arr.get({ a: { b: { c: 1 } } }, 'a.b.c') as number).toBe(1)
   })
 
   // ── Arr.get missing deep path ─────────────────────────────────────────

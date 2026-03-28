@@ -10,10 +10,10 @@ import { HttpError } from '@mantiq/core'
 export class OAuthError extends HttpError {
   constructor(
     message: string,
-    errorCode: string = 'invalid_request',
+    oauthCode: string = 'invalid_request',
     statusCode = 400,
   ) {
-    super(statusCode, message, undefined, undefined, errorCode)
+    super(statusCode, message, undefined, undefined, oauthCode)
   }
 
   toJSON(): Record<string, any> {

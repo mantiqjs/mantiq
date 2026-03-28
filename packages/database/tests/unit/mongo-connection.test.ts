@@ -236,10 +236,10 @@ describe('MongoConnection', () => {
   test('executeAggregate with sum runs aggregation pipeline', async () => {
     const result = await conn.executeAggregate(emptyState('orders'), 'sum', 'amount')
     expect(result).toBe(100)
-    const pipeline = mockCol.aggregate.mock.calls[0]![0]
-    expect(pipeline[0]).toEqual({ $match: {} })
-    expect(pipeline[1].$group._id).toBeNull()
-    expect(pipeline[1].$group.result.$sum).toBe('$amount')
+    const pipeline = (mockCol.aggregate.mock.calls as any[])[0]?.[0]
+    expect(pipeline?.[0]).toEqual({ $match: {} })
+    expect(pipeline?.[1]?.$group?._id).toBeNull()
+    expect(pipeline?.[1]?.$group?.result?.$sum).toBe('$amount')
   })
 
   // ── executeExists ─────────────────────────────────────────────────────
@@ -330,7 +330,7 @@ describe('MongoConnection', () => {
       ],
     })
     await conn.executeSelect(state)
-    const filter = mockCol.find.mock.calls[0]![0]
+    const filter = (mockCol.find.mock.calls as any[])[0]?.[0]
     expect(filter.$and).toBeDefined()
     expect(filter.$and[0]).toEqual({ active: true })
     expect(filter.$and[1]).toEqual({ age: { $gte: 18 } })
@@ -344,7 +344,7 @@ describe('MongoConnection', () => {
       ],
     })
     await conn.executeSelect(state)
-    const filter = mockCol.find.mock.calls[0]![0]
+    const filter = (mockCol.find.mock.calls as any[])[0]?.[0]
     expect(filter.$or).toBeDefined()
   })
 

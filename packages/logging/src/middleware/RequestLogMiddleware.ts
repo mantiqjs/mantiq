@@ -19,13 +19,13 @@ export class RequestLogMiddleware implements Middleware {
 
     const duration = Math.round(performance.now() - start)
 
-    log().withContext({
+    log().info(`${request.method()} ${request.path()} ${response.status} ${duration}ms`, {
       requestId,
       duration,
       status: response.status,
       method: request.method(),
       path: request.path(),
-    }).info(`${request.method()} ${request.path()} ${response.status} ${duration}ms`)
+    })
 
     return response
   }

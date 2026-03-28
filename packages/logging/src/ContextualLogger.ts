@@ -1,4 +1,6 @@
-import type { LogLevel, LogContext, LoggerDriver } from './contracts/Logger.ts'
+import type { LogLevel, LoggerDriver } from './contracts/Logger.ts'
+
+type LogContext = Record<string, any>
 
 /**
  * A logger wrapper that merges persistent context into every log entry.
