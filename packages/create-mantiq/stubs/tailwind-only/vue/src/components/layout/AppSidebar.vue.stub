@@ -1,0 +1,60 @@
+<script setup lang="ts">
+import { Command } from 'lucide-vue-next'
+import NavGroup from './NavGroup.vue'
+import NavUser from './NavUser.vue'
+import type { NavUserUser } from './NavUser.vue'
+import { sidebarData } from './sidebar-data'
+
+const props = defineProps<{
+  user: NavUserUser
+  appName: string
+  activePath: string
+  navigate: (href: string) => void
+  onLogout: () => void
+  collapsed?: boolean
+}>()
+</script>
+
+<template>
+  <aside
+    class="flex h-full flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200"
+    :class="collapsed ? 'w-14' : 'w-64'"
+  >
+    <!-- Header -->
+    <div class="flex h-14 items-center gap-2 border-b border-sidebar-border px-3">
+      <button
+        class="flex items-center gap-2 rounded-md p-1.5 hover:bg-sidebar-accent"
+        :title="appName"
+        @click="navigate('/dashboard')"
+      >
+        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+          <Command class="h-4 w-4" />
+        </span>
+        <template v-if="!collapsed">
+          <span class="grid flex-1 text-left text-sm leading-tight">
+            <span class="truncate font-semibold">{{ appName }}</span>
+            <span class="truncate text-xs text-muted-foreground">Admin Panel</span>
+          </span>
+        </template>
+      </button>
+    </div>
+
+    <!-- Content -->
+    <nav class="flex-1 overflow-y-auto py-2">
+      <NavGroup
+        v-for="group in sidebarData"
+        :key="group.title"
+        :group="group"
+        :active-path="activePath"
+        :navigate="navigate"
+        :collapsed="collapsed"
+        class="mb-2"
+      />
+    </nav>
+
+    <!-- Footer -->
+    <div class="border-t border-sidebar-border p-2">
+      <NavUser :user="user" :navigate="navigate" :on-logout="onLogout" :collapsed="collapsed" />
+    </div>
+  </aside>
+</template>

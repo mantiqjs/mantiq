@@ -1457,5 +1457,117 @@
         "svelte": "src/main.ts"
       }
     }
+  },
+  "tailwind-only": {
+    "vue": {
+      "files": [
+        {
+          "stub": "src/style.css.stub",
+          "target": "src/style.css"
+        },
+        {
+          "stub": "src/lib/utils.ts.stub",
+          "target": "src/lib/utils.ts"
+        },
+        {
+          "stub": "src/components/layout/AuthenticatedLayout.vue.stub",
+          "target": "src/components/layout/AuthenticatedLayout.vue"
+        },
+        {
+          "stub": "src/components/layout/AppSidebar.vue.stub",
+          "target": "src/components/layout/AppSidebar.vue"
+        },
+        {
+          "stub": "src/components/layout/NavUser.vue.stub",
+          "target": "src/components/layout/NavUser.vue"
+        },
+        {
+          "stub": "src/components/layout/Header.vue.stub",
+          "target": "src/components/layout/Header.vue"
+        },
+        {
+          "stub": "src/components/layout/Main.vue.stub",
+          "target": "src/components/layout/Main.vue"
+        },
+        {
+          "stub": "src/components/layout/TopNav.vue.stub",
+          "target": "src/components/layout/TopNav.vue"
+        },
+        {
+          "stub": "src/components/layout/ThemeToggle.vue.stub",
+          "target": "src/components/layout/ThemeToggle.vue"
+        },
+        {
+          "stub": "src/components/layout/NavGroup.vue.stub",
+          "target": "src/components/layout/NavGroup.vue"
+        },
+        {
+          "stub": "src/components/layout/sidebar-data.ts.stub",
+          "target": "src/components/layout/sidebar-data.ts"
+        },
+        {
+          "stub": "src/pages/Dashboard.vue.stub",
+          "target": "src/pages/Dashboard.vue"
+        },
+        {
+          "stub": "src/pages/Users.vue.stub",
+          "target": "src/pages/Users.vue"
+        },
+        {
+          "stub": "src/pages/Login.vue.stub",
+          "target": "src/pages/Login.vue"
+        },
+        {
+          "stub": "src/pages/Register.vue.stub",
+          "target": "src/pages/Register.vue"
+        },
+        {
+          "stub": "src/pages/account/Layout.vue.stub",
+          "target": "src/pages/account/layout.vue"
+        },
+        {
+          "stub": "src/pages/account/Profile.vue.stub",
+          "target": "src/pages/account/profile.vue"
+        },
+        {
+          "stub": "src/pages/account/Security.vue.stub",
+          "target": "src/pages/account/security.vue"
+        },
+        {
+          "stub": "src/pages/account/Preferences.vue.stub",
+          "target": "src/pages/account/preferences.vue"
+        }
+      ]
+    }
+  },
+  "auth": {
+    "web": {
+      "vue": {
+        "files": [
+          {
+            "stub": "src/pages.ts.stub",
+            "target": "src/pages.ts"
+          },
+          {
+            "stub": "src/App.vue.stub",
+            "target": "src/App.vue"
+          }
+        ]
+      }
+    }
+  },
+  "noauth": {
+    "vue": {
+      "files": [
+        {
+          "stub": "src/pages.ts.stub",
+          "target": "src/pages.ts"
+        },
+        {
+          "stub": "src/App.vue.stub",
+          "target": "src/App.vue"
+        }
+      ]
+    }
   }
 }

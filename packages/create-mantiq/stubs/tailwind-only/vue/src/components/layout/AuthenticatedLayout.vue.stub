@@ -1,0 +1,73 @@
+<script setup lang="ts">
+import { ref, provide, onMounted, onUnmounted } from 'vue'
+import { post } from '@/lib/api'
+import AppSidebar from './AppSidebar.vue'
+
+const props = withDefaults(defineProps<{
+  currentUser?: { name: string; email: string; role?: string } | null
+  appName?: string
+  navigate: (href: string) => void
+  activePath: string
+}>(), {
+  appName: 'Mantiq',
+})
+
+const mobileOpen = ref(false)
+
+function toggleMobileSidebar() {
+  mobileOpen.value = !mobileOpen.value
+}
+
+provide('toggleMobileSidebar', toggleMobileSidebar)
+
+async function handleLogout() {
+  await post('/logout', {})
+  props.navigate('/login')
+}
+
+const user = props.currentUser ?? { name: 'User', email: 'user@example.com' }
+
+function onClickOutside(e: MouseEvent) {
+  const target = e.target as HTMLElement
+  if (mobileOpen.value && !target.closest('[data-sidebar]')) {
+    mobileOpen.value = false
+  }
+}
+
+onMounted(() => document.addEventListener('click', onClickOutside))
+onUnmounted(() => document.removeEventListener('click', onClickOutside))
+</script>
+
+<template>
+  <div class="flex min-h-screen">
+    <!-- Desktop sidebar -->
+    <div class="hidden md:flex" data-sidebar>
+      <AppSidebar
+        :user="user"
+        :app-name="appName"
+        :active-path="activePath"
+        :navigate="navigate"
+        :on-logout="handleLogout"
+      />
+    </div>
+
+    <!-- Mobile sidebar overlay -->
+    <div v-if="mobileOpen" class="fixed inset-0 z-40 md:hidden">
+      <div class="fixed inset-0 bg-black/50" @click="mobileOpen = false" />
+      <div class="fixed inset-y-0 left-0 z-50 w-64" data-sidebar @click.stop>
+        <AppSidebar
+          :user="user"
+          :app-name="appName"
+          :active-path="activePath"
+          :navigate="(href: string) => { mobileOpen = false; navigate(href) }"
+          :on-logout="handleLogout"
+        />
+      </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="flex flex-1 flex-col">
+      <slot />
+    </div>
+  </div>
+</template>

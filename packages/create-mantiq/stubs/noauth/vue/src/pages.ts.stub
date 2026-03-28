@@ -1,0 +1,7 @@
+import Dashboard from './pages/Dashboard.vue'
+import Users from './pages/Users.vue'
+
+export const pages: Record<string, any> = {
+  Dashboard,
+  Users,
+}

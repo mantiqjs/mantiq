@@ -1,0 +1,54 @@
+<script setup lang="ts">
+import { ref, inject, onMounted, onUnmounted } from 'vue'
+import { cn } from '@/lib/utils'
+import { PanelLeft } from 'lucide-vue-next'
+import ThemeToggle from './ThemeToggle.vue'
+
+const props = defineProps<{
+  fixed?: boolean
+  class?: string
+  navigate?: (href: string) => void
+}>()
+
+const toggleMobileSidebar = inject<() => void>('toggleMobileSidebar', () => {})
+
+const offset = ref(0)
+
+function onScroll() {
+  offset.value = document.body.scrollTop || document.documentElement.scrollTop
+}
+
+onMounted(() => {
+  document.addEventListener('scroll', onScroll, { passive: true })
+})
+
+onUnmounted(() => {
+  document.removeEventListener('scroll', onScroll)
+})
+</script>
+
+<template>
+  <header
+    :class="cn(
+      'flex h-16 shrink-0 items-center gap-2',
+      fixed && 'sticky top-0 z-10 bg-background',
+      offset > 10 && fixed ? 'border-b' : '',
+      props.class,
+    )"
+  >
+    <div class="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
+      <button
+        class="-ml-1 inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground md:hidden"
+        @click="toggleMobileSidebar"
+      >
+        <PanelLeft class="h-4 w-4" />
+        <span class="sr-only">Toggle sidebar</span>
+      </button>
+      <div class="mx-1 hidden h-4 w-px bg-border md:block" />
+      <slot />
+      <div class="ms-auto flex items-center gap-2">
+        <ThemeToggle />
+      </div>
+    </div>
+  </header>
+</template>

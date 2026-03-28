@@ -1,0 +1,85 @@
+<script setup lang="ts">
+import { ref } from 'vue'
+import AccountLayout from './layout.vue'
+
+const props = withDefaults(defineProps<{
+  appName?: string
+  currentUser?: { name: string; email: string; role?: string } | null
+  navigate: (href: string) => void
+}>(), {
+  appName: 'Mantiq',
+})
+
+const currentPassword = ref('')
+const newPassword = ref('')
+const confirmPassword = ref('')
+const success = ref('')
+const error = ref('')
+
+async function handleSubmit() {
+  success.value = ''
+  error.value = ''
+  if (newPassword.value !== confirmPassword.value) {
+    error.value = 'Passwords do not match.'
+    return
+  }
+  if (newPassword.value.length < 6) {
+    error.value = 'Password must be at least 6 characters.'
+    return
+  }
+  // Password change would call an API endpoint
+  success.value = 'Password updated successfully.'
+  currentPassword.value = ''
+  newPassword.value = ''
+  confirmPassword.value = ''
+}
+</script>
+
+<template>
+  <AccountLayout
+    :app-name="appName"
+    :current-user="currentUser"
+    :navigate="navigate"
+    active-path="/account/security"
+    title="Settings"
+    description="Manage your account settings."
+  >
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+      <div class="p-6 pb-2">
+        <h3 class="text-lg font-semibold leading-none tracking-tight">Security</h3>
+        <p class="mt-1.5 text-sm text-muted-foreground">Change your password.</p>
+      </div>
+      <div class="p-6 pt-4">
+        <div
+          v-if="success"
+          class="mb-4 rounded-md border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-600 dark:text-green-400"
+        >
+          {{ success }}
+        </div>
+        <div
+          v-if="error"
+          class="mb-4 rounded-md border border-destructive px-4 py-3 text-sm text-destructive"
+        >
+          {{ error }}
+        </div>
+        <form class="space-y-4 max-w-md" @submit.prevent="handleSubmit">
+          <div class="space-y-2">
+            <label for="current-password" class="text-sm font-medium leading-none">Current Password</label>
+            <input id="current-password" v-model="currentPassword" type="password" required class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" />
+          </div>
+          <div class="space-y-2">
+            <label for="new-password" class="text-sm font-medium leading-none">New Password</label>
+            <input id="new-password" v-model="newPassword" type="password" required placeholder="Min 6 characters" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" />
+          </div>
+          <div class="space-y-2">
+            <label for="confirm-password" class="text-sm font-medium leading-none">Confirm New Password</label>
+            <input id="confirm-password" v-model="confirmPassword" type="password" required class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" />
+          </div>
+          <button type="submit" class="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90">
+            Update Password
+          </button>
+        </form>
+      </div>
+    </div>
+  </AccountLayout>
+</template>
