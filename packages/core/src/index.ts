@@ -57,12 +57,16 @@ export { RateLimiter, MemoryStore } from './rateLimit/RateLimiter.ts'
 export type { RateLimitConfig, RateLimitStore, LimiterResolver } from './rateLimit/RateLimiter.ts'
 export { ThrottleRequests, getDefaultRateLimiter, setDefaultRateLimiter } from './rateLimit/ThrottleRequests.ts'
 export { SecureHeaders } from './middleware/SecureHeaders.ts'
+export { TimeoutMiddleware } from './middleware/TimeoutMiddleware.ts'
 export { Enum } from './support/Enum.ts'
 export { WebSocketKernel } from './websocket/WebSocketKernel.ts'
 export { DefaultExceptionHandler } from './exceptions/Handler.ts'
 export { CoreServiceProvider } from './providers/CoreServiceProvider.ts'
 export { Discoverer } from './discovery/Discoverer.ts'
 export type { DiscoveryManifest } from './discovery/Discoverer.ts'
+
+// ── URL Signing ──────────────────────────────────────────────────────────────
+export { UrlSigner } from './url/UrlSigner.ts'
 
 // ── Encryption ────────────────────────────────────────────────────────────────
 export { AesEncrypter } from './encryption/Encrypter.ts'
@@ -103,4 +107,5 @@ export { hash, hashCheck } from './helpers/hash.ts'
 export { cache } from './helpers/cache.ts'
 export { session } from './helpers/session.ts'
 export { dd, dump } from './helpers/dd.ts'
+export { signedUrl, hasValidSignature } from './helpers/signedUrl.ts'
 export { base_path, app_path, config_path, database_path, storage_path, public_path, resource_path } from './helpers/paths.ts'

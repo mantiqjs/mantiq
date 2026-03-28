@@ -88,6 +88,13 @@ export class EncryptCookies implements Middleware {
       try {
         const encrypted = await this.encrypter.encrypt(value)
         const newSetCookie = `${encodeURIComponent(name)}=${encodeURIComponent(encrypted)}; ${parts.join('; ')}`
+
+        if (newSetCookie.length > 4096) {
+          console.warn(
+            `[Mantiq] Cookie "${name}" exceeds 4KB (${newSetCookie.length} bytes) — browsers may silently ignore it.`,
+          )
+        }
+
         headers.append('Set-Cookie', newSetCookie)
       } catch {
         // If encryption fails, send unencrypted (shouldn't happen with valid key)
