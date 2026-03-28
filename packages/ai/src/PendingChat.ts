@@ -8,6 +8,7 @@ import type {
   ToolDefinition,
   ResponseFormat,
 } from './contracts/ChatMessage.ts'
+import type { AIMiddleware, AIRequest, AINextFunction } from './middleware/AIMiddleware.ts'
 
 /**
  * Fluent builder for AI chat requests.
@@ -194,7 +195,29 @@ export class PendingChat {
     const driver = this.manager.driver(this._provider)
     const options: ChatOptions = { ...this._options }
     if (this._model) options.model = this._model
-    return driver.chat(this._messages, options)
+
+    const middlewares = this.manager.getMiddlewares()
+    if (middlewares.length === 0) {
+      return driver.chat(this._messages, options)
+    }
+
+    const request: AIRequest = {
+      messages: this._messages,
+      options,
+      provider: this._provider ?? this.manager.getDefaultDriver(),
+      metadata: {},
+    }
+
+    const dispatch = (index: number): AINextFunction => {
+      return (req: AIRequest) => {
+        if (index >= middlewares.length) {
+          return driver.chat(req.messages, req.options)
+        }
+        return middlewares[index]!.handle(req, dispatch(index + 1))
+      }
+    }
+
+    return dispatch(0)(request)
   }
 
   /** Stream the chat response as an async iterable of chunks. */

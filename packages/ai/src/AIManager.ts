@@ -2,6 +2,7 @@ import type { AIDriver } from './contracts/AIDriver.ts'
 import type { AIConfig, ProviderConfig } from './contracts/AIConfig.ts'
 import type { EmbedOptions, EmbeddingResult } from './contracts/Embedding.ts'
 import type { TokenUsage } from './contracts/ChatMessage.ts'
+import type { AIMiddleware } from './middleware/AIMiddleware.ts'
 import { DEFAULT_CONFIG } from './contracts/AIConfig.ts'
 import { PendingChat } from './PendingChat.ts'
 import { AIError } from './errors/AIError.ts'
@@ -35,6 +36,7 @@ export class AIManager {
   private config: AIConfig
   private drivers = new Map<string, AIDriver>()
   private customDrivers = new Map<string, () => AIDriver>()
+  private middlewares: AIMiddleware[] = []
 
   constructor(config?: Partial<AIConfig>) {
     this.config = { ...DEFAULT_CONFIG, ...config }
@@ -70,6 +72,17 @@ export class AIManager {
   async embed(input: string | string[], options?: EmbedOptions): Promise<EmbeddingResult> {
     const providerName = this.config.embeddings?.default ?? this.config.default
     return this.driver(providerName).embed(input, options)
+  }
+
+  /** Register an AI middleware to be applied to all chat requests. */
+  use(middleware: AIMiddleware): this {
+    this.middlewares.push(middleware)
+    return this
+  }
+
+  /** Get all registered AI middlewares. */
+  getMiddlewares(): AIMiddleware[] {
+    return this.middlewares
   }
 
   /** Register a custom driver factory. */
