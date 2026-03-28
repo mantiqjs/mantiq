@@ -48,6 +48,23 @@
         "vite": "^6.0.0",
       },
     },
+    "packages/ai": {
+      "name": "@mantiq/ai",
+      "version": "0.5.23",
+      "devDependencies": {
+        "@mantiq/cli": "workspace:*",
+        "@mantiq/core": "workspace:*",
+        "bun-types": "latest",
+        "typescript": "^5.7.0",
+      },
+      "optionalDependencies": {
+        "@mantiq/database": "^0.5.0",
+        "@mantiq/queue": "^0.5.0",
+      },
+      "peerDependencies": {
+        "@mantiq/core": "^0.5.0",
+      },
+    },
     "packages/auth": {
       "name": "@mantiq/auth",
       "version": "0.5.23",
@@ -546,6 +563,8 @@
 
     "@js-joda/core": ["@js-joda/core@5.7.0", "", {}, "sha512-WBu4ULVVxySLLzK1Ppq+OdfP+adRS4ntmDQT915rzDJ++i95gc2jZkM5B6LWEAwN3lGXpfie3yPABozdD3K3Vg=="],
 
+    "@mantiq/ai": ["@mantiq/ai@workspace:packages/ai"],
+
     "@mantiq/auth": ["@mantiq/auth@workspace:packages/auth"],
 
     "@mantiq/cli": ["@mantiq/cli@workspace:packages/cli"],
@@ -1035,6 +1054,8 @@
     "xtend": ["xtend@4.0.2", "", {}, "sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ=="],
 
     "yallist": ["yallist@3.1.1", "", {}, "sha512-a4UGQaWPH59mOXUYnAG2ewncQS4i4F43Tv3JoAM+s2VDAmS9NsK8GpDMLrCHPksFT7h3K6TOoUNn2pb7RoXx4g=="],
+
+    "@mantiq/ai/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 
     "@mantiq/auth/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 
