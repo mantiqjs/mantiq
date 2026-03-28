@@ -63,6 +63,8 @@ export { EmbeddingManager } from './embeddings/EmbeddingManager.ts'
 
 // ── Vector Stores ────────────────────────────────────────────────────────────
 export { InMemoryVectorStore } from './vectorStores/InMemoryVectorStore.ts'
+export { PgVectorStore } from './vectorStores/PgVectorStore.ts'
+export type { QueryExecutor, PgVectorStoreOptions } from './vectorStores/PgVectorStore.ts'
 
 // ── RAG ──────────────────────────────────────────────────────────────────────
 export { RAGPipeline } from './rag/RAGPipeline.ts'
@@ -95,6 +97,13 @@ export { PIIRedactionMiddleware } from './middleware/PIIRedactionMiddleware.ts'
 // ── Helpers ──────────────────────────────────────────────────────────────────
 export { ai, AI_MANAGER } from './helpers/ai.ts'
 export { estimateCost, MODEL_PRICING } from './helpers/cost.ts'
+
+// ── Commands ────────────────────────────────────────────────────────────────
+export { AIChatCommand } from './commands/AIChatCommand.ts'
+export { MakeAIToolCommand } from './commands/MakeAIToolCommand.ts'
+export { AIEmbedCommand } from './commands/AIEmbedCommand.ts'
+export { AIPromptListCommand } from './commands/AIPromptListCommand.ts'
+export { AICostReportCommand } from './commands/AICostReportCommand.ts'
 
 // ── Service Provider ─────────────────────────────────────────────────────────
 export { AIServiceProvider } from './AIServiceProvider.ts'
