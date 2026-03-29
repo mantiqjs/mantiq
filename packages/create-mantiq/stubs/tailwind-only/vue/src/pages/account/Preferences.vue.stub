@@ -1,0 +1,81 @@
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import AccountLayout from './layout.vue'
+
+const props = withDefaults(defineProps<{
+  appName?: string
+  currentUser?: { name: string; email: string; role?: string } | null
+  navigate: (href: string) => void
+}>(), {
+  appName: 'Mantiq',
+})
+
+const theme = ref<'light' | 'dark' | 'system'>('system')
+const success = ref('')
+
+onMounted(() => {
+  const stored = localStorage.getItem('theme')
+  if (stored === 'light' || stored === 'dark') {
+    theme.value = stored
+  } else {
+    theme.value = 'system'
+  }
+})
+
+function setTheme(value: 'light' | 'dark' | 'system') {
+  theme.value = value
+  if (value === 'system') {
+    localStorage.removeItem('theme')
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    document.documentElement.classList.toggle('dark', prefersDark)
+  } else {
+    localStorage.setItem('theme', value)
+    document.documentElement.classList.toggle('dark', value === 'dark')
+  }
+  success.value = 'Preferences saved.'
+}
+</script>
+
+<template>
+  <AccountLayout
+    :app-name="appName"
+    :current-user="currentUser"
+    :navigate="navigate"
+    active-path="/account/preferences"
+    title="Settings"
+    description="Manage your account settings."
+  >
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+      <div class="p-6 pb-2">
+        <h3 class="text-lg font-semibold leading-none tracking-tight">Preferences</h3>
+        <p class="mt-1.5 text-sm text-muted-foreground">Customize your experience.</p>
+      </div>
+      <div class="p-6 pt-4">
+        <div
+          v-if="success"
+          class="mb-4 rounded-md border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-600 dark:text-green-400"
+        >
+          {{ success }}
+        </div>
+        <div class="space-y-4 max-w-md">
+          <div class="space-y-2">
+            <label class="text-sm font-medium leading-none">Theme</label>
+            <div class="flex gap-2">
+              <button
+                v-for="opt in (['light', 'dark', 'system'] as const)"
+                :key="opt"
+                class="inline-flex h-8 items-center justify-center rounded-md px-3 text-sm font-medium transition-colors"
+                :class="theme === opt
+                  ? 'bg-primary text-primary-foreground shadow'
+                  : 'border border-input bg-background hover:bg-accent hover:text-accent-foreground'"
+                @click="setTheme(opt)"
+              >
+                {{ opt.charAt(0).toUpperCase() + opt.slice(1) }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </AccountLayout>
+</template>

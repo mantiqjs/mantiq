@@ -1,0 +1,41 @@
+import type { MantiqRequest } from '@mantiq/core'
+import { config } from '@mantiq/core'
+import { vite } from '@mantiq/vite'
+import { User } from '../../Models/User.ts'
+
+function render(request: MantiqRequest, page: string, title: string, data: Record<string, any> = {}) {
+  return vite().render(request, {
+    page,
+    entry: ['src/style.css', '{{MAIN_ENTRY}}'],
+    title: config('app.name') + ' — ' + title,
+    data: { appName: config('app.name'), ...data },
+  })
+}
+
+export class PageController {
+  async dashboard(request: MantiqRequest): Promise<Response> {
+    const users = await User.all()
+    return render(request, 'Dashboard', 'Dashboard', {
+      users: users.map((u: any) => u.toObject()),
+    })
+  }
+
+  async users(request: MantiqRequest): Promise<Response> {
+    const users = await User.all()
+    return render(request, 'Users', 'Users', {
+      users: users.map((u: any) => u.toObject()),
+    })
+  }
+
+  async profile(request: MantiqRequest): Promise<Response> {
+    return render(request, 'Profile', 'Profile')
+  }
+
+  async security(request: MantiqRequest): Promise<Response> {
+    return render(request, 'Security', 'Security')
+  }
+
+  async preferences(request: MantiqRequest): Promise<Response> {
+    return render(request, 'Preferences', 'Preferences')
+  }
+}

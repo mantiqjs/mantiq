@@ -1,0 +1,76 @@
+<script lang="ts">
+  import { post } from '$lib/api'
+  import { Button } from '$lib/components/ui/button'
+  import { Input } from '$lib/components/ui/input'
+  import { Label } from '$lib/components/ui/label'
+
+  interface Props {
+    appName?: string
+    navigate?: (href: string) => void
+  }
+  let { appName = 'Mantiq', navigate = () => {} }: Props = $props()
+
+  let name = $state('')
+  let email = $state('')
+  let password = $state('')
+  let error = $state('')
+  let loading = $state(false)
+
+  async function handleSubmit(e: SubmitEvent) {
+    e.preventDefault()
+    error = ''
+    loading = true
+    const { ok, data } = await post('/register', { name, email, password })
+    if (ok) navigate('/dashboard')
+    else error = data?.error ?? 'Registration failed.'
+    loading = false
+  }
+</script>
+
+<div class="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 dark:from-stone-950 dark:via-stone-900 dark:to-stone-950">
+  <div class="flex items-center justify-between px-6 py-4">
+    <div class="flex items-center gap-2.5">
+      <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-sm">M</div>
+      <span class="font-semibold tracking-tight">{appName}</span>
+    </div>
+    <Button variant="ghost" size="sm" class="text-sm" onclick={() => navigate('/login')}>Sign in</Button>
+  </div>
+
+  <div class="flex flex-col items-center justify-center px-4" style="min-height: calc(100vh - 64px)">
+    <div class="w-full max-w-sm">
+      <div class="mb-6 text-center">
+        <span class="text-5xl select-none">🚀</span>
+        <h1 class="mt-4 text-2xl font-bold tracking-tight">Get started</h1>
+        <p class="mt-2 text-sm text-muted-foreground">Create your {appName} workspace</p>
+      </div>
+
+      {#if error}
+        <div class="mb-4 flex items-center gap-2 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200/50 dark:border-red-800/30 px-4 py-3 text-sm text-red-700 dark:text-red-400">
+          <span class="select-none">⚠️</span> {error}
+        </div>
+      {/if}
+
+      <form onsubmit={handleSubmit} class="space-y-4">
+        <div class="space-y-2">
+          <Label for="name">Name</Label>
+          <Input id="name" bind:value={name} required placeholder="Your name" class="h-11 rounded-xl" />
+        </div>
+        <div class="space-y-2">
+          <Label for="email">Email</Label>
+          <Input id="email" type="email" bind:value={email} required placeholder="you@example.com" autocomplete="email" class="h-11 rounded-xl" />
+        </div>
+        <div class="space-y-2">
+          <Label for="password">Password</Label>
+          <Input id="password" type="password" bind:value={password} required placeholder="Min 8 characters" class="h-11 rounded-xl" />
+        </div>
+        <Button type="submit" class="w-full h-11 rounded-xl text-sm font-medium" disabled={loading}>
+          {loading ? 'Creating…' : 'Create workspace'}
+        </Button>
+      </form>
+
+      <p class="mt-6 text-center text-xs text-muted-foreground">
+        By continuing, you agree to our Terms of Service and Privacy Policy.
+      </p>
+    </div>
+  </div>
+</div>

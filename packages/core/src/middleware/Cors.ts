@@ -24,12 +24,26 @@ export class CorsMiddleware implements Middleware {
     const defaultOrigin = appUrl || '*'
     const defaultCredentials = !!appUrl
 
+    let origin = configRepo?.get('cors.origin', defaultOrigin) ?? defaultOrigin
+    let credentials = configRepo?.get('cors.credentials', defaultCredentials) ?? defaultCredentials
+
+    // Security: origin='*' with credentials=true is dangerous — it effectively
+    // disables same-origin policy by reflecting any request origin. Force
+    // credentials to false when origin is a wildcard.
+    if (origin === '*' && credentials) {
+      console.warn(
+        '[Mantiq] CORS: origin="*" with credentials=true is insecure. ' +
+        'Forcing credentials=false. Set an explicit origin to use credentials.',
+      )
+      credentials = false
+    }
+
     this.config = {
-      origin: configRepo?.get('cors.origin', defaultOrigin) ?? defaultOrigin,
+      origin,
       methods: configRepo?.get('cors.methods', ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']) ?? ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: configRepo?.get('cors.allowedHeaders', ['Content-Type', 'Authorization', 'X-Requested-With', 'X-CSRF-TOKEN', 'X-XSRF-TOKEN', 'X-Mantiq']) ?? ['Content-Type', 'Authorization', 'X-Requested-With', 'X-CSRF-TOKEN', 'X-XSRF-TOKEN', 'X-Mantiq'],
       exposedHeaders: configRepo?.get('cors.exposedHeaders', ['X-Heartbeat']) ?? ['X-Heartbeat'],
-      credentials: configRepo?.get('cors.credentials', defaultCredentials) ?? defaultCredentials,
+      credentials,
       maxAge: configRepo?.get('cors.maxAge', 7200) ?? 7200,
     }
   }
@@ -76,15 +90,11 @@ export class CorsMiddleware implements Middleware {
   private setOriginHeader(headers: Headers, requestOrigin: string): void {
     const { origin } = this.config
     if (origin === '*') {
-      if (this.config.credentials) {
-        // CORS spec forbids Access-Control-Allow-Origin: * with credentials.
-        // Reflect the request's Origin header instead; if absent, omit CORS headers entirely.
-        if (!requestOrigin) return
-        headers.set('Access-Control-Allow-Origin', requestOrigin)
-        headers.set('Vary', 'Origin')
-      } else {
-        headers.set('Access-Control-Allow-Origin', '*')
-      }
+      // When origin='*', always use the literal wildcard. The constructor
+      // ensures credentials is false when origin='*', so this is spec-safe.
+      // We never reflect an arbitrary request origin — that would defeat
+      // same-origin policy when combined with credentials.
+      headers.set('Access-Control-Allow-Origin', '*')
     } else if (Array.isArray(origin)) {
       if (origin.includes(requestOrigin)) {
         headers.set('Access-Control-Allow-Origin', requestOrigin)

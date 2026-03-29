@@ -1,0 +1,236 @@
+import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
+import { Header } from '@/components/layout/header'
+import { Main } from '@/components/layout/main'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import {
+  Rocket,
+  Users,
+  TrendingUp,
+  ArrowRight,
+  Zap,
+  Shield,
+  Globe,
+  Bell,
+  FileText,
+  BookOpen,
+  MessageCircle,
+  Headphones,
+} from 'lucide-react'
+
+interface DashboardProps {
+  appName?: string
+  currentUser?: { id: number; name: string; email: string; role: string } | null
+  navigate: (href: string) => void
+  [key: string]: any
+}
+
+const activityItems = [
+  {
+    color: 'border-violet-500',
+    icon: Rocket,
+    title: 'New deployment completed',
+    description: 'Production v2.4.1 deployed successfully',
+    time: '2 minutes ago',
+  },
+  {
+    color: 'border-blue-500',
+    icon: Users,
+    title: 'Team member joined',
+    description: 'Sarah Connor accepted the invitation',
+    time: '15 minutes ago',
+  },
+  {
+    color: 'border-emerald-500',
+    icon: Shield,
+    title: 'Security scan passed',
+    description: 'All 142 checks passed with no vulnerabilities',
+    time: '1 hour ago',
+  },
+  {
+    color: 'border-amber-500',
+    icon: Bell,
+    title: 'Usage alert triggered',
+    description: 'API calls reached 80% of monthly quota',
+    time: '3 hours ago',
+  },
+  {
+    color: 'border-red-500',
+    icon: Globe,
+    title: 'Domain verified',
+    description: 'app.example.com DNS propagation complete',
+    time: '5 hours ago',
+  },
+]
+
+const quickLinks = [
+  { icon: FileText, label: 'Documentation', href: '#' },
+  { icon: BookOpen, label: 'API Reference', href: '#' },
+  { icon: MessageCircle, label: 'Community', href: '#' },
+  { icon: Headphones, label: 'Support', href: '#' },
+]
+
+export default function Dashboard({
+  appName = 'Mantiq',
+  currentUser,
+  navigate,
+}: DashboardProps) {
+  return (
+    <AuthenticatedLayout
+      currentUser={currentUser}
+      appName={appName}
+      navigate={navigate}
+      activePath="/dashboard"
+    >
+      <Header navigate={navigate} />
+      <Main>
+        <div className="space-y-6">
+          {/* Welcome Banner */}
+          <Card className="border-0 bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg">
+            <CardContent className="p-8">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-3xl font-bold tracking-tight">
+                    Welcome back, {currentUser?.name ?? 'there'}!
+                  </h2>
+                  <p className="mt-2 text-lg text-white/80">
+                    Your dashboard is looking great. Here's a quick summary.
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  className="shrink-0 border-white/30 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 hover:text-white"
+                >
+                  View Reports
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Stats Strip */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-md">
+                    <Users className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Total Users</p>
+                    <p className="text-2xl font-bold">12,345</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 text-white shadow-md">
+                    <TrendingUp className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Revenue</p>
+                    <p className="text-2xl font-bold">$89,432</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-md">
+                    <Zap className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Active Now</p>
+                    <p className="text-2xl font-bold">573</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-green-500 text-white shadow-md">
+                    <Shield className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Uptime</p>
+                    <p className="text-2xl font-bold">99.98%</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Two Column Section */}
+          <div className="grid gap-6 lg:grid-cols-3">
+            {/* Activity Feed */}
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle>Recent Activity</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {activityItems.map((item, index) => {
+                    const Icon = item.icon
+                    return (
+                      <div
+                        key={index}
+                        className={`flex items-start gap-4 rounded-lg border-l-4 ${item.color} bg-muted/30 p-4`}
+                      >
+                        <div className="mt-0.5 text-muted-foreground">
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1 space-y-1">
+                          <p className="text-sm font-medium leading-none">{item.title}</p>
+                          <p className="text-sm text-muted-foreground">{item.description}</p>
+                        </div>
+                        <span className="shrink-0 text-xs text-muted-foreground">{item.time}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Quick Links */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Links</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {quickLinks.map((link) => {
+                    const Icon = link.icon
+                    return (
+                      <button
+                        key={link.label}
+                        type="button"
+                        className="flex w-full items-center gap-3 rounded-lg p-3 text-left transition-colors hover:bg-muted"
+                      >
+                        <Icon className="h-5 w-5 text-muted-foreground" />
+                        <span className="flex-1 text-sm font-medium">{link.label}</span>
+                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                      </button>
+                    )
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </Main>
+    </AuthenticatedLayout>
+  )
+}

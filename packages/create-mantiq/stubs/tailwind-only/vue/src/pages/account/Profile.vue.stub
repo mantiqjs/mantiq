@@ -1,0 +1,69 @@
+<script setup lang="ts">
+import { ref } from 'vue'
+import AccountLayout from './layout.vue'
+
+const props = withDefaults(defineProps<{
+  appName?: string
+  currentUser?: { name: string; email: string; role?: string } | null
+  navigate: (href: string) => void
+}>(), {
+  appName: 'Mantiq',
+})
+
+const name = ref(props.currentUser?.name ?? '')
+const email = ref(props.currentUser?.email ?? '')
+const success = ref('')
+const error = ref('')
+
+async function handleSubmit() {
+  success.value = ''
+  error.value = ''
+  // Profile update would call an API endpoint
+  success.value = 'Profile updated successfully.'
+}
+</script>
+
+<template>
+  <AccountLayout
+    :app-name="appName"
+    :current-user="currentUser"
+    :navigate="navigate"
+    active-path="/account/profile"
+    title="Settings"
+    description="Manage your account settings."
+  >
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+      <div class="p-6 pb-2">
+        <h3 class="text-lg font-semibold leading-none tracking-tight">Profile</h3>
+        <p class="mt-1.5 text-sm text-muted-foreground">Update your personal information.</p>
+      </div>
+      <div class="p-6 pt-4">
+        <div
+          v-if="success"
+          class="mb-4 rounded-md border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-600 dark:text-green-400"
+        >
+          {{ success }}
+        </div>
+        <div
+          v-if="error"
+          class="mb-4 rounded-md border border-destructive px-4 py-3 text-sm text-destructive"
+        >
+          {{ error }}
+        </div>
+        <form class="space-y-4 max-w-md" @submit.prevent="handleSubmit">
+          <div class="space-y-2">
+            <label for="profile-name" class="text-sm font-medium leading-none">Name</label>
+            <input id="profile-name" v-model="name" required class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" />
+          </div>
+          <div class="space-y-2">
+            <label for="profile-email" class="text-sm font-medium leading-none">Email</label>
+            <input id="profile-email" v-model="email" type="email" required class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" />
+          </div>
+          <button type="submit" class="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90">
+            Save Changes
+          </button>
+        </form>
+      </div>
+    </div>
+  </AccountLayout>
+</template>

@@ -1,0 +1,68 @@
+import { cn } from '@/lib/utils'
+import { NavGroup } from './nav-group'
+import { NavUser, type NavUserProps } from './nav-user'
+import { sidebarData } from './sidebar-data'
+
+export interface AppSidebarProps {
+  user: NavUserProps['user']
+  appName: string
+  activePath: string
+  navigate: (href: string) => void
+  onLogout: () => void
+  collapsed?: boolean
+}
+
+export function AppSidebar({
+  user,
+  appName,
+  activePath,
+  navigate,
+  onLogout,
+  collapsed,
+}: AppSidebarProps) {
+  return (
+    <aside
+      className={cn(
+        'flex h-screen flex-col border-r border-gray-200 bg-gray-50 transition-[width] duration-200 dark:border-gray-800 dark:bg-gray-900',
+        collapsed ? 'w-16' : 'w-64',
+      )}
+    >
+      {/* Header */}
+      <div className="flex h-14 items-center gap-2 border-b border-gray-200 px-4 dark:border-gray-800">
+        <button
+          type="button"
+          onClick={() => navigate('/dashboard')}
+          className="flex items-center gap-2"
+        >
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-xs font-bold text-white">
+            M
+          </div>
+          {!collapsed && (
+            <div className="grid text-left text-sm leading-tight">
+              <span className="truncate font-semibold text-gray-900 dark:text-gray-50">{appName}</span>
+              <span className="truncate text-xs text-gray-500 dark:text-gray-400">Admin Panel</span>
+            </div>
+          )}
+        </button>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto py-2">
+        {sidebarData.map((group) => (
+          <NavGroup
+            key={group.title}
+            group={group}
+            activePath={activePath}
+            navigate={navigate}
+            collapsed={collapsed}
+          />
+        ))}
+      </nav>
+
+      {/* User footer */}
+      <div className="border-t border-gray-200 dark:border-gray-800">
+        <NavUser user={user} navigate={navigate} onLogout={onLogout} collapsed={collapsed} />
+      </div>
+    </aside>
+  )
+}

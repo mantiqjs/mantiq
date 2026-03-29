@@ -137,11 +137,25 @@ export class SSEManager {
 
   /**
    * Subscribe an SSE connection to a channel.
-   * Note: SSE only supports public channels (no auth handshake).
+   *
+   * Security: private and presence channels (prefixed with `private-` or
+   * `presence-`) require authorization and are rejected via SSE, which has
+   * no auth handshake. Only public channels are allowed.
    */
   subscribe(connId: string, channel: string): boolean {
     const conn = this.connections.get(connId)
     if (!conn) return false
+
+    // Security: reject subscriptions to private/presence channels.
+    // SSE is a unidirectional transport with no auth handshake, so there
+    // is no way to authorize the client for private channels.
+    if (channel.startsWith('private-') || channel.startsWith('presence-')) {
+      this.sendEvent(conn, 'subscription_error', {
+        channel,
+        error: 'Private and presence channels are not available over SSE. Use WebSockets instead.',
+      })
+      return false
+    }
 
     conn.channels.add(channel)
 

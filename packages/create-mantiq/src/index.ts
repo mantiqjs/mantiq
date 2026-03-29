@@ -2,15 +2,17 @@
 import { existsSync, mkdirSync, readdirSync, statSync, readFileSync } from 'node:fs'
 import { dirname, resolve, join, relative } from 'node:path'
 import { randomBytes } from 'node:crypto'
-import { getTemplates } from './templates.ts'
+import { getTemplates, type Theme } from './templates.ts'
 import { Terminal } from './terminal.ts'
 
 /**
  * Recursively copy a directory, preserving structure.
  * Skips node_modules, .git, bun.lock, *.sqlite files.
+ * `skipRelPaths` contains relative paths (from root src) to skip.
  */
-async function copyDirectory(src: string, dest: string): Promise<number> {
+async function copyDirectory(src: string, dest: string, skipRelPaths?: Set<string>, rootSrc?: string): Promise<number> {
   let count = 0
+  const root = rootSrc ?? src
   const entries = readdirSync(src, { withFileTypes: true })
   for (const entry of entries) {
     const srcPath = join(src, entry.name)
@@ -20,9 +22,15 @@ async function copyDirectory(src: string, dest: string): Promise<number> {
     if (['node_modules', '.git', 'bun.lock', 'README.md'].includes(entry.name)) continue
     if (entry.name.endsWith('.sqlite') || entry.name.endsWith('.sqlite-wal') || entry.name.endsWith('.sqlite-shm')) continue
 
+    // Skip paths in the conditional skip set
+    if (skipRelPaths) {
+      const rel = relative(root, srcPath)
+      if (skipRelPaths.has(rel)) continue
+    }
+
     if (entry.isDirectory()) {
       mkdirSync(destPath, { recursive: true })
-      count += await copyDirectory(srcPath, destPath)
+      count += await copyDirectory(srcPath, destPath, skipRelPaths, root)
     } else {
       mkdirSync(dirname(destPath), { recursive: true })
       await Bun.write(destPath, Bun.file(srcPath))
@@ -74,7 +82,11 @@ if (!projectName) {
 
   ${bold('Options:')}
     --kit=${emerald('react|vue|svelte')}    Frontend framework
-    --ui=${emerald('shadcn')}               UI component library (React only)
+    --ui=${emerald('shadcn|tailwind')}      UI component library
+    --theme=${emerald('default|minimal|workspace|corporate|starter')}
+                               Dashboard theme (shadcn only)
+    --auth=${emerald('builtin|none')}       Authentication setup
+    --with=${emerald('ai')}                 Optional packages (comma-separated)
     --no-git                   Skip git initialization
     --yes                      Accept defaults (non-interactive)
 
@@ -82,6 +94,8 @@ if (!projectName) {
     bun create mantiq my-app
     bun create mantiq my-app --kit=react
     bun create mantiq my-app --kit=react --ui=shadcn
+    bun create mantiq my-app --kit=react --auth=none
+    bun create mantiq my-app --kit=react --with=ai
 `)
   process.exit(1)
 }
@@ -97,7 +111,15 @@ if (existsSync(projectDir)) {
 const term = new Terminal()
 
 let kit: Kit | undefined = flags['kit'] as Kit | undefined
-let ui: 'shadcn' | 'none' = (flags['ui'] as string) === 'shadcn' ? 'shadcn' : 'none'
+let ui: 'shadcn' | 'tailwind' = (flags['ui'] as string) === 'tailwind' ? 'tailwind' : 'shadcn'
+const validThemes = ['default', 'minimal', 'workspace', 'corporate', 'starter'] as const
+let theme: Theme = (validThemes as readonly string[]).includes(flags['theme'] as string)
+  ? (flags['theme'] as Theme)
+  : 'default'
+let auth: 'builtin' | 'none' = (flags['auth'] as string) === 'none' ? 'none' : 'builtin'
+let optionalPackages: string[] = typeof flags['with'] === 'string'
+  ? flags['with'].split(',').map(s => s.trim()).filter(Boolean)
+  : []
 
 if (!isCI && !kit) {
   // Show branded header
@@ -108,10 +130,47 @@ if (!isCI && !kit) {
     { value: 'react', label: 'React' },
     { value: 'vue', label: 'Vue' },
     { value: 'svelte', label: 'Svelte' },
-    { value: 'none', label: 'None', hint: 'API only' },
+    { value: 'none', label: 'Vanilla', hint: 'API only' },
   ])
 
   kit = framework === 'none' ? undefined : framework as Kit
+
+  // UI kit selection (only if a frontend framework was chosen)
+  if (kit && !flags['ui']) {
+    const uiChoice = await term.select('Choose a UI kit', [
+      { value: 'shadcn', label: 'shadcn + Tailwind' },
+      { value: 'tailwind', label: 'Tailwind only' },
+    ])
+    ui = uiChoice as 'shadcn' | 'tailwind'
+  }
+
+  // Theme selection (only for shadcn)
+  if (kit && ui === 'shadcn' && !flags['theme']) {
+    const themeChoice = await term.select('Choose a theme', [
+      { value: 'default', label: 'Default', hint: 'emerald, classic admin' },
+      { value: 'minimal', label: 'Minimal', hint: 'clean & focused' },
+      { value: 'workspace', label: 'Workspace', hint: 'warm & approachable' },
+      { value: 'corporate', label: 'Corporate', hint: 'professional & data-rich' },
+      { value: 'starter', label: 'Starter', hint: 'bold & marketing-ready' },
+    ])
+    theme = themeChoice as Theme
+  }
+
+  // Authentication selection
+  if (!flags['auth']) {
+    const authChoice = await term.select('Authentication', [
+      { value: 'builtin', label: 'Built-in', hint: 'session + token auth' },
+      { value: 'none', label: 'None' },
+    ])
+    auth = authChoice as 'builtin' | 'none'
+  }
+
+  // Optional packages selection
+  if (!flags['with']) {
+    optionalPackages = await term.multiSelect('Optional packages', [
+      { value: 'ai', label: 'AI', hint: '@mantiq/ai' },
+    ])
+  }
 
 } else {
   // Validate flags
@@ -130,7 +189,16 @@ let fileCount = 0
 // Step 1: Copy the skeleton directory as the base
 const skeletonDir = resolve(import.meta.dir, '..', 'skeleton')
 if (existsSync(skeletonDir)) {
-  fileCount += await copyDirectory(skeletonDir, projectDir)
+  // Build conditional skip set for skeleton files
+  const skeletonSkips = new Set<string>()
+  if (auth === 'none') {
+    skeletonSkips.add('config/auth.ts')
+    skeletonSkips.add('database/migrations/002_create_personal_access_tokens_table.ts')
+  }
+  if (!optionalPackages.includes('ai')) {
+    skeletonSkips.add('config/ai.ts')
+  }
+  fileCount += await copyDirectory(skeletonDir, projectDir, skeletonSkips)
 } else {
   // Fallback: skeleton not bundled (shouldn't happen in published package)
   console.error('  Skeleton directory not found')
@@ -138,7 +206,7 @@ if (existsSync(skeletonDir)) {
 
 // Step 2: Generate dynamic files (package.json, .env — overwrites skeleton versions)
 const appKey = `base64:${randomBytes(32).toString('base64')}`
-const templates = getTemplates({ name: projectName, appKey, kit, ui })
+const templates = getTemplates({ name: projectName, appKey, kit, ui, theme, auth, optionalPackages })
 for (const [relativePath, content] of Object.entries(templates)) {
   const fullPath = `${projectDir}/${relativePath}`
   mkdirSync(dirname(fullPath), { recursive: true })
@@ -156,14 +224,62 @@ if (kit) {
     const kitManifest = manifest[kit]
     const sharedManifest = manifest.shared
 
+    // Auth-related shared stubs to skip when auth === 'none'
+    const authSharedTargets = new Set([
+      'app/Http/Controllers/AuthController.ts',
+      'app/Http/Controllers/PageController.ts',
+      'app/Http/Requests/LoginRequest.ts',
+      'app/Http/Requests/RegisterRequest.ts',
+      'routes/web.ts',
+      'tests/feature/auth.test.ts',
+    ])
+
+    // Targets that tailwind-only stubs will override — skip from shadcn kit
+    const tailwindOnlyManifest = manifest['tailwind-only']?.[kit]
+    const tailwindOverrideTargets = new Set<string>()
+    if (ui === 'tailwind' && tailwindOnlyManifest?.files) {
+      for (const { target } of tailwindOnlyManifest.files) {
+        tailwindOverrideTargets.add(target)
+      }
+    }
+
     // Kit-specific stubs (src/, vite.config.ts, etc.)
     if (kitManifest?.files) {
       for (const { stub, target } of kitManifest.files) {
+        // Skip components.json when ui === 'tailwind'
+        if (ui === 'tailwind' && stub === 'components.json.stub') continue
+        // Skip files that will be overridden by tailwind-only stubs
+        if (ui === 'tailwind' && tailwindOverrideTargets.has(target)) continue
         const src = resolve(stubsDir, kit, stub)
         const dest = resolve(projectDir, target)
         mkdirSync(dirname(dest), { recursive: true })
         await Bun.write(dest, Bun.file(src))
         fileCount++
+      }
+    }
+
+    // Tailwind-only overlay: replace shadcn-dependent components with plain Tailwind versions
+    if (ui === 'tailwind' && tailwindOnlyManifest?.files) {
+      for (const { stub, target } of tailwindOnlyManifest.files) {
+        const src = resolve(stubsDir, 'tailwind-only', kit, stub)
+        const dest = resolve(projectDir, target)
+        mkdirSync(dirname(dest), { recursive: true })
+        await Bun.write(dest, Bun.file(src))
+        fileCount++
+      }
+    }
+
+    // Theme overlay: replace pages/layouts/styles with theme-specific variants
+    if (ui === 'shadcn' && theme !== 'default' && kit) {
+      const themeManifest = manifest.themes?.[theme]?.[kit]
+      if (themeManifest?.files) {
+        for (const { stub, target } of themeManifest.files) {
+          const src = resolve(stubsDir, 'themes', theme, kit, stub)
+          const dest = resolve(projectDir, target)
+          mkdirSync(dirname(dest), { recursive: true })
+          await Bun.write(dest, Bun.file(src))
+          fileCount++
+        }
       }
     }
 
@@ -178,6 +294,8 @@ if (kit) {
       }
 
       for (const { stub, target } of sharedManifest.files) {
+        // Skip auth-related stubs when auth === 'none'
+        if (auth === 'none' && authSharedTargets.has(target)) continue
         const src = resolve(stubsDir, 'shared', stub)
         const dest = resolve(projectDir, target)
         mkdirSync(dirname(dest), { recursive: true })
@@ -189,10 +307,43 @@ if (kit) {
         fileCount++
       }
     }
+
+    // Noauth overlay: replace auth-aware routes/controllers/models when auth === 'none'
+    if (auth === 'none') {
+      const noauthManifest = manifest.noauth
+      if (noauthManifest?.files) {
+        for (const { stub, target } of noauthManifest.files) {
+          const src = resolve(stubsDir, 'noauth', stub)
+          if (existsSync(src)) {
+            const dest = resolve(projectDir, target)
+            mkdirSync(dirname(dest), { recursive: true })
+            let content = await Bun.file(src).text()
+            // Apply shared placeholders
+            if (sharedManifest?.placeholders) {
+              for (const [key, values] of Object.entries(sharedManifest.placeholders)) {
+                const value = (values as Record<string, string>)[kit!] ?? ''
+                content = content.replaceAll(key, value)
+              }
+            }
+            await Bun.write(dest, content)
+            fileCount++
+          }
+        }
+      }
+    }
   }
 } else {
   // API-only: overlay token-based auth stubs
   const stubsDir = resolve(import.meta.dir, '..', 'stubs')
+
+  // Auth-related API-only stubs to skip when auth === 'none'
+  const authApiOnlyTargets = new Set([
+    'app/Http/Controllers/ApiAuthController.ts',
+    'app/Http/Requests/RegisterRequest.ts',
+    'app/Http/Requests/LoginRequest.ts',
+    'tests/feature/token-auth.test.ts',
+  ])
+
   const apiOnlyFiles = [
     { stub: 'api-only/routes/api.ts.stub', target: 'routes/api.ts' },
     { stub: 'shared/app/Http/Controllers/ApiAuthController.ts.stub', target: 'app/Http/Controllers/ApiAuthController.ts' },
@@ -206,12 +357,34 @@ if (kit) {
     { stub: 'api-only/tests/feature/token-auth.test.ts.stub', target: 'tests/feature/token-auth.test.ts' },
   ]
   for (const { stub, target } of apiOnlyFiles) {
+    // Skip auth-related stubs when auth === 'none'
+    if (auth === 'none' && authApiOnlyTargets.has(target)) continue
     const src = resolve(stubsDir, stub)
     if (existsSync(src)) {
       const dest = resolve(projectDir, target)
       mkdirSync(dirname(dest), { recursive: true })
       await Bun.write(dest, Bun.file(src))
       fileCount++
+    }
+  }
+
+  // Noauth overlay for API-only
+  if (auth === 'none') {
+    const manifestPath = resolve(stubsDir, 'manifest.json')
+    if (existsSync(manifestPath)) {
+      const manifest = JSON.parse(await Bun.file(manifestPath).text())
+      const noauthManifest = manifest.noauth
+      if (noauthManifest?.files) {
+        for (const { stub, target } of noauthManifest.files) {
+          const src = resolve(stubsDir, 'noauth', stub)
+          if (existsSync(src)) {
+            const dest = resolve(projectDir, target)
+            mkdirSync(dirname(dest), { recursive: true })
+            await Bun.write(dest, Bun.file(src))
+            fileCount++
+          }
+        }
+      }
     }
   }
 }
@@ -228,8 +401,8 @@ const install = Bun.spawn(['bun', 'install'], {
 await install.exited
 spin.stop('Dependencies installed')
 
-// ── Install shadcn components (React always uses shadcn) ─────────────────────
-if (kit === 'react') {
+// ── Install shadcn components ────────────────────────────────────────────────
+if (kit === 'react' && ui === 'shadcn') {
   const shadcnSpin = term.spinner('Installing shadcn/ui components')
 
   const run = async (args: string[]) => {
@@ -287,8 +460,11 @@ if (!noGit) {
 
 // ── Done ─────────────────────────────────────────────────────────────────────
 console.log(`\n   ${emerald('✓')}  ${bold(projectName)} created\n`)
-console.log(`   ${dim('Framework')}    ${kit ? bold(kit.charAt(0).toUpperCase() + kit.slice(1)) : dim('None (API only)')}`)
-if (kit === 'react') console.log(`   ${dim('UI Kit')}       ${ui === 'shadcn' ? bold('shadcn/ui') : dim('Plain Tailwind')}`)
+console.log(`   ${dim('Framework')}    ${kit ? bold(kit.charAt(0).toUpperCase() + kit.slice(1)) : dim('Vanilla (API only)')}`)
+if (kit) console.log(`   ${dim('UI Kit')}       ${ui === 'shadcn' ? bold('shadcn/ui') : bold('Tailwind')}`)
+if (kit && ui === 'shadcn') console.log(`   ${dim('Theme')}        ${bold(theme.charAt(0).toUpperCase() + theme.slice(1))}`)
+console.log(`   ${dim('Auth')}         ${auth === 'builtin' ? bold('Built-in') : dim('None')}`)
+if (optionalPackages.length > 0) console.log(`   ${dim('Extras')}       ${bold(optionalPackages.join(', '))}`)
 console.log(`\n   ${dim('Next steps:')}\n`)
 console.log(`   cd ${projectName}`)
 console.log(`   bun mantiq migrate`)

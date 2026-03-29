@@ -298,14 +298,22 @@ export class Application extends ContainerImpl {
   /**
    * Boot all registered (non-deferred) providers.
    * Called after ALL providers have been registered.
+   *
+   * Errors are re-thrown with descriptive messages so they surface
+   * immediately rather than being silently swallowed.
    */
   async bootProviders(): Promise<void> {
     for (const provider of this.providers) {
+      const name = provider.constructor?.name ?? 'Unknown'
       try {
         await provider.boot()
       } catch (e) {
-        const name = provider.constructor?.name ?? 'Unknown'
-        console.error(`[Mantiq] ${name}.boot() failed:`, (e as Error)?.stack ?? e)
+        // Re-throw with context so the developer knows which provider failed.
+        // Previously errors were only logged, masking critical boot failures.
+        throw new Error(
+          `[Mantiq] ${name}.boot() failed: ${(e as Error)?.message ?? e}`,
+          { cause: e },
+        )
       }
     }
     this.booted = true
@@ -330,6 +338,10 @@ export class Application extends ContainerImpl {
   /**
    * Override make() to handle deferred provider loading.
    * If a binding isn't found in the container, check deferred providers.
+   *
+   * Deferred providers are registered and booted synchronously where possible.
+   * If register() or boot() return a Promise, this method will throw — callers
+   * must use makeAsync() for providers that require async initialization.
    */
   override make<T>(abstract: Bindable<T>): T {
     try {
@@ -345,17 +357,74 @@ export class Application extends ContainerImpl {
           for (const [key, p] of this.deferredProviders.entries()) {
             if (p === deferredProvider) this.deferredProviders.delete(key)
           }
-          // Register + boot the deferred provider now
-          const boot = async () => {
+
+          const providerName = deferredProvider.constructor?.name ?? 'DeferredProvider'
+
+          // Register the deferred provider synchronously. If register()
+          // returns a Promise, it means the provider requires async init —
+          // we cannot silently fire-and-forget because make() would return
+          // before the binding is registered.
+          const registerResult = deferredProvider.register()
+          if (registerResult && typeof (registerResult as any).then === 'function') {
+            throw new Error(
+              `[Mantiq] ${providerName}.register() is async but was triggered via synchronous make(). ` +
+              `Use await app.makeAsync(${String((abstract as any)?.name ?? abstract)}) instead.`,
+            )
+          }
+
+          // Boot the deferred provider synchronously.
+          const bootResult = deferredProvider.boot()
+          if (bootResult && typeof (bootResult as any).then === 'function') {
+            throw new Error(
+              `[Mantiq] ${providerName}.boot() is async but was triggered via synchronous make(). ` +
+              `Use await app.makeAsync(${String((abstract as any)?.name ?? abstract)}) instead.`,
+            )
+          }
+
+          this.providers.push(deferredProvider)
+          return super.make(abstract)
+        }
+      }
+      throw err
+    }
+  }
+
+  /**
+   * Async version of make() that properly awaits deferred provider boot.
+   *
+   * Use this when the deferred provider's register() or boot() may be async.
+   * For synchronous providers, make() is sufficient and faster.
+   */
+  async makeAsync<T>(abstract: Bindable<T>): Promise<T> {
+    try {
+      return super.make(abstract)
+    } catch (err) {
+      if (
+        err instanceof ContainerResolutionError &&
+        err.reason === 'not_bound'
+      ) {
+        const deferredProvider = this.deferredProviders.get(abstract)
+        if (deferredProvider) {
+          // Remove from deferred map so we don't loop
+          for (const [key, p] of this.deferredProviders.entries()) {
+            if (p === deferredProvider) this.deferredProviders.delete(key)
+          }
+
+          const providerName = deferredProvider.constructor?.name ?? 'DeferredProvider'
+
+          // Await register + boot so the binding is fully available
+          // before we resolve it. Errors propagate to the caller.
+          try {
             await deferredProvider.register()
             await deferredProvider.boot()
-            this.providers.push(deferredProvider)
+          } catch (e) {
+            throw new Error(
+              `[Mantiq] ${providerName} deferred boot failed: ${(e as Error)?.message ?? e}`,
+              { cause: e },
+            )
           }
-          // Deferred boot — catch and log errors instead of swallowing
-          boot().catch((e) => {
-            const name = deferredProvider.constructor?.name ?? 'DeferredProvider'
-            console.error(`[Mantiq] ${name} deferred boot failed:`, (e as Error)?.stack ?? e)
-          })
+
+          this.providers.push(deferredProvider)
           return super.make(abstract)
         }
       }

@@ -192,11 +192,13 @@ describe('Authorization Code Flow — end-to-end', () => {
   })
 
   test('1. Create a confidential client', async () => {
+    // Hash the secret with bcrypt as verifySecret expects
+    const hashedSecret = await Client.hashSecret(clientSecret)
     const client = new Client()
     client.forceFill({
       id: clientId,
       name: 'E2E Test App',
-      secret: clientSecret,
+      secret: hashedSecret,
       redirect: redirectUri,
       personal_access_client: false,
       password_client: false,
@@ -448,11 +450,12 @@ describe('Client Credentials Flow — end-to-end', () => {
   const clientSecret = 'machine-secret'
 
   beforeAll(async () => {
+    const hashedSecret = await Client.hashSecret(clientSecret)
     const client = new Client()
     client.forceFill({
       id: clientId,
       name: 'Machine Service',
-      secret: clientSecret,
+      secret: hashedSecret,
       redirect: '',
       personal_access_client: false,
       password_client: false,
@@ -640,14 +643,15 @@ describe('Cross-flow security', () => {
     const client1Id = crypto.randomUUID()
     const client2Id = crypto.randomUUID()
 
-    // Create two clients
+    // Create two clients (hash secrets with bcrypt)
     for (const [id, name, secret] of [
       [client1Id, 'Client 1', 'secret-1'],
       [client2Id, 'Client 2', 'secret-2'],
     ] as const) {
+      const hashedSecret = await Client.hashSecret(secret)
       const c = new Client()
       c.forceFill({
-        id, name, secret, redirect: 'https://app.com/callback',
+        id, name, secret: hashedSecret, redirect: 'https://app.com/callback',
         personal_access_client: false, password_client: false, revoked: false,
       })
       await c.save()
@@ -692,9 +696,10 @@ describe('Cross-flow security', () => {
     const grant = new ClientCredentialsGrant(signer, server)
     const ccClientId = crypto.randomUUID()
 
+    const hashedTamperSecret = await Client.hashSecret('tamper-secret')
     const c = new Client()
     c.forceFill({
-      id: ccClientId, name: 'Tamper Test', secret: 'tamper-secret',
+      id: ccClientId, name: 'Tamper Test', secret: hashedTamperSecret,
       redirect: '', personal_access_client: false, password_client: false, revoked: false,
     })
     await c.save()

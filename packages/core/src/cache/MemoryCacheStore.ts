@@ -43,6 +43,14 @@ export class MemoryCacheStore implements CacheStore {
     this.store.clear()
   }
 
+  /**
+   * Increment a cached numeric value.
+   *
+   * Note (#194): This get-then-put is safe in single-threaded Bun because
+   * there is no I/O between the read and write — the event loop cannot
+   * yield to another task mid-execution. If Bun gains multi-threaded
+   * workers sharing memory, this would need a lock or atomic operation.
+   */
   async increment(key: string, value = 1): Promise<number> {
     const current = await this.get<number>(key)
     const newValue = (current ?? 0) + value

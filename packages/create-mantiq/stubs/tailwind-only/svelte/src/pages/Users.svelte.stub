@@ -1,0 +1,293 @@
+<script lang="ts">
+  import { api } from '$lib/api'
+  import AuthenticatedLayout from '$lib/components/layout/authenticated-layout.svelte'
+  import Header from '$lib/components/layout/header.svelte'
+  import Main from '$lib/components/layout/main.svelte'
+  import {
+    MoreHorizontal,
+    UserPlus,
+    Mail,
+    Pencil,
+    Trash2,
+    ChevronLeft,
+    ChevronRight,
+    Search,
+  } from 'lucide-svelte'
+
+  export interface UserType {
+    id: number
+    name: string
+    email: string
+    status: string
+    created_at: string
+  }
+
+  let {
+    appName = 'MantiqJS',
+    currentUser = null,
+    users: initialUsers = [],
+    navigate,
+  }: {
+    appName?: string
+    currentUser?: { id: number; name: string; email: string } | null
+    users?: UserType[]
+    navigate: (href: string) => void
+    [key: string]: any
+  } = $props()
+
+  // Mock data
+  const mockUsers: UserType[] = [
+    { id: 1, name: 'Olivia Martin', email: 'olivia@example.com', status: 'active', created_at: '2024-01-15' },
+    { id: 2, name: 'Jackson Lee', email: 'jackson@example.com', status: 'active', created_at: '2024-02-20' },
+    { id: 3, name: 'Isabella Nguyen', email: 'isabella@example.com', status: 'active', created_at: '2024-02-28' },
+    { id: 4, name: 'William Kim', email: 'william@example.com', status: 'active', created_at: '2024-03-05' },
+    { id: 5, name: 'Sofia Davis', email: 'sofia@example.com', status: 'inactive', created_at: '2024-03-12' },
+    { id: 6, name: 'Liam Johnson', email: 'liam@example.com', status: 'active', created_at: '2024-03-20' },
+    { id: 7, name: 'Emma Wilson', email: 'emma@example.com', status: 'active', created_at: '2024-04-01' },
+    { id: 8, name: 'Noah Brown', email: 'noah@example.com', status: 'inactive', created_at: '2024-04-10' },
+    { id: 9, name: 'Ava Garcia', email: 'ava@example.com', status: 'active', created_at: '2024-04-18' },
+    { id: 10, name: 'Ethan Martinez', email: 'ethan@example.com', status: 'active', created_at: '2024-05-02' },
+  ]
+
+  const getInitialUsers = (): UserType[] => {
+    if (initialUsers && initialUsers.length > 0) {
+      return initialUsers.map(u => ({ ...u, status: (u as any).status ?? 'active', created_at: u.created_at ?? '' }))
+    }
+    return mockUsers
+  }
+
+  let users = $state<UserType[]>(getInitialUsers())
+  let loading = $state(false)
+  let search = $state('')
+  let debouncedSearch = $state('')
+  let page = $state(1)
+  let perPage = $state(10)
+  let total = $state(0)
+
+  // Action menus
+  let openMenuId = $state<number | null>(null)
+
+  // Debounce search
+  let debounceTimer: ReturnType<typeof setTimeout>
+  $effect(() => {
+    clearTimeout(debounceTimer)
+    debounceTimer = setTimeout(() => {
+      debouncedSearch = search
+      page = 1
+    }, 300)
+  })
+
+  // Fetch from API
+  async function fetchUsers() {
+    loading = true
+    const params = new URLSearchParams({
+      page: String(page),
+      per_page: String(perPage),
+      sort: 'created_at',
+      dir: 'desc',
+    })
+    if (debouncedSearch) params.set('search', debouncedSearch)
+
+    const { ok, data } = await api(`/api/users?${params}`)
+    if (ok && data) {
+      users = (data.data as any[]).map((u: any) => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        status: u.status ?? 'active',
+        created_at: u.created_at ?? '',
+      }))
+      if (data.meta) {
+        total = data.meta.total
+      }
+    }
+    loading = false
+  }
+
+  $effect(() => {
+    void page, perPage, debouncedSearch
+    fetchUsers()
+  })
+
+  function getInitials(name: string): string {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+  }
+
+  const totalPages = $derived(Math.max(1, Math.ceil(total / perPage)))
+
+  function handleClickOutside(e: MouseEvent) {
+    const target = e.target as HTMLElement
+    if (!target.closest('[data-action-menu]')) {
+      openMenuId = null
+    }
+  }
+
+  $effect(() => {
+    if (openMenuId !== null) {
+      document.addEventListener('click', handleClickOutside, true)
+      return () => document.removeEventListener('click', handleClickOutside, true)
+    }
+  })
+</script>
+
+<AuthenticatedLayout
+  {currentUser}
+  {appName}
+  {navigate}
+  activePath="/users"
+>
+  <Header fixed {navigate} />
+
+  <Main>
+    <div class="space-y-4">
+      <!-- Title row -->
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 class="text-2xl font-bold tracking-tight">User List</h2>
+          <p class="text-sm text-muted-foreground">
+            {total > 0 ? `${total} users total.` : 'Manage your users here.'}
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            disabled
+            class="inline-flex items-center gap-1.5 rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-accent disabled:pointer-events-none disabled:opacity-50"
+          >
+            <Mail class="h-4 w-4" />
+            Invite User
+          </button>
+          <button
+            type="button"
+            class="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            <UserPlus class="h-4 w-4" />
+            Add User
+          </button>
+        </div>
+      </div>
+
+      <!-- Search -->
+      <div class="relative max-w-sm">
+        <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <input
+          type="text"
+          placeholder="Filter users..."
+          bind:value={search}
+          class="h-9 w-full rounded-md border border-input bg-background pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        />
+      </div>
+
+      <!-- Table -->
+      <div class="rounded-lg border border-border">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-border bg-muted/50">
+              <th class="px-4 py-3 text-left font-medium text-muted-foreground">User</th>
+              <th class="hidden px-4 py-3 text-left font-medium text-muted-foreground sm:table-cell">Status</th>
+              <th class="hidden px-4 py-3 text-left font-medium text-muted-foreground lg:table-cell">Created</th>
+              <th class="w-10 px-4 py-3"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {#if loading}
+              <tr>
+                <td colspan="4" class="px-4 py-8 text-center text-muted-foreground">Loading...</td>
+              </tr>
+            {:else if users.length === 0}
+              <tr>
+                <td colspan="4" class="px-4 py-8 text-center text-muted-foreground">
+                  {search ? 'No users match the current filters.' : 'No users found.'}
+                </td>
+              </tr>
+            {:else}
+              {#each users as user}
+                <tr class="border-b border-border last:border-0 hover:bg-muted/50 transition-colors">
+                  <td class="px-4 py-3">
+                    <div class="flex items-center gap-3">
+                      <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
+                        {getInitials(user.name)}
+                      </div>
+                      <div class="min-w-0">
+                        <div class="truncate text-sm font-medium">{user.name}</div>
+                        <div class="truncate text-xs text-muted-foreground">{user.email}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="hidden px-4 py-3 sm:table-cell">
+                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium capitalize {user.status === 'active' ? 'bg-primary text-primary-foreground' : 'border border-border text-muted-foreground'}">
+                      {user.status}
+                    </span>
+                  </td>
+                  <td class="hidden px-4 py-3 text-sm text-muted-foreground lg:table-cell">
+                    {user.created_at
+                      ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                      : '\u2014'}
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="relative" data-action-menu>
+                      <button
+                        type="button"
+                        onclick={() => openMenuId = openMenuId === user.id ? null : user.id}
+                        class="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent"
+                      >
+                        <MoreHorizontal class="h-4 w-4" />
+                        <span class="sr-only">Open menu</span>
+                      </button>
+                      {#if openMenuId === user.id}
+                        <div class="absolute right-0 top-full z-50 mt-1 w-40 rounded-md border border-border bg-popover p-1 shadow-lg">
+                          <button
+                            type="button"
+                            class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent transition-colors"
+                            onclick={() => openMenuId = null}
+                          >
+                            <Pencil class="h-4 w-4" />
+                            Edit
+                          </button>
+                          <div class="my-1 h-px bg-border"></div>
+                          <button
+                            type="button"
+                            class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-destructive hover:bg-accent transition-colors"
+                            onclick={() => openMenuId = null}
+                          >
+                            <Trash2 class="h-4 w-4" />
+                            Delete
+                          </button>
+                        </div>
+                      {/if}
+                    </div>
+                  </td>
+                </tr>
+              {/each}
+            {/if}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      {#if total > perPage}
+        <div class="flex items-center justify-end gap-2">
+          <button
+            type="button"
+            disabled={page <= 1}
+            onclick={() => page = Math.max(1, page - 1)}
+            class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-input bg-background hover:bg-accent disabled:pointer-events-none disabled:opacity-50"
+          >
+            <ChevronLeft class="h-4 w-4" />
+          </button>
+          <span class="text-sm text-muted-foreground">
+            Page {page} of {totalPages}
+          </span>
+          <button
+            type="button"
+            disabled={page >= totalPages}
+            onclick={() => page = Math.min(totalPages, page + 1)}
+            class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-input bg-background hover:bg-accent disabled:pointer-events-none disabled:opacity-50"
+          >
+            <ChevronRight class="h-4 w-4" />
+          </button>
+        </div>
+      {/if}
+    </div>
+  </Main>
+</AuthenticatedLayout>

@@ -1,0 +1,220 @@
+<script setup lang="ts">
+import { ref } from 'vue'
+import AuthenticatedLayout from '@/components/layout/AuthenticatedLayout.vue'
+import Header from '@/components/layout/Header.vue'
+import Main from '@/components/layout/Main.vue'
+import {
+  Card,
+  CardContent,
+} from '@/components/ui/card'
+import {
+  ChevronRight,
+  ChevronDown,
+  GripVertical,
+} from 'lucide-vue-next'
+
+type Status = 'not-started' | 'in-progress' | 'done'
+
+const props = withDefaults(defineProps<{
+  appName?: string
+  currentUser?: { id: number; name: string; email: string; role: string } | null
+  navigate?: (href: string) => void
+}>(), {
+  appName: 'Mantiq',
+})
+
+const kanbanColumns: { status: Status; label: string; emoji: string; color: string }[] = [
+  { status: 'not-started', label: 'Not Started', emoji: '\uD83D\uDCCB', color: 'bg-stone-200 dark:bg-stone-700' },
+  { status: 'in-progress', label: 'In Progress', emoji: '\uD83D\uDD28', color: 'bg-amber-200 dark:bg-amber-800' },
+  { status: 'done', label: 'Done', emoji: '\u2705', color: 'bg-emerald-200 dark:bg-emerald-800' },
+]
+
+const tasks: { id: number; title: string; status: Status; tag?: string }[] = [
+  { id: 1, title: 'Design database schema', status: 'done', tag: 'Backend' },
+  { id: 2, title: 'Set up authentication flow', status: 'done', tag: 'Auth' },
+  { id: 3, title: 'Build API endpoints', status: 'in-progress', tag: 'Backend' },
+  { id: 4, title: 'Create dashboard layout', status: 'in-progress', tag: 'Frontend' },
+  { id: 5, title: 'Write unit tests', status: 'not-started', tag: 'Testing' },
+  { id: 6, title: 'Set up CI/CD pipeline', status: 'not-started', tag: 'DevOps' },
+  { id: 7, title: 'Configure email notifications', status: 'not-started', tag: 'Backend' },
+  { id: 8, title: 'Deploy to staging', status: 'not-started', tag: 'DevOps' },
+]
+
+const tagColors: Record<string, string> = {
+  Backend: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+  Frontend: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
+  Auth: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+  Testing: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+  DevOps: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300',
+}
+
+const pages = [
+  { emoji: '\uD83D\uDCD6', title: 'Getting Started', desc: 'Quick introduction and setup guide' },
+  { emoji: '\uD83C\uDFD7\uFE0F', title: 'Architecture', desc: 'How the application is structured' },
+  { emoji: '\uD83D\uDCE1', title: 'API Reference', desc: 'Endpoints, params, and responses' },
+  { emoji: '\uD83D\uDE80', title: 'Deployment', desc: 'Deploy your app to production' },
+]
+
+function getGreeting() {
+  const hour = new Date().getHours()
+  if (hour < 12) return 'Good morning'
+  if (hour < 18) return 'Good afternoon'
+  return 'Good evening'
+}
+
+const expandedSections = ref<Record<string, boolean>>({
+  kanban: true,
+  pages: true,
+  notes: false,
+})
+
+function toggle(section: string) {
+  expandedSections.value[section] = !expandedSections.value[section]
+}
+
+function getColumnTasks(status: Status) {
+  return tasks.filter((t) => t.status === status)
+}
+</script>
+
+<template>
+  <AuthenticatedLayout
+    :current-user="currentUser"
+    :app-name="appName"
+    :navigate="navigate"
+    active-path="/dashboard"
+  >
+    <Header :navigate="navigate" />
+    <Main>
+      <div class="max-w-4xl mx-auto space-y-8">
+        <!-- Cover & title — Notion-style page header -->
+        <div>
+          <div class="h-36 rounded-xl bg-gradient-to-br from-amber-100 via-orange-50 to-rose-100 dark:from-amber-950/30 dark:via-stone-900 dark:to-rose-950/20 mb-6" />
+          <div class="-mt-10 ml-2">
+            <span class="text-5xl select-none">&#x1F44B;</span>
+          </div>
+          <h1 class="mt-4 text-3xl font-bold tracking-tight">
+            {{ getGreeting() }}, {{ currentUser?.name?.split(' ')[0] ?? 'there' }}
+          </h1>
+          <p class="text-muted-foreground mt-1">
+            Here's your workspace overview. Click any section to expand or collapse it.
+          </p>
+        </div>
+
+        <!-- Callout block -->
+        <div class="flex gap-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-800/30 p-4">
+          <span class="text-xl select-none shrink-0">&#x1F4A1;</span>
+          <div>
+            <p class="text-sm font-medium">Tip</p>
+            <p class="text-sm text-muted-foreground">
+              Customize this dashboard by editing <code class="rounded bg-muted px-1 py-0.5 text-xs font-mono">src/pages/Dashboard.vue</code>.
+              Add your own widgets, data sources, and integrations.
+            </p>
+          </div>
+        </div>
+
+        <!-- Kanban board section -->
+        <div>
+          <button
+            type="button"
+            class="flex items-center gap-1.5 mb-3 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+            @click="toggle('kanban')"
+          >
+            <ChevronDown v-if="expandedSections.kanban" class="h-4 w-4" />
+            <ChevronRight v-else class="h-4 w-4" />
+            &#x1F5C2;&#xFE0F; Project Board
+          </button>
+
+          <div v-if="expandedSections.kanban" class="grid gap-4 md:grid-cols-3">
+            <div v-for="col in kanbanColumns" :key="col.status">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="text-sm select-none">{{ col.emoji }}</span>
+                <span class="text-sm font-medium">{{ col.label }}</span>
+                <span class="text-xs text-muted-foreground ml-auto">{{ getColumnTasks(col.status).length }}</span>
+              </div>
+              <div class="space-y-2">
+                <Card
+                  v-for="task in getColumnTasks(col.status)"
+                  :key="task.id"
+                  class="group cursor-default shadow-none hover:shadow-sm transition-shadow"
+                >
+                  <CardContent class="p-3">
+                    <div class="flex items-start gap-2">
+                      <GripVertical class="h-4 w-4 mt-0.5 text-muted-foreground/0 group-hover:text-muted-foreground/50 transition-colors shrink-0" />
+                      <div class="flex-1 min-w-0">
+                        <p class="text-sm">{{ task.title }}</p>
+                        <span
+                          v-if="task.tag"
+                          :class="[
+                            'mt-1.5 inline-block rounded-md px-1.5 py-0.5 text-[10px] font-medium',
+                            tagColors[task.tag] ?? 'bg-muted text-muted-foreground',
+                          ]"
+                        >
+                          {{ task.tag }}
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <div
+                  v-if="getColumnTasks(col.status).length === 0"
+                  class="rounded-xl border border-dashed p-4 text-center text-xs text-muted-foreground"
+                >
+                  No tasks
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pages section -->
+        <div>
+          <button
+            type="button"
+            class="flex items-center gap-1.5 mb-3 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+            @click="toggle('pages')"
+          >
+            <ChevronDown v-if="expandedSections.pages" class="h-4 w-4" />
+            <ChevronRight v-else class="h-4 w-4" />
+            &#x1F4C4; Pages
+          </button>
+
+          <div v-if="expandedSections.pages" class="space-y-1">
+            <div
+              v-for="page in pages"
+              :key="page.title"
+              class="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-muted/50 cursor-pointer"
+            >
+              <span class="text-lg select-none">{{ page.emoji }}</span>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium">{{ page.title }}</p>
+                <p class="text-xs text-muted-foreground truncate">{{ page.desc }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notes toggle -->
+        <div>
+          <button
+            type="button"
+            class="flex items-center gap-1.5 mb-3 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+            @click="toggle('notes')"
+          >
+            <ChevronDown v-if="expandedSections.notes" class="h-4 w-4" />
+            <ChevronRight v-else class="h-4 w-4" />
+            &#x1F4DD; Quick Notes
+          </button>
+
+          <Card v-if="expandedSections.notes" class="shadow-none">
+            <CardContent class="p-4">
+              <div class="rounded-lg bg-muted/30 p-4 text-sm text-muted-foreground italic">
+                Start typing your notes here... This is a placeholder for a rich-text editor.
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </Main>
+  </AuthenticatedLayout>
+</template>

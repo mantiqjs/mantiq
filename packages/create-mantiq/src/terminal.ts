@@ -96,6 +96,68 @@ export class Terminal {
     })
   }
 
+  /** Checkbox-style multi-select prompt */
+  async multiSelect(label: string, options: SelectOption[]): Promise<string[]> {
+    let cursor = 0
+    const checked = new Set<number>()
+
+    const render = () => {
+      let out = `   ${EMERALD}◆${R}  ${BOLD}${label}${R}\n`
+      for (let i = 0; i < options.length; i++) {
+        const opt = options[i]!
+        const active = i === cursor
+        const isChecked = checked.has(i)
+        const box = isChecked ? `${EMERALD}\u2611${R}` : `${GRAY}\u2610${R}`
+        const text = active ? `${WHITE}${BOLD}${opt.label}${R}` : `${GRAY}${opt.label}${R}`
+        const hint = opt.hint ? `  ${DIM}${opt.hint}${R}` : ''
+        out += `      ${box}  ${text}${hint}\n`
+      }
+      out += `\n`
+      return out
+    }
+
+    const lines = options.length + 2
+    write(render())
+
+    if (process.stdin.isTTY) process.stdin.setRawMode(true)
+    write(HIDE_CURSOR)
+
+    return new Promise<string[]>((resolve) => {
+      const onData = (buf: Buffer) => {
+        const key = buf.toString()
+        if (key === '\x1b[A' || key === 'k') {
+          cursor = (cursor - 1 + options.length) % options.length
+        } else if (key === '\x1b[B' || key === 'j') {
+          cursor = (cursor + 1) % options.length
+        } else if (key === ' ') {
+          if (checked.has(cursor)) checked.delete(cursor)
+          else checked.add(cursor)
+        } else if (key === '\r' || key === '\n') {
+          process.stdin.removeListener('data', onData)
+          if (process.stdin.isTTY) process.stdin.setRawMode(false)
+          write(SHOW_CURSOR)
+          write(UP(lines) + CLEAR_LINE)
+          for (let i = 0; i < lines; i++) write(`${CLEAR_LINE}\n`)
+          write(UP(lines))
+          const selected = [...checked].sort().map(i => options[i]!.label)
+          const summary = selected.length > 0 ? selected.join(', ') : 'None'
+          write(`   ${EMERALD}\u25C7${R}  ${label}  ${EMERALD}${summary}${R}\n\n`)
+          resolve([...checked].sort().map(i => options[i]!.value))
+          return
+        } else if (key === '\x03') {
+          process.stdin.removeListener('data', onData)
+          if (process.stdin.isTTY) process.stdin.setRawMode(false)
+          write(SHOW_CURSOR + '\n')
+          process.exit(0)
+        }
+        write(UP(lines))
+        write(render())
+      }
+      process.stdin.on('data', onData)
+      process.stdin.resume()
+    })
+  }
+
   /** Yes/No confirm prompt */
   async confirm(label: string, defaultVal = false): Promise<boolean> {
     const options: SelectOption[] = [

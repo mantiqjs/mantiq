@@ -1,0 +1,104 @@
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue'
+import {
+  ChevronsUpDown,
+  LogOut,
+  User,
+  Settings,
+} from 'lucide-vue-next'
+
+export interface NavUserUser {
+  name: string
+  email: string
+  role?: string
+}
+
+const props = defineProps<{
+  user: NavUserUser
+  navigate: (href: string) => void
+  onLogout: () => void
+  collapsed?: boolean
+}>()
+
+const menuOpen = ref(false)
+
+function getInitials(name: string) {
+  return name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+}
+
+function onClickOutside(e: MouseEvent) {
+  const target = e.target as HTMLElement
+  if (!target.closest('[data-nav-user]')) {
+    menuOpen.value = false
+  }
+}
+
+onMounted(() => document.addEventListener('click', onClickOutside))
+onUnmounted(() => document.removeEventListener('click', onClickOutside))
+</script>
+
+<template>
+  <div class="relative" data-nav-user>
+    <button
+      class="flex w-full items-center gap-2 rounded-md p-2 text-left text-sm hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+      @click.stop="menuOpen = !menuOpen"
+    >
+      <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-xs font-semibold">
+        {{ getInitials(user.name) }}
+      </span>
+      <template v-if="!collapsed">
+        <span class="grid flex-1 text-left text-sm leading-tight">
+          <span class="truncate font-semibold">{{ user.name }}</span>
+          <span class="truncate text-xs text-muted-foreground">{{ user.email }}</span>
+        </span>
+        <ChevronsUpDown class="ml-auto h-4 w-4 text-muted-foreground" />
+      </template>
+    </button>
+
+    <div
+      v-if="menuOpen"
+      class="absolute bottom-full left-0 z-50 mb-1 min-w-[14rem] rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+    >
+      <!-- User info -->
+      <div class="px-2 py-1.5">
+        <div class="flex items-center gap-2">
+          <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-xs font-semibold">
+            {{ getInitials(user.name) }}
+          </span>
+          <span class="grid flex-1 text-left text-sm leading-tight">
+            <span class="truncate font-semibold">{{ user.name }}</span>
+            <span class="truncate text-xs text-muted-foreground">{{ user.email }}</span>
+          </span>
+        </div>
+      </div>
+      <div class="my-1 h-px bg-border" />
+      <button
+        class="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+        @click="menuOpen = false; navigate('/account/profile')"
+      >
+        <User class="h-4 w-4" />
+        Account
+      </button>
+      <button
+        class="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+        @click="menuOpen = false; navigate('/account/preferences')"
+      >
+        <Settings class="h-4 w-4" />
+        Settings
+      </button>
+      <div class="my-1 h-px bg-border" />
+      <button
+        class="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-destructive outline-none hover:bg-destructive/10"
+        @click="menuOpen = false; onLogout()"
+      >
+        <LogOut class="h-4 w-4" />
+        Sign out
+      </button>
+    </div>
+  </div>
+</template>

@@ -32,10 +32,13 @@ export class RefreshTokenGrant implements GrantHandler {
     const client = await Client.find(clientId)
     if (!client) throw new OAuthError('Client not found.', 'invalid_client', 401)
 
-    // Verify secret for confidential clients (constant-time comparison to prevent timing attacks)
+    // Verify secret for confidential clients (bcrypt verification against the stored hash)
     if (client.confidential()) {
-      const storedSecret = client.getAttribute('secret') as string
-      if (!clientSecret || !timingSafeEqual(clientSecret, storedSecret)) {
+      if (!clientSecret) {
+        throw new OAuthError('Invalid client credentials.', 'invalid_client', 401)
+      }
+      const secretValid = await client.verifySecret(clientSecret)
+      if (!secretValid) {
         throw new OAuthError('Invalid client credentials.', 'invalid_client', 401)
       }
     }
@@ -127,21 +130,4 @@ export class RefreshTokenGrant implements GrantHandler {
       scope: scopes.join(' '),
     }
   }
-}
-
-/**
- * Constant-time string comparison to prevent timing attacks on secret verification.
- */
-function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false
-
-  const encoder = new TextEncoder()
-  const bufA = encoder.encode(a)
-  const bufB = encoder.encode(b)
-
-  let result = 0
-  for (let i = 0; i < bufA.length; i++) {
-    result |= bufA[i]! ^ bufB[i]!
-  }
-  return result === 0
 }

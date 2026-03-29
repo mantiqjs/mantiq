@@ -137,12 +137,13 @@ describe('AuthCodeGrant', () => {
   let codeChallenge: string
 
   beforeAll(async () => {
-    // Seed a confidential client
+    // Seed a confidential client (hash the secret with bcrypt as verifySecret expects)
+    const hashedSecret = await Client.hashSecret(clientSecret)
     const c = new Client()
     c.forceFill({
       id: clientId,
       name: 'Test App',
-      secret: clientSecret,
+      secret: hashedSecret,
       redirect: redirectUri,
       personal_access_client: false,
       password_client: false,
@@ -445,11 +446,12 @@ describe('ClientCredentialsGrant', () => {
   const clientSecret = 'client-cred-secret'
 
   beforeAll(async () => {
+    const hashedSecret = await Client.hashSecret(clientSecret)
     const c = new Client()
     c.forceFill({
       id: clientId,
       name: 'Machine App',
-      secret: clientSecret,
+      secret: hashedSecret,
       redirect: '',
       personal_access_client: false,
       password_client: false,
@@ -582,11 +584,12 @@ describe('RefreshTokenGrant', () => {
   const userId = 'user-99'
 
   beforeAll(async () => {
+    const hashedSecret = await Client.hashSecret(clientSecret)
     const c = new Client()
     c.forceFill({
       id: clientId,
       name: 'Refresh Client',
-      secret: clientSecret,
+      secret: hashedSecret,
       redirect: 'https://app.example.com/callback',
       personal_access_client: false,
       password_client: false,
@@ -723,11 +726,12 @@ describe('RefreshTokenGrant', () => {
 
   test('wrong client rejects', async () => {
     const otherClientId = crypto.randomUUID()
+    const otherHashedSecret = await Client.hashSecret('other-secret')
     const otherClient = new Client()
     otherClient.forceFill({
       id: otherClientId,
       name: 'Other Client',
-      secret: 'other-secret',
+      secret: otherHashedSecret,
       redirect: '',
       personal_access_client: false,
       password_client: false,

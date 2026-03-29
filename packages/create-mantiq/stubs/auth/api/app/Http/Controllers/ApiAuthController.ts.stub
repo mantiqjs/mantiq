@@ -1,0 +1,57 @@
+import type { MantiqRequest } from '@mantiq/core'
+import { json, hash, hashCheck, abort } from '@mantiq/core'
+import { auth } from '@mantiq/auth'
+import { User } from '../../Models/User.ts'
+
+/**
+ * Sanctum-style token authentication for API-only apps.
+ * Issues bearer tokens instead of session cookies.
+ */
+export class ApiAuthController {
+  async register(request: MantiqRequest, data: Record<string, any>): Promise<Response> {
+    if (await User.where('email', data.email).first()) abort(422, 'A user with this email already exists.')
+
+    const user = await User.create({
+      name: data.name,
+      email: data.email,
+      password: await hash(data.password),
+    })
+
+    const { plainTextToken } = await user.createToken(data.device_name ?? 'api')
+
+    return json({ message: 'Registered.', user: user.toObject(), token: plainTextToken }, 201)
+  }
+
+  async login(request: MantiqRequest, data: Record<string, any>): Promise<Response> {
+    const user = await User.where('email', data.email).first()
+    if (!user || !(await hashCheck(data.password, user.getAuthPassword()))) {
+      abort(401, 'Invalid credentials.')
+    }
+
+    const { plainTextToken } = await user!.createToken(data.device_name ?? 'api')
+
+    return json({ message: 'Logged in.', user: user!.toObject(), token: plainTextToken })
+  }
+
+  async logout(request: MantiqRequest): Promise<Response> {
+    const manager = auth()
+    manager.setRequest(request)
+    const user = await manager.guard('api').user()
+
+    if (user) {
+      const token = user.currentAccessToken?.()
+      if (token) await token.delete()
+    }
+
+    return json({ message: 'Token revoked.' })
+  }
+
+  async user(request: MantiqRequest): Promise<Response> {
+    const manager = auth()
+    manager.setRequest(request)
+    const user = await manager.guard('api').user()
+    if (!user) abort(401, 'Unauthenticated.')
+
+    return json({ user: user!.toObject() })
+  }
+}

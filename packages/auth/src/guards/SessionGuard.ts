@@ -4,6 +4,7 @@ import type { UserProvider } from '../contracts/UserProvider.ts'
 import type { MantiqRequest, EventDispatcher } from '@mantiq/core'
 import type { Encrypter } from '@mantiq/core'
 import { Attempting, Authenticated, Login as LoginEvent, Failed, Logout as LogoutEvent } from '../events/AuthEvents.ts'
+import { timingSafeEqual } from 'node:crypto'
 
 /**
  * Session-based authentication guard.
@@ -22,7 +23,7 @@ export class SessionGuard implements StatefulGuard {
   private _request: MantiqRequest | null = null
 
   /** Pending remember cookie data (set during login, read by middleware). */
-  private _pendingRememberCookie: { id: string | number; token: string; hash: string } | null = null
+  private _pendingRememberCookie: { id: string | number; token: string } | null = null
   /** Flag to clear the remember cookie (set during logout). */
   private _clearRememberCookie = false
 
@@ -67,6 +68,11 @@ export class SessionGuard implements StatefulGuard {
       this._user = await this.recallFromCookie()
       if (this._user) {
         this._viaRemember = true
+
+        // #207: Regenerate session before storing user ID to prevent
+        // session fixation attacks when logging in via remember cookie.
+        await request.session().regenerate(true)
+
         // Re-store in session so subsequent requests don't need the cookie
         this.updateSession(this._user.getAuthIdentifier())
         request.setUser(this._user as any)
@@ -200,8 +206,13 @@ export class SessionGuard implements StatefulGuard {
 
   /**
    * Get pending remember cookie data (read by middleware to set cookie).
+   *
+   * #166: Cookie value format is now `userId|rememberToken` (no password hash).
+   * The password hash was previously included but exposed sensitive material
+   * in the cookie. Validation now relies solely on the remember token stored
+   * in the database, which is cycled on logout and password change.
    */
-  getPendingRememberCookie(): { id: string | number; token: string; hash: string } | null {
+  getPendingRememberCookie(): { id: string | number; token: string } | null {
     return this._pendingRememberCookie
   }
 
@@ -217,6 +228,24 @@ export class SessionGuard implements StatefulGuard {
    */
   getName(): string {
     return this.name
+  }
+
+  // ── Public security helpers ───────────────────────────────────────────
+
+  /**
+   * #196: Generate a new remember token and save it to the database.
+   *
+   * Call this method when a user changes their password to invalidate
+   * all existing remember cookies. Example usage in a password update
+   * controller:
+   *
+   *   await guard.cycleRememberToken(user)
+   *
+   * This is also called internally during logout().
+   */
+  async cycleRememberToken(user: Authenticatable): Promise<void> {
+    const token = generateRandomToken(60)
+    await this.provider.updateRememberToken(user, token)
   }
 
   // ── Internal ────────────────────────────────────────────────────────────
@@ -246,52 +275,89 @@ export class SessionGuard implements StatefulGuard {
   }
 
   /**
-   * Generate a new remember token and save it to the database.
-   */
-  private async cycleRememberToken(user: Authenticatable): Promise<void> {
-    const token = generateRandomToken(60)
-    await this.provider.updateRememberToken(user, token)
-  }
-
-  /**
    * Queue the remember cookie for the middleware to set.
-   * Cookie value format: userId|rememberToken|passwordHash
+   *
+   * #166: Cookie value format: `userId|rememberToken` — password hash removed.
+   * #208: Refuse to queue the cookie if the encrypter is not available,
+   * unless we want to silently expose tokens in plaintext cookies.
    */
   private queueRememberCookie(user: Authenticatable): void {
+    // #208: Warn and refuse to send remember cookie without encryption.
+    // Sending a plaintext remember token in a cookie allows any network
+    // observer to hijack the session. Require encryption or explicit opt-in.
+    if (!this.encrypter) {
+      console.warn(
+        `[mantiq/auth] SessionGuard "${this.name}": Cannot set remember cookie — ` +
+        `no Encrypter is available. The remember cookie would be sent unencrypted, ` +
+        `exposing the token to network observers. Configure an Encrypter or disable ` +
+        `the remember me feature.`
+      )
+      return
+    }
+
     this._pendingRememberCookie = {
       id: user.getAuthIdentifier(),
       token: user.getRememberToken()!,
-      hash: user.getAuthPassword(),
     }
   }
 
   /**
    * Attempt to recall the user from the remember me cookie.
+   *
+   * #215: Validates cookie format strictly — userId must be numeric,
+   * token must be a hex string of at least 40 characters.
+   * #166: Cookie format is now `userId|rememberToken` (2 parts, no password hash).
    */
   private async recallFromCookie(): Promise<Authenticatable | null> {
     const request = this.getRequest()
     const cookieValue = request.cookie(this.getRememberCookieName())
     if (!cookieValue) return null
 
-    // Cookie format: userId|rememberToken|passwordHash
+    // Cookie format: userId|rememberToken
     const parts = cookieValue.split('|')
-    if (parts.length !== 3) return null
 
-    const [userId, token, hash] = parts
+    // #166: Accept both old 3-part format (for migration) and new 2-part format
+    if (parts.length !== 2 && parts.length !== 3) return null
+
+    const [userId, token] = parts
 
     if (!userId || !token) return null
 
+    // #215: Validate userId is numeric to prevent injection
+    if (!/^\d+$/.test(userId)) return null
+
+    // #215: Validate token is a hex string of expected length (at least 40 chars)
+    // to reject obviously malformed or tampered cookies early
+    if (!/^[0-9a-f]{40,}$/i.test(token)) return null
+
     const user = await this.provider.retrieveByToken(
-      isNaN(Number(userId)) ? userId : Number(userId),
+      Number(userId),
       token,
     )
 
     if (!user) return null
 
-    // Validate the password hash hasn't changed (tamper detection)
-    if (hash !== user.getAuthPassword()) return null
+    // #166: Validate the remember token using constant-time comparison
+    // to prevent timing side-channel attacks on the token value.
+    const storedToken = user.getRememberToken()
+    if (!storedToken || !constantTimeEqual(token, storedToken)) return null
 
     return user
+  }
+}
+
+/**
+ * Constant-time string comparison using node:crypto's timingSafeEqual.
+ * Prevents timing side-channel attacks on token comparisons.
+ */
+function constantTimeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  try {
+    const bufA = Buffer.from(a, 'utf-8')
+    const bufB = Buffer.from(b, 'utf-8')
+    return timingSafeEqual(bufA, bufB)
+  } catch {
+    return false
   }
 }
 

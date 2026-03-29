@@ -126,15 +126,18 @@ export class DatabaseEngine implements SearchEngine {
 
     // Escape SQL LIKE wildcards in user input to prevent pattern injection
     const escaped = searchTerm.replace(/[%_\\]/g, '\\$&')
+    const likePattern = `%${escaped}%`
 
-    // Use LIKE for broad compatibility (works on SQLite, Postgres, MySQL)
+    // Use whereRaw with explicit ESCAPE clause for portable LIKE across all
+    // database engines (SQLite, Postgres, MySQL, MSSQL) (#213)
     return query.where((q: any) => {
       for (let i = 0; i < columns.length; i++) {
         const col = columns[i]!
+        const sql = `${col} LIKE ? ESCAPE '\\'`
         if (i === 0) {
-          q.where(col, 'LIKE', `%${escaped}%`)
+          q.whereRaw(sql, [likePattern])
         } else {
-          q.orWhere(col, 'LIKE', `%${escaped}%`)
+          q.orWhereRaw(sql, [likePattern])
         }
       }
     })

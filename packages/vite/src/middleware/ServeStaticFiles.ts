@@ -1,4 +1,5 @@
 import type { Middleware, NextFunction, MantiqRequest } from '@mantiq/core'
+import path from 'node:path'
 import { Vite } from '../Vite.ts'
 
 /**
@@ -43,17 +44,19 @@ export class ServeStaticFiles implements Middleware {
 
     const urlPath = request.path()
 
-    // Prevent directory traversal
-    if (urlPath.includes('..') || urlPath.includes('\0')) {
-      return next()
-    }
-
     // Skip the hot file — it's internal
     if (urlPath === '/hot') {
       return next()
     }
 
-    const filePath = `${this.getPublicDir()}${urlPath}`
+    // Security: resolve the absolute path and verify it stays within publicDir
+    // to prevent directory traversal attacks (including encoded sequences like
+    // %2e%2e, double-encoding, and symlink tricks).
+    const publicDir = path.resolve(this.getPublicDir())
+    const filePath = path.resolve(publicDir, '.' + urlPath)
+    if (!filePath.startsWith(publicDir + path.sep) && filePath !== publicDir) {
+      return next()
+    }
     const file = Bun.file(filePath)
 
     if (await file.exists()) {

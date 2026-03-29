@@ -1,0 +1,16 @@
+import type { Router } from '@mantiq/core'
+import { json } from '@mantiq/core'
+import { UserController } from '../app/Http/Controllers/UserController.ts'
+import { StoreUserRequest } from '../app/Http/Requests/StoreUserRequest.ts'
+import { UpdateUserRequest } from '../app/Http/Requests/UpdateUserRequest.ts'
+
+export default function (router: Router) {
+  // Public
+  router.get('/ping', () => json({ status: 'ok', timestamp: new Date().toISOString() }))
+
+  // Users CRUD — no auth middleware
+  router.get('/users', [UserController, 'index'])
+  router.post('/users', [UserController, 'store', StoreUserRequest])
+  router.put('/users/:id', [UserController, 'update', UpdateUserRequest])
+  router.delete('/users/:id', [UserController, 'destroy'])
+}

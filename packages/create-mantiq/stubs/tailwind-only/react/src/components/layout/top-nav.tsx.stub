@@ -1,0 +1,72 @@
+import { cn } from '@/lib/utils'
+
+interface TopNavLink {
+  title: string
+  href: string
+  isActive?: boolean
+  disabled?: boolean
+}
+
+interface TopNavProps extends React.HTMLAttributes<HTMLElement> {
+  links: TopNavLink[]
+  onLinkClick?: (href: string) => void
+}
+
+export function TopNav({
+  className,
+  links,
+  onLinkClick,
+  ...props
+}: TopNavProps) {
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (onLinkClick) {
+      e.preventDefault()
+      onLinkClick(href)
+    }
+  }
+
+  return (
+    <>
+      {/* Desktop navigation */}
+      <nav
+        className={cn(
+          'hidden items-center gap-4 md:flex lg:gap-6',
+          className,
+        )}
+        {...props}
+      >
+        {links.map((link) => (
+          <a
+            key={link.href}
+            href={link.href}
+            onClick={(e) => handleClick(e, link.href)}
+            className={cn(
+              'text-sm font-medium transition-colors hover:text-gray-900 dark:hover:text-gray-50',
+              link.isActive
+                ? 'text-gray-900 dark:text-gray-50'
+                : 'text-gray-500 dark:text-gray-400',
+              link.disabled && 'pointer-events-none opacity-50',
+            )}
+          >
+            {link.title}
+          </a>
+        ))}
+      </nav>
+
+      {/* Mobile navigation */}
+      <div className="md:hidden">
+        <select
+          onChange={(e) => onLinkClick?.(e.target.value)}
+          defaultValue={links.find(l => l.isActive)?.href ?? ''}
+          className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-900"
+        >
+          {links.map((link) => (
+            <option key={link.href} value={link.href} disabled={link.disabled}>
+              {link.title}
+            </option>
+          ))}
+        </select>
+      </div>
+    </>
+  )
+}

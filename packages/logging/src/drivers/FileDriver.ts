@@ -31,8 +31,11 @@ export class FileDriver implements LoggerDriver {
 
     const line = this.formatter.format(entry) + '\n'
 
-    // Fire-and-forget — logging should never block the request
-    void this.writeLine(line)
+    // Fire-and-forget — logging should never block the request.
+    // Fix #204: Surface write errors on stderr instead of silently swallowing them.
+    void this.writeLine(line).catch((err: Error) =>
+      process.stderr.write('Log write failed: ' + err.message + '\n'),
+    )
   }
 
   private async writeLine(line: string): Promise<void> {

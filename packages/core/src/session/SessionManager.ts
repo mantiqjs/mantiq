@@ -9,7 +9,8 @@ const SESSION_DEFAULTS: SessionConfig = {
   lifetime: 120,
   cookie: 'mantiq_session',
   path: '/',
-  secure: false,
+  // Security: default to secure cookies (HTTPS-only). Override in dev config for HTTP.
+  secure: true,
   httpOnly: true,
   sameSite: 'Lax',
 }

@@ -7,6 +7,14 @@ export function applyHasApiTokens(ModelClass: any): void {
   const proto = ModelClass.prototype
 
   proto.createToken = async function(name: string, abilities: string[] = ['*'], expiresAt?: Date): Promise<NewAccessToken> {
+    // #212: Default empty abilities to ['*'] (full access) and deduplicate.
+    // An empty abilities array would silently deny all permission checks,
+    // which is almost certainly not the caller's intent.
+    if (abilities.length === 0) {
+      abilities = ['*']
+    }
+    abilities = [...new Set(abilities)]
+
     // Generate 64 random hex characters
     const randomBytes = new Uint8Array(32)
     crypto.getRandomValues(randomBytes)

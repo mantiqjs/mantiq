@@ -113,7 +113,9 @@ describe('SessionStore', () => {
     session.put('key', 'value')
     const oldId = session.getId()
     await session.invalidate()
-    expect(session.all()).toEqual({})
+    // After invalidation, user data is gone but a fresh CSRF token is generated
+    expect(session.has('key')).toBe(false)
+    expect(session.has('_token')).toBe(true) // regenerate() now also regenerates CSRF token
     expect(session.getId()).not.toBe(oldId)
   })
 
@@ -146,7 +148,7 @@ describe('SessionStore', () => {
 
   it('generates hex session IDs', () => {
     const id = SessionStore.generateId()
-    expect(id.length).toBe(40) // 20 bytes * 2 hex chars
+    expect(id.length).toBe(64) // 32 bytes * 2 hex chars
     expect(/^[a-f0-9]+$/.test(id)).toBe(true)
   })
 })

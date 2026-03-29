@@ -1,0 +1,140 @@
+<script setup lang="ts">
+import { ref } from 'vue'
+import { post } from '@/lib/api'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+
+const props = withDefaults(defineProps<{
+  appName?: string
+  navigate?: (href: string) => void
+}>(), {
+  appName: 'Mantiq',
+})
+
+const name = ref('')
+const email = ref('')
+const password = ref('')
+const error = ref('')
+const loading = ref(false)
+
+async function handleSubmit() {
+  error.value = ''
+  loading.value = true
+  const { ok, data } = await post('/register', { name: name.value, email: email.value, password: password.value })
+  if (ok) props.navigate?.('/dashboard')
+  else error.value = data?.error?.message ?? data?.error ?? 'Registration failed. Please try again.'
+  loading.value = false
+}
+</script>
+
+<template>
+  <div class="min-h-screen flex bg-background">
+    <!-- Left gradient panel -->
+    <div class="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 animate-gradient">
+      <!-- Floating decorative circles -->
+      <div class="absolute -top-20 -right-20 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
+      <div class="absolute top-1/2 left-10 h-48 w-48 rounded-full bg-indigo-400/20 blur-2xl" />
+      <div class="absolute bottom-10 right-1/4 h-56 w-56 rounded-full bg-purple-300/15 blur-3xl" />
+
+      <div class="relative z-10 flex flex-col justify-center p-16 text-white">
+        <h1 class="text-5xl font-bold leading-tight tracking-tight">
+          Start your<br />journey.
+        </h1>
+        <p class="mt-4 text-xl text-white/70">
+          Create your account and start building something extraordinary with {{ appName }}.
+        </p>
+
+        <!-- Testimonial card -->
+        <div class="mt-12 rounded-2xl bg-white/10 p-6 backdrop-blur-sm">
+          <p class="text-lg leading-relaxed text-white/90">
+            "From idea to production in days, not months. The developer experience is unmatched."
+          </p>
+          <div class="mt-4">
+            <p class="font-semibold">Jamie Chen</p>
+            <p class="text-sm text-white/60">Founder at NovaTech</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right form panel -->
+    <div class="flex flex-1 flex-col items-center justify-center px-6 py-12">
+      <!-- Logo -->
+      <div class="mb-10 flex items-center gap-3">
+        <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 text-white text-sm font-bold">
+          M
+        </div>
+        <span class="text-lg font-semibold tracking-tight">{{ appName }}</span>
+      </div>
+
+      <div class="w-full max-w-sm">
+        <div class="mb-8 text-center">
+          <h1 class="text-2xl font-bold tracking-tight">Create an account</h1>
+          <p class="mt-2 text-sm text-muted-foreground">
+            Get started with {{ appName }} today
+          </p>
+        </div>
+
+        <div v-if="error" class="mb-6 rounded-md border border-destructive px-4 py-3 text-sm text-destructive">
+          {{ error }}
+        </div>
+
+        <form class="space-y-4" @submit.prevent="handleSubmit">
+          <div class="space-y-2">
+            <Label for="name">Name</Label>
+            <Input
+              id="name"
+              v-model="name"
+              required
+              placeholder="John Doe"
+              autocomplete="name"
+            />
+          </div>
+          <div class="space-y-2">
+            <Label for="email">Email</Label>
+            <Input
+              id="email"
+              v-model="email"
+              type="email"
+              required
+              placeholder="you@example.com"
+              autocomplete="email"
+            />
+          </div>
+          <div class="space-y-2">
+            <Label for="password">Password</Label>
+            <Input
+              id="password"
+              v-model="password"
+              type="password"
+              required
+              placeholder="Create a strong password"
+              autocomplete="new-password"
+              :minlength="8"
+            />
+            <p class="text-xs text-muted-foreground">Must be at least 8 characters</p>
+          </div>
+          <Button
+            type="submit"
+            class="w-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-700 hover:to-indigo-700"
+            :disabled="loading"
+          >
+            {{ loading ? 'Creating account...' : 'Create account' }}
+          </Button>
+        </form>
+
+        <p class="mt-6 text-center text-sm text-muted-foreground">
+          Already have an account?{{ ' ' }}
+          <button
+            type="button"
+            class="font-medium text-primary underline underline-offset-4"
+            @click="navigate?.('/login')"
+          >
+            Sign in
+          </button>
+        </p>
+      </div>
+    </div>
+  </div>
+</template>

@@ -1,6 +1,14 @@
 import { describe, it, expect, beforeEach } from 'bun:test'
 import { SessionGuard } from '../../src/guards/SessionGuard.ts'
 import { FakeUser, FakeUserProvider, createFakeRequest } from './helpers.ts'
+import type { Encrypter } from '@mantiq/core'
+
+// Stub encrypter to satisfy #208 (refuse cookie without encrypter)
+const fakeEncrypter: Encrypter = {
+  encrypt: (value: string) => value,
+  decrypt: (payload: string) => payload,
+  getKey: () => 'test-key',
+} as any
 
 describe('SessionGuard', () => {
   let provider: FakeUserProvider
@@ -9,8 +17,10 @@ describe('SessionGuard', () => {
   const bob = new FakeUser(2, 'bob@test.com', 'bobs_password')
 
   beforeEach(async () => {
+    alice.rememberToken = null
+    bob.rememberToken = null
     provider = new FakeUserProvider([alice, bob])
-    guard = new SessionGuard('web', provider)
+    guard = new SessionGuard('web', provider, fakeEncrypter)
     const request = await createFakeRequest()
     guard.setRequest(request)
   })
@@ -135,13 +145,14 @@ describe('SessionGuard', () => {
   })
 
   it('recall from remember cookie', async () => {
-    // Set up: give alice a remember token
-    alice.setRememberToken('test_remember_token_123')
+    // Use a hex token of at least 40 chars to pass format validation (#215)
+    const hexToken = 'ab'.repeat(30)
+    alice.setRememberToken(hexToken)
 
-    // Create a request with the remember cookie
+    // #166: Cookie format is now userId|rememberToken (no password hash)
     const request = await createFakeRequest({
       cookies: {
-        remember_web: `1|test_remember_token_123|${alice.getAuthPassword()}`,
+        remember_web: `1|${hexToken}`,
       },
     })
 
@@ -155,11 +166,14 @@ describe('SessionGuard', () => {
   })
 
   it('recall fails with wrong token', async () => {
-    alice.setRememberToken('correct_token')
+    const correctToken = 'ab'.repeat(30)
+    const wrongToken = 'cd'.repeat(30)
+    alice.setRememberToken(correctToken)
 
+    // #166: Cookie format is now userId|rememberToken (2-part)
     const request = await createFakeRequest({
       cookies: {
-        remember_web: `1|wrong_token|${alice.getAuthPassword()}`,
+        remember_web: `1|${wrongToken}`,
       },
     })
 
@@ -169,12 +183,13 @@ describe('SessionGuard', () => {
     expect(await guard2.user()).toBeNull()
   })
 
-  it('recall fails with changed password hash', async () => {
+  it('recall fails with non-hex token format', async () => {
     alice.setRememberToken('test_token')
 
+    // Non-hex token should be rejected by format validation (#215)
     const request = await createFakeRequest({
       cookies: {
-        remember_web: '1|test_token|old_password_hash',
+        remember_web: '1|test_token',
       },
     })
 

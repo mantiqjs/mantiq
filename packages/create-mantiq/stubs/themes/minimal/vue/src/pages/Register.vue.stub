@@ -1,0 +1,73 @@
+<script setup lang="ts">
+import { ref } from 'vue'
+import { post } from '@/lib/api'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+
+const props = withDefaults(defineProps<{
+  appName?: string
+  navigate?: (href: string) => void
+}>(), {
+  appName: 'Mantiq',
+})
+
+const name = ref('')
+const email = ref('')
+const password = ref('')
+const error = ref('')
+const loading = ref(false)
+
+async function handleSubmit() {
+  error.value = ''
+  loading.value = true
+  const { ok, data } = await post('/register', { name: name.value, email: email.value, password: password.value })
+  if (ok) props.navigate?.('/dashboard')
+  else error.value = data?.error ?? 'Registration failed.'
+  loading.value = false
+}
+</script>
+
+<template>
+  <div class="flex min-h-screen flex-col items-center justify-center bg-background px-4">
+    <div class="w-full max-w-[320px]">
+      <div class="mb-10">
+        <div class="flex items-center gap-2">
+          <div class="flex h-7 w-7 items-center justify-center rounded bg-foreground text-background text-xs font-bold">
+            M
+          </div>
+          <span class="text-sm font-semibold tracking-tight">{{ appName }}</span>
+        </div>
+      </div>
+
+      <h1 class="text-sm font-medium mb-6">Create your account</h1>
+
+      <div v-if="error" class="mb-4 text-sm text-destructive">
+        {{ error }}
+      </div>
+
+      <form class="space-y-3" @submit.prevent="handleSubmit">
+        <div class="space-y-1.5">
+          <Label for="name" class="text-xs text-muted-foreground">Name</Label>
+          <Input id="name" v-model="name" required placeholder="Your name" class="h-8 text-sm" />
+        </div>
+        <div class="space-y-1.5">
+          <Label for="email" class="text-xs text-muted-foreground">Email</Label>
+          <Input id="email" v-model="email" type="email" required placeholder="you@example.com" autocomplete="email" class="h-8 text-sm" />
+        </div>
+        <div class="space-y-1.5">
+          <Label for="password" class="text-xs text-muted-foreground">Password</Label>
+          <Input id="password" v-model="password" type="password" required placeholder="••••••••" class="h-8 text-sm" />
+        </div>
+        <Button type="submit" class="w-full h-8 text-sm" :disabled="loading">
+          {{ loading ? 'Creating\u2026' : 'Create account' }}
+        </Button>
+      </form>
+
+      <p class="mt-4 text-xs text-muted-foreground">
+        Already have an account?{{ ' ' }}
+        <button type="button" class="text-foreground hover:underline underline-offset-2" @click="navigate?.('/login')">Sign in</button>
+      </p>
+    </div>
+  </div>
+</template>

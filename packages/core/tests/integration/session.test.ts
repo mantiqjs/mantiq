@@ -141,7 +141,7 @@ describe('Session Integration', () => {
       const oldId = session.getId()
       await session.regenerate()
       expect(session.getId()).not.toBe(oldId)
-      expect(session.getId().length).toBe(40) // 20 hex bytes
+      expect(session.getId().length).toBe(64) // 32 hex bytes
     })
 
     it('regenerate(false) keeps old session data in handler', async () => {
@@ -182,7 +182,9 @@ describe('Session Integration', () => {
 
       await session.invalidate()
 
-      expect(session.all()).toEqual({})
+      // After invalidation, user data is gone but a fresh CSRF token is generated
+      expect(session.has('user_id')).toBe(false)
+      expect(session.has('_token')).toBe(true) // regenerate() now also regenerates CSRF token
       expect(session.getId()).not.toBe(oldId)
     })
   })
@@ -359,9 +361,9 @@ describe('Session Integration', () => {
   })
 
   describe('session ID format', () => {
-    it('generates 40-character hex IDs', () => {
+    it('generates 64-character hex IDs', () => {
       const id = SessionStore.generateId()
-      expect(id.length).toBe(40)
+      expect(id.length).toBe(64)
       expect(/^[a-f0-9]+$/.test(id)).toBe(true)
     })
 

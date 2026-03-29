@@ -31,11 +31,11 @@ export class AuthorizationController {
     const client = await Client.find(clientId)
     if (!client) throw new OAuthError('Client not found.', 'invalid_client')
 
-    // Validate redirect URI
+    // Security: validate redirect URI by parsing and comparing origin + pathname.
+    // Simple string comparison can be bypassed with trailing slashes, query
+    // params, or path traversal. We also require a registered redirect URI.
     const allowedRedirect = client.getAttribute('redirect') as string
-    if (allowedRedirect && redirectUri !== allowedRedirect) {
-      throw new OAuthError('Invalid redirect URI.', 'invalid_request')
-    }
+    validateRedirectUri(redirectUri, allowedRedirect)
 
     const scopes = scopeParam ? scopeParam.split(' ').filter(Boolean) : []
     const scopeDetails = scopes.map((s) => ({
@@ -78,11 +78,9 @@ export class AuthorizationController {
     const client = await Client.find(clientId)
     if (!client) throw new OAuthError('Client not found.', 'invalid_client')
 
-    // Validate redirect URI matches client's registered URI (same check as GET)
+    // Security: strict redirect URI validation (origin + pathname comparison)
     const allowedRedirect = client.getAttribute('redirect') as string
-    if (allowedRedirect && redirectUri !== allowedRedirect) {
-      throw new OAuthError('Invalid redirect URI.', 'invalid_request')
-    }
+    validateRedirectUri(redirectUri, allowedRedirect)
 
     const userId = typeof user.getAuthIdentifier === 'function'
       ? user.getAuthIdentifier()
@@ -127,14 +125,12 @@ export class AuthorizationController {
     if (!clientId) throw new OAuthError('The client_id parameter is required.', 'invalid_request')
     if (!redirectUri) throw new OAuthError('The redirect_uri parameter is required.', 'invalid_request')
 
-    // Validate redirect URI against client's registered URI (same check as approve)
+    // Validate redirect URI against client's registered URI
     const client = await Client.find(clientId)
     if (!client) throw new OAuthError('Client not found.', 'invalid_client')
 
     const allowedRedirect = client.getAttribute('redirect') as string
-    if (allowedRedirect && redirectUri !== allowedRedirect) {
-      throw new OAuthError('Invalid redirect URI.', 'invalid_request')
-    }
+    validateRedirectUri(redirectUri, allowedRedirect)
 
     const url = new URL(redirectUri)
     url.searchParams.set('error', 'access_denied')
@@ -145,5 +141,57 @@ export class AuthorizationController {
       status: 302,
       headers: { 'Location': url.toString() },
     })
+  }
+}
+
+/**
+ * Strictly validate a redirect URI against the client's registered redirect.
+ *
+ * Security: parses both URIs and compares origin (scheme + host + port) and
+ * pathname. This prevents bypasses via trailing slashes, query params,
+ * fragments, or path traversal that simple string matching would miss.
+ *
+ * A registered redirect URI is required — clients without one are rejected.
+ */
+function validateRedirectUri(requested: string, allowed: string): void {
+  if (!allowed) {
+    throw new OAuthError(
+      'Client has no registered redirect URI.',
+      'invalid_request',
+    )
+  }
+
+  let requestedUrl: URL
+  let allowedUrl: URL
+
+  try {
+    requestedUrl = new URL(requested)
+  } catch {
+    throw new OAuthError('Invalid redirect URI format.', 'invalid_request')
+  }
+
+  try {
+    allowedUrl = new URL(allowed)
+  } catch {
+    throw new OAuthError('Client has an invalid registered redirect URI.', 'server_error')
+  }
+
+  // Compare origin (scheme + host + port) and pathname strictly.
+  // Query params and fragments in the requested URI are rejected to
+  // prevent open-redirect attacks via appended parameters.
+  if (
+    requestedUrl.origin !== allowedUrl.origin ||
+    requestedUrl.pathname !== allowedUrl.pathname
+  ) {
+    throw new OAuthError('Invalid redirect URI.', 'invalid_request')
+  }
+
+  // Reject if the requested URI has extra query params or fragments
+  // that differ from the registered one.
+  if (requestedUrl.search !== allowedUrl.search) {
+    throw new OAuthError(
+      'Redirect URI query parameters do not match the registered URI.',
+      'invalid_request',
+    )
   }
 }

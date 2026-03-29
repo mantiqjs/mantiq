@@ -220,11 +220,67 @@ export class PendingChat {
     return dispatch(0)(request)
   }
 
-  /** Stream the chat response as an async iterable of chunks. */
+  /**
+   * Stream the chat response as an async iterable of chunks.
+   *
+   * Fix #183: Route through the middleware pipeline (same as send()) so that
+   * middlewares can inspect/modify the request before it reaches the driver.
+   * Middleware next() still returns a Promise<ChatResponse> — the final handler
+   * is a stub that kicks off the actual stream. Chunks are yielded after
+   * middleware processing completes.
+   */
   stream(): AsyncIterable<ChatChunk> {
     const driver = this.manager.driver(this._provider)
     const options: ChatOptions = { ...this._options }
     if (this._model) options.model = this._model
-    return driver.stream(this._messages, options)
+
+    const middlewares = this.manager.getMiddlewares()
+    if (middlewares.length === 0) {
+      return driver.stream(this._messages, options)
+    }
+
+    // We need to run middlewares before streaming starts.
+    // Build the same dispatch chain as send(), but the terminal handler
+    // stores the (possibly modified) request and returns a dummy response.
+    const self = this
+    async function* middlewareStream(): AsyncIterable<ChatChunk> {
+      let finalRequest: { messages: ChatMessage[]; options: ChatOptions } | null = null
+
+      const request: AIRequest = {
+        messages: self._messages,
+        options,
+        provider: self._provider ?? self.manager.getDefaultDriver(),
+        metadata: {},
+      }
+
+      const dispatch = (index: number): AINextFunction => {
+        return (req: AIRequest) => {
+          if (index >= middlewares.length) {
+            // Terminal handler: capture the final request for streaming
+            finalRequest = { messages: req.messages, options: req.options }
+            // Return a minimal ChatResponse so middlewares can complete
+            return Promise.resolve({
+              id: '',
+              content: '',
+              role: 'assistant',
+              model: '',
+              finishReason: 'stop' as const,
+              toolCalls: [],
+              usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+              raw: {},
+            } satisfies ChatResponse)
+          }
+          return middlewares[index]!.handle(req, dispatch(index + 1))
+        }
+      }
+
+      await dispatch(0)(request)
+
+      // Stream using the (possibly middleware-modified) request
+      const streamReq = finalRequest!
+      yield* driver.stream(streamReq.messages, streamReq.options)
+    }
+
+    return middlewareStream()
   }
 }

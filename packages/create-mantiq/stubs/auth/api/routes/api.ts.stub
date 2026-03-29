@@ -1,0 +1,24 @@
+import type { Router } from '@mantiq/core'
+import { json } from '@mantiq/core'
+import { ApiAuthController } from '../app/Http/Controllers/ApiAuthController.ts'
+import { UserController } from '../app/Http/Controllers/UserController.ts'
+import { RegisterRequest } from '../app/Http/Requests/RegisterRequest.ts'
+import { LoginRequest } from '../app/Http/Requests/LoginRequest.ts'
+import { StoreUserRequest } from '../app/Http/Requests/StoreUserRequest.ts'
+import { UpdateUserRequest } from '../app/Http/Requests/UpdateUserRequest.ts'
+
+export default function (router: Router) {
+  router.get('/ping', () => json({ status: 'ok', timestamp: new Date().toISOString() }))
+
+  // Token auth — FormRequest auto-validates, controller receives validated data
+  router.post('/register', [ApiAuthController, 'register', RegisterRequest])
+  router.post('/login', [ApiAuthController, 'login', LoginRequest])
+  router.post('/logout', [ApiAuthController, 'logout']).middleware('auth:api')
+  router.get('/user', [ApiAuthController, 'user']).middleware('auth:api')
+
+  // Users CRUD (protected)
+  router.get('/users', [UserController, 'index']).middleware('auth:api')
+  router.post('/users', [UserController, 'store', StoreUserRequest]).middleware('auth:api')
+  router.put('/users/:id', [UserController, 'update', UpdateUserRequest]).middleware('auth:api')
+  router.delete('/users/:id', [UserController, 'destroy']).middleware('auth:api')
+}

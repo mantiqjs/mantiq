@@ -1,0 +1,131 @@
+<script lang="ts">
+  import { ChevronRight, ExternalLink } from 'lucide-svelte'
+  import type { NavGroup as NavGroupData } from './sidebar-data'
+
+  let {
+    group,
+    activePath,
+    navigate,
+    collapsed = false,
+  }: {
+    group: NavGroupData
+    activePath: string
+    navigate: (href: string) => void
+    collapsed?: boolean
+  } = $props()
+
+  function isActive(itemUrl: string, active: string): boolean {
+    if (itemUrl === active) return true
+    const itemBase = itemUrl.split('?')[0]
+    const activeBase = active.split('?')[0]
+    return itemBase === activeBase
+  }
+
+  function isGroupActive(items: NavGroupData['items'][number]['items'], active: string): boolean {
+    if (!items) return false
+    return items.some((sub) => isActive(sub.url, active))
+  }
+
+  // Track which collapsible groups are open
+  let openGroups = $state<Set<string>>(new Set())
+
+  // Auto-open groups that have active children
+  $effect(() => {
+    for (const item of group.items) {
+      if (item.items && isGroupActive(item.items, activePath)) {
+        openGroups.add(item.title)
+        openGroups = new Set(openGroups)
+      }
+    }
+  })
+
+  function toggleGroup(title: string) {
+    if (openGroups.has(title)) {
+      openGroups.delete(title)
+    } else {
+      openGroups.add(title)
+    }
+    openGroups = new Set(openGroups)
+  }
+</script>
+
+<div>
+  {#if !collapsed}
+    <p class="mb-2 px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+      {group.title}
+    </p>
+  {/if}
+  <ul class="space-y-1">
+    {#each group.items as item}
+      {#if item.items && item.items.length > 0}
+        <!-- Group with sub-items -->
+        <li>
+          <button
+            type="button"
+            onclick={() => toggleGroup(item.title)}
+            class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-sidebar-accent {isGroupActive(item.items, activePath) ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-sidebar-foreground'}"
+            title={collapsed ? item.title : undefined}
+          >
+            <item.icon class="h-4 w-4 shrink-0" />
+            {#if !collapsed}
+              <span class="flex-1 text-left">{item.title}</span>
+              <ChevronRight class="h-4 w-4 transition-transform duration-200 {openGroups.has(item.title) ? 'rotate-90' : ''}" />
+            {/if}
+          </button>
+          {#if !collapsed && openGroups.has(item.title)}
+            <ul class="ml-6 mt-1 space-y-1 border-l border-sidebar-border pl-3">
+              {#each item.items as sub}
+                <li>
+                  <button
+                    type="button"
+                    onclick={() => navigate(sub.url)}
+                    class="block w-full rounded-md px-3 py-1.5 text-left text-sm transition-colors hover:bg-sidebar-accent {isActive(sub.url, activePath) ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium' : 'text-muted-foreground'}"
+                  >
+                    {sub.title}
+                  </button>
+                </li>
+              {/each}
+            </ul>
+          {/if}
+        </li>
+      {:else if item.external}
+        <!-- External link -->
+        <li>
+          <a
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
+            title={collapsed ? item.title : undefined}
+          >
+            <item.icon class="h-4 w-4 shrink-0" />
+            {#if !collapsed}
+              <span class="flex-1">{item.title}</span>
+              <ExternalLink class="h-3 w-3 text-muted-foreground" />
+            {/if}
+          </a>
+        </li>
+      {:else}
+        <!-- Regular nav item -->
+        <li>
+          <button
+            type="button"
+            onclick={() => navigate(item.url)}
+            class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-sidebar-accent {isActive(item.url, activePath) ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium' : 'text-sidebar-foreground'}"
+            title={collapsed ? item.title : undefined}
+          >
+            <item.icon class="h-4 w-4 shrink-0" />
+            {#if !collapsed}
+              <span class="flex-1 text-left">{item.title}</span>
+              {#if item.badge}
+                <span class="ml-auto inline-flex items-center rounded bg-secondary px-1.5 py-0 text-[10px] font-medium text-secondary-foreground">
+                  {item.badge}
+                </span>
+              {/if}
+            {/if}
+          </button>
+        </li>
+      {/if}
+    {/each}
+  </ul>
+</div>

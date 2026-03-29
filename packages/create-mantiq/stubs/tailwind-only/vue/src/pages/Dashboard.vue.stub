@@ -1,0 +1,195 @@
+<script setup lang="ts">
+import { AuthenticatedLayout } from '@/components/layout'
+import { Header } from '@/components/layout'
+import { Main } from '@/components/layout'
+import { TopNav } from '@/components/layout'
+import type { TopNavLink } from '@/components/layout/TopNav.vue'
+import { Download } from 'lucide-vue-next'
+
+const props = withDefaults(defineProps<{
+  appName?: string
+  currentUser?: { id: number; name: string; email: string; role: string } | null
+  navigate: (href: string) => void
+}>(), {
+  appName: 'Mantiq',
+})
+
+const topNav: TopNavLink[] = [
+  { title: 'Overview', href: '/dashboard', isActive: true },
+  { title: 'Sales', href: '/dashboard', isActive: false, disabled: true },
+  { title: 'Tickets', href: '/dashboard', isActive: false, disabled: true },
+  { title: 'Performance', href: '/dashboard', isActive: false, disabled: true },
+]
+
+const recentSales = [
+  { name: 'Olivia Martin', email: 'olivia.martin@email.com', amount: '+$1,999.00' },
+  { name: 'Jackson Lee', email: 'jackson.lee@email.com', amount: '+$39.00' },
+  { name: 'Isabella Nguyen', email: 'isabella.nguyen@email.com', amount: '+$299.00' },
+  { name: 'William Kim', email: 'will@email.com', amount: '+$99.00' },
+  { name: 'Sofia Davis', email: 'sofia.davis@email.com', amount: '+$39.00' },
+]
+
+function getInitials(name: string) {
+  return name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+}
+
+const bars = [40, 30, 55, 45, 70, 60, 80, 50, 65, 45, 75, 55]
+const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+const maxH = 160
+const barW = 32
+const gap = 48
+const svgW = bars.length * gap
+const svgH = maxH + 30
+</script>
+
+<template>
+  <AuthenticatedLayout
+    :current-user="currentUser"
+    :app-name="appName"
+    :navigate="navigate"
+    active-path="/dashboard"
+  >
+    <Header :navigate="navigate">
+      <TopNav :links="topNav" @link-click="navigate" />
+    </Header>
+    <Main>
+      <div class="space-y-4">
+        <!-- Page title row -->
+        <div class="flex items-center justify-between">
+          <h2 class="text-3xl font-bold tracking-tight">Dashboard</h2>
+          <button
+            disabled
+            class="inline-flex items-center gap-2 rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium text-muted-foreground shadow-sm"
+          >
+            <Download class="h-4 w-4" />
+            Download
+          </button>
+        </div>
+
+        <!-- Content -->
+        <div class="space-y-4">
+          <!-- Stat cards -->
+          <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <!-- Total Revenue -->
+            <div class="rounded-xl border bg-card p-6 text-card-foreground shadow-sm">
+              <div class="flex items-center justify-between space-y-0 pb-2">
+                <h3 class="text-sm font-medium">Total Revenue</h3>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="h-4 w-4 text-muted-foreground">
+                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+              </div>
+              <div class="text-2xl font-bold">$45,231.89</div>
+              <p class="text-xs text-muted-foreground">+20.1% from last month</p>
+            </div>
+
+            <!-- Subscriptions -->
+            <div class="rounded-xl border bg-card p-6 text-card-foreground shadow-sm">
+              <div class="flex items-center justify-between space-y-0 pb-2">
+                <h3 class="text-sm font-medium">Subscriptions</h3>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="h-4 w-4 text-muted-foreground">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+              </div>
+              <div class="text-2xl font-bold">+2,350</div>
+              <p class="text-xs text-muted-foreground">+180.1% from last month</p>
+            </div>
+
+            <!-- Sales -->
+            <div class="rounded-xl border bg-card p-6 text-card-foreground shadow-sm">
+              <div class="flex items-center justify-between space-y-0 pb-2">
+                <h3 class="text-sm font-medium">Sales</h3>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="h-4 w-4 text-muted-foreground">
+                  <rect width="20" height="14" x="2" y="5" rx="2" />
+                  <path d="M2 10h20" />
+                </svg>
+              </div>
+              <div class="text-2xl font-bold">+12,234</div>
+              <p class="text-xs text-muted-foreground">+19% from last month</p>
+            </div>
+
+            <!-- Active Now -->
+            <div class="rounded-xl border bg-card p-6 text-card-foreground shadow-sm">
+              <div class="flex items-center justify-between space-y-0 pb-2">
+                <h3 class="text-sm font-medium">Active Now</h3>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="h-4 w-4 text-muted-foreground">
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                </svg>
+              </div>
+              <div class="text-2xl font-bold">+573</div>
+              <p class="text-xs text-muted-foreground">+201 since last hour</p>
+            </div>
+          </div>
+
+          <!-- Bottom row: chart + recent sales -->
+          <div class="grid gap-4 lg:grid-cols-7">
+            <!-- Chart card -->
+            <div class="rounded-xl border bg-card text-card-foreground shadow-sm lg:col-span-4">
+              <div class="p-6 pb-2">
+                <h3 class="text-lg font-semibold leading-none tracking-tight">Overview</h3>
+              </div>
+              <div class="p-6 pt-0 pl-2">
+                <svg
+                  :viewBox="`0 0 ${svgW} ${svgH}`"
+                  class="h-[350px] w-full"
+                  preserveAspectRatio="none"
+                >
+                  <g v-for="(h, i) in bars" :key="i">
+                    <rect
+                      :x="i * gap + (gap - barW) / 2"
+                      :y="maxH - (h / 100) * maxH"
+                      :width="barW"
+                      :height="(h / 100) * maxH"
+                      rx="4"
+                      class="fill-foreground/15"
+                    />
+                    <text
+                      :x="i * gap + gap / 2"
+                      :y="maxH + 18"
+                      text-anchor="middle"
+                      class="fill-muted-foreground text-[10px]"
+                    >
+                      {{ months[i] }}
+                    </text>
+                  </g>
+                </svg>
+              </div>
+            </div>
+
+            <!-- Recent sales card -->
+            <div class="rounded-xl border bg-card text-card-foreground shadow-sm lg:col-span-3">
+              <div class="p-6 pb-2">
+                <h3 class="text-lg font-semibold leading-none tracking-tight">Recent Sales</h3>
+                <p class="mt-1.5 text-sm text-muted-foreground">You made 265 sales this month.</p>
+              </div>
+              <div class="p-6 pt-0">
+                <div class="space-y-8">
+                  <div
+                    v-for="sale in recentSales"
+                    :key="sale.email"
+                    class="flex items-center"
+                  >
+                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
+                      {{ getInitials(sale.name) }}
+                    </span>
+                    <div class="ml-4 space-y-1">
+                      <p class="text-sm font-medium leading-none">{{ sale.name }}</p>
+                      <p class="text-sm text-muted-foreground">{{ sale.email }}</p>
+                    </div>
+                    <div class="ml-auto font-medium">{{ sale.amount }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Main>
+  </AuthenticatedLayout>
+</template>

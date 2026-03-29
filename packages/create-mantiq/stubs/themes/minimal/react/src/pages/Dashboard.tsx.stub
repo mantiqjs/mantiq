@@ -1,0 +1,166 @@
+import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
+import { Header } from '@/components/layout/header'
+import { Main } from '@/components/layout/main'
+import {
+  Circle,
+  CheckCircle2,
+  ArrowUpRight,
+  Clock,
+  AlertCircle,
+  Minus,
+} from 'lucide-react'
+
+interface DashboardProps {
+  appName?: string
+  currentUser?: { id: number; name: string; email: string; role: string } | null
+  navigate: (href: string) => void
+  [key: string]: any
+}
+
+type Priority = 'urgent' | 'high' | 'medium' | 'low' | 'none'
+type Status = 'done' | 'in-progress' | 'todo' | 'backlog'
+
+const issues: {
+  id: string
+  title: string
+  status: Status
+  priority: Priority
+  assignee: string
+  updated: string
+}[] = [
+  { id: 'MNT-142', title: 'Fix authentication token refresh race condition', status: 'in-progress', priority: 'urgent', assignee: 'AK', updated: '2m' },
+  { id: 'MNT-141', title: 'Add rate limiting to public API endpoints', status: 'todo', priority: 'high', assignee: 'SC', updated: '15m' },
+  { id: 'MNT-140', title: 'Migrate user sessions to Redis store', status: 'in-progress', priority: 'high', assignee: 'AK', updated: '1h' },
+  { id: 'MNT-139', title: 'Update Stripe webhook handler for v2024-12', status: 'todo', priority: 'medium', assignee: 'JL', updated: '2h' },
+  { id: 'MNT-138', title: 'Implement CSV export for analytics dashboard', status: 'done', priority: 'medium', assignee: 'NR', updated: '3h' },
+  { id: 'MNT-137', title: 'Add OpenTelemetry tracing to queue workers', status: 'backlog', priority: 'low', assignee: 'SC', updated: '5h' },
+  { id: 'MNT-136', title: 'Refactor notification preferences into per-channel config', status: 'done', priority: 'medium', assignee: 'AK', updated: '6h' },
+  { id: 'MNT-135', title: 'Set up staging environment with seed data', status: 'backlog', priority: 'low', assignee: 'JL', updated: '1d' },
+  { id: 'MNT-134', title: 'Write integration tests for payment flow', status: 'todo', priority: 'high', assignee: 'NR', updated: '1d' },
+  { id: 'MNT-133', title: 'Audit and update npm dependencies', status: 'backlog', priority: 'none', assignee: 'SC', updated: '2d' },
+]
+
+const StatusIcon = ({ status }: { status: Status }) => {
+  switch (status) {
+    case 'done':
+      return <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+    case 'in-progress':
+      return <Clock className="h-3.5 w-3.5 text-amber-500" />
+    case 'todo':
+      return <Circle className="h-3.5 w-3.5 text-muted-foreground" />
+    case 'backlog':
+      return <Minus className="h-3.5 w-3.5 text-muted-foreground/50" />
+  }
+}
+
+const PriorityIndicator = ({ priority }: { priority: Priority }) => {
+  const colors: Record<Priority, string> = {
+    urgent: 'bg-red-500',
+    high: 'bg-orange-500',
+    medium: 'bg-yellow-500',
+    low: 'bg-blue-400',
+    none: 'bg-muted-foreground/30',
+  }
+  return (
+    <div className="flex items-center gap-0.5" title={priority}>
+      {[0, 1, 2, 3].map((i) => (
+        <div
+          key={i}
+          className={`h-2.5 w-[3px] rounded-[1px] ${
+            (priority === 'urgent' && i <= 3) ||
+            (priority === 'high' && i <= 2) ||
+            (priority === 'medium' && i <= 1) ||
+            (priority === 'low' && i <= 0)
+              ? colors[priority]
+              : 'bg-muted-foreground/15'
+          }`}
+        />
+      ))}
+    </div>
+  )
+}
+
+export default function Dashboard({
+  appName = 'Mantiq',
+  currentUser,
+  navigate,
+}: DashboardProps) {
+  const doneCount = issues.filter((i) => i.status === 'done').length
+  const inProgressCount = issues.filter((i) => i.status === 'in-progress').length
+  const todoCount = issues.filter((i) => i.status === 'todo').length
+
+  return (
+    <AuthenticatedLayout
+      currentUser={currentUser}
+      appName={appName}
+      navigate={navigate}
+      activePath="/dashboard"
+    >
+      <Header navigate={navigate} />
+      <Main>
+        <div className="space-y-1">
+          {/* Compact header row */}
+          <div className="flex items-center justify-between py-3">
+            <div className="flex items-center gap-6">
+              <h2 className="text-sm font-semibold">My Issues</h2>
+              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1.5">
+                  <Clock className="h-3 w-3 text-amber-500" />
+                  {inProgressCount} in progress
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Circle className="h-3 w-3" />
+                  {todoCount} todo
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 className="h-3 w-3 text-primary" />
+                  {doneCount} done
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                <span className="text-xs">⌘</span>K
+              </kbd>
+            </div>
+          </div>
+
+          {/* Issue list — no cards, just rows */}
+          <div className="border-t">
+            {issues.map((issue) => (
+              <div
+                key={issue.id}
+                className="group flex items-center gap-3 border-b px-1 py-2 transition-colors hover:bg-muted/50 cursor-default"
+              >
+                <PriorityIndicator priority={issue.priority} />
+                <StatusIcon status={issue.status} />
+                <span className="font-mono-num text-xs text-muted-foreground w-16 shrink-0">
+                  {issue.id}
+                </span>
+                <span className={`flex-1 text-sm truncate ${issue.status === 'done' ? 'line-through text-muted-foreground' : ''}`}>
+                  {issue.title}
+                </span>
+                <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-medium text-muted-foreground">
+                  {issue.assignee}
+                </div>
+                <span className="font-mono-num text-xs text-muted-foreground w-8 text-right shrink-0">
+                  {issue.updated}
+                </span>
+                <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground/0 group-hover:text-muted-foreground transition-colors shrink-0" />
+              </div>
+            ))}
+          </div>
+
+          {/* Bottom counts */}
+          <div className="flex items-center justify-between pt-2 text-xs text-muted-foreground">
+            <span>{issues.length} issues</span>
+            <span className="flex items-center gap-1">
+              <AlertCircle className="h-3 w-3" />
+              {issues.filter((i) => i.priority === 'urgent').length} urgent
+            </span>
+          </div>
+        </div>
+      </Main>
+    </AuthenticatedLayout>
+  )
+}

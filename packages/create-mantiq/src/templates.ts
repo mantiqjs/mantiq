@@ -1,8 +1,13 @@
+export type Theme = 'default' | 'minimal' | 'workspace' | 'corporate' | 'starter'
+
 export interface TemplateContext {
   name: string
   appKey: string
   kit?: 'react' | 'vue' | 'svelte' | undefined
-  ui?: 'shadcn' | 'none'
+  ui: 'shadcn' | 'tailwind'
+  theme: Theme
+  auth: 'builtin' | 'none'
+  optionalPackages: string[]
 }
 
 /**
@@ -21,7 +26,7 @@ export function getTemplates(ctx: TemplateContext): Record<string, string> {
 
   // ── package.json (always dynamic — name + deps) ────────────────────────
   const baseDeps: Record<string, string> = {
-    '@mantiq/auth': '^0.5.0',
+    ...(ctx.auth !== 'none' ? { '@mantiq/auth': '^0.5.0' } : {}),
     '@mantiq/cli': '^0.5.0',
     '@mantiq/core': '^0.5.0',
     '@mantiq/database': '^0.5.0',
@@ -37,6 +42,7 @@ export function getTemplates(ctx: TemplateContext): Record<string, string> {
     '@mantiq/notify': '^0.5.0',
     '@mantiq/search': '^0.5.0',
     '@mantiq/health': '^0.5.0',
+    ...(ctx.optionalPackages.includes('ai') ? { '@mantiq/ai': '^0.5.0' } : {}),
   }
 
   const baseDevDeps: Record<string, string> = {
@@ -60,11 +66,23 @@ export function getTemplates(ctx: TemplateContext): Record<string, string> {
       ? { 'vue': '^3.5.0', '@vitejs/plugin-vue': '^6.0.0' }
       : { 'svelte': '^5.0.0', '@sveltejs/vite-plugin-svelte': '^7.0.0' }
 
+    const shadcnOnly = ctx.ui === 'shadcn'
+
     const uiDeps: Record<string, string> = ctx.kit === 'react'
-      ? { 'clsx': '^2.1.0', 'tailwind-merge': '^2.6.0', 'class-variance-authority': '^0.7.1', 'lucide-react': '^0.577.0', 'radix-ui': '^1.4.0' }
+      ? {
+          'clsx': '^2.1.0', 'tailwind-merge': '^2.6.0',
+          ...(shadcnOnly ? { 'class-variance-authority': '^0.7.1', 'lucide-react': '^0.577.0', 'radix-ui': '^1.4.0' } : {}),
+        }
       : ctx.kit === 'vue'
-      ? { 'clsx': '^2.1.0', 'tailwind-merge': '^3.5.0', 'class-variance-authority': '^0.7.1', 'lucide-vue-next': '^0.577.0', 'reka-ui': '^2.9.0', 'tw-animate-css': '^1.4.0', '@tanstack/vue-table': '^8.0.0' }
-      : { 'clsx': '^2.1.0', 'tailwind-merge': '^2.6.0', 'tailwind-variants': '^3.2.0', 'lucide-svelte': '^0.577.0', '@lucide/svelte': '^0.577.0', 'bits-ui': '^2.16.0' }
+      ? {
+          'clsx': '^2.1.0', 'tailwind-merge': '^3.5.0',
+          ...(shadcnOnly ? { 'class-variance-authority': '^0.7.1', 'lucide-vue-next': '^0.577.0', 'reka-ui': '^2.9.0' } : {}),
+          'tw-animate-css': '^1.4.0', '@tanstack/vue-table': '^8.0.0',
+        }
+      : {
+          'clsx': '^2.1.0', 'tailwind-merge': '^2.6.0',
+          ...(shadcnOnly ? { 'tailwind-variants': '^3.2.0', 'lucide-svelte': '^0.577.0', '@lucide/svelte': '^0.577.0', 'bits-ui': '^2.16.0' } : {}),
+        }
 
     Object.assign(baseDeps, {
       '@mantiq/vite': '^0.5.0',

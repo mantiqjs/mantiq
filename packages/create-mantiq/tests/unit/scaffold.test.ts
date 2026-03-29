@@ -10,7 +10,9 @@ function makeCtx(overrides: Partial<TemplateContext> = {}): TemplateContext {
     name: 'test-app',
     appKey: 'base64:dGVzdGtleXRlc3RrZXl0ZXN0a2V5dGVzdGtleT0=',
     kit: undefined,
-    ui: 'none',
+    ui: 'shadcn',
+    auth: 'builtin',
+    optionalPackages: [],
     ...overrides,
   }
 }
@@ -244,5 +246,162 @@ describe('Skeleton directory', () => {
     expect(content).toContain("import { Kernel } from '@mantiq/cli'")
     expect(content).toContain('kernel.run()')
     expect(content).not.toContain('MigrateCommand')
+  })
+})
+
+// ── getTemplates() — auth=none ────────────────────────────────────────────────
+
+describe('getTemplates() — auth=none', () => {
+  const templates = getTemplates(makeCtx({ auth: 'none' }))
+
+  it('does not include @mantiq/auth in deps', () => {
+    const pkg = JSON.parse(templates['package.json']!)
+    expect(pkg.dependencies['@mantiq/auth']).toBeUndefined()
+  })
+
+  it('still includes core deps', () => {
+    const pkg = JSON.parse(templates['package.json']!)
+    expect(pkg.dependencies['@mantiq/core']).toBeDefined()
+    expect(pkg.dependencies['@mantiq/database']).toBeDefined()
+    expect(pkg.dependencies['@mantiq/cli']).toBeDefined()
+  })
+})
+
+// ── getTemplates() — ui=tailwind + React ────────────────────────────────────
+
+describe('getTemplates() — ui=tailwind + React', () => {
+  const templates = getTemplates(makeCtx({ kit: 'react', ui: 'tailwind' }))
+
+  it('does not include radix-ui in deps', () => {
+    const pkg = JSON.parse(templates['package.json']!)
+    expect(pkg.dependencies['radix-ui']).toBeUndefined()
+  })
+
+  it('does not include lucide-react in deps', () => {
+    const pkg = JSON.parse(templates['package.json']!)
+    expect(pkg.dependencies['lucide-react']).toBeUndefined()
+  })
+
+  it('does not include class-variance-authority in deps', () => {
+    const pkg = JSON.parse(templates['package.json']!)
+    expect(pkg.dependencies['class-variance-authority']).toBeUndefined()
+  })
+
+  it('keeps clsx and tailwind-merge', () => {
+    const pkg = JSON.parse(templates['package.json']!)
+    expect(pkg.dependencies['clsx']).toBeDefined()
+    expect(pkg.dependencies['tailwind-merge']).toBeDefined()
+  })
+
+  it('still includes vite and tailwindcss dev deps', () => {
+    const pkg = JSON.parse(templates['package.json']!)
+    expect(pkg.devDependencies['vite']).toBeDefined()
+    expect(pkg.devDependencies['tailwindcss']).toBeDefined()
+  })
+})
+
+// ── getTemplates() — ui=tailwind + Vue ──────────────────────────────────────
+
+describe('getTemplates() — ui=tailwind + Vue', () => {
+  const templates = getTemplates(makeCtx({ kit: 'vue', ui: 'tailwind' }))
+
+  it('does not include reka-ui in deps', () => {
+    const pkg = JSON.parse(templates['package.json']!)
+    expect(pkg.dependencies['reka-ui']).toBeUndefined()
+  })
+
+  it('does not include lucide-vue-next in deps', () => {
+    const pkg = JSON.parse(templates['package.json']!)
+    expect(pkg.dependencies['lucide-vue-next']).toBeUndefined()
+  })
+
+  it('does not include class-variance-authority in deps', () => {
+    const pkg = JSON.parse(templates['package.json']!)
+    expect(pkg.dependencies['class-variance-authority']).toBeUndefined()
+  })
+
+  it('keeps clsx and tailwind-merge', () => {
+    const pkg = JSON.parse(templates['package.json']!)
+    expect(pkg.dependencies['clsx']).toBeDefined()
+    expect(pkg.dependencies['tailwind-merge']).toBeDefined()
+  })
+})
+
+// ── getTemplates() — ui=tailwind + Svelte ───────────────────────────────────
+
+describe('getTemplates() — ui=tailwind + Svelte', () => {
+  const templates = getTemplates(makeCtx({ kit: 'svelte', ui: 'tailwind' }))
+
+  it('does not include bits-ui in deps', () => {
+    const pkg = JSON.parse(templates['package.json']!)
+    expect(pkg.dependencies['bits-ui']).toBeUndefined()
+  })
+
+  it('does not include lucide-svelte in deps', () => {
+    const pkg = JSON.parse(templates['package.json']!)
+    expect(pkg.dependencies['lucide-svelte']).toBeUndefined()
+    expect(pkg.dependencies['@lucide/svelte']).toBeUndefined()
+  })
+
+  it('does not include tailwind-variants in deps', () => {
+    const pkg = JSON.parse(templates['package.json']!)
+    expect(pkg.dependencies['tailwind-variants']).toBeUndefined()
+  })
+
+  it('keeps clsx and tailwind-merge', () => {
+    const pkg = JSON.parse(templates['package.json']!)
+    expect(pkg.dependencies['clsx']).toBeDefined()
+    expect(pkg.dependencies['tailwind-merge']).toBeDefined()
+  })
+})
+
+// ── getTemplates() — optionalPackages=['ai'] ────────────────────────────────
+
+describe('getTemplates() — optionalPackages=[ai]', () => {
+  const templates = getTemplates(makeCtx({ optionalPackages: ['ai'] }))
+
+  it('includes @mantiq/ai in deps', () => {
+    const pkg = JSON.parse(templates['package.json']!)
+    expect(pkg.dependencies['@mantiq/ai']).toBe('^0.5.0')
+  })
+
+  it('still includes all other core deps', () => {
+    const pkg = JSON.parse(templates['package.json']!)
+    expect(pkg.dependencies['@mantiq/core']).toBeDefined()
+    expect(pkg.dependencies['@mantiq/auth']).toBeDefined()
+  })
+})
+
+// ── getTemplates() — optionalPackages=[] (default) ──────────────────────────
+
+describe('getTemplates() — optionalPackages=[] (no ai)', () => {
+  const templates = getTemplates(makeCtx({ optionalPackages: [] }))
+
+  it('does not include @mantiq/ai in deps', () => {
+    const pkg = JSON.parse(templates['package.json']!)
+    expect(pkg.dependencies['@mantiq/ai']).toBeUndefined()
+  })
+})
+
+// ── Backward compat: default context matches original ───────────────────────
+
+describe('Backward compat — default context produces original output', () => {
+  const templates = getTemplates(makeCtx({ kit: 'react', ui: 'shadcn', auth: 'builtin', optionalPackages: [] }))
+
+  it('includes @mantiq/auth', () => {
+    const pkg = JSON.parse(templates['package.json']!)
+    expect(pkg.dependencies['@mantiq/auth']).toBe('^0.5.0')
+  })
+
+  it('includes radix-ui and lucide-react (shadcn deps)', () => {
+    const pkg = JSON.parse(templates['package.json']!)
+    expect(pkg.dependencies['radix-ui']).toBeDefined()
+    expect(pkg.dependencies['lucide-react']).toBeDefined()
+    expect(pkg.dependencies['class-variance-authority']).toBeDefined()
+  })
+
+  it('does not include @mantiq/ai', () => {
+    const pkg = JSON.parse(templates['package.json']!)
+    expect(pkg.dependencies['@mantiq/ai']).toBeUndefined()
   })
 })

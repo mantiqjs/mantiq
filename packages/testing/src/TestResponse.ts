@@ -30,7 +30,18 @@ export class TestResponse {
 
   /** Get the response body as parsed JSON. */
   async json<T = any>(): Promise<T> {
-    if (this._json === undefined) this._json = JSON.parse(await this.text())
+    if (this._json === undefined) {
+      const body = await this.text()
+      // Fix #214: Provide a helpful error message when JSON parsing fails
+      try {
+        this._json = JSON.parse(body)
+      } catch {
+        const preview = body.length > 200 ? body.slice(0, 200) + '...' : body
+        throw new Error(
+          `Failed to parse JSON from response (HTTP ${this.status}). Body preview: ${preview}`,
+        )
+      }
+    }
     return this._json
   }
 

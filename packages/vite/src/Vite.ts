@@ -421,6 +421,10 @@ export class Vite {
       }
     }
 
+    // Security note: `head` and `ssrHead` are trusted developer-controlled values.
+    // They contain raw HTML tags (meta, link, style) that must NOT be escaped.
+    // Developers are responsible for ensuring no user input is interpolated
+    // into head/ssrHead without proper escaping.
     const headContent = [head, ssrHead].filter(Boolean).join('\n    ')
 
     return `<!DOCTYPE html>

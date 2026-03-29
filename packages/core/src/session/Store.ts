@@ -162,6 +162,9 @@ export class SessionStore {
       await this.handler.destroy(this.id)
     }
     this.id = SessionStore.generateId()
+    // Security: regenerate the CSRF token alongside the session ID to prevent
+    // token fixation attacks (e.g. after login).
+    this.regenerateToken()
   }
 
   /**
@@ -182,7 +185,9 @@ export class SessionStore {
   // ── Static helpers ──────────────────────────────────────────────────────
 
   static generateId(): string {
-    const bytes = new Uint8Array(20)
+    // Security: use 256 bits (32 bytes) of entropy per OWASP session ID guidelines.
+    // Produces a 64-char hex string.
+    const bytes = new Uint8Array(32)
     crypto.getRandomValues(bytes)
     let id = ''
     for (let i = 0; i < bytes.length; i++) {

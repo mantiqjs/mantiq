@@ -1,0 +1,51 @@
+<script lang="ts">
+  import { post } from '$lib/api'
+  import AppSidebar from './app-sidebar.svelte'
+  import type { Snippet } from 'svelte'
+
+  let {
+    children,
+    currentUser = null,
+    appName = 'Mantiq',
+    navigate,
+    activePath,
+  }: {
+    children: Snippet
+    currentUser?: { name: string; email: string; role?: string } | null
+    appName?: string
+    navigate: (href: string) => void
+    activePath: string
+  } = $props()
+
+  const user = $derived(currentUser ?? { name: 'User', email: 'user@example.com' })
+
+  async function handleLogout() {
+    await post('/logout', {})
+    navigate('/login')
+  }
+
+  let sidebarOpen = $state(true)
+  let mobileOpen = $state(false)
+</script>
+
+<div class="flex min-h-screen">
+  <AppSidebar
+    {user}
+    {appName}
+    {activePath}
+    {navigate}
+    onLogout={handleLogout}
+    bind:open={sidebarOpen}
+    bind:mobileOpen={mobileOpen}
+  />
+  <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+  {#if mobileOpen}
+    <div
+      class="fixed inset-0 z-30 bg-black/50 lg:hidden"
+      onclick={() => mobileOpen = false}
+    ></div>
+  {/if}
+  <div class="flex flex-1 flex-col {sidebarOpen ? 'lg:ml-64' : 'lg:ml-16'} transition-[margin] duration-200">
+    {@render children()}
+  </div>
+</div>
