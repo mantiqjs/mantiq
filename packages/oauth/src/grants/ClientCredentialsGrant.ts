@@ -30,9 +30,9 @@ export class ClientCredentialsGrant implements GrantHandler {
     const client = await Client.find(clientId)
     if (!client) throw new OAuthError('Client not found.', 'invalid_client', 401)
 
-    // Verify secret (constant-time comparison to prevent timing attacks)
-    const storedSecret = client.getAttribute('secret') as string
-    if (!timingSafeEqual(clientSecret, storedSecret)) {
+    // Verify secret (bcrypt verification against the stored hash)
+    const secretValid = await client.verifySecret(clientSecret)
+    if (!secretValid) {
       throw new OAuthError('Invalid client credentials.', 'invalid_client', 401)
     }
 
@@ -77,21 +77,4 @@ export class ClientCredentialsGrant implements GrantHandler {
       scope: scopes.join(' ') || undefined,
     }
   }
-}
-
-/**
- * Constant-time string comparison to prevent timing attacks on secret verification.
- */
-function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false
-
-  const encoder = new TextEncoder()
-  const bufA = encoder.encode(a)
-  const bufB = encoder.encode(b)
-
-  let result = 0
-  for (let i = 0; i < bufA.length; i++) {
-    result |= bufA[i]! ^ bufB[i]!
-  }
-  return result === 0
 }

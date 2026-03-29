@@ -166,6 +166,11 @@ export class QueryBuilder {
     return this
   }
 
+  orWhereRaw(sql: string, bindings?: any[]): this {
+    this.state.wheres.push({ type: 'raw', boolean: 'or', sql, bindings: bindings ?? [] })
+    return this
+  }
+
   /**
    * Add a where clause comparing two columns.
    *

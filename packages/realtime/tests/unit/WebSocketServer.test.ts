@@ -54,12 +54,23 @@ describe('WebSocketServer', () => {
       expect(ctx).toBeNull()
     })
 
-    it('creates context for correct path without auth', async () => {
+    it('creates context for correct path without auth (allowAnonymous)', async () => {
+      const anonConfig = {
+        ...DEFAULT_CONFIG,
+        websocket: { ...DEFAULT_CONFIG.websocket, allowAnonymous: true },
+      }
+      const anonServer = new WebSocketServer(anonConfig)
       const request = createMockRequest('/ws')
-      const ctx = await server.onUpgrade(request)
+      const ctx = await anonServer.onUpgrade(request)
       expect(ctx).not.toBeNull()
       expect(ctx!.channels).toBeInstanceOf(Set)
       expect(ctx!.userId).toBeUndefined()
+    })
+
+    it('rejects unauthenticated connections when allowAnonymous is false (default)', async () => {
+      const request = createMockRequest('/ws')
+      const ctx = await server.onUpgrade(request)
+      expect(ctx).toBeNull()
     })
 
     it('uses authenticator when provided', async () => {
