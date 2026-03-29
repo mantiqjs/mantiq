@@ -1,0 +1,219 @@
+import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
+import { Header } from '@/components/layout/header'
+import { Main } from '@/components/layout/main'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import {
+  TrendingUp,
+  TrendingDown,
+  Activity,
+  Users,
+  DollarSign,
+  ArrowRight,
+  UserPlus,
+  BarChart3,
+  Settings,
+  Zap,
+} from 'lucide-react'
+
+interface DashboardProps {
+  appName?: string
+  currentUser?: { id: number; name: string; email: string; role: string } | null
+  navigate: (href: string) => void
+  [key: string]: any
+}
+
+const metrics = [
+  {
+    title: 'Revenue',
+    value: '$48,352',
+    trend: '+12.5%',
+    positive: true,
+    icon: DollarSign,
+    sparkline: '2,4,3,6,5,8,7,10,9,12',
+  },
+  {
+    title: 'Active Users',
+    value: '2,841',
+    trend: '+8.2%',
+    positive: true,
+    icon: Users,
+    sparkline: '3,5,4,6,8,7,9,8,10,11',
+  },
+  {
+    title: 'Conversion',
+    value: '3.24%',
+    trend: '-0.4%',
+    positive: false,
+    icon: Activity,
+    sparkline: '8,7,9,6,7,5,6,4,5,4',
+  },
+  {
+    title: 'Growth',
+    value: '+18.2%',
+    trend: '+2.1%',
+    positive: true,
+    icon: TrendingUp,
+    sparkline: '2,3,4,5,4,6,7,8,9,11',
+  },
+]
+
+const activityFeed = [
+  { time: '2 min ago', text: 'New user signed up', dot: 'bg-primary' },
+  { time: '15 min ago', text: 'Order #1247 completed', dot: 'bg-green-500' },
+  { time: '32 min ago', text: 'Payment of $299.00 received', dot: 'bg-primary' },
+  { time: '1 hr ago', text: 'Deployment to production succeeded', dot: 'bg-green-500' },
+  { time: '2 hr ago', text: 'User "alex@email.com" upgraded to Pro', dot: 'bg-primary' },
+  { time: '3 hr ago', text: 'New support ticket #892 opened', dot: 'bg-muted-foreground' },
+]
+
+const quickActions = [
+  { label: 'New User', icon: UserPlus },
+  { label: 'View Reports', icon: BarChart3 },
+  { label: 'Run Workflow', icon: Zap },
+  { label: 'Settings', icon: Settings },
+]
+
+function Sparkline({ points, positive }: { points: string; positive: boolean }) {
+  const values = points.split(',').map(Number)
+  const max = Math.max(...values)
+  const min = Math.min(...values)
+  const range = max - min || 1
+  const w = 80
+  const h = 24
+  const coords = values
+    .map((v, i) => {
+      const x = (i / (values.length - 1)) * w
+      const y = h - ((v - min) / range) * h
+      return `${x},${y}`
+    })
+    .join(' ')
+
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="inline-block">
+      <polyline
+        points={coords}
+        fill="none"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={positive ? 'stroke-primary' : 'stroke-destructive'}
+      />
+    </svg>
+  )
+}
+
+export default function Dashboard({
+  appName = 'Mantiq',
+  currentUser,
+  navigate,
+}: DashboardProps) {
+  return (
+    <AuthenticatedLayout
+      currentUser={currentUser}
+      appName={appName}
+      navigate={navigate}
+      activePath="/dashboard"
+    >
+      <Header navigate={navigate} />
+      <Main>
+        <div className="space-y-8">
+          {/* Page heading */}
+          <div>
+            <h2 className="text-2xl font-semibold tracking-tight">Dashboard</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Here's what's happening today.
+            </p>
+          </div>
+
+          {/* Metric cards */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {metrics.map((m) => (
+              <Card key={m.title}>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    {m.title}
+                  </CardTitle>
+                  <m.icon className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-end justify-between gap-2">
+                    <div className="space-y-1">
+                      <div className="text-2xl font-bold tracking-tight">{m.value}</div>
+                      <Badge
+                        variant={m.positive ? 'default' : 'destructive'}
+                        className="gap-1 text-xs font-medium"
+                      >
+                        {m.positive ? (
+                          <TrendingUp className="h-3 w-3" />
+                        ) : (
+                          <TrendingDown className="h-3 w-3" />
+                        )}
+                        {m.trend}
+                      </Badge>
+                    </div>
+                    <Sparkline points={m.sparkline} positive={m.positive} />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Activity + Quick actions */}
+          <div className="grid gap-6 lg:grid-cols-3">
+            {/* Activity timeline */}
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="text-base font-semibold">Activity</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="relative space-y-0">
+                  {activityFeed.map((item, i) => (
+                    <div key={i} className="flex gap-3 pb-6 last:pb-0">
+                      {/* Timeline line + dot */}
+                      <div className="flex flex-col items-center">
+                        <div className={`h-2 w-2 rounded-full mt-2 ${item.dot}`} />
+                        {i < activityFeed.length - 1 && (
+                          <div className="w-px flex-1 bg-border" />
+                        )}
+                      </div>
+                      {/* Content */}
+                      <div className="flex-1 pb-1">
+                        <p className="text-sm">{item.text}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{item.time}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Quick actions */}
+            <div className="space-y-4">
+              <h3 className="text-base font-semibold">Quick Actions</h3>
+              <div className="grid grid-cols-2 gap-3">
+                {quickActions.map((action) => (
+                  <Card
+                    key={action.label}
+                    className="cursor-pointer transition-colors hover:bg-muted/50"
+                  >
+                    <CardContent className="flex flex-col items-center justify-center gap-2 p-4">
+                      <action.icon className="h-5 w-5 text-muted-foreground" />
+                      <span className="text-sm font-medium">{action.label}</span>
+                      <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </Main>
+    </AuthenticatedLayout>
+  )
+}

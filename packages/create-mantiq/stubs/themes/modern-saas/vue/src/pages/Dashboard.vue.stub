@@ -1,0 +1,224 @@
+<script setup lang="ts">
+import { AuthenticatedLayout } from '@/components/layout'
+import { Header } from '@/components/layout'
+import { Main } from '@/components/layout'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import {
+  Rocket,
+  Users,
+  TrendingUp,
+  ArrowRight,
+  Zap,
+  Shield,
+  Globe,
+  Bell,
+  FileText,
+  BookOpen,
+  MessageCircle,
+  Headphones,
+} from 'lucide-vue-next'
+
+const props = withDefaults(defineProps<{
+  appName?: string
+  currentUser?: { id: number; name: string; email: string; role: string } | null
+  navigate: (href: string) => void
+}>(), {
+  appName: 'Mantiq',
+})
+
+const activityItems = [
+  {
+    color: 'border-violet-500',
+    icon: Rocket,
+    title: 'New deployment completed',
+    description: 'Production v2.4.1 deployed successfully',
+    time: '2 minutes ago',
+  },
+  {
+    color: 'border-blue-500',
+    icon: Users,
+    title: 'Team member joined',
+    description: 'Sarah Connor accepted the invitation',
+    time: '15 minutes ago',
+  },
+  {
+    color: 'border-emerald-500',
+    icon: Shield,
+    title: 'Security scan passed',
+    description: 'All 142 checks passed with no vulnerabilities',
+    time: '1 hour ago',
+  },
+  {
+    color: 'border-amber-500',
+    icon: Bell,
+    title: 'Usage alert triggered',
+    description: 'API calls reached 80% of monthly quota',
+    time: '3 hours ago',
+  },
+  {
+    color: 'border-red-500',
+    icon: Globe,
+    title: 'Domain verified',
+    description: 'app.example.com DNS propagation complete',
+    time: '5 hours ago',
+  },
+]
+
+const quickLinks = [
+  { icon: FileText, label: 'Documentation' },
+  { icon: BookOpen, label: 'API Reference' },
+  { icon: MessageCircle, label: 'Community' },
+  { icon: Headphones, label: 'Support' },
+]
+</script>
+
+<template>
+  <AuthenticatedLayout
+    :current-user="currentUser"
+    :app-name="appName"
+    :navigate="navigate"
+    active-path="/dashboard"
+  >
+    <Header :navigate="navigate" />
+    <Main>
+      <div class="space-y-6">
+        <!-- Welcome Banner -->
+        <Card class="border-0 bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg">
+          <CardContent class="p-8">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 class="text-3xl font-bold tracking-tight">
+                  Welcome back, {{ currentUser?.name ?? 'there' }}!
+                </h2>
+                <p class="mt-2 text-lg text-white/80">
+                  Your dashboard is looking great. Here's a quick summary.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                class="shrink-0 border-white/30 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 hover:text-white"
+              >
+                View Reports
+                <ArrowRight class="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <!-- Stats Strip -->
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardContent class="p-6">
+              <div class="flex items-center gap-4">
+                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-md">
+                  <Users class="h-6 w-6" />
+                </div>
+                <div>
+                  <p class="text-sm font-medium text-muted-foreground">Total Users</p>
+                  <p class="text-2xl font-bold">12,345</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent class="p-6">
+              <div class="flex items-center gap-4">
+                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 text-white shadow-md">
+                  <TrendingUp class="h-6 w-6" />
+                </div>
+                <div>
+                  <p class="text-sm font-medium text-muted-foreground">Revenue</p>
+                  <p class="text-2xl font-bold">$89,432</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent class="p-6">
+              <div class="flex items-center gap-4">
+                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-md">
+                  <Zap class="h-6 w-6" />
+                </div>
+                <div>
+                  <p class="text-sm font-medium text-muted-foreground">Active Now</p>
+                  <p class="text-2xl font-bold">573</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent class="p-6">
+              <div class="flex items-center gap-4">
+                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-green-500 text-white shadow-md">
+                  <Shield class="h-6 w-6" />
+                </div>
+                <div>
+                  <p class="text-sm font-medium text-muted-foreground">Uptime</p>
+                  <p class="text-2xl font-bold">99.98%</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <!-- Two Column Section -->
+        <div class="grid gap-6 lg:grid-cols-3">
+          <!-- Activity Feed -->
+          <Card class="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Recent Activity</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div class="space-y-4">
+                <div
+                  v-for="(item, index) in activityItems"
+                  :key="index"
+                  :class="['flex items-start gap-4 rounded-lg border-l-4 bg-muted/30 p-4', item.color]"
+                >
+                  <div class="mt-0.5 text-muted-foreground">
+                    <component :is="item.icon" class="h-5 w-5" />
+                  </div>
+                  <div class="flex-1 space-y-1">
+                    <p class="text-sm font-medium leading-none">{{ item.title }}</p>
+                    <p class="text-sm text-muted-foreground">{{ item.description }}</p>
+                  </div>
+                  <span class="shrink-0 text-xs text-muted-foreground">{{ item.time }}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <!-- Quick Links -->
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Links</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div class="space-y-2">
+                <button
+                  v-for="link in quickLinks"
+                  :key="link.label"
+                  type="button"
+                  class="flex w-full items-center gap-3 rounded-lg p-3 text-left transition-colors hover:bg-muted"
+                >
+                  <component :is="link.icon" class="h-5 w-5 text-muted-foreground" />
+                  <span class="flex-1 text-sm font-medium">{{ link.label }}</span>
+                  <ArrowRight class="h-4 w-4 text-muted-foreground" />
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </Main>
+  </AuthenticatedLayout>
+</template>

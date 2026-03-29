@@ -2,7 +2,7 @@
 import { existsSync, mkdirSync, readdirSync, statSync, readFileSync } from 'node:fs'
 import { dirname, resolve, join, relative } from 'node:path'
 import { randomBytes } from 'node:crypto'
-import { getTemplates } from './templates.ts'
+import { getTemplates, type Theme } from './templates.ts'
 import { Terminal } from './terminal.ts'
 
 /**
@@ -83,6 +83,8 @@ if (!projectName) {
   ${bold('Options:')}
     --kit=${emerald('react|vue|svelte')}    Frontend framework
     --ui=${emerald('shadcn|tailwind')}      UI component library
+    --theme=${emerald('default|linear|notion|stripe|modern-saas')}
+                               Dashboard theme (shadcn only)
     --auth=${emerald('builtin|none')}       Authentication setup
     --with=${emerald('ai')}                 Optional packages (comma-separated)
     --no-git                   Skip git initialization
@@ -110,6 +112,10 @@ const term = new Terminal()
 
 let kit: Kit | undefined = flags['kit'] as Kit | undefined
 let ui: 'shadcn' | 'tailwind' = (flags['ui'] as string) === 'tailwind' ? 'tailwind' : 'shadcn'
+const validThemes = ['default', 'linear', 'notion', 'stripe', 'modern-saas'] as const
+let theme: Theme = (validThemes as readonly string[]).includes(flags['theme'] as string)
+  ? (flags['theme'] as Theme)
+  : 'default'
 let auth: 'builtin' | 'none' = (flags['auth'] as string) === 'none' ? 'none' : 'builtin'
 let optionalPackages: string[] = typeof flags['with'] === 'string'
   ? flags['with'].split(',').map(s => s.trim()).filter(Boolean)
@@ -136,6 +142,18 @@ if (!isCI && !kit) {
       { value: 'tailwind', label: 'Tailwind only' },
     ])
     ui = uiChoice as 'shadcn' | 'tailwind'
+  }
+
+  // Theme selection (only for shadcn)
+  if (kit && ui === 'shadcn' && !flags['theme']) {
+    const themeChoice = await term.select('Choose a theme', [
+      { value: 'default', label: 'Default', hint: 'emerald, classic admin' },
+      { value: 'linear', label: 'Linear', hint: 'minimal & focused' },
+      { value: 'notion', label: 'Notion', hint: 'warm & approachable' },
+      { value: 'stripe', label: 'Stripe', hint: 'professional & data-rich' },
+      { value: 'modern-saas', label: 'Modern SaaS', hint: 'bold & marketing-ready' },
+    ])
+    theme = themeChoice as Theme
   }
 
   // Authentication selection
@@ -188,7 +206,7 @@ if (existsSync(skeletonDir)) {
 
 // Step 2: Generate dynamic files (package.json, .env — overwrites skeleton versions)
 const appKey = `base64:${randomBytes(32).toString('base64')}`
-const templates = getTemplates({ name: projectName, appKey, kit, ui, auth, optionalPackages })
+const templates = getTemplates({ name: projectName, appKey, kit, ui, theme, auth, optionalPackages })
 for (const [relativePath, content] of Object.entries(templates)) {
   const fullPath = `${projectDir}/${relativePath}`
   mkdirSync(dirname(fullPath), { recursive: true })
@@ -248,6 +266,20 @@ if (kit) {
         mkdirSync(dirname(dest), { recursive: true })
         await Bun.write(dest, Bun.file(src))
         fileCount++
+      }
+    }
+
+    // Theme overlay: replace pages/layouts/styles with theme-specific variants
+    if (ui === 'shadcn' && theme !== 'default' && kit) {
+      const themeManifest = manifest.themes?.[theme]?.[kit]
+      if (themeManifest?.files) {
+        for (const { stub, target } of themeManifest.files) {
+          const src = resolve(stubsDir, 'themes', theme, kit, stub)
+          const dest = resolve(projectDir, target)
+          mkdirSync(dirname(dest), { recursive: true })
+          await Bun.write(dest, Bun.file(src))
+          fileCount++
+        }
       }
     }
 
@@ -430,6 +462,7 @@ if (!noGit) {
 console.log(`\n   ${emerald('✓')}  ${bold(projectName)} created\n`)
 console.log(`   ${dim('Framework')}    ${kit ? bold(kit.charAt(0).toUpperCase() + kit.slice(1)) : dim('Vanilla (API only)')}`)
 if (kit) console.log(`   ${dim('UI Kit')}       ${ui === 'shadcn' ? bold('shadcn/ui') : bold('Tailwind')}`)
+if (kit && ui === 'shadcn') console.log(`   ${dim('Theme')}        ${bold(theme.charAt(0).toUpperCase() + theme.slice(1))}`)
 console.log(`   ${dim('Auth')}         ${auth === 'builtin' ? bold('Built-in') : dim('None')}`)
 if (optionalPackages.length > 0) console.log(`   ${dim('Extras')}       ${bold(optionalPackages.join(', '))}`)
 console.log(`\n   ${dim('Next steps:')}\n`)

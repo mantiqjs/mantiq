@@ -1,0 +1,289 @@
+<script lang="ts">
+  import AuthenticatedLayout from '$lib/components/layout/AuthenticatedLayout.svelte'
+  import Header from '$lib/components/layout/Header.svelte'
+  import Main from '$lib/components/layout/Main.svelte'
+  import TopNav from '$lib/components/layout/TopNav.svelte'
+  import { Button } from '$lib/components/ui/button'
+  import * as Card from '$lib/components/ui/card'
+  import { Badge } from '$lib/components/ui/badge'
+  import * as Table from '$lib/components/ui/table'
+  import {
+    TrendingUp,
+    TrendingDown,
+    ArrowUpRight,
+    ArrowDownRight,
+    CreditCard,
+    DollarSign,
+    Users,
+    Activity,
+  } from 'lucide-svelte'
+
+  let {
+    appName = 'Mantiq',
+    currentUser = null,
+    navigate,
+  }: {
+    appName?: string
+    currentUser?: { id: number; name: string; email: string } | null
+    navigate: (href: string) => void
+    [key: string]: any
+  } = $props()
+
+  let activeRange = $state('7d')
+
+  const topNav = [
+    { title: 'Overview', href: '/dashboard', isActive: true },
+    { title: 'Sales', href: '/dashboard', isActive: false, disabled: true },
+    { title: 'Tickets', href: '/dashboard', isActive: false, disabled: true },
+    { title: 'Performance', href: '/dashboard', isActive: false, disabled: true },
+  ]
+
+  const ranges = ['7d', '30d', '90d'] as const
+
+  function rangeLabel(r: string) {
+    if (r === '7d') return '7 days'
+    if (r === '30d') return '30 days'
+    return '90 days'
+  }
+
+  const transactions = [
+    { customer: 'Olivia Martin', email: 'olivia@email.com', amount: '$1,999.00', status: 'Completed', date: 'Mar 15, 2025' },
+    { customer: 'Jackson Lee', email: 'jackson@email.com', amount: '$39.00', status: 'Completed', date: 'Mar 14, 2025' },
+    { customer: 'Isabella Nguyen', email: 'isabella@email.com', amount: '$299.00', status: 'Pending', date: 'Mar 14, 2025' },
+    { customer: 'William Kim', email: 'will@email.com', amount: '$99.00', status: 'Failed', date: 'Mar 13, 2025' },
+    { customer: 'Sofia Davis', email: 'sofia@email.com', amount: '$39.00', status: 'Completed', date: 'Mar 13, 2025' },
+  ]
+
+  function statusColor(status: string) {
+    if (status === 'Completed') return 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/20'
+    if (status === 'Pending') return 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/20'
+    return 'bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/20'
+  }
+
+  // Revenue chart
+  const chartData = [1200, 2100, 1800, 3200, 2800, 4100, 3600, 5200, 4800, 5800, 5100, 6200, 5600]
+  const maxVal = Math.max(...chartData)
+  const svgW = 700
+  const svgH = 220
+  const padL = 40
+  const padR = 10
+  const padT = 10
+  const padB = 30
+  const chartW = svgW - padL - padR
+  const chartH = svgH - padT - padB
+  const stepX = chartW / (chartData.length - 1)
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+  const yLabels = ['$0', '$2k', '$4k', '$6k']
+
+  const points = chartData.map((val, i) => ({
+    x: padL + i * stepX,
+    y: padT + chartH - (val / maxVal) * chartH,
+  }))
+
+  const linePath = points.map((p, i) => {
+    if (i === 0) return `M ${p.x} ${p.y}`
+    const prev = points[i - 1]
+    const cpx1 = prev.x + stepX * 0.4
+    const cpx2 = p.x - stepX * 0.4
+    return `C ${cpx1} ${prev.y}, ${cpx2} ${p.y}, ${p.x} ${p.y}`
+  }).join(' ')
+
+  const areaPath = `${linePath} L ${points[points.length - 1].x} ${padT + chartH} L ${points[0].x} ${padT + chartH} Z`
+</script>
+
+<AuthenticatedLayout
+  {currentUser}
+  {appName}
+  {navigate}
+  activePath="/dashboard"
+>
+  <Header {navigate}>
+    <TopNav links={topNav} onLinkClick={navigate} />
+  </Header>
+  <Main>
+    <div class="space-y-6">
+      <!-- Page title row -->
+      <div class="flex items-center justify-between">
+        <h2 class="text-3xl font-bold tracking-tight">Dashboard</h2>
+        <div class="flex items-center gap-1 rounded-lg border bg-card p-1">
+          {#each ranges as range}
+            <button
+              class="rounded-md px-3 py-1.5 text-xs font-medium transition-colors {activeRange === range ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}"
+              onclick={() => activeRange = range}
+            >
+              {rangeLabel(range)}
+            </button>
+          {/each}
+        </div>
+      </div>
+
+      <!-- Stat cards -->
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <!-- Total Revenue -->
+        <Card.Root>
+          <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-2">
+            <Card.Title class="text-sm font-medium">Total Revenue</Card.Title>
+            <DollarSign class="h-4 w-4 text-muted-foreground" />
+          </Card.Header>
+          <Card.Content>
+            <div class="text-2xl font-bold">$45,231.89</div>
+            <div class="mt-1 flex items-center gap-1">
+              <Badge variant="outline" class="border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 gap-0.5 text-xs font-medium">
+                <ArrowUpRight class="h-3 w-3" />
+                +20.1%
+              </Badge>
+              <span class="text-xs text-muted-foreground">from last period</span>
+            </div>
+          </Card.Content>
+        </Card.Root>
+
+        <!-- New Customers -->
+        <Card.Root>
+          <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-2">
+            <Card.Title class="text-sm font-medium">New Customers</Card.Title>
+            <Users class="h-4 w-4 text-muted-foreground" />
+          </Card.Header>
+          <Card.Content>
+            <div class="text-2xl font-bold">+2,350</div>
+            <div class="mt-1 flex items-center gap-1">
+              <Badge variant="outline" class="border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 gap-0.5 text-xs font-medium">
+                <ArrowUpRight class="h-3 w-3" />
+                +180.1%
+              </Badge>
+              <span class="text-xs text-muted-foreground">from last period</span>
+            </div>
+          </Card.Content>
+        </Card.Root>
+
+        <!-- Active Subscriptions -->
+        <Card.Root>
+          <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-2">
+            <Card.Title class="text-sm font-medium">Active Subscriptions</Card.Title>
+            <CreditCard class="h-4 w-4 text-muted-foreground" />
+          </Card.Header>
+          <Card.Content>
+            <div class="text-2xl font-bold">+12,234</div>
+            <div class="mt-1 flex items-center gap-1">
+              <Badge variant="outline" class="border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 gap-0.5 text-xs font-medium">
+                <ArrowUpRight class="h-3 w-3" />
+                +19%
+              </Badge>
+              <span class="text-xs text-muted-foreground">from last period</span>
+            </div>
+          </Card.Content>
+        </Card.Root>
+
+        <!-- Churn Rate -->
+        <Card.Root>
+          <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-2">
+            <Card.Title class="text-sm font-medium">Churn Rate</Card.Title>
+            <Activity class="h-4 w-4 text-muted-foreground" />
+          </Card.Header>
+          <Card.Content>
+            <div class="text-2xl font-bold">2.4%</div>
+            <div class="mt-1 flex items-center gap-1">
+              <Badge variant="outline" class="border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 gap-0.5 text-xs font-medium">
+                <ArrowDownRight class="h-3 w-3" />
+                -0.3%
+              </Badge>
+              <span class="text-xs text-muted-foreground">from last period</span>
+            </div>
+          </Card.Content>
+        </Card.Root>
+      </div>
+
+      <!-- Revenue chart -->
+      <Card.Root>
+        <Card.Header>
+          <div class="flex items-center justify-between">
+            <div>
+              <Card.Title>Revenue Overview</Card.Title>
+              <Card.Description>Daily revenue for the selected period</Card.Description>
+            </div>
+            <div class="flex items-center gap-2 text-sm">
+              <TrendingUp class="h-4 w-4 text-emerald-600" />
+              <span class="font-medium text-emerald-600">+12.5%</span>
+            </div>
+          </div>
+        </Card.Header>
+        <Card.Content>
+          <svg viewBox="0 0 {svgW} {svgH}" class="h-[280px] w-full" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" style="stop-color: var(--color-primary)" stop-opacity="0.3" />
+                <stop offset="100%" style="stop-color: var(--color-primary)" stop-opacity="0.02" />
+              </linearGradient>
+            </defs>
+
+            <!-- Grid lines -->
+            {#each yLabels as _, i}
+              {@const y = padT + chartH - (i / (yLabels.length - 1)) * chartH}
+              <line x1={padL} y1={y} x2={svgW - padR} y2={y} class="stroke-border" stroke-width="0.5" stroke-dasharray="4 4" />
+            {/each}
+
+            <!-- Y-axis labels -->
+            {#each yLabels as label, i}
+              {@const y = padT + chartH - (i / (yLabels.length - 1)) * chartH}
+              <text x={padL - 6} y={y + 3} text-anchor="end" class="fill-muted-foreground text-[9px]">
+                {label}
+              </text>
+            {/each}
+
+            <!-- Area fill -->
+            <path d={areaPath} fill="url(#areaGradient)" />
+
+            <!-- Line -->
+            <path d={linePath} fill="none" class="stroke-primary" stroke-width="2" stroke-linecap="round" />
+
+            <!-- X-axis labels -->
+            {#each days as day, i}
+              {@const idx = Math.round((i / (days.length - 1)) * (chartData.length - 1))}
+              <text x={points[idx].x} y={svgH - 6} text-anchor="middle" class="fill-muted-foreground text-[9px]">
+                {day}
+              </text>
+            {/each}
+          </svg>
+        </Card.Content>
+      </Card.Root>
+
+      <!-- Recent Transactions -->
+      <Card.Root>
+        <Card.Header>
+          <Card.Title>Recent Transactions</Card.Title>
+          <Card.Description>Latest payment activity across all channels</Card.Description>
+        </Card.Header>
+        <Card.Content>
+          <Table.Root>
+            <Table.Header>
+              <Table.Row>
+                <Table.Head>Customer</Table.Head>
+                <Table.Head>Amount</Table.Head>
+                <Table.Head>Status</Table.Head>
+                <Table.Head class="text-right">Date</Table.Head>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
+              {#each transactions as tx}
+                <Table.Row>
+                  <Table.Cell>
+                    <div>
+                      <p class="font-medium">{tx.customer}</p>
+                      <p class="text-sm text-muted-foreground">{tx.email}</p>
+                    </div>
+                  </Table.Cell>
+                  <Table.Cell class="font-medium">{tx.amount}</Table.Cell>
+                  <Table.Cell>
+                    <Badge variant="outline" class={statusColor(tx.status)}>
+                      {tx.status}
+                    </Badge>
+                  </Table.Cell>
+                  <Table.Cell class="text-right text-muted-foreground">{tx.date}</Table.Cell>
+                </Table.Row>
+              {/each}
+            </Table.Body>
+          </Table.Root>
+        </Card.Content>
+      </Card.Root>
+    </div>
+  </Main>
+</AuthenticatedLayout>

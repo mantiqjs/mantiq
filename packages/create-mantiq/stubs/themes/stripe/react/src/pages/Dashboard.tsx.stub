@@ -1,0 +1,310 @@
+import { useState } from 'react'
+import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
+import { Header } from '@/components/layout/header'
+import { Main } from '@/components/layout/main'
+import { TopNav } from '@/components/layout/top-nav'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
+  TrendingUp,
+  TrendingDown,
+  ArrowUpRight,
+  ArrowDownRight,
+  CreditCard,
+  DollarSign,
+  Users,
+  Activity,
+} from 'lucide-react'
+
+interface DashboardProps {
+  appName?: string
+  currentUser?: { id: number; name: string; email: string; role: string } | null
+  navigate: (href: string) => void
+  [key: string]: any
+}
+
+const topNav = [
+  { title: 'Overview', href: '/dashboard', isActive: true },
+  { title: 'Sales', href: '/dashboard', isActive: false, disabled: true },
+  { title: 'Tickets', href: '/dashboard', isActive: false, disabled: true },
+  { title: 'Performance', href: '/dashboard', isActive: false, disabled: true },
+]
+
+const transactions = [
+  { customer: 'Olivia Martin', email: 'olivia@email.com', amount: '$1,999.00', status: 'Completed', date: 'Mar 15, 2025' },
+  { customer: 'Jackson Lee', email: 'jackson@email.com', amount: '$39.00', status: 'Completed', date: 'Mar 14, 2025' },
+  { customer: 'Isabella Nguyen', email: 'isabella@email.com', amount: '$299.00', status: 'Pending', date: 'Mar 14, 2025' },
+  { customer: 'William Kim', email: 'will@email.com', amount: '$99.00', status: 'Failed', date: 'Mar 13, 2025' },
+  { customer: 'Sofia Davis', email: 'sofia@email.com', amount: '$39.00', status: 'Completed', date: 'Mar 13, 2025' },
+]
+
+function statusColor(status: string) {
+  if (status === 'Completed') return 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/20'
+  if (status === 'Pending') return 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/20'
+  return 'bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/20'
+}
+
+function RevenueChart() {
+  const data = [1200, 2100, 1800, 3200, 2800, 4100, 3600, 5200, 4800, 5800, 5100, 6200, 5600]
+  const maxVal = Math.max(...data)
+  const svgW = 700
+  const svgH = 220
+  const padL = 40
+  const padR = 10
+  const padT = 10
+  const padB = 30
+  const chartW = svgW - padL - padR
+  const chartH = svgH - padT - padB
+  const stepX = chartW / (data.length - 1)
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+  const yLabels = ['$0', '$2k', '$4k', '$6k']
+
+  const points = data.map((val, i) => ({
+    x: padL + i * stepX,
+    y: padT + chartH - (val / maxVal) * chartH,
+  }))
+
+  const linePath = points.map((p, i) => {
+    if (i === 0) return `M ${p.x} ${p.y}`
+    const prev = points[i - 1]
+    const cpx1 = prev.x + stepX * 0.4
+    const cpx2 = p.x - stepX * 0.4
+    return `C ${cpx1} ${prev.y}, ${cpx2} ${p.y}, ${p.x} ${p.y}`
+  }).join(' ')
+
+  const areaPath = `${linePath} L ${points[points.length - 1].x} ${padT + chartH} L ${points[0].x} ${padT + chartH} Z`
+
+  return (
+    <svg viewBox={`0 0 ${svgW} ${svgH}`} className="h-[280px] w-full" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" className="[stop-color:var(--color-primary)]" stopOpacity={0.3} />
+          <stop offset="100%" className="[stop-color:var(--color-primary)]" stopOpacity={0.02} />
+        </linearGradient>
+      </defs>
+
+      {/* Grid lines */}
+      {yLabels.map((_, i) => {
+        const y = padT + chartH - (i / (yLabels.length - 1)) * chartH
+        return (
+          <line key={i} x1={padL} y1={y} x2={svgW - padR} y2={y} className="stroke-border" strokeWidth={0.5} strokeDasharray="4 4" />
+        )
+      })}
+
+      {/* Y-axis labels */}
+      {yLabels.map((label, i) => {
+        const y = padT + chartH - (i / (yLabels.length - 1)) * chartH
+        return (
+          <text key={i} x={padL - 6} y={y + 3} textAnchor="end" className="fill-muted-foreground text-[9px]">
+            {label}
+          </text>
+        )
+      })}
+
+      {/* Area fill */}
+      <path d={areaPath} fill="url(#areaGradient)" />
+
+      {/* Line */}
+      <path d={linePath} fill="none" className="stroke-primary" strokeWidth={2} strokeLinecap="round" />
+
+      {/* X-axis labels */}
+      {days.map((day, i) => {
+        const idx = Math.round((i / (days.length - 1)) * (data.length - 1))
+        return (
+          <text key={i} x={points[idx].x} y={svgH - 6} textAnchor="middle" className="fill-muted-foreground text-[9px]">
+            {day}
+          </text>
+        )
+      })}
+    </svg>
+  )
+}
+
+export default function Dashboard({
+  appName = 'Mantiq',
+  currentUser,
+  navigate,
+}: DashboardProps) {
+  const [activeRange, setActiveRange] = useState('7d')
+
+  return (
+    <AuthenticatedLayout
+      currentUser={currentUser}
+      appName={appName}
+      navigate={navigate}
+      activePath="/dashboard"
+    >
+      <Header navigate={navigate}>
+        <TopNav links={topNav} onLinkClick={navigate} />
+      </Header>
+      <Main>
+        <div className="space-y-6">
+          {/* Page title row */}
+          <div className="flex items-center justify-between">
+            <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+            <div className="flex items-center gap-1 rounded-lg border bg-card p-1">
+              {(['7d', '30d', '90d'] as const).map((range) => (
+                <button
+                  key={range}
+                  onClick={() => setActiveRange(range)}
+                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                    activeRange === range
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {range === '7d' ? '7 days' : range === '30d' ? '30 days' : '90 days'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Stat cards */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">$45,231.89</div>
+                <div className="mt-1 flex items-center gap-1">
+                  <Badge variant="outline" className="border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 gap-0.5 text-xs font-medium">
+                    <ArrowUpRight className="h-3 w-3" />
+                    +20.1%
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">from last period</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">New Customers</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">+2,350</div>
+                <div className="mt-1 flex items-center gap-1">
+                  <Badge variant="outline" className="border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 gap-0.5 text-xs font-medium">
+                    <ArrowUpRight className="h-3 w-3" />
+                    +180.1%
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">from last period</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Active Subscriptions</CardTitle>
+                <CreditCard className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">+12,234</div>
+                <div className="mt-1 flex items-center gap-1">
+                  <Badge variant="outline" className="border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 gap-0.5 text-xs font-medium">
+                    <ArrowUpRight className="h-3 w-3" />
+                    +19%
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">from last period</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Churn Rate</CardTitle>
+                <Activity className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">2.4%</div>
+                <div className="mt-1 flex items-center gap-1">
+                  <Badge variant="outline" className="border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 gap-0.5 text-xs font-medium">
+                    <ArrowDownRight className="h-3 w-3" />
+                    -0.3%
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">from last period</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Revenue chart */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Revenue Overview</CardTitle>
+                  <CardDescription>Daily revenue for the selected period</CardDescription>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <TrendingUp className="h-4 w-4 text-emerald-600" />
+                  <span className="font-medium text-emerald-600">+12.5%</span>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <RevenueChart />
+            </CardContent>
+          </Card>
+
+          {/* Recent Transactions */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Transactions</CardTitle>
+              <CardDescription>Latest payment activity across all channels</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Date</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {transactions.map((tx) => (
+                    <TableRow key={tx.email}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{tx.customer}</p>
+                          <p className="text-sm text-muted-foreground">{tx.email}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-medium">{tx.amount}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={statusColor(tx.status)}>
+                          {tx.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right text-muted-foreground">{tx.date}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
+      </Main>
+    </AuthenticatedLayout>
+  )
+}

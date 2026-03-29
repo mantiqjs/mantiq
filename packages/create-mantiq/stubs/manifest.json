@@ -1757,5 +1757,255 @@
         }
       ]
     }
+  },
+  "themes": {
+    "linear": {
+      "react": {
+        "files": [
+          {
+            "stub": "src/style.css.stub",
+            "target": "src/style.css"
+          },
+          {
+            "stub": "src/pages/Dashboard.tsx.stub",
+            "target": "src/pages/Dashboard.tsx"
+          },
+          {
+            "stub": "src/pages/Login.tsx.stub",
+            "target": "src/pages/Login.tsx"
+          },
+          {
+            "stub": "src/pages/Register.tsx.stub",
+            "target": "src/pages/Register.tsx"
+          }
+        ]
+      },
+      "vue": {
+        "files": [
+          {
+            "stub": "src/style.css.stub",
+            "target": "src/style.css"
+          },
+          {
+            "stub": "src/pages/Dashboard.vue.stub",
+            "target": "src/pages/Dashboard.vue"
+          },
+          {
+            "stub": "src/pages/Login.vue.stub",
+            "target": "src/pages/Login.vue"
+          },
+          {
+            "stub": "src/pages/Register.vue.stub",
+            "target": "src/pages/Register.vue"
+          }
+        ]
+      },
+      "svelte": {
+        "files": [
+          {
+            "stub": "src/style.css.stub",
+            "target": "src/style.css"
+          },
+          {
+            "stub": "src/pages/Dashboard.svelte.stub",
+            "target": "src/pages/Dashboard.svelte"
+          },
+          {
+            "stub": "src/pages/Login.svelte.stub",
+            "target": "src/pages/Login.svelte"
+          },
+          {
+            "stub": "src/pages/Register.svelte.stub",
+            "target": "src/pages/Register.svelte"
+          }
+        ]
+      }
+    },
+    "notion": {
+      "react": {
+        "files": [
+          {
+            "stub": "src/style.css.stub",
+            "target": "src/style.css"
+          },
+          {
+            "stub": "src/pages/Dashboard.tsx.stub",
+            "target": "src/pages/Dashboard.tsx"
+          },
+          {
+            "stub": "src/pages/Login.tsx.stub",
+            "target": "src/pages/Login.tsx"
+          },
+          {
+            "stub": "src/pages/Register.tsx.stub",
+            "target": "src/pages/Register.tsx"
+          }
+        ]
+      },
+      "vue": {
+        "files": [
+          {
+            "stub": "src/style.css.stub",
+            "target": "src/style.css"
+          },
+          {
+            "stub": "src/pages/Dashboard.vue.stub",
+            "target": "src/pages/Dashboard.vue"
+          },
+          {
+            "stub": "src/pages/Login.vue.stub",
+            "target": "src/pages/Login.vue"
+          },
+          {
+            "stub": "src/pages/Register.vue.stub",
+            "target": "src/pages/Register.vue"
+          }
+        ]
+      },
+      "svelte": {
+        "files": [
+          {
+            "stub": "src/style.css.stub",
+            "target": "src/style.css"
+          },
+          {
+            "stub": "src/pages/Dashboard.svelte.stub",
+            "target": "src/pages/Dashboard.svelte"
+          },
+          {
+            "stub": "src/pages/Login.svelte.stub",
+            "target": "src/pages/Login.svelte"
+          },
+          {
+            "stub": "src/pages/Register.svelte.stub",
+            "target": "src/pages/Register.svelte"
+          }
+        ]
+      }
+    },
+    "stripe": {
+      "react": {
+        "files": [
+          {
+            "stub": "src/style.css.stub",
+            "target": "src/style.css"
+          },
+          {
+            "stub": "src/pages/Dashboard.tsx.stub",
+            "target": "src/pages/Dashboard.tsx"
+          },
+          {
+            "stub": "src/pages/Login.tsx.stub",
+            "target": "src/pages/Login.tsx"
+          },
+          {
+            "stub": "src/pages/Register.tsx.stub",
+            "target": "src/pages/Register.tsx"
+          }
+        ]
+      },
+      "vue": {
+        "files": [
+          {
+            "stub": "src/style.css.stub",
+            "target": "src/style.css"
+          },
+          {
+            "stub": "src/pages/Dashboard.vue.stub",
+            "target": "src/pages/Dashboard.vue"
+          },
+          {
+            "stub": "src/pages/Login.vue.stub",
+            "target": "src/pages/Login.vue"
+          },
+          {
+            "stub": "src/pages/Register.vue.stub",
+            "target": "src/pages/Register.vue"
+          }
+        ]
+      },
+      "svelte": {
+        "files": [
+          {
+            "stub": "src/style.css.stub",
+            "target": "src/style.css"
+          },
+          {
+            "stub": "src/pages/Dashboard.svelte.stub",
+            "target": "src/pages/Dashboard.svelte"
+          },
+          {
+            "stub": "src/pages/Login.svelte.stub",
+            "target": "src/pages/Login.svelte"
+          },
+          {
+            "stub": "src/pages/Register.svelte.stub",
+            "target": "src/pages/Register.svelte"
+          }
+        ]
+      }
+    },
+    "modern-saas": {
+      "react": {
+        "files": [
+          {
+            "stub": "src/style.css.stub",
+            "target": "src/style.css"
+          },
+          {
+            "stub": "src/pages/Dashboard.tsx.stub",
+            "target": "src/pages/Dashboard.tsx"
+          },
+          {
+            "stub": "src/pages/Login.tsx.stub",
+            "target": "src/pages/Login.tsx"
+          },
+          {
+            "stub": "src/pages/Register.tsx.stub",
+            "target": "src/pages/Register.tsx"
+          }
+        ]
+      },
+      "vue": {
+        "files": [
+          {
+            "stub": "src/style.css.stub",
+            "target": "src/style.css"
+          },
+          {
+            "stub": "src/pages/Dashboard.vue.stub",
+            "target": "src/pages/Dashboard.vue"
+          },
+          {
+            "stub": "src/pages/Login.vue.stub",
+            "target": "src/pages/Login.vue"
+          },
+          {
+            "stub": "src/pages/Register.vue.stub",
+            "target": "src/pages/Register.vue"
+          }
+        ]
+      },
+      "svelte": {
+        "files": [
+          {
+            "stub": "src/style.css.stub",
+            "target": "src/style.css"
+          },
+          {
+            "stub": "src/pages/Dashboard.svelte.stub",
+            "target": "src/pages/Dashboard.svelte"
+          },
+          {
+            "stub": "src/pages/Login.svelte.stub",
+            "target": "src/pages/Login.svelte"
+          },
+          {
+            "stub": "src/pages/Register.svelte.stub",
+            "target": "src/pages/Register.svelte"
+          }
+        ]
+      }
+    }
   }
 }

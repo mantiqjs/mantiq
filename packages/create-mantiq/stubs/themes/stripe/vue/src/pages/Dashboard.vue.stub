@@ -1,0 +1,320 @@
+<script setup lang="ts">
+import { ref } from 'vue'
+import { AuthenticatedLayout } from '@/components/layout'
+import { Header } from '@/components/layout'
+import { Main } from '@/components/layout'
+import { TopNav } from '@/components/layout'
+import type { TopNavLink } from '@/components/layout/TopNav.vue'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
+  TrendingUp,
+  TrendingDown,
+  ArrowUpRight,
+  ArrowDownRight,
+  CreditCard,
+  DollarSign,
+  Users,
+  Activity,
+} from 'lucide-vue-next'
+
+const props = withDefaults(defineProps<{
+  appName?: string
+  currentUser?: { id: number; name: string; email: string; role: string } | null
+  navigate: (href: string) => void
+}>(), {
+  appName: 'Mantiq',
+})
+
+const topNav: TopNavLink[] = [
+  { title: 'Overview', href: '/dashboard', isActive: true },
+  { title: 'Sales', href: '/dashboard', isActive: false, disabled: true },
+  { title: 'Tickets', href: '/dashboard', isActive: false, disabled: true },
+  { title: 'Performance', href: '/dashboard', isActive: false, disabled: true },
+]
+
+const activeRange = ref('7d')
+const ranges = ['7d', '30d', '90d'] as const
+
+function rangeLabel(r: string) {
+  if (r === '7d') return '7 days'
+  if (r === '30d') return '30 days'
+  return '90 days'
+}
+
+const transactions = [
+  { customer: 'Olivia Martin', email: 'olivia@email.com', amount: '$1,999.00', status: 'Completed', date: 'Mar 15, 2025' },
+  { customer: 'Jackson Lee', email: 'jackson@email.com', amount: '$39.00', status: 'Completed', date: 'Mar 14, 2025' },
+  { customer: 'Isabella Nguyen', email: 'isabella@email.com', amount: '$299.00', status: 'Pending', date: 'Mar 14, 2025' },
+  { customer: 'William Kim', email: 'will@email.com', amount: '$99.00', status: 'Failed', date: 'Mar 13, 2025' },
+  { customer: 'Sofia Davis', email: 'sofia@email.com', amount: '$39.00', status: 'Completed', date: 'Mar 13, 2025' },
+]
+
+function statusColor(status: string) {
+  if (status === 'Completed') return 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/20'
+  if (status === 'Pending') return 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/20'
+  return 'bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/20'
+}
+
+// Revenue chart data
+const chartData = [1200, 2100, 1800, 3200, 2800, 4100, 3600, 5200, 4800, 5800, 5100, 6200, 5600]
+const maxVal = Math.max(...chartData)
+const svgW = 700
+const svgH = 220
+const padL = 40
+const padR = 10
+const padT = 10
+const padB = 30
+const chartW = svgW - padL - padR
+const chartH = svgH - padT - padB
+const stepX = chartW / (chartData.length - 1)
+const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const yLabels = ['$0', '$2k', '$4k', '$6k']
+
+const points = chartData.map((val, i) => ({
+  x: padL + i * stepX,
+  y: padT + chartH - (val / maxVal) * chartH,
+}))
+
+const linePath = points.map((p, i) => {
+  if (i === 0) return `M ${p.x} ${p.y}`
+  const prev = points[i - 1]
+  const cpx1 = prev.x + stepX * 0.4
+  const cpx2 = p.x - stepX * 0.4
+  return `C ${cpx1} ${prev.y}, ${cpx2} ${p.y}, ${p.x} ${p.y}`
+}).join(' ')
+
+const areaPath = `${linePath} L ${points[points.length - 1].x} ${padT + chartH} L ${points[0].x} ${padT + chartH} Z`
+</script>
+
+<template>
+  <AuthenticatedLayout
+    :current-user="currentUser"
+    :app-name="appName"
+    :navigate="navigate"
+    active-path="/dashboard"
+  >
+    <Header :navigate="navigate">
+      <TopNav :links="topNav" @link-click="navigate" />
+    </Header>
+    <Main>
+      <div class="space-y-6">
+        <!-- Page title row -->
+        <div class="flex items-center justify-between">
+          <h2 class="text-3xl font-bold tracking-tight">Dashboard</h2>
+          <div class="flex items-center gap-1 rounded-lg border bg-card p-1">
+            <button
+              v-for="range in ranges"
+              :key="range"
+              :class="[
+                'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+                activeRange === range
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground',
+              ]"
+              @click="activeRange = range"
+            >
+              {{ rangeLabel(range) }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Stat cards -->
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <!-- Total Revenue -->
+          <Card>
+            <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle class="text-sm font-medium">Total Revenue</CardTitle>
+              <DollarSign class="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div class="text-2xl font-bold">$45,231.89</div>
+              <div class="mt-1 flex items-center gap-1">
+                <Badge variant="outline" class="border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 gap-0.5 text-xs font-medium">
+                  <ArrowUpRight class="h-3 w-3" />
+                  +20.1%
+                </Badge>
+                <span class="text-xs text-muted-foreground">from last period</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <!-- New Customers -->
+          <Card>
+            <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle class="text-sm font-medium">New Customers</CardTitle>
+              <Users class="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div class="text-2xl font-bold">+2,350</div>
+              <div class="mt-1 flex items-center gap-1">
+                <Badge variant="outline" class="border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 gap-0.5 text-xs font-medium">
+                  <ArrowUpRight class="h-3 w-3" />
+                  +180.1%
+                </Badge>
+                <span class="text-xs text-muted-foreground">from last period</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <!-- Active Subscriptions -->
+          <Card>
+            <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle class="text-sm font-medium">Active Subscriptions</CardTitle>
+              <CreditCard class="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div class="text-2xl font-bold">+12,234</div>
+              <div class="mt-1 flex items-center gap-1">
+                <Badge variant="outline" class="border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 gap-0.5 text-xs font-medium">
+                  <ArrowUpRight class="h-3 w-3" />
+                  +19%
+                </Badge>
+                <span class="text-xs text-muted-foreground">from last period</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <!-- Churn Rate -->
+          <Card>
+            <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle class="text-sm font-medium">Churn Rate</CardTitle>
+              <Activity class="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div class="text-2xl font-bold">2.4%</div>
+              <div class="mt-1 flex items-center gap-1">
+                <Badge variant="outline" class="border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 gap-0.5 text-xs font-medium">
+                  <ArrowDownRight class="h-3 w-3" />
+                  -0.3%
+                </Badge>
+                <span class="text-xs text-muted-foreground">from last period</span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <!-- Revenue chart -->
+        <Card>
+          <CardHeader>
+            <div class="flex items-center justify-between">
+              <div>
+                <CardTitle>Revenue Overview</CardTitle>
+                <CardDescription>Daily revenue for the selected period</CardDescription>
+              </div>
+              <div class="flex items-center gap-2 text-sm">
+                <TrendingUp class="h-4 w-4 text-emerald-600" />
+                <span class="font-medium text-emerald-600">+12.5%</span>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <svg :viewBox="`0 0 ${svgW} ${svgH}`" class="h-[280px] w-full" preserveAspectRatio="xMidYMid meet">
+              <defs>
+                <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" style="stop-color: var(--color-primary)" stop-opacity="0.3" />
+                  <stop offset="100%" style="stop-color: var(--color-primary)" stop-opacity="0.02" />
+                </linearGradient>
+              </defs>
+
+              <!-- Grid lines -->
+              <line
+                v-for="(_, i) in yLabels"
+                :key="'grid-' + i"
+                :x1="padL"
+                :y1="padT + chartH - (i / (yLabels.length - 1)) * chartH"
+                :x2="svgW - padR"
+                :y2="padT + chartH - (i / (yLabels.length - 1)) * chartH"
+                class="stroke-border"
+                stroke-width="0.5"
+                stroke-dasharray="4 4"
+              />
+
+              <!-- Y-axis labels -->
+              <text
+                v-for="(label, i) in yLabels"
+                :key="'y-' + i"
+                :x="padL - 6"
+                :y="padT + chartH - (i / (yLabels.length - 1)) * chartH + 3"
+                text-anchor="end"
+                class="fill-muted-foreground text-[9px]"
+              >
+                {{ label }}
+              </text>
+
+              <!-- Area fill -->
+              <path :d="areaPath" fill="url(#areaGradient)" />
+
+              <!-- Line -->
+              <path :d="linePath" fill="none" class="stroke-primary" stroke-width="2" stroke-linecap="round" />
+
+              <!-- X-axis labels -->
+              <text
+                v-for="(day, i) in days"
+                :key="'x-' + i"
+                :x="points[Math.round((i / (days.length - 1)) * (chartData.length - 1))].x"
+                :y="svgH - 6"
+                text-anchor="middle"
+                class="fill-muted-foreground text-[9px]"
+              >
+                {{ day }}
+              </text>
+            </svg>
+          </CardContent>
+        </Card>
+
+        <!-- Recent Transactions -->
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Transactions</CardTitle>
+            <CardDescription>Latest payment activity across all channels</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead class="text-right">Date</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow v-for="tx in transactions" :key="tx.email">
+                  <TableCell>
+                    <div>
+                      <p class="font-medium">{{ tx.customer }}</p>
+                      <p class="text-sm text-muted-foreground">{{ tx.email }}</p>
+                    </div>
+                  </TableCell>
+                  <TableCell class="font-medium">{{ tx.amount }}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" :class="statusColor(tx.status)">
+                      {{ tx.status }}
+                    </Badge>
+                  </TableCell>
+                  <TableCell class="text-right text-muted-foreground">{{ tx.date }}</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+    </Main>
+  </AuthenticatedLayout>
+</template>

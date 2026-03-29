@@ -1,8 +1,11 @@
+export type Theme = 'default' | 'linear' | 'notion' | 'stripe' | 'modern-saas'
+
 export interface TemplateContext {
   name: string
   appKey: string
   kit?: 'react' | 'vue' | 'svelte' | undefined
   ui: 'shadcn' | 'tailwind'
+  theme: Theme
   auth: 'builtin' | 'none'
   optionalPackages: string[]
 }

@@ -1,0 +1,222 @@
+<script setup lang="ts">
+import { AuthenticatedLayout } from '@/components/layout'
+import { Header } from '@/components/layout'
+import { Main } from '@/components/layout'
+import { TopNav } from '@/components/layout'
+import type { TopNavLink } from '@/components/layout/TopNav.vue'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card'
+import { Users, ShoppingCart, TrendingUp, CheckCircle2, Circle } from 'lucide-vue-next'
+
+const props = withDefaults(defineProps<{
+  appName?: string
+  currentUser?: { id: number; name: string; email: string; role: string } | null
+  navigate: (href: string) => void
+}>(), {
+  appName: 'Mantiq',
+})
+
+const topNav: TopNavLink[] = [
+  { title: 'Overview', href: '/dashboard', isActive: true },
+  { title: 'Sales', href: '/dashboard', isActive: false, disabled: true },
+  { title: 'Tickets', href: '/dashboard', isActive: false, disabled: true },
+  { title: 'Performance', href: '/dashboard', isActive: false, disabled: true },
+]
+
+const activityFeed = [
+  { color: 'bg-green-500', label: 'New user registered', detail: 'sarah.chen@email.com', time: '2 hours ago' },
+  { color: 'bg-blue-500', label: 'Order #4821 completed', detail: '$249.00 — Premium Plan', time: '3 hours ago' },
+  { color: 'bg-amber-500', label: 'Payment retry scheduled', detail: 'invoice_38291 — $79.00', time: '5 hours ago' },
+  { color: 'bg-green-500', label: 'Deployment successful', detail: 'v2.4.1 → production', time: '6 hours ago' },
+  { color: 'bg-blue-500', label: 'New feedback received', detail: '5-star review from Alex M.', time: '8 hours ago' },
+]
+
+const checklist = [
+  { label: 'Set up your database', done: true },
+  { label: 'Create your first model', done: true },
+  { label: 'Configure email', done: false },
+  { label: 'Deploy to production', done: false },
+]
+
+const completedCount = checklist.filter((c) => c.done).length
+const progressPercent = Math.round((completedCount / checklist.length) * 100)
+
+function getGreeting() {
+  const hour = new Date().getHours()
+  if (hour < 12) return 'Good morning'
+  if (hour < 18) return 'Good afternoon'
+  return 'Good evening'
+}
+
+const formattedDate = new Date().toLocaleDateString('en-US', {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+})
+
+// Area chart data
+const points = [20, 35, 28, 45, 42, 55, 48, 62, 58, 70, 65, 78]
+const chartW = 400
+const chartH = 120
+const stepX = chartW / (points.length - 1)
+const maxY = Math.max(...points)
+const linePoints = points.map((p, i) => `${i * stepX},${chartH - (p / maxY) * chartH}`).join(' ')
+const areaPoints = `0,${chartH} ${linePoints} ${(points.length - 1) * stepX},${chartH}`
+</script>
+
+<template>
+  <AuthenticatedLayout
+    :current-user="currentUser"
+    :app-name="appName"
+    :navigate="navigate"
+    active-path="/dashboard"
+  >
+    <Header :navigate="navigate">
+      <TopNav :links="topNav" @link-click="navigate" />
+    </Header>
+    <Main>
+      <div class="space-y-6">
+        <!-- Greeting -->
+        <div>
+          <h2 class="text-3xl font-bold tracking-tight">
+            {{ getGreeting() }}, {{ currentUser?.name?.split(' ')[0] ?? 'there' }}
+          </h2>
+          <p class="text-muted-foreground mt-1">{{ formattedDate }}</p>
+        </div>
+
+        <!-- Bento grid -->
+        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <!-- Hero card — Revenue (2 cols) -->
+          <Card class="md:col-span-2">
+            <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle class="text-sm font-medium">Revenue</CardTitle>
+              <TrendingUp class="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div class="text-3xl font-bold">$48,352</div>
+              <p class="text-xs text-muted-foreground mb-4">vs $41,200 last month</p>
+              <svg :viewBox="`0 0 ${chartW} ${chartH}`" class="h-[140px] w-full" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" class="[stop-color:var(--color-primary)]" stop-opacity="0.3" />
+                    <stop offset="100%" class="[stop-color:var(--color-primary)]" stop-opacity="0.02" />
+                  </linearGradient>
+                </defs>
+                <polygon :points="areaPoints" fill="url(#areaGradient)" />
+                <polyline
+                  :points="linePoints"
+                  fill="none"
+                  class="stroke-primary"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </CardContent>
+          </Card>
+
+          <!-- Users -->
+          <Card>
+            <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle class="text-sm font-medium">Users</CardTitle>
+              <Users class="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div class="text-2xl font-bold">+2,350</div>
+              <p class="text-xs text-muted-foreground">+12.5% from last month</p>
+            </CardContent>
+          </Card>
+
+          <!-- Orders -->
+          <Card>
+            <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle class="text-sm font-medium">Orders</CardTitle>
+              <ShoppingCart class="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div class="text-2xl font-bold">+856</div>
+              <p class="text-xs text-muted-foreground">+8.2% from last month</p>
+            </CardContent>
+          </Card>
+
+          <!-- Conversion -->
+          <Card>
+            <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle class="text-sm font-medium">Conversion</CardTitle>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="h-4 w-4 text-muted-foreground">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+              </svg>
+            </CardHeader>
+            <CardContent>
+              <div class="text-2xl font-bold">4.2%</div>
+              <p class="text-xs text-muted-foreground">+0.3% from last month</p>
+            </CardContent>
+          </Card>
+
+          <!-- Recent Activity -->
+          <Card class="md:col-span-2 lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Recent Activity</CardTitle>
+              <CardDescription>Latest events across your app</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div class="space-y-4">
+                <div
+                  v-for="(item, i) in activityFeed"
+                  :key="i"
+                  class="flex items-start gap-3"
+                >
+                  <div :class="['mt-1.5 h-2 w-2 rounded-full shrink-0', item.color]" />
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium leading-none">{{ item.label }}</p>
+                    <p class="text-xs text-muted-foreground mt-1 truncate">{{ item.detail }}</p>
+                  </div>
+                  <span class="text-xs text-muted-foreground whitespace-nowrap">{{ item.time }}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <!-- Getting Started -->
+          <Card>
+            <CardHeader>
+              <CardTitle>Getting Started</CardTitle>
+              <CardDescription>{{ completedCount }} of {{ checklist.length }} complete</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <!-- Progress bar -->
+              <div class="mb-4">
+                <div class="h-2 w-full rounded-full bg-secondary">
+                  <div
+                    class="h-2 rounded-full bg-primary transition-all"
+                    :style="{ width: `${progressPercent}%` }"
+                  />
+                </div>
+                <p class="text-xs text-muted-foreground mt-1.5">{{ progressPercent }}% complete</p>
+              </div>
+              <div class="space-y-3">
+                <div
+                  v-for="(item, i) in checklist"
+                  :key="i"
+                  class="flex items-center gap-2.5"
+                >
+                  <CheckCircle2 v-if="item.done" class="h-4 w-4 text-primary shrink-0" />
+                  <Circle v-else class="h-4 w-4 text-muted-foreground/40 shrink-0" />
+                  <span :class="['text-sm', item.done ? 'line-through text-muted-foreground' : '']">
+                    {{ item.label }}
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </Main>
+  </AuthenticatedLayout>
+</template>
