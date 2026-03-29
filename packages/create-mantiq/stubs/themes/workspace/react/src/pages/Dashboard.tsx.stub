@@ -5,16 +5,23 @@ import { Main } from '@/components/layout/main'
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import {
   ChevronRight,
   ChevronDown,
-  CheckCircle2,
-  Circle,
   GripVertical,
+  ClipboardList,
+  Hammer,
+  CheckCircle2,
+  Lightbulb,
+  KanbanSquare,
+  FileText,
+  BookOpen,
+  Building2,
+  Radio,
+  Rocket,
+  StickyNote,
+  Hand,
 } from 'lucide-react'
 
 interface DashboardProps {
@@ -26,13 +33,20 @@ interface DashboardProps {
 
 type Status = 'not-started' | 'in-progress' | 'done'
 
-const kanbanColumns: { status: Status; label: string; emoji: string; color: string }[] = [
-  { status: 'not-started', label: 'Not Started', emoji: '📋', color: 'bg-stone-200 dark:bg-stone-700' },
-  { status: 'in-progress', label: 'In Progress', emoji: '🔨', color: 'bg-amber-200 dark:bg-amber-800' },
-  { status: 'done', label: 'Done', emoji: '✅', color: 'bg-emerald-200 dark:bg-emerald-800' },
+interface Task {
+  id: number
+  title: string
+  status: Status
+  tag?: string
+}
+
+const kanbanColumns: { status: Status; label: string; icon: typeof ClipboardList; iconClass: string }[] = [
+  { status: 'not-started', label: 'Not Started', icon: ClipboardList, iconClass: 'text-muted-foreground' },
+  { status: 'in-progress', label: 'In Progress', icon: Hammer, iconClass: 'text-amber-500' },
+  { status: 'done', label: 'Done', icon: CheckCircle2, iconClass: 'text-emerald-500' },
 ]
 
-const tasks: { id: number; title: string; status: Status; tag?: string }[] = [
+const initialTasks: Task[] = [
   { id: 1, title: 'Design database schema', status: 'done', tag: 'Backend' },
   { id: 2, title: 'Set up authentication flow', status: 'done', tag: 'Auth' },
   { id: 3, title: 'Build API endpoints', status: 'in-progress', tag: 'Backend' },
@@ -51,11 +65,11 @@ const tagColors: Record<string, string> = {
   DevOps: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300',
 }
 
-const pages = [
-  { emoji: '📖', title: 'Getting Started', desc: 'Quick introduction and setup guide' },
-  { emoji: '🏗️', title: 'Architecture', desc: 'How the application is structured' },
-  { emoji: '📡', title: 'API Reference', desc: 'Endpoints, params, and responses' },
-  { emoji: '🚀', title: 'Deployment', desc: 'Deploy your app to production' },
+const pageItems = [
+  { icon: BookOpen, title: 'Getting Started', desc: 'Quick introduction and setup guide' },
+  { icon: Building2, title: 'Architecture', desc: 'How the application is structured' },
+  { icon: Radio, title: 'API Reference', desc: 'Endpoints, params, and responses' },
+  { icon: Rocket, title: 'Deployment', desc: 'Deploy your app to production' },
 ]
 
 function getGreeting() {
@@ -70,14 +84,53 @@ export default function Dashboard({
   currentUser,
   navigate,
 }: DashboardProps) {
+  const [tasks, setTasks] = useState<Task[]>(initialTasks)
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     kanban: true,
     pages: true,
     notes: false,
   })
+  const [draggedId, setDraggedId] = useState<number | null>(null)
+  const [dropTarget, setDropTarget] = useState<Status | null>(null)
 
   const toggle = (section: string) =>
     setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }))
+
+  const handleDragStart = (e: React.DragEvent, taskId: number) => {
+    setDraggedId(taskId)
+    e.dataTransfer.effectAllowed = 'move'
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '0.5'
+    }
+  }
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    setDraggedId(null)
+    setDropTarget(null)
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '1'
+    }
+  }
+
+  const handleDragOver = (e: React.DragEvent, status: Status) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setDropTarget(status)
+  }
+
+  const handleDragLeave = () => {
+    setDropTarget(null)
+  }
+
+  const handleDrop = (e: React.DragEvent, targetStatus: Status) => {
+    e.preventDefault()
+    if (draggedId === null) return
+    setTasks((prev) =>
+      prev.map((t) => (t.id === draggedId ? { ...t, status: targetStatus } : t)),
+    )
+    setDraggedId(null)
+    setDropTarget(null)
+  }
 
   return (
     <AuthenticatedLayout
@@ -89,23 +142,25 @@ export default function Dashboard({
       <Header navigate={navigate} />
       <Main>
         <div className="max-w-4xl mx-auto space-y-8">
-          {/* Cover & title — Notion-style page header */}
+          {/* Cover & title */}
           <div>
-            <div className="h-36 rounded-xl bg-gradient-to-br from-amber-100 via-orange-50 to-rose-100 dark:from-amber-950/30 dark:via-stone-900 dark:to-rose-950/20 mb-6" />
-            <div className="-mt-10 ml-2">
-              <span className="text-5xl select-none">👋</span>
+            <div className="h-40 rounded-2xl bg-gradient-to-r from-amber-300 via-orange-300 to-rose-300 dark:from-amber-800 dark:via-orange-900 dark:to-rose-900 mb-6 shadow-sm" />
+            <div className="-mt-10 ml-3">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-card border shadow-md">
+                <Hand className="h-7 w-7 text-amber-500" />
+              </div>
             </div>
             <h1 className="mt-4 text-3xl font-bold tracking-tight">
               {getGreeting()}, {currentUser?.name?.split(' ')[0] ?? 'there'}
             </h1>
             <p className="text-muted-foreground mt-1">
-              Here's your workspace overview. Click any section to expand or collapse it.
+              Here's your workspace overview. Drag tasks between columns to update their status.
             </p>
           </div>
 
           {/* Callout block */}
-          <div className="flex gap-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-800/30 p-4">
-            <span className="text-xl select-none shrink-0">💡</span>
+          <div className="flex gap-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-700 p-4 shadow-sm">
+            <Lightbulb className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-medium">Tip</p>
               <p className="text-sm text-muted-foreground">
@@ -123,26 +178,45 @@ export default function Dashboard({
               className="flex items-center gap-1.5 mb-3 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
             >
               {expandedSections.kanban ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-              🗂️ Project Board
+              <KanbanSquare className="h-4 w-4" />
+              Project Board
             </button>
 
             {expandedSections.kanban && (
               <div className="grid gap-4 md:grid-cols-3">
                 {kanbanColumns.map((col) => {
+                  const Icon = col.icon
                   const columnTasks = tasks.filter((t) => t.status === col.status)
+                  const isOver = dropTarget === col.status && draggedId !== null
                   return (
-                    <div key={col.status}>
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="text-sm select-none">{col.emoji}</span>
+                    <div
+                      key={col.status}
+                      onDragOver={(e) => handleDragOver(e, col.status)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, col.status)}
+                      className={`rounded-xl p-2 -m-2 transition-colors ${isOver ? 'bg-primary/5 ring-2 ring-primary/20' : ''}`}
+                    >
+                      <div className="flex items-center gap-2 mb-3 px-2">
+                        <Icon className={`h-4 w-4 ${col.iconClass}`} />
                         <span className="text-sm font-medium">{col.label}</span>
-                        <span className="text-xs text-muted-foreground ml-auto">{columnTasks.length}</span>
+                        <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-muted text-xs text-muted-foreground">
+                          {columnTasks.length}
+                        </span>
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-2 min-h-[60px]">
                         {columnTasks.map((task) => (
-                          <Card key={task.id} className="group cursor-default shadow-none hover:shadow-sm transition-shadow">
+                          <Card
+                            key={task.id}
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, task.id)}
+                            onDragEnd={handleDragEnd}
+                            className={`group cursor-grab active:cursor-grabbing shadow-sm hover:shadow-md transition-all border-border/60 ${
+                              draggedId === task.id ? 'opacity-50 scale-95' : ''
+                            }`}
+                          >
                             <CardContent className="p-3">
                               <div className="flex items-start gap-2">
-                                <GripVertical className="h-4 w-4 mt-0.5 text-muted-foreground/0 group-hover:text-muted-foreground/50 transition-colors shrink-0" />
+                                <GripVertical className="h-4 w-4 mt-0.5 text-muted-foreground/30 group-hover:text-muted-foreground/60 transition-colors shrink-0" />
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm">{task.title}</p>
                                   {task.tag && (
@@ -156,8 +230,8 @@ export default function Dashboard({
                           </Card>
                         ))}
                         {columnTasks.length === 0 && (
-                          <div className="rounded-xl border border-dashed p-4 text-center text-xs text-muted-foreground">
-                            No tasks
+                          <div className={`rounded-xl border-2 border-dashed p-6 text-center text-xs text-muted-foreground transition-colors ${isOver ? 'border-primary/40 bg-primary/5' : ''}`}>
+                            Drop tasks here
                           </div>
                         )}
                       </div>
@@ -176,23 +250,27 @@ export default function Dashboard({
               className="flex items-center gap-1.5 mb-3 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
             >
               {expandedSections.pages ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-              📄 Pages
+              <FileText className="h-4 w-4" />
+              Pages
             </button>
 
             {expandedSections.pages && (
               <div className="space-y-1">
-                {pages.map((page) => (
-                  <div
-                    key={page.title}
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-muted/50 cursor-pointer"
-                  >
-                    <span className="text-lg select-none">{page.emoji}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">{page.title}</p>
-                      <p className="text-xs text-muted-foreground truncate">{page.desc}</p>
+                {pageItems.map((page) => {
+                  const Icon = page.icon
+                  return (
+                    <div
+                      key={page.title}
+                      className="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-muted/50 cursor-pointer"
+                    >
+                      <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">{page.title}</p>
+                        <p className="text-xs text-muted-foreground truncate">{page.desc}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>
@@ -205,7 +283,8 @@ export default function Dashboard({
               className="flex items-center gap-1.5 mb-3 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
             >
               {expandedSections.notes ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-              📝 Quick Notes
+              <StickyNote className="h-4 w-4" />
+              Quick Notes
             </button>
 
             {expandedSections.notes && (

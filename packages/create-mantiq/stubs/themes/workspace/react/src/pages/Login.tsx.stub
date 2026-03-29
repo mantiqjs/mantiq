@@ -3,6 +3,7 @@ import { post } from '../lib/api.ts'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Hand, AlertTriangle } from 'lucide-react'
 
 interface LoginProps {
   appName?: string
@@ -49,10 +50,11 @@ export default function Login({ appName = 'Mantiq', navigate }: LoginProps) {
       {/* Centered content */}
       <div className="flex flex-col items-center justify-center px-4" style={{ minHeight: 'calc(100vh - 64px)' }}>
         <div className="w-full max-w-sm">
-          {/* Emoji greeting */}
           <div className="mb-6 text-center">
-            <span className="text-5xl select-none">👋</span>
-            <h1 className="mt-4 text-2xl font-bold tracking-tight">Welcome back</h1>
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+              <Hand className="h-7 w-7 text-primary" />
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight">Welcome back</h1>
             <p className="mt-2 text-sm text-muted-foreground">
               Log in to your {appName} workspace
             </p>
@@ -60,7 +62,7 @@ export default function Login({ appName = 'Mantiq', navigate }: LoginProps) {
 
           {error && (
             <div className="mb-4 flex items-center gap-2 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200/50 dark:border-red-800/30 px-4 py-3 text-sm text-red-700 dark:text-red-400">
-              <span className="select-none">⚠️</span>
+              <AlertTriangle className="h-4 w-4 shrink-0" />
               {error}
             </div>
           )}

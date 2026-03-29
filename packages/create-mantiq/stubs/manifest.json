@@ -1767,6 +1767,14 @@
             "target": "src/style.css"
           },
           {
+            "stub": "src/components/layout/authenticated-layout.tsx.stub",
+            "target": "src/components/layout/authenticated-layout.tsx"
+          },
+          {
+            "stub": "src/components/layout/app-sidebar.tsx.stub",
+            "target": "src/components/layout/app-sidebar.tsx"
+          },
+          {
             "stub": "src/pages/Dashboard.tsx.stub",
             "target": "src/pages/Dashboard.tsx"
           },
@@ -1827,6 +1835,14 @@
           {
             "stub": "src/style.css.stub",
             "target": "src/style.css"
+          },
+          {
+            "stub": "src/components/layout/authenticated-layout.tsx.stub",
+            "target": "src/components/layout/authenticated-layout.tsx"
+          },
+          {
+            "stub": "src/components/layout/app-sidebar.tsx.stub",
+            "target": "src/components/layout/app-sidebar.tsx"
           },
           {
             "stub": "src/pages/Dashboard.tsx.stub",
@@ -1891,6 +1907,14 @@
             "target": "src/style.css"
           },
           {
+            "stub": "src/components/layout/authenticated-layout.tsx.stub",
+            "target": "src/components/layout/authenticated-layout.tsx"
+          },
+          {
+            "stub": "src/components/layout/app-sidebar.tsx.stub",
+            "target": "src/components/layout/app-sidebar.tsx"
+          },
+          {
             "stub": "src/pages/Dashboard.tsx.stub",
             "target": "src/pages/Dashboard.tsx"
           },
@@ -1951,6 +1975,14 @@
           {
             "stub": "src/style.css.stub",
             "target": "src/style.css"
+          },
+          {
+            "stub": "src/components/layout/authenticated-layout.tsx.stub",
+            "target": "src/components/layout/authenticated-layout.tsx"
+          },
+          {
+            "stub": "src/components/layout/app-sidebar.tsx.stub",
+            "target": "src/components/layout/app-sidebar.tsx"
           },
           {
             "stub": "src/pages/Dashboard.tsx.stub",
