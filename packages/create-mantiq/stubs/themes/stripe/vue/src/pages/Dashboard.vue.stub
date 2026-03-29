@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { AuthenticatedLayout } from '@/components/layout'
-import { Header } from '@/components/layout'
-import { Main } from '@/components/layout'
-import { TopNav } from '@/components/layout'
-import type { TopNavLink } from '@/components/layout/TopNav.vue'
+import AuthenticatedLayout from '@/components/layout/AuthenticatedLayout.vue'
+import Header from '@/components/layout/Header.vue'
+import Main from '@/components/layout/Main.vue'
+import TopNav from '@/components/layout/TopNav.vue'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -14,6 +13,7 @@ import {
   CardDescription,
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
 import {
   Table,
   TableBody,
@@ -24,7 +24,6 @@ import {
 } from '@/components/ui/table'
 import {
   TrendingUp,
-  TrendingDown,
   ArrowUpRight,
   ArrowDownRight,
   CreditCard,
@@ -36,26 +35,17 @@ import {
 const props = withDefaults(defineProps<{
   appName?: string
   currentUser?: { id: number; name: string; email: string; role: string } | null
-  navigate: (href: string) => void
+  navigate?: (href: string) => void
 }>(), {
   appName: 'Mantiq',
 })
 
-const topNav: TopNavLink[] = [
+const topNav = [
   { title: 'Overview', href: '/dashboard', isActive: true },
   { title: 'Sales', href: '/dashboard', isActive: false, disabled: true },
   { title: 'Tickets', href: '/dashboard', isActive: false, disabled: true },
   { title: 'Performance', href: '/dashboard', isActive: false, disabled: true },
 ]
-
-const activeRange = ref('7d')
-const ranges = ['7d', '30d', '90d'] as const
-
-function rangeLabel(r: string) {
-  if (r === '7d') return '7 days'
-  if (r === '30d') return '30 days'
-  return '90 days'
-}
 
 const transactions = [
   { customer: 'Olivia Martin', email: 'olivia@email.com', amount: '$1,999.00', status: 'Completed', date: 'Mar 15, 2025' },
@@ -69,6 +59,16 @@ function statusColor(status: string) {
   if (status === 'Completed') return 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/20'
   if (status === 'Pending') return 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/20'
   return 'bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/20'
+}
+
+const activeRange = ref('7d')
+
+const ranges = ['7d', '30d', '90d'] as const
+
+function rangeLabel(range: string) {
+  if (range === '7d') return '7 days'
+  if (range === '30d') return '30 days'
+  return '90 days'
 }
 
 // Revenue chart data
@@ -100,6 +100,15 @@ const linePath = points.map((p, i) => {
 }).join(' ')
 
 const areaPath = `${linePath} L ${points[points.length - 1].x} ${padT + chartH} L ${points[0].x} ${padT + chartH} Z`
+
+function yPos(index: number) {
+  return padT + chartH - (index / (yLabels.length - 1)) * chartH
+}
+
+function xLabelPos(index: number) {
+  const idx = Math.round((index / (days.length - 1)) * (chartData.length - 1))
+  return points[idx].x
+}
 </script>
 
 <template>
@@ -110,7 +119,7 @@ const areaPath = `${linePath} L ${points[points.length - 1].x} ${padT + chartH} 
     active-path="/dashboard"
   >
     <Header :navigate="navigate">
-      <TopNav :links="topNav" @link-click="navigate" />
+      <TopNav :links="topNav" :on-link-click="navigate" />
     </Header>
     <Main>
       <div class="space-y-6">
@@ -136,7 +145,6 @@ const areaPath = `${linePath} L ${points[points.length - 1].x} ${padT + chartH} 
 
         <!-- Stat cards -->
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <!-- Total Revenue -->
           <Card>
             <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle class="text-sm font-medium">Total Revenue</CardTitle>
@@ -154,7 +162,6 @@ const areaPath = `${linePath} L ${points[points.length - 1].x} ${padT + chartH} 
             </CardContent>
           </Card>
 
-          <!-- New Customers -->
           <Card>
             <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle class="text-sm font-medium">New Customers</CardTitle>
@@ -172,7 +179,6 @@ const areaPath = `${linePath} L ${points[points.length - 1].x} ${padT + chartH} 
             </CardContent>
           </Card>
 
-          <!-- Active Subscriptions -->
           <Card>
             <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle class="text-sm font-medium">Active Subscriptions</CardTitle>
@@ -190,7 +196,6 @@ const areaPath = `${linePath} L ${points[points.length - 1].x} ${padT + chartH} 
             </CardContent>
           </Card>
 
-          <!-- Churn Rate -->
           <Card>
             <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle class="text-sm font-medium">Churn Rate</CardTitle>
@@ -227,8 +232,8 @@ const areaPath = `${linePath} L ${points[points.length - 1].x} ${padT + chartH} 
             <svg :viewBox="`0 0 ${svgW} ${svgH}`" class="h-[280px] w-full" preserveAspectRatio="xMidYMid meet">
               <defs>
                 <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" style="stop-color: var(--color-primary)" stop-opacity="0.3" />
-                  <stop offset="100%" style="stop-color: var(--color-primary)" stop-opacity="0.02" />
+                  <stop offset="0%" class="[stop-color:var(--color-primary)]" stop-opacity="0.3" />
+                  <stop offset="100%" class="[stop-color:var(--color-primary)]" stop-opacity="0.02" />
                 </linearGradient>
               </defs>
 
@@ -237,9 +242,9 @@ const areaPath = `${linePath} L ${points[points.length - 1].x} ${padT + chartH} 
                 v-for="(_, i) in yLabels"
                 :key="'grid-' + i"
                 :x1="padL"
-                :y1="padT + chartH - (i / (yLabels.length - 1)) * chartH"
+                :y1="yPos(i)"
                 :x2="svgW - padR"
-                :y2="padT + chartH - (i / (yLabels.length - 1)) * chartH"
+                :y2="yPos(i)"
                 class="stroke-border"
                 stroke-width="0.5"
                 stroke-dasharray="4 4"
@@ -248,9 +253,9 @@ const areaPath = `${linePath} L ${points[points.length - 1].x} ${padT + chartH} 
               <!-- Y-axis labels -->
               <text
                 v-for="(label, i) in yLabels"
-                :key="'y-' + i"
+                :key="'ylabel-' + i"
                 :x="padL - 6"
-                :y="padT + chartH - (i / (yLabels.length - 1)) * chartH + 3"
+                :y="yPos(i) + 3"
                 text-anchor="end"
                 class="fill-muted-foreground text-[9px]"
               >
@@ -266,8 +271,8 @@ const areaPath = `${linePath} L ${points[points.length - 1].x} ${padT + chartH} 
               <!-- X-axis labels -->
               <text
                 v-for="(day, i) in days"
-                :key="'x-' + i"
-                :x="points[Math.round((i / (days.length - 1)) * (chartData.length - 1))].x"
+                :key="'xlabel-' + i"
+                :x="xLabelPos(i)"
                 :y="svgH - 6"
                 text-anchor="middle"
                 class="fill-muted-foreground text-[9px]"

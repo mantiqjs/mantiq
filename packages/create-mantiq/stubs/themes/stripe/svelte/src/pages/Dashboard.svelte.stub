@@ -6,6 +6,7 @@
   import { Button } from '$lib/components/ui/button'
   import * as Card from '$lib/components/ui/card'
   import { Badge } from '$lib/components/ui/badge'
+  import { Separator } from '$lib/components/ui/separator'
   import * as Table from '$lib/components/ui/table'
   import {
     TrendingUp,
@@ -18,18 +19,12 @@
     Activity,
   } from 'lucide-svelte'
 
-  let {
-    appName = 'Mantiq',
-    currentUser = null,
-    navigate,
-  }: {
+  interface Props {
     appName?: string
-    currentUser?: { id: number; name: string; email: string } | null
-    navigate: (href: string) => void
-    [key: string]: any
-  } = $props()
-
-  let activeRange = $state('7d')
+    currentUser?: { id: number; name: string; email: string; role: string } | null
+    navigate?: (href: string) => void
+  }
+  let { appName = 'Mantiq', currentUser = null, navigate = () => {} }: Props = $props()
 
   const topNav = [
     { title: 'Overview', href: '/dashboard', isActive: true },
@@ -37,14 +32,6 @@
     { title: 'Tickets', href: '/dashboard', isActive: false, disabled: true },
     { title: 'Performance', href: '/dashboard', isActive: false, disabled: true },
   ]
-
-  const ranges = ['7d', '30d', '90d'] as const
-
-  function rangeLabel(r: string) {
-    if (r === '7d') return '7 days'
-    if (r === '30d') return '30 days'
-    return '90 days'
-  }
 
   const transactions = [
     { customer: 'Olivia Martin', email: 'olivia@email.com', amount: '$1,999.00', status: 'Completed', date: 'Mar 15, 2025' },
@@ -60,7 +47,9 @@
     return 'bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/20'
   }
 
-  // Revenue chart
+  let activeRange = $state('7d')
+
+  // Revenue chart data
   const chartData = [1200, 2100, 1800, 3200, 2800, 4100, 3600, 5200, 4800, 5800, 5100, 6200, 5600]
   const maxVal = Math.max(...chartData)
   const svgW = 700
@@ -91,12 +80,7 @@
   const areaPath = `${linePath} L ${points[points.length - 1].x} ${padT + chartH} L ${points[0].x} ${padT + chartH} Z`
 </script>
 
-<AuthenticatedLayout
-  {currentUser}
-  {appName}
-  {navigate}
-  activePath="/dashboard"
->
+<AuthenticatedLayout {currentUser} {appName} {navigate} activePath="/dashboard">
   <Header {navigate}>
     <TopNav links={topNav} onLinkClick={navigate} />
   </Header>
@@ -106,12 +90,14 @@
       <div class="flex items-center justify-between">
         <h2 class="text-3xl font-bold tracking-tight">Dashboard</h2>
         <div class="flex items-center gap-1 rounded-lg border bg-card p-1">
-          {#each ranges as range}
+          {#each ['7d', '30d', '90d'] as range}
             <button
-              class="rounded-md px-3 py-1.5 text-xs font-medium transition-colors {activeRange === range ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}"
               onclick={() => activeRange = range}
+              class="rounded-md px-3 py-1.5 text-xs font-medium transition-colors {activeRange === range
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'}"
             >
-              {rangeLabel(range)}
+              {range === '7d' ? '7 days' : range === '30d' ? '30 days' : '90 days'}
             </button>
           {/each}
         </div>
@@ -119,7 +105,6 @@
 
       <!-- Stat cards -->
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <!-- Total Revenue -->
         <Card.Root>
           <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-2">
             <Card.Title class="text-sm font-medium">Total Revenue</Card.Title>
@@ -137,7 +122,6 @@
           </Card.Content>
         </Card.Root>
 
-        <!-- New Customers -->
         <Card.Root>
           <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-2">
             <Card.Title class="text-sm font-medium">New Customers</Card.Title>
@@ -155,7 +139,6 @@
           </Card.Content>
         </Card.Root>
 
-        <!-- Active Subscriptions -->
         <Card.Root>
           <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-2">
             <Card.Title class="text-sm font-medium">Active Subscriptions</Card.Title>
@@ -173,7 +156,6 @@
           </Card.Content>
         </Card.Root>
 
-        <!-- Churn Rate -->
         <Card.Root>
           <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-2">
             <Card.Title class="text-sm font-medium">Churn Rate</Card.Title>
@@ -210,8 +192,8 @@
           <svg viewBox="0 0 {svgW} {svgH}" class="h-[280px] w-full" preserveAspectRatio="xMidYMid meet">
             <defs>
               <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" style="stop-color: var(--color-primary)" stop-opacity="0.3" />
-                <stop offset="100%" style="stop-color: var(--color-primary)" stop-opacity="0.02" />
+                <stop offset="0%" class="[stop-color:var(--color-primary)]" stop-opacity="0.3" />
+                <stop offset="100%" class="[stop-color:var(--color-primary)]" stop-opacity="0.02" />
               </linearGradient>
             </defs>
 
@@ -263,7 +245,7 @@
               </Table.Row>
             </Table.Header>
             <Table.Body>
-              {#each transactions as tx}
+              {#each transactions as tx (tx.email)}
                 <Table.Row>
                   <Table.Cell>
                     <div>

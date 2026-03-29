@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label'
 
 const props = withDefaults(defineProps<{
   appName?: string
-  navigate: (href: string) => void
+  navigate?: (href: string) => void
 }>(), {
   appName: 'Mantiq',
 })
@@ -21,13 +21,9 @@ const loading = ref(false)
 async function handleSubmit() {
   error.value = ''
   loading.value = true
-  const { ok, data } = await post('/register', {
-    name: name.value,
-    email: email.value,
-    password: password.value,
-  })
-  if (ok) props.navigate('/dashboard')
-  else error.value = data?.error?.message ?? data?.error ?? 'Registration failed'
+  const { ok, data } = await post('/register', { name: name.value, email: email.value, password: password.value })
+  if (ok) props.navigate?.('/dashboard')
+  else error.value = data?.error?.message ?? data?.error ?? 'Registration failed. Please try again.'
   loading.value = false
 }
 </script>
@@ -43,7 +39,7 @@ async function handleSubmit() {
 
       <div class="relative z-10 flex flex-col justify-center p-16 text-white">
         <h1 class="text-5xl font-bold leading-tight tracking-tight">
-          Start your<br>journey.
+          Start your<br />journey.
         </h1>
         <p class="mt-4 text-xl text-white/70">
           Create your account and start building something extraordinary with {{ appName }}.
@@ -80,10 +76,7 @@ async function handleSubmit() {
           </p>
         </div>
 
-        <div
-          v-if="error"
-          class="mb-6 rounded-md border border-destructive px-4 py-3 text-sm text-destructive"
-        >
+        <div v-if="error" class="mb-6 rounded-md border border-destructive px-4 py-3 text-sm text-destructive">
           {{ error }}
         </div>
 
@@ -118,6 +111,7 @@ async function handleSubmit() {
               required
               placeholder="Create a strong password"
               autocomplete="new-password"
+              :minlength="8"
             />
             <p class="text-xs text-muted-foreground">Must be at least 8 characters</p>
           </div>
@@ -131,11 +125,11 @@ async function handleSubmit() {
         </form>
 
         <p class="mt-6 text-center text-sm text-muted-foreground">
-          Already have an account?
+          Already have an account?{{ ' ' }}
           <button
             type="button"
             class="font-medium text-primary underline underline-offset-4"
-            @click="navigate('/login')"
+            @click="navigate?.('/login')"
           >
             Sign in
           </button>

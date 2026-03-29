@@ -4,14 +4,11 @@
   import { Input } from '$lib/components/ui/input'
   import { Label } from '$lib/components/ui/label'
 
-  let {
-    appName = 'Mantiq',
-    navigate,
-  }: {
+  interface Props {
     appName?: string
-    navigate: (href: string) => void
-    [key: string]: any
-  } = $props()
+    navigate?: (href: string) => void
+  }
+  let { appName = 'Mantiq', navigate = () => {} }: Props = $props()
 
   let email = $state('')
   let password = $state('')
@@ -24,85 +21,70 @@
     loading = true
     const { ok, data } = await post('/login', { email, password })
     if (ok) navigate('/dashboard')
-    else error = data?.error ?? 'Invalid email or password. Please try again.'
+    else error = data?.error ?? 'Invalid credentials.'
     loading = false
   }
 </script>
 
-<div class="relative flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
-  <!-- Dot grid background -->
-  <div
-    class="absolute inset-0 bg-[radial-gradient(circle,_oklch(0.556_0.014_285.938_/_0.15)_1px,_transparent_1px)] [background-size:24px_24px]"
-    aria-hidden="true"
-  ></div>
-
-  <div class="relative z-10 w-full max-w-md">
-    <!-- Card -->
-    <div class="rounded-xl border bg-card p-8 shadow-sm">
-      <!-- Logo -->
-      <div class="mb-8 flex items-center justify-center gap-3">
-        <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-bold">
+<div class="flex min-h-screen flex-col items-center justify-center bg-background px-4">
+  <div class="w-full max-w-[320px]">
+    <!-- Logo — just text, minimal -->
+    <div class="mb-10">
+      <div class="flex items-center gap-2">
+        <div class="flex h-7 w-7 items-center justify-center rounded bg-foreground text-background text-xs font-bold">
           M
         </div>
-        <span class="text-xl font-semibold tracking-tight">{appName}</span>
+        <span class="text-sm font-semibold tracking-tight">{appName}</span>
       </div>
-
-      <div class="mb-6 text-center">
-        <h1 class="text-xl font-semibold tracking-tight">Sign in to your account</h1>
-        <p class="mt-1 text-sm text-muted-foreground">
-          Enter your credentials to continue
-        </p>
-      </div>
-
-      {#if error}
-        <div class="mb-6 rounded-md border border-destructive px-4 py-3 text-sm text-destructive">
-          {error}
-        </div>
-      {/if}
-
-      <form onsubmit={handleSubmit} class="space-y-4">
-        <div class="space-y-2">
-          <Label for="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            bind:value={email}
-            required
-            placeholder="you@example.com"
-            autocomplete="email"
-          />
-        </div>
-        <div class="space-y-2">
-          <Label for="password">Password</Label>
-          <Input
-            id="password"
-            type="password"
-            bind:value={password}
-            required
-            placeholder="Enter your password"
-            autocomplete="current-password"
-          />
-        </div>
-        <Button type="submit" class="w-full" disabled={loading}>
-          {loading ? 'Signing in...' : 'Sign in'}
-        </Button>
-      </form>
-
-      <p class="mt-6 text-center text-sm text-muted-foreground">
-        Don't have an account?{' '}
-        <button
-          type="button"
-          class="font-medium text-primary underline-offset-4 hover:underline"
-          onclick={() => navigate('/register')}
-        >
-          Register
-        </button>
-      </p>
     </div>
 
-    <!-- Footer -->
-    <p class="mt-6 text-center text-xs text-muted-foreground">
-      Powered by {appName}
+    <h1 class="text-sm font-medium mb-6">Sign in to continue</h1>
+
+    {#if error}
+      <div class="mb-4 text-sm text-destructive">
+        {error}
+      </div>
+    {/if}
+
+    <form onsubmit={handleSubmit} class="space-y-3">
+      <div class="space-y-1.5">
+        <Label for="email" class="text-xs text-muted-foreground">Email</Label>
+        <Input
+          id="email"
+          type="email"
+          bind:value={email}
+          required
+          placeholder="you@example.com"
+          autocomplete="email"
+          class="h-8 text-sm"
+        />
+      </div>
+      <div class="space-y-1.5">
+        <Label for="password" class="text-xs text-muted-foreground">Password</Label>
+        <Input
+          id="password"
+          type="password"
+          bind:value={password}
+          required
+          placeholder="••••••••"
+          autocomplete="current-password"
+          class="h-8 text-sm"
+        />
+      </div>
+      <Button type="submit" class="w-full h-8 text-sm" disabled={loading}>
+        {loading ? 'Signing in…' : 'Continue'}
+      </Button>
+    </form>
+
+    <p class="mt-4 text-xs text-muted-foreground">
+      No account?{' '}
+      <button
+        type="button"
+        class="text-foreground hover:underline underline-offset-2"
+        onclick={() => navigate('/register')}
+      >
+        Create one
+      </button>
     </p>
   </div>
 </div>

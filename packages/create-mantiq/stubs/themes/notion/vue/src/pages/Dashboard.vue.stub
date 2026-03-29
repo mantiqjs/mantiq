@@ -1,50 +1,59 @@
 <script setup lang="ts">
-import { AuthenticatedLayout } from '@/components/layout'
-import { Header } from '@/components/layout'
-import { Main } from '@/components/layout'
-import { TopNav } from '@/components/layout'
-import type { TopNavLink } from '@/components/layout/TopNav.vue'
+import { ref } from 'vue'
+import AuthenticatedLayout from '@/components/layout/AuthenticatedLayout.vue'
+import Header from '@/components/layout/Header.vue'
+import Main from '@/components/layout/Main.vue'
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
 } from '@/components/ui/card'
-import { Users, ShoppingCart, TrendingUp, CheckCircle2, Circle } from 'lucide-vue-next'
+import {
+  ChevronRight,
+  ChevronDown,
+  GripVertical,
+} from 'lucide-vue-next'
+
+type Status = 'not-started' | 'in-progress' | 'done'
 
 const props = withDefaults(defineProps<{
   appName?: string
   currentUser?: { id: number; name: string; email: string; role: string } | null
-  navigate: (href: string) => void
+  navigate?: (href: string) => void
 }>(), {
   appName: 'Mantiq',
 })
 
-const topNav: TopNavLink[] = [
-  { title: 'Overview', href: '/dashboard', isActive: true },
-  { title: 'Sales', href: '/dashboard', isActive: false, disabled: true },
-  { title: 'Tickets', href: '/dashboard', isActive: false, disabled: true },
-  { title: 'Performance', href: '/dashboard', isActive: false, disabled: true },
+const kanbanColumns: { status: Status; label: string; emoji: string; color: string }[] = [
+  { status: 'not-started', label: 'Not Started', emoji: '\uD83D\uDCCB', color: 'bg-stone-200 dark:bg-stone-700' },
+  { status: 'in-progress', label: 'In Progress', emoji: '\uD83D\uDD28', color: 'bg-amber-200 dark:bg-amber-800' },
+  { status: 'done', label: 'Done', emoji: '\u2705', color: 'bg-emerald-200 dark:bg-emerald-800' },
 ]
 
-const activityFeed = [
-  { color: 'bg-green-500', label: 'New user registered', detail: 'sarah.chen@email.com', time: '2 hours ago' },
-  { color: 'bg-blue-500', label: 'Order #4821 completed', detail: '$249.00 — Premium Plan', time: '3 hours ago' },
-  { color: 'bg-amber-500', label: 'Payment retry scheduled', detail: 'invoice_38291 — $79.00', time: '5 hours ago' },
-  { color: 'bg-green-500', label: 'Deployment successful', detail: 'v2.4.1 → production', time: '6 hours ago' },
-  { color: 'bg-blue-500', label: 'New feedback received', detail: '5-star review from Alex M.', time: '8 hours ago' },
+const tasks: { id: number; title: string; status: Status; tag?: string }[] = [
+  { id: 1, title: 'Design database schema', status: 'done', tag: 'Backend' },
+  { id: 2, title: 'Set up authentication flow', status: 'done', tag: 'Auth' },
+  { id: 3, title: 'Build API endpoints', status: 'in-progress', tag: 'Backend' },
+  { id: 4, title: 'Create dashboard layout', status: 'in-progress', tag: 'Frontend' },
+  { id: 5, title: 'Write unit tests', status: 'not-started', tag: 'Testing' },
+  { id: 6, title: 'Set up CI/CD pipeline', status: 'not-started', tag: 'DevOps' },
+  { id: 7, title: 'Configure email notifications', status: 'not-started', tag: 'Backend' },
+  { id: 8, title: 'Deploy to staging', status: 'not-started', tag: 'DevOps' },
 ]
 
-const checklist = [
-  { label: 'Set up your database', done: true },
-  { label: 'Create your first model', done: true },
-  { label: 'Configure email', done: false },
-  { label: 'Deploy to production', done: false },
-]
+const tagColors: Record<string, string> = {
+  Backend: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+  Frontend: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
+  Auth: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+  Testing: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+  DevOps: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300',
+}
 
-const completedCount = checklist.filter((c) => c.done).length
-const progressPercent = Math.round((completedCount / checklist.length) * 100)
+const pages = [
+  { emoji: '\uD83D\uDCD6', title: 'Getting Started', desc: 'Quick introduction and setup guide' },
+  { emoji: '\uD83C\uDFD7\uFE0F', title: 'Architecture', desc: 'How the application is structured' },
+  { emoji: '\uD83D\uDCE1', title: 'API Reference', desc: 'Endpoints, params, and responses' },
+  { emoji: '\uD83D\uDE80', title: 'Deployment', desc: 'Deploy your app to production' },
+]
 
 function getGreeting() {
   const hour = new Date().getHours()
@@ -53,21 +62,19 @@ function getGreeting() {
   return 'Good evening'
 }
 
-const formattedDate = new Date().toLocaleDateString('en-US', {
-  weekday: 'long',
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric',
+const expandedSections = ref<Record<string, boolean>>({
+  kanban: true,
+  pages: true,
+  notes: false,
 })
 
-// Area chart data
-const points = [20, 35, 28, 45, 42, 55, 48, 62, 58, 70, 65, 78]
-const chartW = 400
-const chartH = 120
-const stepX = chartW / (points.length - 1)
-const maxY = Math.max(...points)
-const linePoints = points.map((p, i) => `${i * stepX},${chartH - (p / maxY) * chartH}`).join(' ')
-const areaPoints = `0,${chartH} ${linePoints} ${(points.length - 1) * stepX},${chartH}`
+function toggle(section: string) {
+  expandedSections.value[section] = !expandedSections.value[section]
+}
+
+function getColumnTasks(status: Status) {
+  return tasks.filter((t) => t.status === status)
+}
 </script>
 
 <template>
@@ -77,141 +84,132 @@ const areaPoints = `0,${chartH} ${linePoints} ${(points.length - 1) * stepX},${c
     :navigate="navigate"
     active-path="/dashboard"
   >
-    <Header :navigate="navigate">
-      <TopNav :links="topNav" @link-click="navigate" />
-    </Header>
+    <Header :navigate="navigate" />
     <Main>
-      <div class="space-y-6">
-        <!-- Greeting -->
+      <div class="max-w-4xl mx-auto space-y-8">
+        <!-- Cover & title — Notion-style page header -->
         <div>
-          <h2 class="text-3xl font-bold tracking-tight">
+          <div class="h-36 rounded-xl bg-gradient-to-br from-amber-100 via-orange-50 to-rose-100 dark:from-amber-950/30 dark:via-stone-900 dark:to-rose-950/20 mb-6" />
+          <div class="-mt-10 ml-2">
+            <span class="text-5xl select-none">&#x1F44B;</span>
+          </div>
+          <h1 class="mt-4 text-3xl font-bold tracking-tight">
             {{ getGreeting() }}, {{ currentUser?.name?.split(' ')[0] ?? 'there' }}
-          </h2>
-          <p class="text-muted-foreground mt-1">{{ formattedDate }}</p>
+          </h1>
+          <p class="text-muted-foreground mt-1">
+            Here's your workspace overview. Click any section to expand or collapse it.
+          </p>
         </div>
 
-        <!-- Bento grid -->
-        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <!-- Hero card — Revenue (2 cols) -->
-          <Card class="md:col-span-2">
-            <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle class="text-sm font-medium">Revenue</CardTitle>
-              <TrendingUp class="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div class="text-3xl font-bold">$48,352</div>
-              <p class="text-xs text-muted-foreground mb-4">vs $41,200 last month</p>
-              <svg :viewBox="`0 0 ${chartW} ${chartH}`" class="h-[140px] w-full" preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" class="[stop-color:var(--color-primary)]" stop-opacity="0.3" />
-                    <stop offset="100%" class="[stop-color:var(--color-primary)]" stop-opacity="0.02" />
-                  </linearGradient>
-                </defs>
-                <polygon :points="areaPoints" fill="url(#areaGradient)" />
-                <polyline
-                  :points="linePoints"
-                  fill="none"
-                  class="stroke-primary"
-                  stroke-width="2.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </CardContent>
-          </Card>
+        <!-- Callout block -->
+        <div class="flex gap-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-800/30 p-4">
+          <span class="text-xl select-none shrink-0">&#x1F4A1;</span>
+          <div>
+            <p class="text-sm font-medium">Tip</p>
+            <p class="text-sm text-muted-foreground">
+              Customize this dashboard by editing <code class="rounded bg-muted px-1 py-0.5 text-xs font-mono">src/pages/Dashboard.vue</code>.
+              Add your own widgets, data sources, and integrations.
+            </p>
+          </div>
+        </div>
 
-          <!-- Users -->
-          <Card>
-            <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle class="text-sm font-medium">Users</CardTitle>
-              <Users class="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div class="text-2xl font-bold">+2,350</div>
-              <p class="text-xs text-muted-foreground">+12.5% from last month</p>
-            </CardContent>
-          </Card>
+        <!-- Kanban board section -->
+        <div>
+          <button
+            type="button"
+            class="flex items-center gap-1.5 mb-3 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+            @click="toggle('kanban')"
+          >
+            <ChevronDown v-if="expandedSections.kanban" class="h-4 w-4" />
+            <ChevronRight v-else class="h-4 w-4" />
+            &#x1F5C2;&#xFE0F; Project Board
+          </button>
 
-          <!-- Orders -->
-          <Card>
-            <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle class="text-sm font-medium">Orders</CardTitle>
-              <ShoppingCart class="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div class="text-2xl font-bold">+856</div>
-              <p class="text-xs text-muted-foreground">+8.2% from last month</p>
-            </CardContent>
-          </Card>
-
-          <!-- Conversion -->
-          <Card>
-            <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle class="text-sm font-medium">Conversion</CardTitle>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="h-4 w-4 text-muted-foreground">
-                <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-              </svg>
-            </CardHeader>
-            <CardContent>
-              <div class="text-2xl font-bold">4.2%</div>
-              <p class="text-xs text-muted-foreground">+0.3% from last month</p>
-            </CardContent>
-          </Card>
-
-          <!-- Recent Activity -->
-          <Card class="md:col-span-2 lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>Latest events across your app</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div class="space-y-4">
-                <div
-                  v-for="(item, i) in activityFeed"
-                  :key="i"
-                  class="flex items-start gap-3"
+          <div v-if="expandedSections.kanban" class="grid gap-4 md:grid-cols-3">
+            <div v-for="col in kanbanColumns" :key="col.status">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="text-sm select-none">{{ col.emoji }}</span>
+                <span class="text-sm font-medium">{{ col.label }}</span>
+                <span class="text-xs text-muted-foreground ml-auto">{{ getColumnTasks(col.status).length }}</span>
+              </div>
+              <div class="space-y-2">
+                <Card
+                  v-for="task in getColumnTasks(col.status)"
+                  :key="task.id"
+                  class="group cursor-default shadow-none hover:shadow-sm transition-shadow"
                 >
-                  <div :class="['mt-1.5 h-2 w-2 rounded-full shrink-0', item.color]" />
-                  <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium leading-none">{{ item.label }}</p>
-                    <p class="text-xs text-muted-foreground mt-1 truncate">{{ item.detail }}</p>
-                  </div>
-                  <span class="text-xs text-muted-foreground whitespace-nowrap">{{ item.time }}</span>
+                  <CardContent class="p-3">
+                    <div class="flex items-start gap-2">
+                      <GripVertical class="h-4 w-4 mt-0.5 text-muted-foreground/0 group-hover:text-muted-foreground/50 transition-colors shrink-0" />
+                      <div class="flex-1 min-w-0">
+                        <p class="text-sm">{{ task.title }}</p>
+                        <span
+                          v-if="task.tag"
+                          :class="[
+                            'mt-1.5 inline-block rounded-md px-1.5 py-0.5 text-[10px] font-medium',
+                            tagColors[task.tag] ?? 'bg-muted text-muted-foreground',
+                          ]"
+                        >
+                          {{ task.tag }}
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <div
+                  v-if="getColumnTasks(col.status).length === 0"
+                  class="rounded-xl border border-dashed p-4 text-center text-xs text-muted-foreground"
+                >
+                  No tasks
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+        </div>
 
-          <!-- Getting Started -->
-          <Card>
-            <CardHeader>
-              <CardTitle>Getting Started</CardTitle>
-              <CardDescription>{{ completedCount }} of {{ checklist.length }} complete</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <!-- Progress bar -->
-              <div class="mb-4">
-                <div class="h-2 w-full rounded-full bg-secondary">
-                  <div
-                    class="h-2 rounded-full bg-primary transition-all"
-                    :style="{ width: `${progressPercent}%` }"
-                  />
-                </div>
-                <p class="text-xs text-muted-foreground mt-1.5">{{ progressPercent }}% complete</p>
+        <!-- Pages section -->
+        <div>
+          <button
+            type="button"
+            class="flex items-center gap-1.5 mb-3 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+            @click="toggle('pages')"
+          >
+            <ChevronDown v-if="expandedSections.pages" class="h-4 w-4" />
+            <ChevronRight v-else class="h-4 w-4" />
+            &#x1F4C4; Pages
+          </button>
+
+          <div v-if="expandedSections.pages" class="space-y-1">
+            <div
+              v-for="page in pages"
+              :key="page.title"
+              class="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-muted/50 cursor-pointer"
+            >
+              <span class="text-lg select-none">{{ page.emoji }}</span>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium">{{ page.title }}</p>
+                <p class="text-xs text-muted-foreground truncate">{{ page.desc }}</p>
               </div>
-              <div class="space-y-3">
-                <div
-                  v-for="(item, i) in checklist"
-                  :key="i"
-                  class="flex items-center gap-2.5"
-                >
-                  <CheckCircle2 v-if="item.done" class="h-4 w-4 text-primary shrink-0" />
-                  <Circle v-else class="h-4 w-4 text-muted-foreground/40 shrink-0" />
-                  <span :class="['text-sm', item.done ? 'line-through text-muted-foreground' : '']">
-                    {{ item.label }}
-                  </span>
-                </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notes toggle -->
+        <div>
+          <button
+            type="button"
+            class="flex items-center gap-1.5 mb-3 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+            @click="toggle('notes')"
+          >
+            <ChevronDown v-if="expandedSections.notes" class="h-4 w-4" />
+            <ChevronRight v-else class="h-4 w-4" />
+            &#x1F4DD; Quick Notes
+          </button>
+
+          <Card v-if="expandedSections.notes" class="shadow-none">
+            <CardContent class="p-4">
+              <div class="rounded-lg bg-muted/30 p-4 text-sm text-muted-foreground italic">
+                Start typing your notes here... This is a placeholder for a rich-text editor.
               </div>
             </CardContent>
           </Card>

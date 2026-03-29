@@ -4,8 +4,8 @@
 /*
  * shadcn/ui theme — Linear
  *
- * Zinc/neutral palette with blue accent.
- * Inspired by Linear and Vercel's minimal design language.
+ * Extreme minimalism: zero shadows, hairline borders, sharp corners.
+ * Monospace numbers. Compact spacing. Inspired by Linear.app.
  */
 
 @theme inline {
@@ -48,7 +48,7 @@
 }
 
 :root {
-  --radius: 0.5rem;
+  --radius: 0.375rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0.004 285.823);
   --card: oklch(1 0 0);
@@ -65,8 +65,8 @@
   --accent-foreground: oklch(0.205 0.006 285.885);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0.004 286.32);
-  --input: oklch(0.922 0.004 286.32);
+  --border: oklch(0.935 0.004 286.32);
+  --input: oklch(0.935 0.004 286.32);
   --ring: oklch(0.546 0.245 262.881);
   --chart-1: oklch(0.546 0.245 262.881);
   --chart-2: oklch(0.6 0.118 184.714);
@@ -79,42 +79,42 @@
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.967 0.001 286.375);
   --sidebar-accent-foreground: oklch(0.205 0.006 285.885);
-  --sidebar-border: oklch(0.922 0.004 286.32);
+  --sidebar-border: oklch(0.935 0.004 286.32);
   --sidebar-ring: oklch(0.546 0.245 262.881);
 }
 
 .dark {
-  --background: oklch(0.141 0.005 285.823);
+  --background: oklch(0.13 0.004 285.823);
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.178 0.005 285.823);
+  --card: oklch(0.155 0.004 285.823);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.178 0.005 285.823);
+  --popover: oklch(0.155 0.004 285.823);
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.623 0.214 262.881);
-  --primary-foreground: oklch(0.145 0.004 285.823);
-  --secondary: oklch(0.269 0.006 286.033);
+  --primary-foreground: oklch(0.13 0.004 285.823);
+  --secondary: oklch(0.22 0.006 286.033);
   --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0.006 286.033);
-  --muted-foreground: oklch(0.708 0.014 286.067);
-  --accent: oklch(0.269 0.006 286.033);
+  --muted: oklch(0.22 0.006 286.033);
+  --muted-foreground: oklch(0.63 0.014 286.067);
+  --accent: oklch(0.22 0.006 286.033);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.704 0.191 22.216);
-  --border: oklch(0.274 0.006 286.033);
-  --input: oklch(0.274 0.006 286.033);
+  --border: oklch(0.24 0.005 286.033);
+  --input: oklch(0.24 0.005 286.033);
   --ring: oklch(0.623 0.214 262.881);
   --chart-1: oklch(0.623 0.214 262.881);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.16 0.005 285.823);
+  --sidebar: oklch(0.14 0.004 285.823);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.623 0.214 262.881);
-  --sidebar-primary-foreground: oklch(0.145 0.004 285.823);
-  --sidebar-accent: oklch(0.269 0.006 286.033);
+  --sidebar-primary-foreground: oklch(0.13 0.004 285.823);
+  --sidebar-accent: oklch(0.22 0.006 286.033);
   --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.274 0.006 286.033);
+  --sidebar-border: oklch(0.24 0.005 286.033);
   --sidebar-ring: oklch(0.623 0.214 262.881);
 }
 
@@ -124,11 +124,19 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "ss01", "ss02", "cv01";
+    -webkit-font-smoothing: antialiased;
   }
+}
+
+/* Monospace tabular figures for numbers */
+.font-mono-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
 }
 
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.animate-fade-up { animation: fadeUp 0.4s ease-out; }
+.animate-fade-up { animation: fadeUp 0.3s ease-out; }

@@ -5,14 +5,11 @@
   import { Label } from '$lib/components/ui/label'
   import { Separator } from '$lib/components/ui/separator'
 
-  let {
-    appName = 'Mantiq',
-    navigate,
-  }: {
+  interface Props {
     appName?: string
-    navigate: (href: string) => void
-    [key: string]: any
-  } = $props()
+    navigate?: (href: string) => void
+  }
+  let { appName = 'Mantiq', navigate = () => {} }: Props = $props()
 
   let name = $state('')
   let email = $state('')
@@ -100,9 +97,9 @@
             required
           />
           <label for="terms" class="text-xs text-muted-foreground leading-relaxed">
-            I agree to the
+            I agree to the{' '}
             <button type="button" class="font-medium text-primary hover:text-primary/80">Terms of Service</button>
-            and
+            {' '}and{' '}
             <button type="button" class="font-medium text-primary hover:text-primary/80">Privacy Policy</button>
           </label>
         </div>

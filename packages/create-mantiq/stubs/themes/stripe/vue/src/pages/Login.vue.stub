@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator'
 
 const props = withDefaults(defineProps<{
   appName?: string
-  navigate: (href: string) => void
+  navigate?: (href: string) => void
 }>(), {
   appName: 'Mantiq',
 })
@@ -22,7 +22,7 @@ async function handleSubmit() {
   error.value = ''
   loading.value = true
   const { ok, data } = await post('/login', { email: email.value, password: password.value })
-  if (ok) props.navigate('/dashboard')
+  if (ok) props.navigate?.('/dashboard')
   else error.value = data?.error ?? 'Invalid email or password. Please try again.'
   loading.value = false
 }
@@ -48,10 +48,7 @@ async function handleSubmit() {
           </p>
         </div>
 
-        <div
-          v-if="error"
-          class="mb-4 rounded-md border border-destructive px-4 py-3 text-sm text-destructive"
-        >
+        <div v-if="error" class="mb-4 rounded-md border border-destructive px-4 py-3 text-sm text-destructive">
           {{ error }}
         </div>
 
@@ -105,7 +102,7 @@ async function handleSubmit() {
           <button
             type="button"
             class="font-medium text-primary hover:text-primary/80"
-            @click="navigate('/register')"
+            @click="navigate?.('/register')"
           >
             Create an account
           </button>

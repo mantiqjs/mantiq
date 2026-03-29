@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label'
 
 const props = withDefaults(defineProps<{
   appName?: string
-  navigate: (href: string) => void
+  navigate?: (href: string) => void
 }>(), {
   appName: 'Mantiq',
 })
@@ -15,128 +15,58 @@ const props = withDefaults(defineProps<{
 const name = ref('')
 const email = ref('')
 const password = ref('')
-const passwordConfirmation = ref('')
 const error = ref('')
 const loading = ref(false)
 
 async function handleSubmit() {
   error.value = ''
-  if (password.value !== passwordConfirmation.value) {
-    error.value = 'Passwords do not match.'
-    return
-  }
   loading.value = true
-  const { ok, data } = await post('/register', {
-    name: name.value,
-    email: email.value,
-    password: password.value,
-  })
-  if (ok) props.navigate('/dashboard')
-  else error.value = data?.error?.message ?? data?.error ?? 'Registration failed. Please try again.'
+  const { ok, data } = await post('/register', { name: name.value, email: email.value, password: password.value })
+  if (ok) props.navigate?.('/dashboard')
+  else error.value = data?.error ?? 'Registration failed.'
   loading.value = false
 }
 </script>
 
 <template>
-  <div class="relative flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
-    <!-- Dot grid background -->
-    <div
-      class="absolute inset-0 bg-[radial-gradient(circle,_oklch(0.556_0.014_285.938_/_0.15)_1px,_transparent_1px)] [background-size:24px_24px]"
-      aria-hidden="true"
-    />
-
-    <div class="relative z-10 w-full max-w-md">
-      <!-- Card -->
-      <div class="rounded-xl border bg-card p-8 shadow-sm">
-        <!-- Logo -->
-        <div class="mb-8 flex items-center justify-center gap-3">
-          <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-bold">
+  <div class="flex min-h-screen flex-col items-center justify-center bg-background px-4">
+    <div class="w-full max-w-[320px]">
+      <div class="mb-10">
+        <div class="flex items-center gap-2">
+          <div class="flex h-7 w-7 items-center justify-center rounded bg-foreground text-background text-xs font-bold">
             M
           </div>
-          <span class="text-xl font-semibold tracking-tight">{{ appName }}</span>
+          <span class="text-sm font-semibold tracking-tight">{{ appName }}</span>
         </div>
-
-        <div class="mb-6 text-center">
-          <h1 class="text-xl font-semibold tracking-tight">Create an account</h1>
-          <p class="mt-1 text-sm text-muted-foreground">
-            Get started with {{ appName }} today
-          </p>
-        </div>
-
-        <div
-          v-if="error"
-          class="mb-6 rounded-md border border-destructive px-4 py-3 text-sm text-destructive"
-        >
-          {{ error }}
-        </div>
-
-        <form class="space-y-4" @submit.prevent="handleSubmit">
-          <div class="space-y-2">
-            <Label for="name">Name</Label>
-            <Input
-              id="name"
-              v-model="name"
-              required
-              placeholder="John Doe"
-              autocomplete="name"
-            />
-          </div>
-          <div class="space-y-2">
-            <Label for="email">Email</Label>
-            <Input
-              id="email"
-              v-model="email"
-              type="email"
-              required
-              placeholder="you@example.com"
-              autocomplete="email"
-            />
-          </div>
-          <div class="space-y-2">
-            <Label for="password">Password</Label>
-            <Input
-              id="password"
-              v-model="password"
-              type="password"
-              required
-              placeholder="Create a strong password"
-              autocomplete="new-password"
-              minlength="8"
-            />
-            <p class="text-xs text-muted-foreground">Must be at least 8 characters</p>
-          </div>
-          <div class="space-y-2">
-            <Label for="password_confirmation">Confirm Password</Label>
-            <Input
-              id="password_confirmation"
-              v-model="passwordConfirmation"
-              type="password"
-              required
-              placeholder="Confirm your password"
-              autocomplete="new-password"
-              minlength="8"
-            />
-          </div>
-          <Button type="submit" class="w-full" :disabled="loading">
-            {{ loading ? 'Creating account...' : 'Create account' }}
-          </Button>
-        </form>
-
-        <p class="mt-6 text-center text-sm text-muted-foreground">
-          Already have an account?
-          <button
-            type="button"
-            class="font-medium text-primary underline-offset-4 hover:underline"
-            @click="navigate('/login')"
-          >
-            Sign in
-          </button>
-        </p>
       </div>
 
-      <!-- Footer -->
-      <p class="mt-6 text-center text-xs text-muted-foreground">
-        Powered by {{ appName }}
+      <h1 class="text-sm font-medium mb-6">Create your account</h1>
+
+      <div v-if="error" class="mb-4 text-sm text-destructive">
+        {{ error }}
+      </div>
+
+      <form class="space-y-3" @submit.prevent="handleSubmit">
+        <div class="space-y-1.5">
+          <Label for="name" class="text-xs text-muted-foreground">Name</Label>
+          <Input id="name" v-model="name" required placeholder="Your name" class="h-8 text-sm" />
+        </div>
+        <div class="space-y-1.5">
+          <Label for="email" class="text-xs text-muted-foreground">Email</Label>
+          <Input id="email" v-model="email" type="email" required placeholder="you@example.com" autocomplete="email" class="h-8 text-sm" />
+        </div>
+        <div class="space-y-1.5">
+          <Label for="password" class="text-xs text-muted-foreground">Password</Label>
+          <Input id="password" v-model="password" type="password" required placeholder="••••••••" class="h-8 text-sm" />
+        </div>
+        <Button type="submit" class="w-full h-8 text-sm" :disabled="loading">
+          {{ loading ? 'Creating\u2026' : 'Create account' }}
+        </Button>
+      </form>
+
+      <p class="mt-4 text-xs text-muted-foreground">
+        Already have an account?{{ ' ' }}
+        <button type="button" class="text-foreground hover:underline underline-offset-2" @click="navigate?.('/login')">Sign in</button>
       </p>
     </div>
   </div>

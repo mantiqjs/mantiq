@@ -4,6 +4,7 @@
   import Main from '$lib/components/layout/Main.svelte'
   import { Button } from '$lib/components/ui/button'
   import * as Card from '$lib/components/ui/card'
+  import { Badge } from '$lib/components/ui/badge'
   import {
     Rocket,
     Users,
@@ -19,16 +20,12 @@
     Headphones,
   } from 'lucide-svelte'
 
-  let {
-    appName = 'Mantiq',
-    currentUser = null,
-    navigate,
-  }: {
+  interface Props {
     appName?: string
-    currentUser?: { id: number; name: string; email: string } | null
-    navigate: (href: string) => void
-    [key: string]: any
-  } = $props()
+    currentUser?: { id: number; name: string; email: string; role: string } | null
+    navigate?: (href: string) => void
+  }
+  let { appName = 'Mantiq', currentUser = null, navigate = () => {} }: Props = $props()
 
   const activityItems = [
     {
@@ -69,19 +66,14 @@
   ]
 
   const quickLinks = [
-    { icon: FileText, label: 'Documentation' },
-    { icon: BookOpen, label: 'API Reference' },
-    { icon: MessageCircle, label: 'Community' },
-    { icon: Headphones, label: 'Support' },
+    { icon: FileText, label: 'Documentation', href: '#' },
+    { icon: BookOpen, label: 'API Reference', href: '#' },
+    { icon: MessageCircle, label: 'Community', href: '#' },
+    { icon: Headphones, label: 'Support', href: '#' },
   ]
 </script>
 
-<AuthenticatedLayout
-  {currentUser}
-  {appName}
-  {navigate}
-  activePath="/dashboard"
->
+<AuthenticatedLayout {currentUser} {appName} {navigate} activePath="/dashboard">
   <Header {navigate} />
   <Main>
     <div class="space-y-6">
@@ -176,10 +168,11 @@
           </Card.Header>
           <Card.Content>
             <div class="space-y-4">
-              {#each activityItems as item}
-                <div class="flex items-start gap-4 rounded-lg border-l-4 bg-muted/30 p-4 {item.color}">
+              {#each activityItems as item, index}
+                {@const Icon = item.icon}
+                <div class="flex items-start gap-4 rounded-lg border-l-4 {item.color} bg-muted/30 p-4">
                   <div class="mt-0.5 text-muted-foreground">
-                    <item.icon class="h-5 w-5" />
+                    <Icon class="h-5 w-5" />
                   </div>
                   <div class="flex-1 space-y-1">
                     <p class="text-sm font-medium leading-none">{item.title}</p>
@@ -200,11 +193,12 @@
           <Card.Content>
             <div class="space-y-2">
               {#each quickLinks as link}
+                {@const Icon = link.icon}
                 <button
                   type="button"
                   class="flex w-full items-center gap-3 rounded-lg p-3 text-left transition-colors hover:bg-muted"
                 >
-                  <link.icon class="h-5 w-5 text-muted-foreground" />
+                  <Icon class="h-5 w-5 text-muted-foreground" />
                   <span class="flex-1 text-sm font-medium">{link.label}</span>
                   <ArrowRight class="h-4 w-4 text-muted-foreground" />
                 </button>

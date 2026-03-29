@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { AuthenticatedLayout } from '@/components/layout'
-import { Header } from '@/components/layout'
-import { Main } from '@/components/layout'
+import AuthenticatedLayout from '@/components/layout/AuthenticatedLayout.vue'
+import Header from '@/components/layout/Header.vue'
+import Main from '@/components/layout/Main.vue'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -23,16 +23,17 @@ import {
   MessageCircle,
   Headphones,
 } from 'lucide-vue-next'
+import { type Component } from 'vue'
 
 const props = withDefaults(defineProps<{
   appName?: string
   currentUser?: { id: number; name: string; email: string; role: string } | null
-  navigate: (href: string) => void
+  navigate?: (href: string) => void
 }>(), {
   appName: 'Mantiq',
 })
 
-const activityItems = [
+const activityItems: { color: string; icon: Component; title: string; description: string; time: string }[] = [
   {
     color: 'border-violet-500',
     icon: Rocket,
@@ -70,11 +71,11 @@ const activityItems = [
   },
 ]
 
-const quickLinks = [
-  { icon: FileText, label: 'Documentation' },
-  { icon: BookOpen, label: 'API Reference' },
-  { icon: MessageCircle, label: 'Community' },
-  { icon: Headphones, label: 'Support' },
+const quickLinks: { icon: Component; label: string; href: string }[] = [
+  { icon: FileText, label: 'Documentation', href: '#' },
+  { icon: BookOpen, label: 'API Reference', href: '#' },
+  { icon: MessageCircle, label: 'Community', href: '#' },
+  { icon: Headphones, label: 'Support', href: '#' },
 ]
 </script>
 
@@ -182,7 +183,10 @@ const quickLinks = [
                 <div
                   v-for="(item, index) in activityItems"
                   :key="index"
-                  :class="['flex items-start gap-4 rounded-lg border-l-4 bg-muted/30 p-4', item.color]"
+                  :class="[
+                    'flex items-start gap-4 rounded-lg border-l-4 bg-muted/30 p-4',
+                    item.color,
+                  ]"
                 >
                   <div class="mt-0.5 text-muted-foreground">
                     <component :is="item.icon" class="h-5 w-5" />

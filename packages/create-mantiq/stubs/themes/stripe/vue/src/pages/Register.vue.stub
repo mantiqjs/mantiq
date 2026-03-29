@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator'
 
 const props = withDefaults(defineProps<{
   appName?: string
-  navigate: (href: string) => void
+  navigate?: (href: string) => void
 }>(), {
   appName: 'Mantiq',
 })
@@ -22,12 +22,8 @@ const loading = ref(false)
 async function handleSubmit() {
   error.value = ''
   loading.value = true
-  const { ok, data } = await post('/register', {
-    name: name.value,
-    email: email.value,
-    password: password.value,
-  })
-  if (ok) props.navigate('/dashboard')
+  const { ok, data } = await post('/register', { name: name.value, email: email.value, password: password.value })
+  if (ok) props.navigate?.('/dashboard')
   else error.value = data?.error?.message ?? data?.error ?? 'Registration failed. Please try again.'
   loading.value = false
 }
@@ -53,10 +49,7 @@ async function handleSubmit() {
           </p>
         </div>
 
-        <div
-          v-if="error"
-          class="mb-4 rounded-md border border-destructive px-4 py-3 text-sm text-destructive"
-        >
+        <div v-if="error" class="mb-4 rounded-md border border-destructive px-4 py-3 text-sm text-destructive">
           {{ error }}
         </div>
 
@@ -91,6 +84,7 @@ async function handleSubmit() {
               required
               placeholder="Create a strong password"
               autocomplete="new-password"
+              :minlength="8"
             />
             <p class="text-xs text-muted-foreground">Must be at least 8 characters</p>
           </div>
@@ -103,9 +97,9 @@ async function handleSubmit() {
               required
             />
             <label for="terms" class="text-xs text-muted-foreground leading-relaxed">
-              I agree to the
+              I agree to the{{ ' ' }}
               <button type="button" class="font-medium text-primary hover:text-primary/80">Terms of Service</button>
-              and
+              {{ ' ' }}and{{ ' ' }}
               <button type="button" class="font-medium text-primary hover:text-primary/80">Privacy Policy</button>
             </label>
           </div>
@@ -125,11 +119,11 @@ async function handleSubmit() {
         </div>
 
         <p class="text-center text-sm text-muted-foreground">
-          Already have an account?
+          Already have an account?{{ ' ' }}
           <button
             type="button"
             class="font-medium text-primary hover:text-primary/80"
-            @click="navigate('/login')"
+            @click="navigate?.('/login')"
           >
             Sign in
           </button>

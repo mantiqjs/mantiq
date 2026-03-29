@@ -4,14 +4,11 @@
   import { Input } from '$lib/components/ui/input'
   import { Label } from '$lib/components/ui/label'
 
-  let {
-    appName = 'Mantiq',
-    navigate,
-  }: {
+  interface Props {
     appName?: string
-    navigate: (href: string) => void
-    [key: string]: any
-  } = $props()
+    navigate?: (href: string) => void
+  }
+  let { appName = 'Mantiq', navigate = () => {} }: Props = $props()
 
   let email = $state('')
   let password = $state('')
@@ -39,7 +36,7 @@
 
     <div class="relative z-10 flex flex-col justify-center p-16 text-white">
       <h1 class="text-5xl font-bold leading-tight tracking-tight">
-        Build something<br>amazing.
+        Build something<br />amazing.
       </h1>
       <p class="mt-4 text-xl text-white/70">
         Join thousands of developers shipping faster with {appName}.
