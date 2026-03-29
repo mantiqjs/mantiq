@@ -75,9 +75,10 @@ export class Authenticate implements Middleware {
     const headers = new Headers(response.headers)
 
     // Set remember cookie
+    // #166: Cookie format is now userId|token (no password hash)
     const pending = guard.getPendingRememberCookie()
     if (pending) {
-      const cookieValue = `${pending.id}|${pending.token}|${pending.hash}`
+      const cookieValue = `${pending.id}|${pending.token}`
       headers.append(
         'Set-Cookie',
         serializeCookie(guard.getRememberCookieName(), cookieValue, {

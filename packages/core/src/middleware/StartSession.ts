@@ -55,6 +55,16 @@ export class StartSession implements Middleware {
     // Save session
     await session.save()
 
+    // Probabilistic garbage collection: ~2% chance per request to clean up expired sessions.
+    // This avoids the need for a dedicated cron job while keeping overhead minimal.
+    if (Math.random() < 0.02) {
+      const lifetime = config.lifetime * 60 // convert minutes to seconds
+      handler.gc(lifetime).catch(() => {
+        // GC failures are non-critical — log and continue
+        console.warn('[Mantiq] Session garbage collection failed.')
+      })
+    }
+
     // Attach cookie to response
     return this.addCookieToResponse(response, session, config)
   }

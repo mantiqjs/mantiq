@@ -226,17 +226,20 @@ export class QueryBuilder {
   // ── Joins ───────────────────────────────────────────────────────────────────
 
   join(table: string, first: string, operator: string, second: string): this {
-    this.state.joins.push({ type: 'inner', table, first: sanitizeColumn(first), operator, second: sanitizeColumn(second) })
+    // Security: sanitize operator to prevent SQL injection via JOIN clauses (#192)
+    this.state.joins.push({ type: 'inner', table, first: sanitizeColumn(first), operator: sanitizeOperator(operator), second: sanitizeColumn(second) })
     return this
   }
 
   leftJoin(table: string, first: string, operator: string, second: string): this {
-    this.state.joins.push({ type: 'left', table, first: sanitizeColumn(first), operator, second: sanitizeColumn(second) })
+    // Security: sanitize operator to prevent SQL injection via JOIN clauses (#192)
+    this.state.joins.push({ type: 'left', table, first: sanitizeColumn(first), operator: sanitizeOperator(operator), second: sanitizeColumn(second) })
     return this
   }
 
   rightJoin(table: string, first: string, operator: string, second: string): this {
-    this.state.joins.push({ type: 'right', table, first: sanitizeColumn(first), operator, second: sanitizeColumn(second) })
+    // Security: sanitize operator to prevent SQL injection via JOIN clauses (#192)
+    this.state.joins.push({ type: 'right', table, first: sanitizeColumn(first), operator: sanitizeOperator(operator), second: sanitizeColumn(second) })
     return this
   }
 
@@ -288,7 +291,8 @@ export class QueryBuilder {
   }
 
   async first(): Promise<any> {
-    const rows = await this.limit(1).get()
+    // Use clone to avoid mutating the builder's limitValue (#185)
+    const rows = await this.clone().limit(1).get()
     return rows[0] ?? null
   }
 
@@ -325,7 +329,8 @@ export class QueryBuilder {
    * Get the only record matching the query. Throws if zero or more than one.
    */
   async sole(): Promise<Record<string, any>> {
-    const results = await this.limit(2).get()
+    // Use clone to avoid mutating the builder's limitValue
+    const results = await this.clone().limit(2).get()
     if (results.length === 0) throw new ModelNotFoundError(this.state.table)
     if (results.length > 1) throw new Error(`Expected one result for table [${this.state.table}], found multiple.`)
     return results[0]!

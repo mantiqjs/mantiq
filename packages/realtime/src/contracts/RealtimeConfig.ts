@@ -20,6 +20,19 @@ export interface RealtimeConfig {
     heartbeatInterval: number
     /** Close connection if no pong after this many ms. */
     heartbeatTimeout: number
+    /**
+     * Allow unauthenticated WebSocket connections.
+     * When false (default), connections are rejected unless an authenticator
+     * is registered via WebSocketServer.authenticate(). Must be explicitly
+     * set to true to allow anonymous connections.
+     */
+    allowAnonymous?: boolean
+    /**
+     * Maximum WebSocket message payload size in bytes.
+     * Messages exceeding this limit will cause the connection to be closed.
+     * Default: 65536 (64 KB). Passed to Bun.serve's WebSocket config.
+     */
+    maxPayloadLength?: number
   }
 
   /** SSE fallback settings. */
@@ -55,6 +68,8 @@ export const DEFAULT_CONFIG: RealtimeConfig = {
     maxConnections: 0,
     heartbeatInterval: 25_000,
     heartbeatTimeout: 10_000,
+    allowAnonymous: false,
+    maxPayloadLength: 65_536, // 64 KB
   },
   sse: {
     enabled: true,

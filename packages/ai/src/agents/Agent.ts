@@ -120,6 +120,16 @@ export class Agent {
         }
 
         const args = JSON.parse(toolCall.function.arguments)
+
+        // Fix #178: Validate tool arguments against parameter schema before execution
+        const validationError = validateToolArgs(args, tool.parameters)
+        if (validationError) {
+          const result = `Error: Invalid arguments for tool "${tool.name}": ${validationError}`
+          this.memory.add({ role: 'tool', content: result, toolCallId: toolCall.id })
+          toolCallsExecuted.push({ name: tool.name, args, result })
+          continue
+        }
+
         this.onToolCall?.(tool.name, args)
 
         let result: string
@@ -136,4 +146,51 @@ export class Agent {
 
     throw new AIError(`Agent exceeded maximum iterations (${this.maxIterations})`)
   }
+}
+
+/**
+ * Basic structural validation of tool arguments against a JSON schema definition.
+ * Checks required fields are present and top-level types match.
+ * Returns an error string if validation fails, or null if valid.
+ */
+function validateToolArgs(args: Record<string, any>, schema: Record<string, any>): string | null {
+  if (schema.type === 'object') {
+    if (typeof args !== 'object' || args === null || Array.isArray(args)) {
+      return 'Expected an object'
+    }
+
+    // Check required fields
+    const required: string[] = schema.required ?? []
+    for (const field of required) {
+      if (!(field in args) || args[field] === undefined) {
+        return `Missing required field: "${field}"`
+      }
+    }
+
+    // Check top-level property types when defined
+    const properties: Record<string, any> = schema.properties ?? {}
+    for (const [key, value] of Object.entries(args)) {
+      const propSchema = properties[key]
+      if (!propSchema || !propSchema.type) continue
+
+      const expectedType = propSchema.type
+      const actualType = Array.isArray(value) ? 'array' : typeof value
+
+      // Map JSON schema types to JS typeof results
+      const typeMatches =
+        (expectedType === 'string' && actualType === 'string') ||
+        (expectedType === 'number' && actualType === 'number') ||
+        (expectedType === 'integer' && actualType === 'number' && Number.isInteger(value)) ||
+        (expectedType === 'boolean' && actualType === 'boolean') ||
+        (expectedType === 'array' && actualType === 'array') ||
+        (expectedType === 'object' && actualType === 'object') ||
+        value === null // null is acceptable for any type
+
+      if (!typeMatches) {
+        return `Field "${key}" expected type "${expectedType}" but got "${actualType}"`
+      }
+    }
+  }
+
+  return null
 }

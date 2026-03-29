@@ -25,6 +25,9 @@ export class WebSocketServer implements WebSocketHandler {
   constructor(private config: RealtimeConfig) {
     this.connections = new ConnectionManager(config)
     this.channels = new ChannelManager(config)
+
+    // Security: if allowAnonymous is not explicitly true and no authenticator
+    // is registered, connections will be rejected by default (see onUpgrade).
   }
 
   // ── Configuration ──────────────────────────────────────────────────────
@@ -70,6 +73,11 @@ export class WebSocketServer implements WebSocketHandler {
       }
       userId = result.userId
       metadata = result.metadata ?? {}
+    } else if (!this.config.websocket.allowAnonymous) {
+      // Security: reject connections by default when no authenticator is
+      // configured. The developer must either register an authenticator via
+      // authenticate() or explicitly set allowAnonymous: true in config.
+      return null
     }
 
     return {
@@ -97,9 +105,28 @@ export class WebSocketServer implements WebSocketHandler {
   }
 
   /**
+   * Returns the configured maxPayloadLength for Bun.serve's WebSocket config.
+   * This enforces a server-side limit on incoming message sizes.
+   */
+  getMaxPayloadLength(): number {
+    return this.config.websocket.maxPayloadLength ?? 65_536
+  }
+
+  /**
    * Called when a message is received from a client.
    */
   async message(ws: RealtimeSocket, raw: string | Buffer): Promise<void> {
+    // Security: enforce message size limit. Bun enforces maxPayloadLength at
+    // the transport level, but we double-check here as a defense-in-depth
+    // measure in case the transport config is misconfigured.
+    const maxPayload = this.config.websocket.maxPayloadLength ?? 65_536
+    const messageSize = typeof raw === 'string' ? raw.length : raw.byteLength
+    if (messageSize > maxPayload) {
+      ws.send(serialize({ event: 'error', message: 'Message exceeds maximum allowed size' }))
+      ws.close(1009, 'Message too large')
+      return
+    }
+
     const msg = parseClientMessage(raw)
     if (!msg) {
       ws.send(serialize({ event: 'error', message: 'Invalid message format' }))

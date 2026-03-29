@@ -203,17 +203,21 @@ describe('Auth Security', () => {
     expect(await guard.guest()).toBe(true)
   })
 
-  // ── 10. Remember cookie with tampered signature → rejected ────────────────
-  it('remember cookie with wrong password hash is rejected', async () => {
-    user.rememberToken = 'valid-token'
+  // ── 10. Remember cookie with tampered token → rejected ────────────────
+  it('remember cookie with wrong token is rejected', async () => {
+    // Use hex tokens of valid length (#215)
+    const correctToken = 'ab'.repeat(30)
+    const wrongToken = 'cd'.repeat(30)
+    user.rememberToken = correctToken
+    // #166: Cookie format is now userId|rememberToken (2-part, no password hash)
     const cookies = {
-      remember_web: `${user.id}|valid-token|tampered-hash`,
+      remember_web: `${user.id}|${wrongToken}`,
     }
     const tamperedRequest = createMockRequest(session, cookies)
     guard.setRequest(tamperedRequest)
 
     const result = await guard.user()
-    // Tampered hash doesn't match user.getAuthPassword() → should be null
+    // Wrong token doesn't match user.getRememberToken() → should be null
     expect(result).toBeNull()
   })
 
@@ -264,7 +268,9 @@ describe('Auth Security', () => {
   it('guard with remember cookie pointing to non-existent user returns null', async () => {
     const noUserProvider = createMockProvider(null)
     const nullGuard = new SessionGuard('web', noUserProvider)
-    const cookies = { remember_web: '999|some-token|some-hash' }
+    // #166/#215: Use 2-part format with valid hex token
+    const hexToken = 'ab'.repeat(30)
+    const cookies = { remember_web: `999|${hexToken}` }
     nullGuard.setRequest(createMockRequest(createMockSession(), cookies))
 
     const result = await nullGuard.user()

@@ -223,16 +223,33 @@ export const uuid: Rule = {
     isEmpty(v) || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(v)) || `The ${field} field must be a valid UUID.`,
 }
 
+/**
+ * Detect patterns prone to catastrophic backtracking (ReDoS).
+ * Rejects nested quantifiers like (a+)+, (a*)+, (a+)*, (.+)+ etc. (#177)
+ */
+function hasNestedQuantifiers(pattern: string): boolean {
+  // Matches a group followed by a quantifier that itself contains a quantifier
+  return /(\([^)]*[+*][^)]*\))[+*{]/.test(pattern) ||
+         /(\[[^\]]*\])[+*{]\)?[+*{]/.test(pattern)
+}
+
 export const regex: Rule = {
   name: 'regex',
   validate: (v, field, _data, [pattern]) => {
     if (isEmpty(v)) return true
     try {
       const match = pattern!.match(/^\/(.+)\/([gimsuy]*)$/)
+      const rawPattern = match ? match[1]! : pattern!
+
+      // Security: reject patterns with nested quantifiers to prevent ReDoS (#177)
+      if (hasNestedQuantifiers(rawPattern)) {
+        return `The ${field} field format is invalid.`
+      }
+
       const re = match ? new RegExp(match[1]!, match[2]) : new RegExp(pattern!)
       return re.test(String(v)) || `The ${field} field format is invalid.`
     } catch {
-      // Invalid or dangerous regex pattern — treat as validation failure
+      // Invalid regex pattern (syntax error) — treat as validation failure
       return `The ${field} field format is invalid.`
     }
   },

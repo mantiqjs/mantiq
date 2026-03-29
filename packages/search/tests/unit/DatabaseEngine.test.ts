@@ -35,6 +35,14 @@ function createQueryMock(rows: any[] = [], countValue = 0) {
             subQueryCalls.push({ method: 'orWhere', args: subArgs })
             return subQuery
           },
+          whereRaw(...subArgs: any[]) {
+            subQueryCalls.push({ method: 'whereRaw', args: subArgs })
+            return subQuery
+          },
+          orWhereRaw(...subArgs: any[]) {
+            subQueryCalls.push({ method: 'orWhereRaw', args: subArgs })
+            return subQuery
+          },
         }
         args[0](subQuery)
         calls.push({ method: 'where', args: ['<callback>'] })
@@ -148,10 +156,10 @@ describe('DatabaseEngine', () => {
     const q = Model.getLastQuery()
     // A where callback should have been invoked
     expect(q._calls.some((c: QueryCall) => c.method === 'where')).toBe(true)
-    // Sub-query should contain LIKE calls
+    // Sub-query should contain whereRaw LIKE calls with ESCAPE clause
     expect(q._subQueryCalls.length).toBeGreaterThanOrEqual(1)
-    expect(q._subQueryCalls[0].method).toBe('where')
-    expect(q._subQueryCalls[0].args).toEqual(['title', 'LIKE', '%hello%'])
+    expect(q._subQueryCalls[0].method).toBe('whereRaw')
+    expect(q._subQueryCalls[0].args).toEqual(["title LIKE ? ESCAPE '\\'", ['%hello%']])
   })
 
   // ── where clause added to SQL ────────────────────────────────────────
@@ -251,8 +259,9 @@ describe('DatabaseEngine', () => {
     await engine.search(b)
 
     const q = Model.getLastQuery()
-    // The sub-query should contain escaped LIKE pattern
-    expect(q._subQueryCalls[0].args[2]).toBe('%100\\%\\_match\\\\test%')
+    // The sub-query should contain escaped LIKE pattern with ESCAPE clause
+    expect(q._subQueryCalls[0].method).toBe('whereRaw')
+    expect(q._subQueryCalls[0].args[1][0]).toBe('%100\\%\\_match\\\\test%')
   })
 
   // ── multiple where clauses AND together ──────────────────────────────
@@ -365,9 +374,11 @@ describe('DatabaseEngine', () => {
     await engine.search(b)
 
     const q = Model.getLastQuery()
-    expect(q._subQueryCalls[0].args).toEqual(['name', 'LIKE', '%john%'])
+    expect(q._subQueryCalls[0].method).toBe('whereRaw')
+    expect(q._subQueryCalls[0].args).toEqual(["name LIKE ? ESCAPE '\\'", ['%john%']])
     if (q._subQueryCalls.length > 1) {
-      expect(q._subQueryCalls[1].args).toEqual(['email', 'LIKE', '%john%'])
+      expect(q._subQueryCalls[1].method).toBe('orWhereRaw')
+      expect(q._subQueryCalls[1].args).toEqual(["email LIKE ? ESCAPE '\\'", ['%john%']])
     }
   })
 })

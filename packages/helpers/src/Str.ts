@@ -187,8 +187,11 @@ export const Str = {
 
   /** Check if string matches a wildcard pattern (* for any) */
   is(pattern: string, value: string): boolean {
+    // Security: escape all regex metacharacters FIRST to prevent ReDoS,
+    // then replace the escaped wildcard placeholders with regex equivalents.
+    const escaped = pattern.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')
     const regex = new RegExp(
-      '^' + pattern.replace(/\*/g, '.*').replace(/\?/g, '.') + '$',
+      '^' + escaped.replace(/\\\*/g, '.*').replace(/\\\?/g, '.') + '$',
     )
     return regex.test(value)
   },

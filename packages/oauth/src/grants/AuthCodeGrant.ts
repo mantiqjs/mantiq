@@ -34,19 +34,54 @@ export class AuthCodeGrant implements GrantHandler {
     const client = await Client.find(clientId)
     if (!client) throw new OAuthError('Client not found.', 'invalid_client', 401)
 
-    // Verify client secret for confidential clients
+    // Verify client secret for confidential clients.
+    // Uses bcrypt verification against the stored hash (not plaintext comparison).
     if (client.confidential()) {
-      const storedSecret = client.getAttribute('secret') as string
-      if (!clientSecret || !timingSafeEqual(clientSecret, storedSecret)) {
+      if (!clientSecret) {
+        throw new OAuthError('Invalid client credentials.', 'invalid_client', 401)
+      }
+      const secretValid = await client.verifySecret(clientSecret)
+      if (!secretValid) {
         throw new OAuthError('Invalid client credentials.', 'invalid_client', 401)
       }
     }
 
-    // Resolve auth code
-    const authCode = await AuthCode.where('id', code)
-      .where('revoked', false)
-      .first() as AuthCode | null
+    // Security: validate redirect_uri against the client's registered redirect.
+    // This prevents an attacker from exchanging a stolen auth code with a
+    // different redirect_uri to intercept the tokens.
+    const allowedRedirect = client.getAttribute('redirect') as string
+    if (allowedRedirect) {
+      try {
+        const requestedUrl = new URL(redirectUri)
+        const allowedUrl = new URL(allowedRedirect)
+        if (
+          requestedUrl.origin !== allowedUrl.origin ||
+          requestedUrl.pathname !== allowedUrl.pathname ||
+          requestedUrl.search !== allowedUrl.search
+        ) {
+          throw new OAuthError('Redirect URI does not match the registered URI.', 'invalid_grant')
+        }
+      } catch (e) {
+        if (e instanceof OAuthError) throw e
+        throw new OAuthError('Invalid redirect URI format.', 'invalid_request')
+      }
+    }
 
+    // Security: atomically revoke the auth code to prevent TOCTOU race conditions.
+    // A separate lookup + revoke creates a window where two concurrent requests
+    // could both read revoked=false and both exchange the same code for tokens.
+    // Instead, we UPDATE ... WHERE revoked=false and check affected rows.
+    const affected = await AuthCode.where('id', code)
+      .where('revoked', false)
+      .update({ revoked: true })
+
+    if (!affected || affected === 0) {
+      // Code was already used, doesn't exist, or was revoked
+      throw new OAuthError('Invalid authorization code.', 'invalid_grant')
+    }
+
+    // Now load the auth code to read its attributes (already revoked atomically above)
+    const authCode = await AuthCode.find(code) as AuthCode | null
     if (!authCode) throw new OAuthError('Invalid authorization code.', 'invalid_grant')
 
     // Verify the code belongs to this client
@@ -73,10 +108,6 @@ export class AuthCodeGrant implements GrantHandler {
         throw new OAuthError('Invalid code verifier.', 'invalid_grant')
       }
     }
-
-    // Revoke the auth code (single use)
-    authCode.setAttribute('revoked', true)
-    await authCode.save()
 
     // Issue tokens
     const userId = authCode.getAttribute('user_id') as string
@@ -157,21 +188,4 @@ export class AuthCodeGrant implements GrantHandler {
 
     throw new OAuthError(`Unsupported code challenge method: ${method}`, 'invalid_request')
   }
-}
-
-/**
- * Constant-time string comparison to prevent timing attacks on secret verification.
- */
-function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false
-
-  const encoder = new TextEncoder()
-  const bufA = encoder.encode(a)
-  const bufB = encoder.encode(b)
-
-  let result = 0
-  for (let i = 0; i < bufA.length; i++) {
-    result |= bufA[i]! ^ bufB[i]!
-  }
-  return result === 0
 }

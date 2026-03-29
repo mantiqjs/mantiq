@@ -168,21 +168,25 @@ describe('Auth flow: SessionGuard + FakeUserProvider', () => {
     expect(success).toBe(true)
 
     const pending = guard.getPendingRememberCookie()
-    expect(pending).not.toBeNull()
-    expect(pending!.id).toBe(1)
-    expect(pending!.token).toBeTruthy()
-    expect(pending!.hash).toBe('secret123')
+    // #166: Cookie no longer contains password hash — only id and token
+    // Note: pending is null when no encrypter is provided (#208),
+    // so this test validates the guard behaviour without encryption.
+    // With no encrypter, the guard refuses to queue the cookie.
+    expect(pending).toBeNull()
 
-    // Alice should have a remember token set
+    // Alice should have a remember token set even though cookie was not queued
     expect(alice.getRememberToken()).toBeTruthy()
   })
 
   it('user() recalled from remember cookie when session is empty', async () => {
-    alice.setRememberToken('recall_token_abc')
+    // Use a hex token of at least 40 chars to pass format validation (#215)
+    const hexToken = 'a'.repeat(60)
+    alice.setRememberToken(hexToken)
 
+    // #166: Cookie format is now userId|rememberToken (no password hash)
     const request = await createFakeRequest({
       cookies: {
-        remember_web: `1|recall_token_abc|${alice.getAuthPassword()}`,
+        remember_web: `1|${hexToken}`,
       },
     })
 

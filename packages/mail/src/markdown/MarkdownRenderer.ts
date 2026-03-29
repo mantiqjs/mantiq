@@ -148,9 +148,19 @@ function sanitizeLinkUrl(url: string): string | null {
   return trimmed
 }
 
+/**
+ * Security: escape HTML special characters to prevent XSS when
+ * user-provided text is interpolated into HTML output.
+ */
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+}
+
 /** Process inline markdown: bold, italic, code, links */
 function inlineFormatting(text: string): string {
-  return text
+  // Security: escape HTML in the raw text first to prevent XSS injection,
+  // then apply markdown formatting on the escaped output.
+  return escapeHtml(text)
     // Bold
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     // Italic
@@ -164,6 +174,7 @@ function inlineFormatting(text: string): string {
         // Security: strip dangerous link, render as plain text only
         return label
       }
+      // Security: label is already HTML-escaped from the escapeHtml() call above
       return `<a href="${safeUrl}" class="email-link" style="color:#10b981;text-decoration:underline;">${label}</a>`
     })
 }

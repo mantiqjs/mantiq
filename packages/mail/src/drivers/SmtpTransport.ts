@@ -17,6 +17,27 @@ export class SmtpTransport implements MailTransport {
     this.config = config
   }
 
+  /**
+   * Security: validate that a value contains no CR, LF, or null bytes
+   * to prevent SMTP header/command injection.
+   */
+  private assertNoInjection(value: string, field: string): void {
+    if (/[\r\n\0]/.test(value)) {
+      throw new MailError(
+        `SMTP injection detected in ${field}: value contains CR, LF, or null bytes`,
+      )
+    }
+  }
+
+  /**
+   * Security: sanitize a subject line by stripping CR/LF characters
+   * to prevent SMTP header injection. Per RFC 2047, subjects should
+   * not contain bare newlines.
+   */
+  private sanitizeSubject(subject: string): string {
+    return subject.replace(/[\r\n\0]/g, '')
+  }
+
   async send(message: Message): Promise<{ id: string }> {
     const { host, port, username, password, encryption = 'none' } = this.config
 
@@ -133,13 +154,19 @@ export class SmtpTransport implements MailTransport {
         }
       }
 
+      // Security: validate all email addresses against SMTP injection
+      this.assertNoInjection(message.from.address, 'from address')
+      const allRecipients = [...message.to, ...message.cc, ...message.bcc]
+      for (const recipient of allRecipients) {
+        this.assertNoInjection(recipient.address, 'recipient address')
+      }
+
       // MAIL FROM
       socket.write(`MAIL FROM:<${message.from.address}>\r\n`)
       const mailFrom = await waitForResponse()
       this.assertCode(mailFrom, 250, 'MAIL FROM')
 
       // RCPT TO — all recipients
-      const allRecipients = [...message.to, ...message.cc, ...message.bcc]
       for (const recipient of allRecipients) {
         socket.write(`RCPT TO:<${recipient.address}>\r\n`)
         const rcpt = await waitForResponse()
@@ -236,11 +263,14 @@ export class SmtpTransport implements MailTransport {
       lines.push(`Reply-To: ${Message.formatAddresses(message.replyTo)}`)
     }
 
-    lines.push(`Subject: ${message.subject}`)
+    // Security: sanitize subject to prevent SMTP header injection
+    lines.push(`Subject: ${this.sanitizeSubject(message.subject)}`)
     lines.push(`MIME-Version: 1.0`)
 
-    // Custom headers
+    // Custom headers — validate against SMTP header injection
     for (const [key, value] of Object.entries(message.headers)) {
+      this.assertNoInjection(key, 'custom header name')
+      this.assertNoInjection(value, `custom header '${key}'`)
       lines.push(`${key}: ${value}`)
     }
 

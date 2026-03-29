@@ -81,10 +81,42 @@ export class FileCacheStore implements CacheStore {
     }
   }
 
+  /**
+   * Fix #194: Atomic increment using write-to-temp + rename to prevent
+   * TOCTOU race conditions where concurrent increments could lose updates.
+   */
   async increment(key: string, value = 1): Promise<number> {
-    const current = await this.get<number>(key)
-    const newValue = (current ?? 0) + value
-    await this.put(key, newValue)
+    await this.ensureDirectory()
+    const targetPath = this.path(key)
+    const file = Bun.file(targetPath)
+
+    let current = 0
+    if (await file.exists()) {
+      try {
+        const payload: FileCachePayload = await file.json()
+        if (payload.expiresAt !== null && Date.now() > payload.expiresAt) {
+          // Expired — treat as 0
+        } else {
+          current = (payload.value as number) ?? 0
+        }
+      } catch {
+        // Corrupted file — start from 0
+      }
+    }
+
+    const newValue = current + value
+
+    // Atomic write: temp file + rename to avoid partial reads by concurrent operations
+    const tmpPath = join(this.directory, `_tmp_${randomBytes(8).toString('hex')}.cache`)
+    const payload: FileCachePayload = { value: newValue, expiresAt: null }
+    await Bun.write(tmpPath, JSON.stringify(payload))
+
+    try {
+      await rename(tmpPath, targetPath)
+    } catch {
+      try { await rm(tmpPath) } catch { /* ignore */ }
+    }
+
     return newValue
   }
 

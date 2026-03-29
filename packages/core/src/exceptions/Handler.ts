@@ -8,6 +8,11 @@ import { UnauthorizedError } from '../errors/UnauthorizedError.ts'
 import { MantiqResponse } from '../http/Response.ts'
 import { renderDevErrorPage } from './DevErrorPage.ts'
 
+/** Security: escape HTML special characters to prevent XSS in error pages. */
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+}
+
 export class DefaultExceptionHandler implements ExceptionHandler {
   dontReport: Constructor<Error>[] = [
     NotFoundError,
@@ -102,12 +107,15 @@ export class DefaultExceptionHandler implements ExceptionHandler {
   }
 
   private genericHtmlPage(status: number, message: string): string {
+    // Security: escape message to prevent XSS — error messages may contain
+    // user-controlled input (e.g., URL paths, query parameters).
+    const safeMessage = escapeHtml(message)
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${status} ${message}</title>
+  <title>${status} ${safeMessage}</title>
   <style>
     body { font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f7fafc; color: #2d3748; }
     .box { text-align: center; }
@@ -118,7 +126,7 @@ export class DefaultExceptionHandler implements ExceptionHandler {
 <body>
   <div class="box">
     <h1>${status}</h1>
-    <p>${message}</p>
+    <p>${safeMessage}</p>
   </div>
 </body>
 </html>`

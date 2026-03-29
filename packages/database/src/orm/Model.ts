@@ -32,6 +32,7 @@ export interface ModelStatic<T extends Model> {
   softDelete: boolean
   softDeleteColumn: string
   _fireEvent: ((model: Model, event: string) => Promise<boolean>) | null
+  _withoutEventsCount: number
   _morphMap: Record<string, ModelStatic<any>>
   _globalScopes: Map<string, Scope>
   _booted: Set<typeof Model>
@@ -98,6 +99,9 @@ export abstract class Model {
    * Register mappings via `Model.morphMap({ Post: PostModel, Video: VideoModel })`.
    */
   static _morphMap: Record<string, ModelStatic<any>> = {}
+
+  /** Counter for nested withoutEvents() calls — ensures per-scope safety (#186). */
+  static _withoutEventsCount = 0
 
   /** Per-class global scope registry. */
   static _globalScopes = new Map<string, Scope>()
@@ -819,13 +823,23 @@ export abstract class Model {
 
   // ── Event control ────────────────────────────────────────────────────────
 
+  /**
+   * Execute a callback with events disabled. Uses a counter so nested/concurrent
+   * calls are safe — events only re-enable when all withoutEvents scopes exit (#186).
+   */
   static async withoutEvents<R>(callback: () => Promise<R> | R): Promise<R> {
-    const previous = this._fireEvent
+    this._withoutEventsCount = (this._withoutEventsCount ?? 0) + 1
+    const savedHandler = this._fireEvent
     this._fireEvent = null
     try {
       return await callback()
     } finally {
-      this._fireEvent = previous
+      this._withoutEventsCount = (this._withoutEventsCount ?? 1) - 1
+      // Only restore the event handler when all nested withoutEvents scopes have exited
+      if (this._withoutEventsCount <= 0) {
+        this._fireEvent = savedHandler
+        this._withoutEventsCount = 0
+      }
     }
   }
 
@@ -977,18 +991,39 @@ export abstract class Model {
   private castAttribute(value: any, type: CastType): any {
     if (value === null || value === undefined) return value
     switch (type) {
-      case 'int': return parseInt(value, 10)
+      case 'int': {
+        // Clamp to safe integer range to prevent silent precision loss (#205)
+        const parsed = parseInt(value, 10)
+        if (isNaN(parsed)) return 0
+        return Math.min(Math.max(parsed, Number.MIN_SAFE_INTEGER), Number.MAX_SAFE_INTEGER)
+      }
       case 'float': return parseFloat(value)
-      case 'boolean': return Boolean(value) && value !== '0' && value !== 0
+      case 'boolean': {
+        // Explicit falsy value check — 'false', 'no', 'off', '0', 0, false, '' all → false (#193)
+        const falsy = [false, 0, '', '0', 'false', 'no', 'off']
+        if (falsy.includes(typeof value === 'string' ? value.toLowerCase() : value)) return false
+        return true
+      }
       case 'string': return String(value)
       case 'json':
       case 'array':
         if (typeof value === 'string') {
-          try { return JSON.parse(value) } catch { return value }
+          try {
+            return JSON.parse(value)
+          } catch {
+            // Return null on parse failure instead of raw string (#210)
+            console.warn(`[Model] Failed to parse JSON cast for value: ${value.substring(0, 100)}`)
+            return null
+          }
         }
         return value
-      case 'date': return new Date(value)
-      case 'datetime': return new Date(value)
+      case 'date':
+      case 'datetime': {
+        // Validate parsed date to catch invalid inputs like "not-a-date" (#211)
+        const date = new Date(value)
+        if (isNaN(date.getTime())) return null
+        return date
+      }
       default: return value
     }
   }

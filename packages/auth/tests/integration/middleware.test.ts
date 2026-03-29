@@ -8,7 +8,7 @@
  * Run: bun test packages/auth/tests/integration/middleware.test.ts
  */
 import { describe, it, expect, beforeEach } from 'bun:test'
-import { ContainerImpl, HashManager, UnauthorizedError, ForbiddenError } from '@mantiq/core'
+import { ContainerImpl, HashManager, UnauthorizedError, ForbiddenError, ENCRYPTER } from '@mantiq/core'
 import { AuthManager } from '../../src/AuthManager.ts'
 import { Authenticate } from '../../src/middleware/Authenticate.ts'
 import { RedirectIfAuthenticated } from '../../src/middleware/RedirectIfAuthenticated.ts'
@@ -75,6 +75,12 @@ describe('Authenticate middleware (integration)', () => {
 
     container = new ContainerImpl()
     container.singleton(HashManager, () => new HashManager({ bcrypt: { rounds: 4 } }))
+    // Register a fake encrypter so remember cookie is allowed (#208)
+    container.bind(ENCRYPTER, () => ({
+      encrypt: (v: string) => v,
+      decrypt: (v: string) => v,
+      getKey: () => 'test-key',
+    }))
     authManager = new AuthManager(config, container)
     middleware = new Authenticate(authManager)
   })

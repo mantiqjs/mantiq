@@ -97,8 +97,9 @@ export class EncryptCookies implements Middleware {
 
         headers.append('Set-Cookie', newSetCookie)
       } catch {
-        // If encryption fails, send unencrypted (shouldn't happen with valid key)
-        headers.append('Set-Cookie', setCookie)
+        // Security: drop the cookie entirely rather than sending it unencrypted.
+        // Sending plaintext cookies would expose sensitive data on the wire.
+        console.warn(`[Mantiq] Failed to encrypt cookie "${name}" — dropping cookie to prevent plaintext exposure.`)
       }
     }
 

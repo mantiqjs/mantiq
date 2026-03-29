@@ -1,5 +1,6 @@
 import type { Middleware, NextFunction } from '../contracts/Middleware.ts'
 import type { MantiqRequest } from '../contracts/Request.ts'
+import { timingSafeEqual as cryptoTimingSafeEqual } from 'node:crypto'
 import { TokenMismatchError } from '../errors/TokenMismatchError.ts'
 import { AesEncrypter } from '../encryption/Encrypter.ts'
 import { serializeCookie } from '../http/Cookie.ts'
@@ -113,17 +114,21 @@ export class VerifyCsrfToken implements Middleware {
 
 /**
  * Constant-time string comparison to prevent timing attacks on token verification.
+ * Uses node:crypto's timingSafeEqual which handles length-mismatch internally
+ * without leaking token length via timing side-channels.
  */
 function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false
-
   const encoder = new TextEncoder()
   const bufA = encoder.encode(a)
   const bufB = encoder.encode(b)
 
-  let result = 0
-  for (let i = 0; i < bufA.length; i++) {
-    result |= bufA[i]! ^ bufB[i]!
-  }
-  return result === 0
+  // Pad to equal length so we never leak the expected token length via an early return.
+  const maxLen = Math.max(bufA.length, bufB.length)
+  const paddedA = new Uint8Array(maxLen)
+  const paddedB = new Uint8Array(maxLen)
+  paddedA.set(bufA)
+  paddedB.set(bufB)
+
+  // If lengths differ the tokens cannot match, but we still compare in constant time.
+  return bufA.length === bufB.length && cryptoTimingSafeEqual(paddedA, paddedB)
 }

@@ -150,12 +150,13 @@ export class SQLiteDriver implements QueueDriver {
     const now = Math.floor(Date.now() / 1000)
     const exception = `${error.name}: ${error.message}\n${error.stack ?? ''}`
 
+    // Fix #202: Use .immediate() to prevent SQLITE_BUSY errors under concurrent load
     db.transaction(() => {
       db.prepare('DELETE FROM queue_jobs WHERE id = ?').run(job.id)
       db.prepare(
         'INSERT INTO queue_failed_jobs (queue, payload, exception, failed_at) VALUES (?, ?, ?, ?)',
       ).run(job.queue, JSON.stringify(job.payload), exception, now)
-    })()
+    }).immediate()
   }
 
   async getFailedJobs(): Promise<FailedJob[]> {
