@@ -1759,7 +1759,7 @@
     }
   },
   "themes": {
-    "linear": {
+    "minimal": {
       "react": {
         "files": [
           {
@@ -1821,7 +1821,7 @@
         ]
       }
     },
-    "notion": {
+    "workspace": {
       "react": {
         "files": [
           {
@@ -1883,7 +1883,7 @@
         ]
       }
     },
-    "stripe": {
+    "corporate": {
       "react": {
         "files": [
           {
@@ -1945,7 +1945,7 @@
         ]
       }
     },
-    "modern-saas": {
+    "starter": {
       "react": {
         "files": [
           {

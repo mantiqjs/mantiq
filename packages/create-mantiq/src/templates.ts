@@ -1,4 +1,4 @@
-export type Theme = 'default' | 'linear' | 'notion' | 'stripe' | 'modern-saas'
+export type Theme = 'default' | 'minimal' | 'workspace' | 'corporate' | 'starter'
 
 export interface TemplateContext {
   name: string

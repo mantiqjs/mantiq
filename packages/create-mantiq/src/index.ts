@@ -83,7 +83,7 @@ if (!projectName) {
   ${bold('Options:')}
     --kit=${emerald('react|vue|svelte')}    Frontend framework
     --ui=${emerald('shadcn|tailwind')}      UI component library
-    --theme=${emerald('default|linear|notion|stripe|modern-saas')}
+    --theme=${emerald('default|minimal|workspace|corporate|starter')}
                                Dashboard theme (shadcn only)
     --auth=${emerald('builtin|none')}       Authentication setup
     --with=${emerald('ai')}                 Optional packages (comma-separated)
@@ -112,7 +112,7 @@ const term = new Terminal()
 
 let kit: Kit | undefined = flags['kit'] as Kit | undefined
 let ui: 'shadcn' | 'tailwind' = (flags['ui'] as string) === 'tailwind' ? 'tailwind' : 'shadcn'
-const validThemes = ['default', 'linear', 'notion', 'stripe', 'modern-saas'] as const
+const validThemes = ['default', 'minimal', 'workspace', 'corporate', 'starter'] as const
 let theme: Theme = (validThemes as readonly string[]).includes(flags['theme'] as string)
   ? (flags['theme'] as Theme)
   : 'default'
@@ -148,10 +148,10 @@ if (!isCI && !kit) {
   if (kit && ui === 'shadcn' && !flags['theme']) {
     const themeChoice = await term.select('Choose a theme', [
       { value: 'default', label: 'Default', hint: 'emerald, classic admin' },
-      { value: 'linear', label: 'Linear', hint: 'minimal & focused' },
-      { value: 'notion', label: 'Notion', hint: 'warm & approachable' },
-      { value: 'stripe', label: 'Stripe', hint: 'professional & data-rich' },
-      { value: 'modern-saas', label: 'Modern SaaS', hint: 'bold & marketing-ready' },
+      { value: 'minimal', label: 'Minimal', hint: 'clean & focused' },
+      { value: 'workspace', label: 'Workspace', hint: 'warm & approachable' },
+      { value: 'corporate', label: 'Corporate', hint: 'professional & data-rich' },
+      { value: 'starter', label: 'Starter', hint: 'bold & marketing-ready' },
     ])
     theme = themeChoice as Theme
   }
