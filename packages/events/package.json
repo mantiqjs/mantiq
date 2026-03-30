@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/events",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Event dispatcher, listeners, observers, and broadcasting for MantiqJS",
   "type": "module",
   "license": "MIT",

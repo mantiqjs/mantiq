@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/vite",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Vite dev server & manifest integration",
   "type": "module",
   "license": "MIT",
