@@ -1,0 +1,52 @@
+{
+  "name": "studio-test",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run dev:backend & bun run dev:frontend & wait",
+    "start": "bun run index.ts",
+    "mantiq": "bun run mantiq.ts",
+    "test": "bun test tests/",
+    "dev:backend": "bun run --watch index.ts",
+    "dev:frontend": "bunx vite --clearScreen false",
+    "build": "vite build && vite build --ssr src/ssr.tsx --outDir bootstrap/ssr"
+  },
+  "dependencies": {
+    "@mantiq/auth": "^0.5.0",
+    "@mantiq/cli": "^0.5.0",
+    "@mantiq/core": "^0.5.0",
+    "@mantiq/database": "^0.5.0",
+    "@mantiq/events": "^0.5.0",
+    "@mantiq/filesystem": "^0.5.0",
+    "@mantiq/health": "^0.5.0",
+    "@mantiq/heartbeat": "^0.5.0",
+    "@mantiq/helpers": "^0.5.0",
+    "@mantiq/logging": "^0.5.0",
+    "@mantiq/mail": "^0.5.0",
+    "@mantiq/notify": "^0.5.0",
+    "@mantiq/queue": "^0.5.0",
+    "@mantiq/realtime": "^0.5.0",
+    "@mantiq/search": "^0.5.0",
+    "@mantiq/validation": "^0.5.0",
+    "@mantiq/vite": "^0.5.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.0",
+    "lucide-react": "^1.7.0",
+    "radix-ui": "^1.4.3",
+    "tailwind-merge": "^2.6.0"
+  },
+  "devDependencies": {
+    "@mantiq/testing": "^0.5.0",
+    "bun-types": "latest",
+    "typescript": "^5.7.0",
+    "vite": "^8.0.0",
+    "tailwindcss": "^4.0.0",
+    "@tailwindcss/vite": "^4.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^6.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0"
+  }
+}

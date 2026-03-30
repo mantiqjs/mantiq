@@ -122,11 +122,11 @@ describe('Resource', () => {
     })
 
     it('derives slug from class name', () => {
-      expect(ProductCategoryResource.resolveSlug()).toBe('product-categorys')
+      expect(ProductCategoryResource.resolveSlug()).toBe('product-categories')
     })
 
     it('does not double-pluralize names ending in s', () => {
-      expect(StatusResource.resolveSlug()).toBe('status')
+      expect(StatusResource.resolveSlug()).toBe('statuses')
     })
   })
 
@@ -136,11 +136,11 @@ describe('Resource', () => {
     })
 
     it('derives label from class name', () => {
-      expect(ProductCategoryResource.resolveLabel()).toBe('Product Categorys')
+      expect(ProductCategoryResource.resolveLabel()).toBe('Product Categories')
     })
 
     it('does not double-pluralize names ending in s', () => {
-      expect(StatusResource.resolveLabel()).toBe('Status')
+      expect(StatusResource.resolveLabel()).toBe('Statuses')
     })
   })
 
