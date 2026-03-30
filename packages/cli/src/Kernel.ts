@@ -139,6 +139,27 @@ export class Kernel {
     } catch {
       // @mantiq/heartbeat not installed — skip heartbeat commands
     }
+
+    // Studio commands (if @mantiq/studio is installed)
+    try {
+      // @ts-ignore — optional dependency, may not be installed
+      const studio = await import('@mantiq/studio')
+      this.register(new studio.InstallCommand() as any)
+      this.register(new studio.MakePanelCommand() as any)
+      this.register(new studio.MakeResourceCommand() as any)
+    } catch {
+      // @mantiq/studio not installed — skip studio commands
+    }
+
+    // Agent rules commands (if @mantiq/agent-rules is installed)
+    try {
+      // @ts-ignore — optional dependency, may not be installed
+      const mod = await import('@mantiq/agent-rules')
+      this.register(new mod.AgentGenerateCommand() as any)
+      this.register(new mod.AgentUpdateCommand() as any)
+    } catch {
+      // @mantiq/agent-rules not installed — skip agent commands
+    }
   }
 
   /**

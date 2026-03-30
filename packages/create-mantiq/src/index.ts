@@ -446,6 +446,24 @@ if (kit) {
   buildSpin.stop('Frontend built')
 }
 
+// ── Generate AI agent rules ──────────────────────────────────────────────────
+const agentSpin = term.spinner('Generating AI agent rules')
+try {
+  const agentGen = Bun.spawn(['bun', 'run', 'mantiq', 'agent:generate'], {
+    cwd: projectDir,
+    stdout: 'pipe',
+    stderr: 'pipe',
+  })
+  const agentExit = await agentGen.exited
+  if (agentExit === 0) {
+    agentSpin.stop('AI agent rules generated')
+  } else {
+    agentSpin.stop('AI agent rules skipped')
+  }
+} catch {
+  agentSpin.stop('AI agent rules skipped')
+}
+
 // ── Git init ─────────────────────────────────────────────────────────────────
 if (!noGit) {
   const gitSpin = term.spinner('Initializing git')
