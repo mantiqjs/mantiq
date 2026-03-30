@@ -61,7 +61,7 @@ export function CreatePage({ resource, basePath, onNavigate }: CreatePageProps) 
       }
 
       // Success — navigate back to list
-      onNavigate(`/${resource.slug}`)
+      onNavigate(`/resources/${resource.slug}`)
     } catch (err) {
       setErrors({
         _global: [err instanceof Error ? err.message : 'An unexpected error occurred.'],
@@ -93,7 +93,7 @@ export function CreatePage({ resource, basePath, onNavigate }: CreatePageProps) 
       <div className="flex items-center gap-4">
         <button
           type="button"
-          onClick={() => onNavigate(`/${resource.slug}`)}
+          onClick={() => onNavigate(`/resources/${resource.slug}`)}
           className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors"
         >
           <Icon name="arrow-left" className="h-4 w-4" />
@@ -119,7 +119,7 @@ export function CreatePage({ resource, basePath, onNavigate }: CreatePageProps) 
         <FormRenderer
           schema={schema}
           onSubmit={handleSubmit}
-          onCancel={() => onNavigate(`/${resource.slug}`)}
+          onCancel={() => onNavigate(`/resources/${resource.slug}`)}
           submitLabel="Create"
           loading={loading}
           errors={errors}

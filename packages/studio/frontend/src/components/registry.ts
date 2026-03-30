@@ -1,6 +1,43 @@
 import type { ComponentType } from 'react'
 
-const registry: Record<string, ComponentType<any>> = {}
+// Form components
+import { TextInput } from '@/components/forms/TextInput'
+import { Textarea } from '@/components/forms/Textarea'
+import { Select } from '@/components/forms/Select'
+import { Toggle } from '@/components/forms/Toggle'
+import { Checkbox } from '@/components/forms/Checkbox'
+import { Radio } from '@/components/forms/Radio'
+import { DatePicker } from '@/components/forms/DatePicker'
+import { ColorPicker } from '@/components/forms/ColorPicker'
+import { TagsInput } from '@/components/forms/TagsInput'
+import { FileUpload } from '@/components/forms/FileUpload'
+import { Repeater } from '@/components/forms/Repeater'
+import { KeyValue } from '@/components/forms/KeyValue'
+
+// Layout components
+import { Section } from '@/components/forms/Section'
+import { TabsLayout } from '@/components/forms/TabsLayout'
+import { GridLayout } from '@/components/forms/GridLayout'
+import { WizardLayout } from '@/components/forms/WizardLayout'
+
+const registry: Record<string, ComponentType<any>> = {
+  'text-input': TextInput,
+  'textarea': Textarea,
+  'select': Select,
+  'toggle': Toggle,
+  'checkbox': Checkbox,
+  'radio': Radio,
+  'date-picker': DatePicker,
+  'color-picker': ColorPicker,
+  'tags-input': TagsInput,
+  'file-upload': FileUpload,
+  'repeater': Repeater,
+  'key-value': KeyValue,
+  'section': Section,
+  'tabs': TabsLayout,
+  'grid': GridLayout,
+  'wizard': WizardLayout,
+}
 
 export function registerComponent(type: string, component: ComponentType<any>): void {
   registry[type] = component
@@ -8,57 +45,4 @@ export function registerComponent(type: string, component: ComponentType<any>): 
 
 export function resolveComponent(type: string): ComponentType<any> | null {
   return registry[type] ?? null
-}
-
-// ── Lazy pre-registration of built-in components ──────────────────────────────
-// We import and register eagerly so resolveComponent() works synchronously.
-
-async function registerBuiltins() {
-  // Form components
-  const { TextInput } = await import('@/components/forms/TextInput')
-  const { Textarea } = await import('@/components/forms/Textarea')
-  const { Select } = await import('@/components/forms/Select')
-  const { Toggle } = await import('@/components/forms/Toggle')
-  const { Checkbox } = await import('@/components/forms/Checkbox')
-  const { Radio } = await import('@/components/forms/Radio')
-  const { DatePicker } = await import('@/components/forms/DatePicker')
-  const { ColorPicker } = await import('@/components/forms/ColorPicker')
-  const { TagsInput } = await import('@/components/forms/TagsInput')
-  const { FileUpload } = await import('@/components/forms/FileUpload')
-  const { Repeater } = await import('@/components/forms/Repeater')
-  const { KeyValue } = await import('@/components/forms/KeyValue')
-
-  // Layout components
-  const { Section } = await import('@/components/forms/Section')
-  const { TabsLayout } = await import('@/components/forms/TabsLayout')
-  const { GridLayout } = await import('@/components/forms/GridLayout')
-  const { WizardLayout } = await import('@/components/forms/WizardLayout')
-
-  registerComponent('text-input', TextInput)
-  registerComponent('textarea', Textarea)
-  registerComponent('select', Select)
-  registerComponent('toggle', Toggle)
-  registerComponent('checkbox', Checkbox)
-  registerComponent('radio', Radio)
-  registerComponent('date-picker', DatePicker)
-  registerComponent('color-picker', ColorPicker)
-  registerComponent('tags-input', TagsInput)
-  registerComponent('file-upload', FileUpload)
-  registerComponent('repeater', Repeater)
-  registerComponent('key-value', KeyValue)
-  registerComponent('section', Section)
-  registerComponent('tabs', TabsLayout)
-  registerComponent('grid', GridLayout)
-  registerComponent('wizard', WizardLayout)
-}
-
-// Kick off registration immediately
-const builtinsReady = registerBuiltins()
-
-/**
- * Wait for all built-in components to be registered.
- * Call this once at app startup before rendering any schemas.
- */
-export function ensureBuiltins(): Promise<void> {
-  return builtinsReady
 }

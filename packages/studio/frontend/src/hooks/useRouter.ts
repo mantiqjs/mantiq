@@ -47,10 +47,12 @@ function matchRoute(
 
 // ── Routes definition ────────────────────────────────────────────────────────
 
+// Order matters: literal segments before params, longer before shorter
 const ROUTES = [
-  '/resources/:slug',
-  '/resources/:slug/create',
   '/resources/:slug/:id/edit',
+  '/resources/:slug/create',
+  '/resources/:slug/:id',
+  '/resources/:slug',
 ] as const
 
 // ── Hook ─────────────────────────────────────────────────────────────────────
@@ -59,16 +61,20 @@ export function useRouter(): RouterState {
   const [pathname, setPathname] = useState(window.location.pathname)
 
   useEffect(() => {
-    const onPopState = () => {
-      setPathname(window.location.pathname)
+    const sync = () => setPathname(window.location.pathname)
+    window.addEventListener('popstate', sync)
+    window.addEventListener('studio:navigate', sync)
+    return () => {
+      window.removeEventListener('popstate', sync)
+      window.removeEventListener('studio:navigate', sync)
     }
-    window.addEventListener('popstate', onPopState)
-    return () => window.removeEventListener('popstate', onPopState)
   }, [])
 
   const navigate = useCallback((to: string) => {
     window.history.pushState(null, '', to)
     setPathname(to)
+    // Notify all other useRouter instances
+    window.dispatchEvent(new Event('studio:navigate'))
   }, [])
 
   const match = useMemo((): RouteMatch | null => {
@@ -86,8 +92,8 @@ export function useRouter(): RouterState {
       localPath = localPath.slice(basePath.length) || '/'
     }
 
-    // Try each route pattern (more specific first — order matters)
-    for (const pattern of [...ROUTES].reverse()) {
+    // Try each route pattern (most specific first)
+    for (const pattern of ROUTES) {
       const params = matchRoute(localPath, pattern)
       if (params) {
         return { path: localPath, pattern, params }

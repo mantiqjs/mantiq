@@ -510,7 +510,7 @@ function handleStats(): Response {
 function handlePanelSchema(): Response {
   return Response.json({
     id: 'admin',
-    path: '/admin',
+    path: '',
     brandName: 'Mantiq Studio',
     brandLogo: null,
     favicon: null,

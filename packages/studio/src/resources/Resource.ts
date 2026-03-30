@@ -165,8 +165,10 @@ export abstract class Resource implements Serializable {
     const kebab = name
       .replace(/([a-z])([A-Z])/g, '$1-$2')
       .toLowerCase()
-    // Naive pluralization: add 's' if not already ending with 's'
-    return kebab.endsWith('s') ? kebab : `${kebab}s`
+    // Basic pluralization
+    if (kebab.endsWith('s') || kebab.endsWith('x') || kebab.endsWith('z') || kebab.endsWith('sh') || kebab.endsWith('ch')) return `${kebab}es`
+    if (kebab.endsWith('y') && !/[aeiou]y$/.test(kebab)) return `${kebab.slice(0, -1)}ies`
+    return `${kebab}s`
   }
 
   /**
@@ -177,8 +179,11 @@ export abstract class Resource implements Serializable {
     const name = this.name.replace(/Resource$/, '')
     // Insert space before capitals: UserPost → User Post
     const spaced = name.replace(/([a-z])([A-Z])/g, '$1 $2')
-    // Naive pluralize
-    return spaced.endsWith('s') ? spaced : `${spaced}s`
+    // Basic pluralization
+    const lower = spaced.toLowerCase()
+    if (lower.endsWith('s') || lower.endsWith('x') || lower.endsWith('z') || lower.endsWith('sh') || lower.endsWith('ch')) return `${spaced}es`
+    if (lower.endsWith('y') && !/[aeiou]y$/i.test(spaced)) return `${spaced.slice(0, -1)}ies`
+    return `${spaced}s`
   }
 
   toSchema(): Record<string, unknown> {

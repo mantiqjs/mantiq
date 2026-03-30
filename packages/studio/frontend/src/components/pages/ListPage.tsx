@@ -38,6 +38,7 @@ export function ListPage({ resource, basePath, onNavigate }: ListPageProps) {
 
   // Query state
   const [search, setSearch] = useState('')
+  const [searchDisplay, setSearchDisplay] = useState('')
   const [sort, setSort] = useState(resource.table.defaultSort ?? '')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(resource.table.defaultSortDirection ?? 'desc')
   const [filters, setFilters] = useState<Record<string, string>>({})
@@ -105,13 +106,24 @@ export function ListPage({ resource, basePath, onNavigate }: ListPageProps) {
     fetchData()
   }, [fetchData])
 
-  // Debounced search
+  // Live polling — auto-refresh if table.poll is set (seconds)
+  useEffect(() => {
+    const pollInterval = tableSchema?.poll ?? resource.table?.poll
+    if (!pollInterval || pollInterval <= 0) return
+    const timer = setInterval(() => {
+      fetchData()
+    }, pollInterval * 1000)
+    return () => clearInterval(timer)
+  }, [fetchData, tableSchema?.poll, resource.table?.poll])
+
+  // Debounced search — display updates instantly, query fires after 400ms
   function handleSearchChange(val: string) {
+    setSearchDisplay(val)
     if (searchTimer.current) clearTimeout(searchTimer.current)
     searchTimer.current = setTimeout(() => {
       setSearch(val)
       setPage(1)
-    }, 300)
+    }, 400)
   }
 
   function handleSortChange(col: string) {
@@ -143,11 +155,11 @@ export function ListPage({ resource, basePath, onNavigate }: ListPageProps) {
   // Actions
   function handleAction(actionName: string, recordId: number) {
     if (actionName === 'view') {
-      onNavigate(`/${resource.slug}/${recordId}`)
+      onNavigate(`/resources/${resource.slug}/${recordId}`)
       return
     }
     if (actionName === 'edit') {
-      onNavigate(`/${resource.slug}/${recordId}/edit`)
+      onNavigate(`/resources/${resource.slug}/${recordId}/edit`)
       return
     }
     if (actionName === 'delete') {
@@ -273,7 +285,7 @@ export function ListPage({ resource, basePath, onNavigate }: ListPageProps) {
         schema={tableSchema}
         data={data}
         meta={meta}
-        search={search}
+        search={searchDisplay}
         onSearchChange={handleSearchChange}
         sort={sort}
         sortDirection={sortDirection}
@@ -288,7 +300,7 @@ export function ListPage({ resource, basePath, onNavigate }: ListPageProps) {
         onPerPageChange={handlePerPageChange}
         onAction={handleAction}
         onBulkAction={handleBulkAction}
-        onCreateClick={() => onNavigate(`/${resource.slug}/create`)}
+        onCreateClick={() => onNavigate(`/resources/${resource.slug}/create`)}
         loading={loading}
       />
 
