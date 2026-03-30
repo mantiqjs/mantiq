@@ -57,6 +57,9 @@ export function ListPage({ resource, basePath, onNavigate }: ListPageProps) {
   // Debounce timer
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // Resolved table schema (fetched or fallback to resource.table)
+  const tableSchema = schema ?? resource.table
+
   // Fetch schema on mount
   useEffect(() => {
     async function fetchSchema() {
@@ -168,7 +171,6 @@ export function ListPage({ resource, basePath, onNavigate }: ListPageProps) {
     }
 
     // Find the action schema
-    const tableSchema = schema ?? resource.table
     const action = tableSchema.actions.find((a) => a.name === actionName)
       ?? tableSchema.headerActions?.find((a) => a.name === actionName)
     if (!action) return
@@ -200,7 +202,6 @@ export function ListPage({ resource, basePath, onNavigate }: ListPageProps) {
   }
 
   function handleBulkAction(actionName: string, ids: number[]) {
-    const tableSchema = schema ?? resource.table
     const action = tableSchema.bulkActions.find((a) => a.name === actionName)
     if (!action) return
 
@@ -246,8 +247,6 @@ export function ListPage({ resource, basePath, onNavigate }: ListPageProps) {
       setDeleteLoading(false)
     }
   }
-
-  const tableSchema = schema ?? resource.table
 
   return (
     <div className="space-y-6">

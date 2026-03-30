@@ -128,4 +128,6 @@ export { StudioServiceProvider } from './StudioServiceProvider.ts'
 
 // ── Commands ──────────────────────────────────────────────────────────────────
 export { MakeResourceCommand } from './commands/MakeResourceCommand.ts'
+export { MakePanelCommand } from './commands/MakePanelCommand.ts'
+export { InstallCommand } from './commands/InstallCommand.ts'
 export { PublishFrontendCommand } from './commands/PublishFrontendCommand.ts'
