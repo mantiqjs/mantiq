@@ -30,3 +30,6 @@ export { ServeStaticFiles } from './middleware/ServeStaticFiles.ts'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 export { vite } from './helpers/vite.ts'
+
+// ── Vite Plugins ─────────────────────────────────────────────────────────────
+export { mantiq } from './plugins/mantiq.ts'
