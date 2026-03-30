@@ -86,7 +86,7 @@ if (!projectName) {
     --theme=${emerald('default|minimal|workspace|corporate|starter')}
                                Dashboard theme (shadcn only)
     --auth=${emerald('builtin|none')}       Authentication setup
-    --with=${emerald('ai')}                 Optional packages (comma-separated)
+    --with=${emerald('ai,studio')}           Optional packages (comma-separated)
     --no-git                   Skip git initialization
     --yes                      Accept defaults (non-interactive)
 
@@ -95,7 +95,7 @@ if (!projectName) {
     bun create mantiq my-app --kit=react
     bun create mantiq my-app --kit=react --ui=shadcn
     bun create mantiq my-app --kit=react --auth=none
-    bun create mantiq my-app --kit=react --with=ai
+    bun create mantiq my-app --kit=react --with=ai,studio
 `)
   process.exit(1)
 }
@@ -169,6 +169,7 @@ if (!isCI && !kit) {
   if (!flags['with']) {
     optionalPackages = await term.multiSelect('Optional packages', [
       { value: 'ai', label: 'AI', hint: '@mantiq/ai' },
+      { value: 'studio', label: 'Studio', hint: '@mantiq/studio — admin panel' },
     ])
   }
 

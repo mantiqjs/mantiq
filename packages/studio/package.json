@@ -16,11 +16,11 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@mantiq/core": "workspace:*",
-    "@mantiq/database": "workspace:*",
-    "@mantiq/auth": "workspace:*",
-    "@mantiq/validation": "workspace:*",
-    "@mantiq/helpers": "workspace:*"
+    "@mantiq/core": "^0.7.0",
+    "@mantiq/database": "^0.7.0",
+    "@mantiq/auth": "^0.7.0",
+    "@mantiq/validation": "^0.7.0",
+    "@mantiq/helpers": "^0.7.0"
   },
   "devDependencies": {
     "bun-types": "latest",
@@ -28,8 +28,8 @@
     "vite": "^8.0.0"
   },
   "peerDependencies": {
-    "@mantiq/realtime": "workspace:*",
-    "@mantiq/vite": "workspace:*"
+    "@mantiq/realtime": "^0.7.0",
+    "@mantiq/vite": "^0.7.0"
   },
   "peerDependenciesMeta": {
     "@mantiq/realtime": {
