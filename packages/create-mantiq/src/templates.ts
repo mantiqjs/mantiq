@@ -26,28 +26,28 @@ export function getTemplates(ctx: TemplateContext): Record<string, string> {
 
   // ── package.json (always dynamic — name + deps) ────────────────────────
   const baseDeps: Record<string, string> = {
-    ...(ctx.auth !== 'none' ? { '@mantiq/auth': '^0.5.0' } : {}),
-    '@mantiq/cli': '^0.5.0',
-    '@mantiq/core': '^0.5.0',
-    '@mantiq/database': '^0.5.0',
-    '@mantiq/events': '^0.5.0',
-    '@mantiq/filesystem': '^0.5.0',
-    '@mantiq/heartbeat': '^0.5.0',
-    '@mantiq/helpers': '^0.5.0',
-    '@mantiq/logging': '^0.5.0',
-    '@mantiq/queue': '^0.5.0',
-    '@mantiq/realtime': '^0.5.0',
-    '@mantiq/validation': '^0.5.0',
-    '@mantiq/mail': '^0.5.0',
-    '@mantiq/notify': '^0.5.0',
-    '@mantiq/search': '^0.5.0',
-    '@mantiq/health': '^0.5.0',
-    ...(ctx.optionalPackages.includes('ai') ? { '@mantiq/ai': '^0.5.0' } : {}),
+    ...(ctx.auth !== 'none' ? { '@mantiq/auth': '^0.7.0' } : {}),
+    '@mantiq/cli': '^0.7.0',
+    '@mantiq/core': '^0.7.0',
+    '@mantiq/database': '^0.7.0',
+    '@mantiq/events': '^0.7.0',
+    '@mantiq/filesystem': '^0.7.0',
+    '@mantiq/heartbeat': '^0.7.0',
+    '@mantiq/helpers': '^0.7.0',
+    '@mantiq/logging': '^0.7.0',
+    '@mantiq/queue': '^0.7.0',
+    '@mantiq/realtime': '^0.7.0',
+    '@mantiq/validation': '^0.7.0',
+    '@mantiq/mail': '^0.7.0',
+    '@mantiq/notify': '^0.7.0',
+    '@mantiq/search': '^0.7.0',
+    '@mantiq/health': '^0.7.0',
+    ...(ctx.optionalPackages.includes('ai') ? { '@mantiq/ai': '^0.7.0' } : {}),
     ...(ctx.optionalPackages.includes('studio') ? { '@mantiq/studio': '^0.7.0' } : {}),
   }
 
   const baseDevDeps: Record<string, string> = {
-    '@mantiq/testing': '^0.5.0',
+    '@mantiq/testing': '^0.7.0',
     'bun-types': 'latest',
     'typescript': '^5.7.0',
   }
@@ -86,7 +86,7 @@ export function getTemplates(ctx: TemplateContext): Record<string, string> {
         }
 
     Object.assign(baseDeps, {
-      '@mantiq/vite': '^0.5.0',
+      '@mantiq/vite': '^0.7.0',
       ...uiDeps,
     })
 

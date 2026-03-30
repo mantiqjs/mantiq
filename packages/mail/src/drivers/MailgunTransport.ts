@@ -59,10 +59,9 @@ export class MailgunTransport implements MailTransport {
 
     // Attachments
     for (const attachment of message.attachments) {
-      const content = typeof attachment.content === 'string'
-        ? new Blob([attachment.content], { type: attachment.contentType || 'application/octet-stream' })
-        : new Blob([attachment.content], { type: attachment.contentType || 'application/octet-stream' })
-
+      const content = new Blob([attachment.content as any], {
+        type: attachment.contentType || 'application/octet-stream',
+      })
       formData.append('attachment', content, attachment.filename)
     }
 

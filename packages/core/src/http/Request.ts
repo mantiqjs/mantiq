@@ -280,7 +280,7 @@ export class MantiqRequest implements MantiqRequestContract {
       } else if (contentType.includes('multipart/form-data')) {
         const formData = await this.bunRequest.clone().formData()
         for (const [key, value] of formData.entries()) {
-          if (value instanceof File) {
+          if (typeof value === 'object' && value instanceof File) {
             const uploaded = new UploadedFile(value)
             if (this.parsedFiles[key]) {
               const existing = this.parsedFiles[key]!

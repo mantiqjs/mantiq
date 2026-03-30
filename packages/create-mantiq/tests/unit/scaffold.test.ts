@@ -362,7 +362,7 @@ describe('getTemplates() — optionalPackages=[ai]', () => {
 
   it('includes @mantiq/ai in deps', () => {
     const pkg = JSON.parse(templates['package.json']!)
-    expect(pkg.dependencies['@mantiq/ai']).toBe('^0.5.0')
+    expect(pkg.dependencies['@mantiq/ai']).toBe('^0.7.0')
   })
 
   it('still includes all other core deps', () => {
@@ -390,7 +390,7 @@ describe('Backward compat — default context produces original output', () => {
 
   it('includes @mantiq/auth', () => {
     const pkg = JSON.parse(templates['package.json']!)
-    expect(pkg.dependencies['@mantiq/auth']).toBe('^0.5.0')
+    expect(pkg.dependencies['@mantiq/auth']).toBe('^0.7.0')
   })
 
   it('includes radix-ui and lucide-react (shadcn deps)', () => {
@@ -403,5 +403,106 @@ describe('Backward compat — default context produces original output', () => {
   it('does not include @mantiq/ai', () => {
     const pkg = JSON.parse(templates['package.json']!)
     expect(pkg.dependencies['@mantiq/ai']).toBeUndefined()
+  })
+})
+
+// ── getTemplates() — optionalPackages=[studio] ──────────────────────────────
+
+describe('getTemplates() — optionalPackages=[studio]', () => {
+  const templates = getTemplates(makeCtx({ optionalPackages: ['studio'] }))
+
+  it('includes @mantiq/studio in deps', () => {
+    const pkg = JSON.parse(templates['package.json']!)
+    expect(pkg.dependencies['@mantiq/studio']).toBe('^0.7.0')
+  })
+
+  it('does not include @mantiq/ai', () => {
+    const pkg = JSON.parse(templates['package.json']!)
+    expect(pkg.dependencies['@mantiq/ai']).toBeUndefined()
+  })
+})
+
+// ── Stub quality checks ────────────────────────────────────────────────────
+
+describe('Stubs — UserFactory', () => {
+  const stubPath = join(import.meta.dir, '../../stubs/shared/database/factories/UserFactory.ts.stub')
+
+  it('exists', () => {
+    expect(existsSync(stubPath)).toBe(true)
+  })
+
+  it('definition() has correct signature (index: number, fake: Faker)', () => {
+    const content = readFileSync(stubPath, 'utf-8')
+    expect(content).toContain('definition(index: number, fake: Faker)')
+    expect(content).not.toContain('definition(faker: Faker)')
+  })
+
+  it('uses override keyword', () => {
+    const content = readFileSync(stubPath, 'utf-8')
+    expect(content).toContain('override definition')
+  })
+})
+
+describe('Stubs — api.ts (all kits)', () => {
+  for (const kit of ['react', 'vue', 'svelte']) {
+    const stubPath = join(import.meta.dir, `../../stubs/${kit}/src/lib/api.ts.stub`)
+
+    it(`${kit}/api.ts exists`, () => {
+      expect(existsSync(stubPath)).toBe(true)
+    })
+
+    it(`${kit}/api.ts returns error data on failure (not null)`, () => {
+      const content = readFileSync(stubPath, 'utf-8')
+      // The non-ok branch should return data, not null
+      expect(content).toContain("if (!res.ok) return { ok: false, status: res.status, data }")
+      expect(content).not.toMatch(/if \(!res\.ok\) return \{ ok: false, status: res\.status, data: null \}/)
+    })
+
+    it(`${kit}/api.ts error branch type is 'any' not 'null'`, () => {
+      const content = readFileSync(stubPath, 'utf-8')
+      expect(content).toContain('{ ok: false; status: number; data: any }')
+      expect(content).not.toContain('{ ok: false; status: number; data: null }')
+    })
+  }
+})
+
+describe('Stubs — App.tsx', () => {
+  const stubPath = join(import.meta.dir, '../../stubs/react/src/App.tsx.stub')
+
+  it('exists', () => {
+    expect(existsSync(stubPath)).toBe(true)
+  })
+
+  it('guards initial against undefined with ?? {}', () => {
+    const content = readFileSync(stubPath, 'utf-8')
+    expect(content).toContain('?? {}')
+  })
+})
+
+describe('Stubs — users.test.ts', () => {
+  const stubPath = join(import.meta.dir, '../../stubs/shared/tests/feature/users.test.ts.stub')
+
+  it('exists', () => {
+    expect(existsSync(stubPath)).toBe(true)
+  })
+
+  it('imports expect from bun:test', () => {
+    const content = readFileSync(stubPath, 'utf-8')
+    expect(content).toMatch(/import\s*\{[^}]*expect[^}]*\}\s*from\s*['"]bun:test['"]/)
+  })
+})
+
+// ── Dep version consistency ─────────────────────────────────────────────────
+
+describe('Template dep versions', () => {
+  it('all @mantiq/* deps use ^0.7.0', () => {
+    const templates = getTemplates(makeCtx({ kit: 'react', auth: 'builtin', optionalPackages: ['ai', 'studio'] }))
+    const pkg = JSON.parse(templates['package.json']!)
+    const allDeps = { ...pkg.dependencies, ...pkg.devDependencies }
+    for (const [name, version] of Object.entries(allDeps)) {
+      if (name.startsWith('@mantiq/')) {
+        expect(`${name}@${version}`).toBe(`${name}@^0.7.0`)
+      }
+    }
   })
 })
