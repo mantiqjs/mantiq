@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/studio",
-  "version": "0.5.23",
+  "version": "0.7.0",
   "type": "module",
   "main": "src/index.ts",
   "types": "src/index.ts",
@@ -31,7 +31,11 @@
     "@mantiq/vite": "workspace:*"
   },
   "peerDependenciesMeta": {
-    "@mantiq/realtime": { "optional": true },
-    "@mantiq/vite": { "optional": true }
+    "@mantiq/realtime": {
+      "optional": true
+    },
+    "@mantiq/vite": {
+      "optional": true
+    }
   }
 }

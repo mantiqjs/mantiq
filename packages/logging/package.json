@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/logging",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "description": "Channel-based logging",
   "type": "module",
   "license": "MIT",
