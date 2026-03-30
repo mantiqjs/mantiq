@@ -93,7 +93,7 @@ export class MantiqResponse {
       ? `attachment; filename="${sanitized}"`
       : `attachment; filename="${sanitized}"; filename*=UTF-8''${encodeURIComponent(sanitized)}`
 
-    return new Response(content, {
+    return new Response(content as any, {
       headers: {
         'Content-Type': mimeType ?? 'application/octet-stream',
         'Content-Disposition': disposition,

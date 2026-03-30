@@ -3,7 +3,7 @@ function getCookie(name: string): string | null {
   return match ? decodeURIComponent(match[1]!) : null
 }
 
-type ApiResult<T> = { ok: true; status: number; data: T } | { ok: false; status: number; data: null }
+type ApiResult<T> = { ok: true; status: number; data: T } | { ok: false; status: number; data: any }
 
 export async function api<T = any>(url: string, opts: RequestInit = {}): Promise<ApiResult<T>> {
   const headers: Record<string, string> = { Accept: 'application/json', ...(opts.headers as Record<string, string>) }
@@ -24,7 +24,7 @@ export async function api<T = any>(url: string, opts: RequestInit = {}): Promise
 
   const ct = res.headers.get('content-type') ?? ''
   const data = ct.includes('json') ? await res.json() : null
-  if (!res.ok) return { ok: false, status: res.status, data: null }
+  if (!res.ok) return { ok: false, status: res.status, data }
   return { ok: true, status: res.status, data }
 }
 

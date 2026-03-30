@@ -86,7 +86,9 @@ export class TestCase {
     try {
       const { HttpKernel } = await import('@mantiq/core')
       const kernel = this.app.make(HttpKernel)
-      this.handler = (req: Request) => kernel.handle(req)
+      // Provide a minimal mock server so kernel.handle() can call server.requestIP()
+      const mockServer = { requestIP: () => null } as any
+      this.handler = (req: Request) => kernel.handle(req, mockServer)
     } catch {
       // Fallback: use the exported default as a Bun server handler
       this.handler = async (req: Request) => {
