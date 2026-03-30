@@ -27,6 +27,12 @@ export class StudioController {
       return Response.json({ error: 'Panel not found' }, { status: 404 })
     }
 
+    // Authorization: canAccess
+    const user = (request as any).user?.() ?? null
+    if (!await panel.canAccess(user)) {
+      return Response.json({ error: 'Forbidden.' }, { status: 403 })
+    }
+
     const resources = panel.resources()
     const navigation: NavigationGroupSchema[] = panel.navigationGroups().length > 0
       ? NavigationBuilder.build(resources, panel.navigationGroups())
@@ -84,6 +90,13 @@ export class StudioController {
   async index(request: MantiqRequest): Promise<Response> {
     try {
       const { resource, ResourceClass } = this.resolver.resolve(request)
+
+      // Authorization: canViewAny
+      const user = (request as any).user?.() ?? null
+      if (!await ResourceClass.canViewAny(user)) {
+        return Response.json({ error: 'Forbidden.' }, { status: 403 })
+      }
+
       const ModelClass = this.resolver.getModelClass(ResourceClass)
 
       // 1. Build base query
@@ -172,6 +185,13 @@ export class StudioController {
   async store(request: MantiqRequest): Promise<Response> {
     try {
       const { resource, ResourceClass } = this.resolver.resolve(request)
+
+      // Authorization: canCreate
+      const user = (request as any).user?.() ?? null
+      if (!await ResourceClass.canCreate(user)) {
+        return Response.json({ error: 'Forbidden.' }, { status: 403 })
+      }
+
       const ModelClass = this.resolver.getModelClass(ResourceClass)
       const body = await request.input()
 
@@ -254,6 +274,12 @@ export class StudioController {
         return Response.json({ error: 'Record not found.' }, { status: 404 })
       }
 
+      // Authorization: canUpdate
+      const user = (request as any).user?.() ?? null
+      if (!await ResourceClass.canUpdate(user, record)) {
+        return Response.json({ error: 'Forbidden.' }, { status: 403 })
+      }
+
       const body = await request.input()
 
       // Extract validation rules from form schema
@@ -302,6 +328,12 @@ export class StudioController {
       const record = await ModelClass.find(id)
       if (!record) {
         return Response.json({ error: 'Record not found.' }, { status: 404 })
+      }
+
+      // Authorization: canDelete
+      const user = (request as any).user?.() ?? null
+      if (!await ResourceClass.canDelete(user, record)) {
+        return Response.json({ error: 'Forbidden.' }, { status: 403 })
       }
 
       // Lifecycle: beforeDelete
