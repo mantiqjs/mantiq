@@ -29,6 +29,7 @@ export class MySQLConnection extends BaseSQLConnection {
   private async getPool(): Promise<any> {
     if (!this.pool) {
       try {
+        // @ts-ignore — optional peer dependency, may not be installed
         const mysql: any = await import('mysql2/promise')
         this.pool = await mysql.createPool({
           host: this.config.host ?? 'localhost',

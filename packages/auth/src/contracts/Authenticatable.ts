@@ -40,4 +40,21 @@ export interface Authenticatable {
 
   /** Get the primary key value. */
   getKey(): string | number
+
+  // ── Token methods (present when HasApiTokens mixin is applied) ────
+
+  /** Create a new personal access token. */
+  createToken?(name: string, abilities?: string[], expiresAt?: Date): Promise<{ accessToken: any; plainTextToken: string }>
+
+  /** Get all tokens for this user. */
+  tokens?(): any
+
+  /** Get the current access token instance. */
+  currentAccessToken?(): any
+
+  /** Check if the current token has a given ability. */
+  tokenCan?(ability: string): boolean
+
+  /** Check if the current token lacks a given ability. */
+  tokenCant?(ability: string): boolean
 }

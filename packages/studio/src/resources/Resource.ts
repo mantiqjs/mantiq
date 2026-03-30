@@ -7,12 +7,12 @@ import type { Action } from '../actions/Action.ts'
 import type { BulkAction } from '../actions/BulkAction.ts'
 
 export interface FormInstance {
-  toSchema(): FormSchema
+  toSchema(): Record<string, unknown>
   getComponents(): FormComponent[]
 }
 
 export interface TableInstance {
-  toSchema(): TableSchema
+  toSchema(): Record<string, unknown>
   getColumns(): Column[]
   getFilters(): Filter[]
   getActions(): Action[]
@@ -197,8 +197,8 @@ export abstract class Resource implements Serializable {
       recordTitleAttribute: ctor.recordTitleAttribute,
       globallySearchable: ctor.globallySearchable,
       softDeletes: ctor.softDeletes,
-      form: this.form().toSchema(),
-      table: this.table().toSchema(),
+      form: this.form().toSchema() as unknown as FormSchema,
+      table: this.table().toSchema() as unknown as TableSchema,
     }
     return schema as unknown as Record<string, unknown>
   }
