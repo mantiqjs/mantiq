@@ -371,8 +371,8 @@ export class SchemaIntrospector {
       const db = mongoConn.getDatabase()
       const collection = db.collection(collectionName)
 
-      // Sample last 10 documents (most recent data reflects current schema)
-      const docs = await collection.find({}).sort({ _id: -1 }).limit(10).toArray()
+      // Sample last 100 documents for better type inference
+      const docs = await collection.find({}).sort({ _id: -1 }).limit(100).toArray()
 
       if (docs.length === 0) return []
 
