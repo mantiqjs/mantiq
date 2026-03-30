@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/search",
-  "version": "0.5.23",
+  "version": "0.6.0",
   "description": "Full-text search abstraction — Algolia, Meilisearch, Typesense, Elasticsearch, database, and collection drivers",
   "type": "module",
   "license": "MIT",
