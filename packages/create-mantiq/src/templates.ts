@@ -43,6 +43,7 @@ export function getTemplates(ctx: TemplateContext): Record<string, string> {
     '@mantiq/search': '^0.5.0',
     '@mantiq/health': '^0.5.0',
     ...(ctx.optionalPackages.includes('ai') ? { '@mantiq/ai': '^0.5.0' } : {}),
+    ...(ctx.optionalPackages.includes('studio') ? { '@mantiq/studio': '^0.7.0' } : {}),
   }
 
   const baseDevDeps: Record<string, string> = {
