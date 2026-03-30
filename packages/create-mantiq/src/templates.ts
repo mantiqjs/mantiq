@@ -47,7 +47,6 @@ export function getTemplates(ctx: TemplateContext): Record<string, string> {
   }
 
   const baseDevDeps: Record<string, string> = {
-    '@mantiq/agent-rules': '^0.7.0',
     '@mantiq/testing': '^0.7.0',
     'bun-types': 'latest',
     'typescript': '^5.7.0',
