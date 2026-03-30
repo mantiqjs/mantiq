@@ -131,3 +131,7 @@ export { MakeResourceCommand } from './commands/MakeResourceCommand.ts'
 export { MakePanelCommand } from './commands/MakePanelCommand.ts'
 export { InstallCommand } from './commands/InstallCommand.ts'
 export { PublishFrontendCommand } from './commands/PublishFrontendCommand.ts'
+
+// ── Vite Plugin ──────────────────────────────────────────────────────────────
+export { studioPlugin } from './vite/studioPlugin.ts'
+export type { StudioPluginOptions } from './vite/studioPlugin.ts'
