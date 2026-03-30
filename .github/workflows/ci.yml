@@ -270,7 +270,7 @@ jobs:
           bun ${{ github.workspace }}/packages/create-mantiq/src/index.ts test-app $KIT_FLAG --yes --no-git
           # Link local workspace packages instead of published npm versions
           cd test-app
-          for pkg in core database auth cli validation helpers filesystem logging events queue realtime heartbeat vite mail notify search health oauth social-auth testing ai; do
+          for pkg in core database auth cli validation helpers filesystem logging events queue realtime heartbeat vite mail notify search health oauth social-auth testing ai agent-rules studio; do
             PKG_DIR="${{ github.workspace }}/packages/$pkg"
             if [ -d "$PKG_DIR" ]; then
               rm -rf "node_modules/@mantiq/$pkg"
