@@ -4,20 +4,53 @@
 
 `@mantiq/studio` is a server-driven UI framework for building admin panels, CRUD interfaces, dashboards, and forms. The server defines UI structure using TypeScript builder classes that serialize to JSON schemas. A bundled React + shadcn/ui frontend fetches and renders them. **No frontend code is needed for standard admin panels.**
 
-### Key Design Principle: Pluggable & Independent
+### Key Design Principles
 
-Studio is **completely independent of the user's application frontend**. Whether the user chose React, Vue, Svelte, Vanilla, or has no frontend at all — Studio works identically. It ships its own self-contained React SPA (pre-built, served from the package's `frontend/dist/` directory) at a configurable path (default `/admin`). The user's app and Studio share only the backend — they never share frontend code, build tools, or dependencies.
+**1. Pluggable & Independent** — Studio is completely independent of the user's application frontend. Whether the user chose React, Vue, Svelte, or has no frontend — Studio works identically. It serves its own React SPA at a configurable path (default `/admin`). The user's app and Studio share only the backend.
+
+**2. Publishable Frontend** — Studio ships a pre-built SPA that works out of the box, but users can publish the frontend source into their project for full customization via `bun mantiq studio:publish`. This gives both zero-config defaults AND full escape hatches.
+
+**3. Auto-Discovery** — Panels are auto-discovered from the `app/Studio/` directory. Any class extending `StudioPanel` in that directory is registered automatically. No manual configuration needed.
+
+**4. Centralized Auth** — Studio uses `@mantiq/auth` directly. All panels share the same auth system, guards, and user model. Panel-level access is controlled via a `canAccessPanel(user)` gate, not a separate auth system.
+
+**5. Multi-Panel** — Multiple panels can coexist (admin, customer portal, partner dashboard), each with its own path, resources, theme, and access gate — but sharing the same auth infrastructure and user model.
 
 This means:
-- **No frontend setup required** — `bun add @mantiq/studio` is all you need
-- **No Vite/React dependency in the user's project** — Studio's React app is pre-compiled
-- **Isolated routing** — Studio's `/admin/*` routes are completely separate from the app's routes
-- **Isolated auth** — Studio can use a different auth guard than the main app (e.g., `admin` guard vs `web` guard)
-- **Works on headless APIs** — Even a pure JSON API project (no frontend kit) can add Studio for admin
+- **No frontend setup required** — `bun add @mantiq/studio` works immediately
+- **Customizable when needed** — `bun mantiq studio:publish` copies frontend source into `studio/` for full control
+- **Isolated routing** — each panel's routes are namespaced under its path (`/admin/*`, `/portal/*`)
+- **Shared auth** — one user model, one session, panel access controlled by gates
+- **Works on headless APIs** — even a pure JSON API project can add Studio
 
-This is architecturally divided into two halves:
-- **Backend (`@mantiq/studio`)**: TypeScript builder classes (Resources, Forms, Tables, Widgets, Pages, Navigation, Actions) that run on Bun and serialize to JSON. Integrates with `@mantiq/core` (routing, middleware, container), `@mantiq/database` (ORM models, queries), `@mantiq/auth` (guards, policies), and `@mantiq/realtime` (WebSocket updates).
-- **Frontend (bundled React SPA)**: A pre-built React app shipped inside the npm package. Uses shadcn/ui components, a component registry pattern, and communicates with the backend exclusively via JSON APIs. Served by `StudioServeAssets` middleware — no user-side build step.
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  User's App                                             │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐              │
+│  │ React    │  │ Vue      │  │ API only │  (any setup)  │
+│  │ frontend │  │ frontend │  │ no UI    │              │
+│  └──────────┘  └──────────┘  └──────────┘              │
+│                                                         │
+│  Mantiq Backend (shared)                                │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │ @mantiq/core  @mantiq/database  @mantiq/auth    │   │
+│  └─────────────────────────────────────────────────┘   │
+│       │                                                 │
+│  ┌────┴────────────────────────────────────────────┐   │
+│  │ @mantiq/studio (backend)                        │   │
+│  │  PanelManager → Resources → JSON Schema API     │   │
+│  └─────────────────┬───────────────────────────────┘   │
+│                     │ JSON over HTTP                    │
+│  ┌──────────────────┴──────────────────────────────┐   │
+│  │ Studio Frontend (self-contained React SPA)       │   │
+│  │  /admin/*  — AdminPanel                          │   │
+│  │  /portal/* — CustomerPanel                       │   │
+│  │  Pre-built OR published to studio/ for customizing│  │
+│  └─────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -25,9 +58,9 @@ This is architecturally divided into two halves:
 
 ```
 packages/studio/
-src/
+src/                                      -- BACKEND (npm package)
   index.ts                              -- Public API exports
-  StudioServiceProvider.ts              -- Registers all studio bindings
+  StudioServiceProvider.ts              -- Auto-discovers panels, registers routes
   StudioPanel.ts                        -- Abstract panel class (entry point)
   contracts/
     StudioConfig.ts                     -- StudioConfig, PanelConfig interfaces
@@ -35,6 +68,7 @@ src/
     HasAuthorization.ts                 -- Policy/gate contract
   panel/
     PanelManager.ts                     -- Manages multiple panels, resolves active panel
+    PanelDiscovery.ts                   -- Scans app/Studio/ for panel classes
     PanelRouteRegistrar.ts              -- Registers all panel routes (API + SPA catch-all)
   resources/
     Resource.ts                         -- Abstract Resource base class
@@ -146,9 +180,9 @@ src/
     ActionAuthorizationError.ts
   testing/
     StudioFake.ts                       -- Test helpers for resources
-frontend/                               -- React + shadcn/ui SPA (pre-built)
-  dist/                                 -- Pre-built production assets
-  src/
+frontend/                               -- React + shadcn/ui SPA source
+  dist/                                 -- Pre-built production assets (shipped with npm)
+  src/                                  -- Source (published to user's studio/ via studio:publish)
     main.tsx                            -- Entry point
     App.tsx                             -- Root component with routing
     api/
@@ -310,24 +344,88 @@ interface HasAuthorization {
 
 ### 4. StudioPanel (Entry Point)
 
+#### 4.1 Auto-Discovery
+
+Panels are auto-discovered from `app/Studio/`. Any file exporting a class that extends `StudioPanel` is registered automatically:
+
+```
+app/
+  Studio/
+    AdminPanel.ts          → discovered, serves /admin
+    CustomerPanel.ts       → discovered, serves /portal
+    Panels/
+      PartnerPanel.ts      → discovered (recursive scan), serves /partners
+```
+
+The `StudioServiceProvider` scans `app/Studio/` recursively on boot. No config file or manual registration needed.
+
+Users can also register panels explicitly in `config/studio.ts` if they prefer:
+```typescript
+export default {
+  panels: [AdminPanel, CustomerPanel],
+  // If empty/missing, auto-discovery is used
+}
+```
+
+#### 4.2 Panel Class
+
 ```typescript
 abstract class StudioPanel {
+  /** URL prefix for this panel. Must be unique across panels. */
   path: string = '/admin'
+
+  /** Brand name shown in sidebar header */
   brandName: string = 'Studio'
+  brandLogo?: string
+  favicon?: string
+
+  /** Panel ID — derived from class name (AdminPanel → 'admin') */
+  get id(): string
+
+  // ── Resources & Pages ─────────────────────────────────────────
 
   abstract resources(): Constructor<Resource>[]
   widgets(): Constructor<Widget>[] { return [] }
   pages(): Constructor<Page>[] { return [] }
-  middleware(): Constructor<Middleware>[] { return [Authenticate] }
+
+  // ── Access Control (centralized via @mantiq/auth) ─────────────
+
+  /**
+   * Gate check: can this user access this panel?
+   * Uses the app's existing auth — same session, same guards, same user model.
+   * Override to restrict access (e.g., only admins can access AdminPanel).
+   */
+  canAccess(user: Authenticatable): boolean | Promise<boolean> { return true }
+
+  /**
+   * Which auth guard to use for this panel.
+   * Defaults to the app's default guard — no separate auth system.
+   */
+  guard(): string { return 'web' }
+
+  /**
+   * Additional middleware applied to all panel routes.
+   * Auth middleware is always applied automatically — don't include it here.
+   */
+  middleware(): Constructor<Middleware>[] { return [] }
+
+  /**
+   * Login page URL. When unauthenticated, redirect here.
+   * Defaults to the app's login route — NOT a separate Studio login.
+   */
+  loginUrl(): string { return '/login' }
+
+  // ── Navigation ────────────────────────────────────────────────
 
   navigationGroups(): NavigationGroup[] { return [] }
-  colors(): Record<string, string> { return {} }
 
+  // ── Theme ─────────────────────────────────────────────────────
+
+  colors(): { primary?: string; danger?: string; warning?: string; success?: string; info?: string } { return {} }
   darkMode(): boolean { return true }
   sidebarCollapsible(): boolean { return true }
   topNavigation(): boolean { return false }
   globalSearch(): boolean { return true }
-
   maxContentWidth(): 'full' | '7xl' | '6xl' | '5xl' { return '7xl' }
 
   /** Called during boot to register routes, resolve resources, etc. */
@@ -335,10 +433,82 @@ abstract class StudioPanel {
 }
 ```
 
-The `StudioServiceProvider` reads the panel config, instantiates user-defined panels, and registers all necessary routes and middleware. The boot flow:
+#### 4.3 Multi-Panel Example
 
-1. `register()` -- Bind `PanelManager` as singleton, bind `StudioController` and friends.
-2. `boot()` -- Discover panels from config, call `panel.boot()` for each, register routes via `PanelRouteRegistrar`.
+```typescript
+// app/Studio/AdminPanel.ts
+export class AdminPanel extends StudioPanel {
+  path = '/admin'
+  brandName = 'Admin'
+
+  canAccess(user: Authenticatable) {
+    return user.hasRole('admin')
+  }
+
+  resources() {
+    return [UserResource, OrderResource, ProductResource]
+  }
+
+  widgets() {
+    return [RevenueStats, OrderChart]
+  }
+}
+
+// app/Studio/CustomerPanel.ts
+export class CustomerPanel extends StudioPanel {
+  path = '/portal'
+  brandName = 'Customer Portal'
+
+  canAccess(user: Authenticatable) {
+    return user.hasRole('customer')
+  }
+
+  resources() {
+    return [TicketResource, InvoiceResource]
+  }
+
+  // Same login page — shared auth
+  loginUrl() { return '/login' }
+}
+```
+
+Both panels share the same auth system. The same user can access both panels if they pass both `canAccess` gates. Session, cookies, CSRF — all centralized through `@mantiq/auth`.
+
+#### 4.4 Boot Flow
+
+```
+StudioServiceProvider.register()
+  └─ Bind PanelManager as singleton
+
+StudioServiceProvider.boot()
+  ├─ PanelDiscovery.scan('app/Studio/')        → find all StudioPanel subclasses
+  ├─ For each panel:
+  │   ├─ panel.boot(container)                 → resolve resources, widgets
+  │   ├─ PanelRouteRegistrar.register(panel)   → register API + SPA routes
+  │   │   ├─ GET  {path}/api/panel             → panel schema (nav, config)
+  │   │   ├─ GET  {path}/api/resources/:r      → list
+  │   │   ├─ POST {path}/api/resources/:r      → create
+  │   │   ├─ ...                               → full CRUD + actions
+  │   │   └─ GET  {path}/{*}                   → SPA catch-all
+  │   └─ Apply middleware: [Authenticate(guard), CheckPanelAccess(panel), ...panel.middleware()]
+  └─ PanelManager.register(panel)              → store for resolution
+```
+
+#### 4.5 Centralized Auth — How It Works
+
+Studio does NOT have its own login page, session management, or user model. It uses whatever `@mantiq/auth` is already configured with:
+
+1. **Unauthenticated user hits `/admin`** → `Authenticate` middleware redirects to `panel.loginUrl()` (default: `/login`)
+2. **User logs in via the app's normal login flow** → session created by `@mantiq/auth`
+3. **User navigates back to `/admin`** → `Authenticate` passes, `CheckPanelAccess` calls `panel.canAccess(user)`
+4. **If `canAccess` returns false** → 403 Forbidden
+5. **If `canAccess` returns true** → Studio SPA loads, API calls carry the same session cookie
+
+This means:
+- **One login page** for the entire app (or a custom one if the user prefers)
+- **One user model** — no separate "admin users" table
+- **Role/permission based access** — `canAccess` uses the existing user model's roles/permissions
+- **Session sharing** — admin actions and app actions share the same session
 
 ---
 
@@ -437,9 +607,188 @@ GET    /admin/api/resources/{resource}/relation/{name}   -- relation data (for S
 
 All routes are wrapped in the panel's middleware stack.
 
+#### 5.3 RelationManagers (Filament-style)
+
+RelationManagers display related records as tabs on the Edit/View page. Like Filament's `RelationManager`:
+
+```typescript
+abstract class RelationManager implements Serializable {
+  /** The relationship name on the parent model */
+  abstract relationship(): string
+
+  /** Table definition for the related records */
+  abstract table(): Table
+
+  /** Form for creating/editing related records inline */
+  abstract form(): Form
+
+  /** Can the user create related records? */
+  canCreate(user: Authenticatable, parent: Model): boolean { return true }
+
+  /** Can the user delete related records? */
+  canDelete(user: Authenticatable, parent: Model, record: Model): boolean { return true }
+
+  /** Can the user associate/dissociate? (for BelongsToMany) */
+  canAssociate(user: Authenticatable, parent: Model): boolean { return true }
+  canDissociate(user: Authenticatable, parent: Model, record: Model): boolean { return true }
+}
+
+// Example: Order has many OrderItems
+class OrderItemsRelationManager extends RelationManager {
+  override relationship() { return 'items' }
+
+  override table() {
+    return Table.make([
+      TextColumn.make('product_name').searchable(),
+      TextColumn.make('quantity').numeric(),
+      TextColumn.make('unit_price').money('USD'),
+      TextColumn.make('total').money('USD'),
+    ])
+  }
+
+  override form() {
+    return Form.make([
+      Select.make('product_id').relationship('product', 'name').searchable(),
+      TextInput.make('quantity').numeric().required(),
+      TextInput.make('unit_price').numeric().prefix('$').required(),
+    ])
+  }
+}
+
+// Register on the Resource:
+class OrderResource extends Resource {
+  // ...
+  relationManagers() {
+    return [OrderItemsRelationManager]
+  }
+}
+```
+
+Supported relation types:
+- **HasMany** — inline table with create/edit/delete
+- **BelongsToMany** — table with attach/detach + pivot form
+- **MorphMany** — same as HasMany but polymorphic
+- **MorphToMany** — same as BelongsToMany but polymorphic
+
+#### 5.4 Soft Deletes
+
+When a model uses soft deletes (`SoftDeletes` trait), Studio automatically:
+
+```typescript
+class UserResource extends Resource {
+  static softDeletes = true  // enables trash UI
+
+  // Authorization for soft-delete specific actions
+  static canRestore(user: Authenticatable, record: Model) { return true }
+  static canForceDelete(user: Authenticatable, record: Model) { return user.hasRole('admin') }
+}
+```
+
+The table automatically gets:
+- **Trash filter** — TernaryFilter with "With trashed", "Only trashed", "Without trashed"
+- **Restore action** — on trashed records
+- **Force delete action** — permanently removes the record
+- **Delete action** — soft deletes (moves to trash)
+
+The frontend shows a "Trash" toggle/tab above the table.
+
+#### 5.5 Tenant Scoping
+
+First-class multi-tenancy support via a `TenantAware` mixin:
+
+```typescript
+class AdminPanel extends StudioPanel {
+  /** Enable tenant scoping for this panel */
+  tenant(): { model: Constructor<Model>; ownershipColumn: string; slugColumn: string } | null {
+    return {
+      model: Team,
+      ownershipColumn: 'team_id',
+      slugColumn: 'slug',
+    }
+  }
+
+  /** The relationship on the User that resolves their tenants */
+  tenantRelationship(): string { return 'teams' }
+
+  /** Route prefix includes tenant: /admin/{tenant}/... */
+  tenantRoutePrefix(): boolean { return true }
+}
+```
+
+When tenant is enabled:
+- Panel routes become `/admin/{tenant:slug}/resources/...`
+- All resource queries are automatically scoped: `query.where(ownershipColumn, currentTenant.id)`
+- A tenant switcher appears in the sidebar header
+- Resources can opt-out of tenant scoping with `static tenantScoped = false`
+- `modifyQuery()` receives the tenant as context
+
+#### 5.6 Field-Level Authorization
+
+Form components and table columns support field-level visibility based on the current user:
+
+```typescript
+static form(): Form {
+  return Form.make([
+    TextInput.make('name').required(),
+    TextInput.make('email').required(),
+    TextInput.make('salary')
+      .numeric()
+      .prefix('$')
+      .visible((user) => user.hasRole('hr'))      // only HR can see
+      .disabled((user) => !user.hasRole('admin')), // only admin can edit
+    Select.make('role')
+      .options({ admin: 'Admin', user: 'User' })
+      .disabled((user) => !user.hasRole('admin')),
+  ])
+}
+
+static table(): Table {
+  return Table.make([
+    TextColumn.make('name'),
+    TextColumn.make('email'),
+    TextColumn.make('salary')
+      .money('USD')
+      .visible((user) => user.hasRole('hr')),  // column hidden for non-HR
+  ])
+}
+```
+
+The `visible()` and `disabled()` callbacks receive the authenticated user and are evaluated server-side before serialization. Hidden fields are excluded from the schema entirely — never sent to the frontend.
+
 ---
 
 ### 6. Form System
+
+#### 6.0 Reactivity Protocol
+
+Form fields can react to changes in other fields. This follows Filament's reactive pattern:
+
+```typescript
+Form.make([
+  Select.make('country')
+    .options({ us: 'United States', uk: 'United Kingdom' })
+    .reactive(),  // triggers re-fetch when changed
+
+  Select.make('state')
+    .dependsOn(['country'])
+    .options(async (get) => {
+      const country = get('country')
+      if (!country) return {}
+      const states = await State.where('country', country).pluck('name', 'code')
+      return states
+    }),
+])
+```
+
+**Protocol**: When a `reactive()` field changes, the frontend sends a `POST /api/resources/{resource}/form-state` request with the current form data. The server re-evaluates all `dependsOn` fields and returns updated schemas (options, visibility, validation rules) for those fields only. The frontend merges the updated schemas without losing user input.
+
+```typescript
+// POST /admin/api/resources/users/form-state
+// Body: { data: { country: 'us', state: null }, changed: 'country' }
+// Response: { updates: { state: { options: { ny: 'New York', ca: 'California' } } } }
+```
+
+This is a server round-trip (like Filament's Livewire), not client-side evaluation. This ensures options can come from the database and visibility rules stay server-controlled.
 
 #### 6.1 Form Container
 
@@ -1243,7 +1592,51 @@ router.group({ prefix: '/admin', middleware: [...panelMiddleware] }, () => {
 
 ### 13. Frontend Architecture
 
-The React frontend is a standalone SPA bundled with the package. It is built once during package build and served by `StudioServeAssets` middleware.
+#### 13.0 Two Modes: Pre-built (default) and Published (customizable)
+
+**Pre-built mode** (default): Studio ships a pre-compiled React SPA in `frontend/dist/`. The `StudioServeAssets` middleware serves these files. Zero configuration, works immediately after `bun add @mantiq/studio`.
+
+**Published mode** (customizable): Running `bun mantiq studio:publish` copies the frontend source into the user's project at `studio/`:
+
+```
+my-app/
+  studio/                              ← published frontend
+    src/
+      main.tsx
+      App.tsx
+      components/
+        registry.ts                    ← register custom components here
+        forms/
+        tables/
+        widgets/
+        layout/
+      theme/
+        colors.ts                      ← customize theme
+    vite.config.ts
+    package.json                       ← React, shadcn/ui deps (isolated from app)
+    tsconfig.json
+```
+
+This `studio/` directory is a self-contained Vite + React project. It has its own `package.json` with React/shadcn deps — completely isolated from the user's main app. Users can:
+- Add custom React components and register them in `registry.ts`
+- Modify the theme, layout, branding
+- Override any built-in component
+- Add npm packages (chart libraries, rich editors, etc.)
+
+The build output goes to `studio/dist/` and `StudioServeAssets` serves from there instead of the package's `frontend/dist/`.
+
+```bash
+# Publish frontend source for customization
+bun mantiq studio:publish
+
+# Build the customized frontend
+cd studio && bun install && bun run build
+
+# Or use the Studio Vite plugin (auto-builds alongside the app)
+bun mantiq studio:build
+```
+
+#### 13.1 Component Registry
 
 #### 13.1 Component Registry
 
