@@ -29,7 +29,8 @@
       "@mantiq/logging": ["./packages/logging/src/index.ts"],
       "@mantiq/ai": ["./packages/ai/src/index.ts"],
       "@mantiq/studio": ["./packages/studio/src/index.ts"],
-      "@mantiq/studio/vite": ["./packages/studio/src/vite/studioPlugin.ts"]
+      "@mantiq/studio/vite": ["./packages/studio/src/vite/studioPlugin.ts"],
+      "@mantiq/agent-rules": ["./packages/agent-rules/src/index.ts"]
     }
   },
   "references": [
@@ -46,6 +47,7 @@
     { "path": "./packages/realtime" },
     { "path": "./packages/logging" },
     { "path": "./packages/ai" },
-    { "path": "./packages/studio" }
+    { "path": "./packages/studio" },
+    { "path": "./packages/agent-rules" }
   ]
 }

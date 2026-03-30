@@ -139,6 +139,16 @@ export class Kernel {
     } catch {
       // @mantiq/heartbeat not installed — skip heartbeat commands
     }
+
+    // Agent rules commands (if @mantiq/agent-rules is installed)
+    try {
+      // @ts-ignore — optional dependency, may not be installed
+      const mod = await import('@mantiq/agent-rules')
+      this.register(new mod.AgentGenerateCommand() as any)
+      this.register(new mod.AgentUpdateCommand() as any)
+    } catch {
+      // @mantiq/agent-rules not installed — skip agent commands
+    }
   }
 
   /**
