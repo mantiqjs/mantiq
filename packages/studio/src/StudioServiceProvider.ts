@@ -86,7 +86,7 @@ export class StudioServiceProvider extends ServiceProvider {
     // In dev: Vite plugin handles this via configureServer middleware
     // In prod: serves from frontend/dist/ or published studio/dist/
     const assetsMiddleware = new StudioServeAssets(prefix)
-    router.get(`${prefix}/{path:.*}`, (req) => assetsMiddleware.handle(req, () => {
+    router.get(`${prefix}/{path:.*}`, (req) => assetsMiddleware.handle(req, async () => {
       return new Response('Studio frontend not found. Run: bun mantiq studio:install', {
         status: 404,
         headers: { 'Content-Type': 'text/plain' },
@@ -95,7 +95,7 @@ export class StudioServiceProvider extends ServiceProvider {
 
     // Panel root redirect
     if (prefix) {
-      router.get(prefix, (req) => assetsMiddleware.handle(req, () => {
+      router.get(prefix, (req) => assetsMiddleware.handle(req, async () => {
         return new Response(null, {
           status: 302,
           headers: { Location: `${prefix}/` },
