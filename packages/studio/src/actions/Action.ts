@@ -36,6 +36,10 @@ export abstract class Action implements Serializable {
 
   abstract handle(record: Record<string, unknown>, data?: Record<string, unknown>): ActionResult | Promise<ActionResult>
 
+  get name(): string {
+    return this._name
+  }
+
   label(label: string): this {
     this._label = label
     return this

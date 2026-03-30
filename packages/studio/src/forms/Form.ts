@@ -13,6 +13,10 @@ export class Form implements Serializable {
     return new Form(components)
   }
 
+  getComponents(): FormComponent[] {
+    return this._components
+  }
+
   columns(count: number): this {
     this._columns = count
     return this

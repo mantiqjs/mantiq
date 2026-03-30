@@ -19,6 +19,14 @@ export abstract class Column implements Serializable {
 
   abstract type(): string
 
+  getName(): string {
+    return this._name
+  }
+
+  isSearchable(): boolean {
+    return this._searchable
+  }
+
   label(label: string): this {
     this._label = label
     return this

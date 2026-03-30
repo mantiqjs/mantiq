@@ -1,5 +1,23 @@
 import type { Serializable } from '../contracts/Serializable.ts'
 import type { ResourceSchema, FormSchema, TableSchema } from '../schema/SchemaTypes.ts'
+import type { FormComponent } from '../forms/contracts/FormComponent.ts'
+import type { Column } from '../tables/contracts/Column.ts'
+import type { Filter } from '../tables/contracts/Filter.ts'
+import type { Action } from '../actions/Action.ts'
+import type { BulkAction } from '../actions/BulkAction.ts'
+
+export interface FormInstance {
+  toSchema(): FormSchema
+  getComponents(): FormComponent[]
+}
+
+export interface TableInstance {
+  toSchema(): TableSchema
+  getColumns(): Column[]
+  getFilters(): Filter[]
+  getActions(): Action[]
+  getBulkActions(): BulkAction[]
+}
 
 /**
  * Abstract base class for all Studio resources.
@@ -47,10 +65,10 @@ export abstract class Resource implements Serializable {
   // ── CRUD Definitions ──────────────────────────────────────────────────────
 
   /** Define the form schema for creating and editing records. */
-  abstract form(): { toSchema(): FormSchema }
+  abstract form(): FormInstance
 
   /** Define the table schema for listing records. */
-  abstract table(): { toSchema(): TableSchema }
+  abstract table(): TableInstance
 
   // ── Lifecycle Hooks ───────────────────────────────────────────────────────
 

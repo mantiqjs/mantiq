@@ -365,6 +365,29 @@
         "@mantiq/core": "^0.5.0",
       },
     },
+    "packages/studio": {
+      "name": "@mantiq/studio",
+      "version": "0.5.23",
+      "dependencies": {
+        "@mantiq/auth": "workspace:*",
+        "@mantiq/core": "workspace:*",
+        "@mantiq/database": "workspace:*",
+        "@mantiq/helpers": "workspace:*",
+        "@mantiq/validation": "workspace:*",
+      },
+      "devDependencies": {
+        "bun-types": "latest",
+        "typescript": "^5.7.0",
+      },
+      "peerDependencies": {
+        "@mantiq/realtime": "workspace:*",
+        "@mantiq/vite": "workspace:*",
+      },
+      "optionalPeers": [
+        "@mantiq/realtime",
+        "@mantiq/vite",
+      ],
+    },
     "packages/testing": {
       "name": "@mantiq/testing",
       "version": "0.6.1",
@@ -600,6 +623,8 @@
     "@mantiq/search": ["@mantiq/search@workspace:packages/search"],
 
     "@mantiq/social-auth": ["@mantiq/social-auth@workspace:packages/social-auth"],
+
+    "@mantiq/studio": ["@mantiq/studio@workspace:packages/studio"],
 
     "@mantiq/testing": ["@mantiq/testing@workspace:packages/testing"],
 
@@ -1102,6 +1127,8 @@
     "@mantiq/search/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 
     "@mantiq/social-auth/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
+
+    "@mantiq/studio/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 
     "@mantiq/testing/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 

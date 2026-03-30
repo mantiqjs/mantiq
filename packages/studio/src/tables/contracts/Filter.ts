@@ -11,6 +11,10 @@ export abstract class Filter implements Serializable {
 
   abstract type(): string
 
+  getName(): string {
+    return this._name
+  }
+
   abstract apply(query: Record<string, unknown>, value: unknown): Record<string, unknown>
 
   label(label: string): this {

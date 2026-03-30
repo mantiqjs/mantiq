@@ -97,6 +97,24 @@ export class Table implements Serializable {
     return this
   }
 
+  // ── Public Accessors ──────────────────────────────────────────────────────
+
+  getColumns(): Column[] {
+    return this._columns
+  }
+
+  getFilters(): Filter[] {
+    return this._filters
+  }
+
+  getActions(): Action[] {
+    return this._actions
+  }
+
+  getBulkActions(): BulkAction[] {
+    return this._bulkActions
+  }
+
   toSchema(): Record<string, unknown> {
     return {
       type: 'table',

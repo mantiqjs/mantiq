@@ -97,6 +97,7 @@ export type {
 
 // ── Resources ─────────────────────────────────────────────────────────────────
 export { Resource } from './resources/Resource.ts'
+export type { FormInstance, TableInstance } from './resources/Resource.ts'
 
 // ── Panel ─────────────────────────────────────────────────────────────────────
 export { StudioPanel } from './StudioPanel.ts'
@@ -110,6 +111,7 @@ export { NavigationItem } from './navigation/NavigationItem.ts'
 
 // ── HTTP ──────────────────────────────────────────────────────────────────────
 export { StudioController } from './http/StudioController.ts'
+export { ResourceResolver, ResourceNotFoundError } from './http/ResourceResolver.ts'
 
 // ── Middleware ─────────────────────────────────────────────────────────────────
 export { CheckPanelAccess } from './middleware/CheckPanelAccess.ts'
