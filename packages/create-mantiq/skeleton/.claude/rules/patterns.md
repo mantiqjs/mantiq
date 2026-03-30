@@ -49,9 +49,20 @@ override rules(): Record<string, string> {
 Use class keys, NOT strings:
 
 ```typescript
-app.singleton(CacheManager, () => new CacheManager())
-app.make(CacheManager)   // correct
-app.make('cache')         // WRONG — will throw
+import { CacheManager } from '@mantiq/core'
+
+app.make(CacheManager)   // correct — use the class itself as key
+app.make('cache')         // WRONG — string keys will throw
+```
+
+Helper functions are available for common services:
+
+```typescript
+import { cache, config, env } from '@mantiq/core'
+
+await cache().get('key')           // CacheManager
+config('database.connection')       // ConfigRepository
+env('APP_KEY')                      // environment variable
 ```
 
 ## Config Files

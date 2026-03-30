@@ -63,6 +63,8 @@ import { Command } from '@mantiq/cli'
 import type { ParsedArgs } from '@mantiq/cli'
 import { ServiceProvider } from '@mantiq/core'
 import type { Middleware, NextFunction } from '@mantiq/core'
+import { CacheManager } from '@mantiq/core'
+import { cache, config, env } from '@mantiq/core'
 import { TestCase } from '@mantiq/testing'
 ```
 
