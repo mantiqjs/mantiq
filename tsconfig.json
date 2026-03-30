@@ -27,7 +27,9 @@
       "@mantiq/events": ["./packages/events/src/index.ts"],
       "@mantiq/realtime": ["./packages/realtime/src/index.ts"],
       "@mantiq/logging": ["./packages/logging/src/index.ts"],
-      "@mantiq/ai": ["./packages/ai/src/index.ts"]
+      "@mantiq/ai": ["./packages/ai/src/index.ts"],
+      "@mantiq/studio": ["./packages/studio/src/index.ts"],
+      "@mantiq/studio/vite": ["./packages/studio/src/vite/studioPlugin.ts"]
     }
   },
   "references": [
@@ -43,6 +45,7 @@
     { "path": "./packages/events" },
     { "path": "./packages/realtime" },
     { "path": "./packages/logging" },
-    { "path": "./packages/ai" }
+    { "path": "./packages/ai" },
+    { "path": "./packages/studio" }
   ]
 }

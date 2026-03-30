@@ -1,13 +1,16 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { mantiq } from '@mantiq/vite'
 import path from 'path'
 import { writeFileSync, unlinkSync } from 'node:fs'
 
-export default defineConfig({
+export default defineConfig(async () => ({
   plugins: [
     react(),
     tailwindcss(),
+    // Auto-discovers @mantiq/* plugins (Studio admin panel, etc.)
+    ...await mantiq(),
     // Write public/hot so the backend knows the dev server is running
     {
       name: 'mantiq-hot',
@@ -39,4 +42,4 @@ export default defineConfig({
       input: ['src/main.tsx', 'src/style.css'],
     },
   },
-})
+}))

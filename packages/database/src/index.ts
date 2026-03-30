@@ -57,6 +57,10 @@ export type { SchemaBuilder } from './schema/SchemaBuilder.ts'
 export { SchemaBuilderImpl } from './schema/SchemaBuilder.ts'
 export { Blueprint } from './schema/Blueprint.ts'
 export { ColumnDefinition } from './schema/ColumnDefinition.ts'
+
+// ── Schema Introspection ─────────────────────────────────────────────────────
+export { SchemaIntrospector, sqlTypeToTs, sqlTypeToCategory } from './schema/SchemaIntrospector.ts'
+export type { TableInfo, ColumnInfo, IndexInfo, ForeignKeyInfo } from './schema/SchemaIntrospector.ts'
 export type { IndexDefinition, ForeignKeyDefinition } from './schema/Blueprint.ts'
 
 // ── Migrations ────────────────────────────────────────────────────────────────

@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ESNext"],
+    "types": ["bun-types"],
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "paths": {
+      "@mantiq/core": ["../core/src/index.ts"],
+      "@mantiq/database": ["../database/src/index.ts"],
+      "@mantiq/auth": ["../auth/src/index.ts"],
+      "@mantiq/validation": ["../validation/src/index.ts"],
+      "@mantiq/helpers": ["../helpers/src/index.ts"],
+      "@mantiq/cli": ["../cli/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "frontend", "tests"]
+}
