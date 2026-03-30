@@ -38,7 +38,8 @@ export async function mantiq(): Promise<Plugin[]> {
         // Discover panel path from the first panel file
         const panelPath = await discoverPanelPath(studioDir)
 
-        const { studioPlugin } = await import('@mantiq/studio/vite')
+        // @ts-ignore — @mantiq/studio may not be installed
+        const { studioPlugin } = await import('@mantiq/studio/vite') as any
         const plugin = studioPlugin({ path: panelPath })
         plugins.push(plugin)
       }
