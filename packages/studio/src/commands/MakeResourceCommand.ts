@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync } from 'node:fs'
 import { dirname } from 'node:path'
+import type { ColumnInfo, ForeignKeyInfo } from '@mantiq/database'
 
 /**
  * Generates a Studio Resource class.
@@ -9,8 +10,9 @@ import { dirname } from 'node:path'
  *   bun mantiq make:resource UserResource --model=User
  *   bun mantiq make:resource UserResource --from-db
  *
- * With --from-db, reads the model's table schema from the database
- * and generates form fields + table columns for every column.
+ * With --from-db, uses @mantiq/database SchemaIntrospector to read
+ * the live database schema and generates form fields + table columns
+ * for every column — works with SQLite, Postgres, MySQL, MSSQL, MongoDB.
  */
 export class MakeResourceCommand {
   name = 'make:resource'
@@ -28,6 +30,7 @@ export class MakeResourceCommand {
     if (!rawName) {
       this.io.error('Please provide a resource name.')
       this.io.info('Usage: bun mantiq make:resource UserResource')
+      this.io.info('       bun mantiq make:resource UserResource --from-db')
       return 1
     }
 
@@ -49,17 +52,28 @@ export class MakeResourceCommand {
     mkdirSync(dirname(filePath), { recursive: true })
 
     let columns: ColumnInfo[] = []
+    let foreignKeys: ForeignKeyInfo[] = []
+
     if (fromDb) {
-      columns = await this.introspectTable(modelName)
-      if (columns.length === 0) {
-        this.io.info(`Could not read table schema for ${modelName}. Generating basic stub.`)
-      } else {
-        this.io.info(`Found ${columns.length} columns in ${this.toTableName(modelName)}`)
+      try {
+        const result = await this.introspectFromDb(modelName)
+        columns = result.columns
+        foreignKeys = result.foreignKeys
+        if (columns.length > 0) {
+          this.io.info(`Found ${columns.length} columns in ${this.toTableName(modelName)}`)
+          if (foreignKeys.length > 0) {
+            this.io.info(`Found ${foreignKeys.length} foreign key(s): ${foreignKeys.map(fk => `${fk.column} → ${fk.referencedTable}`).join(', ')}`)
+          }
+        } else {
+          this.io.info(`Could not read table schema for ${modelName}. Generating basic stub.`)
+        }
+      } catch (err) {
+        this.io.info(`DB introspection failed: ${err}. Generating basic stub.`)
       }
     }
 
     const stub = columns.length > 0
-      ? this.generateFromSchema(className, modelName, columns)
+      ? this.generateFromSchema(className, modelName, columns, foreignKeys)
       : this.generateBasicStub(className, modelName)
 
     await Bun.write(filePath, stub)
@@ -68,30 +82,22 @@ export class MakeResourceCommand {
     return 0
   }
 
-  // ── DB Introspection ─────────────────────────────────────────────────
+  // ── DB Introspection via @mantiq/database ─────────────────────────────
 
-  private async introspectTable(modelName: string): Promise<ColumnInfo[]> {
+  private async introspectFromDb(modelName: string): Promise<{ columns: ColumnInfo[]; foreignKeys: ForeignKeyInfo[] }> {
     const tableName = this.toTableName(modelName)
 
-    try {
-      // Try SQLite first (most common in dev)
-      const { Database } = await import('bun:sqlite')
-      const dbPath = `${process.cwd()}/database/database.sqlite`
-      if (!existsSync(dbPath)) return []
+    // Import SchemaIntrospector and DatabaseManager at runtime
+    const { SchemaIntrospector } = await import('@mantiq/database')
+    const { getManager } = await import('@mantiq/database')
 
-      const db = new Database(dbPath, { readonly: true })
-      const rows = db.prepare(`PRAGMA table_info('${tableName}')`).all() as any[]
-      db.close()
+    const connection = getManager().connection()
+    const introspector = new SchemaIntrospector(connection)
 
-      return rows.map(row => ({
-        name: row.name as string,
-        type: (row.type as string).toLowerCase(),
-        nullable: row.notnull === 0,
-        pk: row.pk === 1,
-        defaultValue: row.dflt_value as string | null,
-      }))
-    } catch {
-      return []
+    const tableInfo = await introspector.getTable(tableName)
+    return {
+      columns: tableInfo.columns,
+      foreignKeys: tableInfo.foreignKeys,
     }
   }
 
@@ -129,26 +135,92 @@ export class ${className} extends Resource {
 `
   }
 
-  private generateFromSchema(className: string, modelName: string, columns: ColumnInfo[]): string {
+  private generateFromSchema(className: string, modelName: string, columns: ColumnInfo[], foreignKeys: ForeignKeyInfo[]): string {
     const icon = this.deriveIcon(modelName)
-    const skipColumns = new Set(['id', 'created_at', 'updated_at', 'deleted_at', 'remember_token', 'password'])
+    const skipFormFields = new Set(['id', 'created_at', 'updated_at', 'deleted_at', 'remember_token', 'password'])
+    const skipTableColumns = new Set(['password', 'remember_token', 'deleted_at', 'updated_at'])
+
+    // Build a lookup of foreign keys by column name
+    const fkMap = new Map<string, ForeignKeyInfo>()
+    for (const fk of foreignKeys) fkMap.set(fk.column, fk)
+
     const formFields = columns
-      .filter(c => !c.pk && !skipColumns.has(c.name))
-      .map(c => this.columnToFormField(c))
+      .filter(c => !c.primaryKey && !skipFormFields.has(c.name))
+      .map(c => this.columnToFormField(c, fkMap.get(c.name)))
 
     const tableColumns = columns
-      .filter(c => !['password', 'remember_token', 'deleted_at', 'updated_at'].includes(c.name))
-      .map(c => this.columnToTableColumn(c))
+      .filter(c => !skipTableColumns.has(c.name))
+      .map(c => this.columnToTableColumn(c, fkMap.get(c.name)))
 
-    const searchable = columns
-      .filter(c => ['name', 'title', 'email', 'slug', 'description'].includes(c.name))
-      .map(c => c.name)
+    // Detect searchable columns
+    const searchable = columns.filter(c =>
+      ['name', 'title', 'email', 'slug', 'description', 'subject'].includes(c.name)
+    ).map(c => c.name)
+
+    // Detect filterable columns (enums, booleans, foreign keys)
+    const filters = columns.filter(c =>
+      c.isEnum ||
+      ['status', 'type', 'role', 'state', 'category', 'priority', 'level'].includes(c.name) ||
+      c.dbType.includes('bool') || c.dbType === 'tinyint' ||
+      ['active', 'published', 'featured', 'verified'].includes(c.name)
+    )
+
+    const filterCode = filters.map(c => {
+      if (c.dbType.includes('bool') || c.dbType === 'tinyint' || ['active', 'published', 'featured', 'verified'].includes(c.name)) {
+        return `      TernaryFilter.make('${c.name}').label('${this.humanize(c.name)}').trueLabel('Yes').falseLabel('No'),`
+      }
+      if (c.isEnum && c.enumValues.length > 0) {
+        const opts = c.enumValues.map(v => `'${v}': '${this.humanize(v)}'`).join(', ')
+        return `      SelectFilter.make('${c.name}').label('${this.humanize(c.name)}').options({ ${opts} }),`
+      }
+      return `      SelectFilter.make('${c.name}').label('${this.humanize(c.name)}').options({}),`
+    })
+
+    // Collect unique imports
+    const formImports = new Set(['Form'])
+    const tableImports = new Set(['Table'])
+    const actionImports = new Set(['EditAction', 'DeleteAction', 'BulkDeleteAction'])
+    const filterImports = new Set<string>()
+
+    for (const c of columns.filter(col => !col.primaryKey && !skipFormFields.has(col.name))) {
+      const fk = fkMap.get(c.name)
+      if (fk || c.name.endsWith('_id') || ['status', 'type', 'role', 'state', 'category', 'priority', 'level'].includes(c.name)) {
+        formImports.add('Select')
+      } else if (c.dbType.includes('bool') || c.dbType === 'tinyint' || ['active', 'published', 'featured', 'verified', 'is_admin'].includes(c.name)) {
+        formImports.add('Toggle')
+      } else if (c.dbType.includes('text') || ['content', 'body', 'description', 'bio', 'notes'].includes(c.name)) {
+        formImports.add('Textarea')
+      } else if (c.dbType.includes('date') || c.dbType.includes('time') || c.name.endsWith('_at') || c.name.endsWith('_date')) {
+        formImports.add('DatePicker')
+      } else {
+        formImports.add('TextInput')
+      }
+    }
+
+    for (const c of columns.filter(col => !skipTableColumns.has(col.name))) {
+      if (c.dbType.includes('bool') || c.dbType === 'tinyint' || ['active', 'published', 'featured', 'verified'].includes(c.name)) {
+        tableImports.add('BooleanColumn')
+      } else if (['status', 'type', 'role', 'state', 'priority', 'level'].includes(c.name) || c.isEnum) {
+        tableImports.add('BadgeColumn')
+      } else {
+        tableImports.add('TextColumn')
+      }
+    }
+
+    for (const c of filters) {
+      if (c.dbType.includes('bool') || c.dbType === 'tinyint' || ['active', 'published', 'featured', 'verified'].includes(c.name)) {
+        filterImports.add('TernaryFilter')
+      } else {
+        filterImports.add('SelectFilter')
+      }
+    }
+
+    const hasFilters = filterCode.length > 0
 
     return `import { Resource } from '@mantiq/studio'
-import { Form, TextInput, Textarea, Select, Toggle, DatePicker } from '@mantiq/studio'
-import { Table, TextColumn, BadgeColumn, BooleanColumn } from '@mantiq/studio'
-import { SelectFilter, TernaryFilter } from '@mantiq/studio'
-import { EditAction, DeleteAction, BulkDeleteAction } from '@mantiq/studio'
+import { ${[...formImports].join(', ')} } from '@mantiq/studio'
+import { ${[...tableImports].join(', ')} } from '@mantiq/studio'
+${hasFilters ? `import { ${[...filterImports].join(', ')} } from '@mantiq/studio'\n` : ''}import { ${[...actionImports].join(', ')} } from '@mantiq/studio'
 import { ${modelName} } from '../../Models/${modelName}.ts'
 
 export class ${className} extends Resource {
@@ -166,7 +238,7 @@ ${formFields.map(f => `      ${f},`).join('\n')}
     return Table.make([
 ${tableColumns.map(c => `      ${c},`).join('\n')}
     ])
-    .actions([EditAction.make(), DeleteAction.make()])
+${hasFilters ? `    .filters([\n${filterCode.join('\n')}\n    ])\n` : ''}    .actions([EditAction.make(), DeleteAction.make()])
     .bulkActions([BulkDeleteAction.make()])
     .defaultSort('id', 'desc')
   }
@@ -174,78 +246,98 @@ ${tableColumns.map(c => `      ${c},`).join('\n')}
 `
   }
 
-  private columnToFormField(col: ColumnInfo): string {
+  private columnToFormField(col: ColumnInfo, fk: ForeignKeyInfo | undefined): string {
     const name = col.name
     const label = this.humanize(name)
+    const required = !col.nullable ? '.required()' : ''
 
-    // Detect field type from column name and SQL type
-    if (name === 'email') return `TextInput.make('email').email().required().label('${label}')`
-    if (name === 'password') return `TextInput.make('password').password().required().label('${label}')`
+    // Foreign key → Select with relationship
+    if (fk) {
+      const relTable = fk.referencedTable
+      const relName = name.replace(/_id$/, '')
+      return `Select.make('${name}').label('${this.humanize(relName)}').searchable()  // → ${relTable}`
+    }
+
+    // Detect field type from column name and DB type
+    if (name === 'email') return `TextInput.make('email').email()${required}.label('${label}')`
+    if (name === 'password') return `TextInput.make('password').password()${required}.label('${label}')`
     if (name.endsWith('_url') || name === 'url' || name === 'website') return `TextInput.make('${name}').url().label('${label}')`
     if (name === 'phone' || name === 'tel') return `TextInput.make('${name}').tel().label('${label}')`
     if (name === 'slug') return `TextInput.make('slug').label('${label}').helperText('Auto-generated if left empty')`
 
+    // Enum
+    if (col.isEnum && col.enumValues.length > 0) {
+      const opts = col.enumValues.map(v => `'${v}': '${this.humanize(v)}'`).join(', ')
+      return `Select.make('${name}').label('${label}').options({ ${opts} })${required}`
+    }
+
     // Boolean
-    if (col.type.includes('bool') || col.type === 'tinyint' || ['active', 'published', 'featured', 'verified', 'is_admin'].includes(name)) {
+    if (col.dbType.includes('bool') || col.dbType === 'tinyint' || ['active', 'published', 'featured', 'verified', 'is_admin'].includes(name)) {
       return `Toggle.make('${name}').label('${label}')`
     }
 
     // Date/time
-    if (col.type.includes('date') || col.type.includes('time') || name.endsWith('_at') || name.endsWith('_date')) {
-      const withTime = col.type.includes('datetime') || col.type.includes('timestamp') || name.endsWith('_at')
+    if (col.dbType.includes('date') || col.dbType.includes('time') || name.endsWith('_at') || name.endsWith('_date')) {
+      const withTime = col.dbType.includes('datetime') || col.dbType.includes('timestamp') || name.endsWith('_at')
       return `DatePicker.make('${name}').label('${label}')${withTime ? '.withTime()' : ''}`
     }
 
     // Text/long content
-    if (col.type.includes('text') || name === 'content' || name === 'body' || name === 'description' || name === 'bio' || name === 'notes') {
+    if (col.dbType.includes('text') || ['content', 'body', 'description', 'bio', 'notes', 'summary', 'excerpt'].includes(name)) {
       return `Textarea.make('${name}').label('${label}').rows(4)`
     }
 
-    // Foreign key → Select
+    // Foreign key without FK constraint (just _id naming)
     if (name.endsWith('_id')) {
-      const relation = name.replace(/_id$/, '')
-      return `Select.make('${name}').label('${this.humanize(relation)}').searchable()`
+      const relName = name.replace(/_id$/, '')
+      return `Select.make('${name}').label('${this.humanize(relName)}').searchable()`
     }
 
     // Status/type/role enum-like fields
     if (['status', 'type', 'role', 'state', 'category', 'priority', 'level'].includes(name)) {
-      return `Select.make('${name}').label('${label}').options({}).required()`
+      return `Select.make('${name}').label('${label}').options({})${required}`
     }
 
     // Numeric
-    if (col.type.includes('int') || col.type.includes('float') || col.type.includes('double') || col.type.includes('decimal') || col.type.includes('real') || col.type === 'numeric') {
-      const prefix = name === 'price' || name === 'total' || name === 'amount' || name === 'cost' ? `.prefix('$')` : ''
-      return `TextInput.make('${name}').numeric()${prefix}.label('${label}')`
+    if (col.tsType === 'number') {
+      const prefix = ['price', 'total', 'amount', 'cost', 'fee', 'rate'].includes(name) ? `.prefix('$')` : ''
+      return `TextInput.make('${name}').numeric()${prefix}.label('${label}')${required}`
     }
 
     // Default string
-    const required = !col.nullable ? '.required()' : ''
-    return `TextInput.make('${name}').label('${label}')${required}`
+    const maxLen = col.maxLength ? `.maxLength(${col.maxLength})` : ''
+    return `TextInput.make('${name}').label('${label}')${maxLen}${required}`
   }
 
-  private columnToTableColumn(col: ColumnInfo): string {
+  private columnToTableColumn(col: ColumnInfo, fk: ForeignKeyInfo | undefined): string {
     const name = col.name
     const label = this.humanize(name)
 
-    if (col.pk) return `TextColumn.make('${name}').label('#').sortable().width('60px')`
+    if (col.primaryKey) return `TextColumn.make('${name}').label('#').sortable().width('60px')`
 
-    // Boolean columns
-    if (col.type.includes('bool') || col.type === 'tinyint' || ['active', 'published', 'featured', 'verified', 'is_admin'].includes(name)) {
+    // Boolean
+    if (col.dbType.includes('bool') || col.dbType === 'tinyint' || ['active', 'published', 'featured', 'verified', 'is_admin'].includes(name)) {
       return `BooleanColumn.make('${name}').label('${label}').trueIcon('check-circle').falseIcon('x-circle').trueColor('success').falseColor('muted')`
     }
 
-    // Status/role → Badge
-    if (['status', 'type', 'role', 'state', 'priority', 'level'].includes(name)) {
+    // Status/role/enum → Badge
+    if (['status', 'type', 'role', 'state', 'priority', 'level'].includes(name) || col.isEnum) {
+      if (col.isEnum && col.enumValues.length > 0) {
+        // Auto-assign colors to enum values
+        const colorPool = ['primary', 'info', 'success', 'warning', 'danger', 'muted']
+        const colors = col.enumValues.map((v, i) => `'${v}': '${colorPool[i % colorPool.length]}'`).join(', ')
+        return `BadgeColumn.make('${name}').label('${label}').colors({ ${colors} }).sortable()`
+      }
       return `BadgeColumn.make('${name}').label('${label}').sortable()`
     }
 
     // Date columns
-    if (col.type.includes('date') || col.type.includes('time') || name.endsWith('_at') || name.endsWith('_date')) {
+    if (col.dbType.includes('date') || col.dbType.includes('time') || name.endsWith('_at') || name.endsWith('_date')) {
       return `TextColumn.make('${name}').label('${label}').dateTime().sortable()`
     }
 
     // Money columns
-    if (name === 'price' || name === 'total' || name === 'amount' || name === 'cost') {
+    if (['price', 'total', 'amount', 'cost', 'fee', 'rate'].includes(name)) {
       return `TextColumn.make('${name}').label('${label}').money().sortable()`
     }
 
@@ -253,7 +345,7 @@ ${tableColumns.map(c => `      ${c},`).join('\n')}
     if (name === 'email') return `TextColumn.make('${name}').label('${label}').searchable().sortable().copyable()`
 
     // Searchable text columns
-    const searchable = ['name', 'title', 'email', 'slug', 'description'].includes(name)
+    const searchable = ['name', 'title', 'email', 'slug', 'description', 'subject'].includes(name)
     return `TextColumn.make('${name}').label('${label}')${searchable ? '.searchable()' : ''}.sortable()`
   }
 
@@ -286,12 +378,4 @@ ${tableColumns.map(c => `      ${c},`).join('\n')}
     }
     return iconMap[lower] ?? 'file'
   }
-}
-
-interface ColumnInfo {
-  name: string
-  type: string
-  nullable: boolean
-  pk: boolean
-  defaultValue: string | null
 }
