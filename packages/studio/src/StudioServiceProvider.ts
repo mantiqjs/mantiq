@@ -81,7 +81,10 @@ export class StudioServiceProvider extends ServiceProvider {
       r.post('/resources/:resource/bulk-actions/:action', (req) => controller.bulkAction(req))
     })
 
-    // SPA catch-all — serves the React frontend for all non-API panel routes
+    // SPA catch-all — serves the React frontend for all non-API panel routes.
+    // No auth middleware here — the SPA is just static HTML/JS/CSS.
+    // Auth is enforced by the API endpoints above; the frontend handles
+    // unauthenticated state by redirecting to the login page client-side.
     const assetsMiddleware = new StudioServeAssets(prefix)
     router.get(`${prefix}/{path:.*}`, (req) => assetsMiddleware.handle(req, async () => {
       return new Response('Studio frontend not found. Run: bun mantiq studio:install', {
@@ -90,12 +93,12 @@ export class StudioServiceProvider extends ServiceProvider {
       })
     }))
 
-    // Panel root redirect
+    // Panel root — serve SPA directly instead of redirecting
     if (prefix) {
       router.get(prefix, (req) => assetsMiddleware.handle(req, async () => {
-        return new Response(null, {
-          status: 302,
-          headers: { Location: `${prefix}/` },
+        return new Response('Studio frontend not found. Run: bun mantiq studio:install', {
+          status: 404,
+          headers: { 'Content-Type': 'text/plain' },
         })
       }))
     }
