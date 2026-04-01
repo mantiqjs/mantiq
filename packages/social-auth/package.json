@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/social-auth",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "description": "Social authentication — login with Google, GitHub, Facebook, Apple, and more via extensible providers",
   "type": "module",
   "license": "MIT",
