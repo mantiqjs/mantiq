@@ -11,7 +11,9 @@ export class PanelDiscovery {
    */
   static async scan(directory: string): Promise<StudioPanel[]> {
     const panels: StudioPanel[] = []
-    const glob = new Bun.Glob('**/*.ts')
+    // Only scan top-level *.ts files — panels live at app/Studio/<Name>Panel.ts.
+    // Resources, middleware, etc. live in subdirectories and should not be imported here.
+    const glob = new Bun.Glob('*.ts')
 
     try {
       for await (const file of glob.scan({ cwd: directory, absolute: true })) {
