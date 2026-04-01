@@ -30,9 +30,29 @@ export class StudioServiceProvider extends ServiceProvider {
 
     if (panels.length === 0) return
 
+    // Register a CheckPanelAccess middleware alias per panel so the
+    // framework's string-based middleware system can resolve it.
+    let kernel: any = null
+    try {
+      const { HttpKernel } = await import('@mantiq/core')
+      kernel = this.app.make(HttpKernel)
+    } catch { /* CLI context — no kernel */ }
+
     for (const panel of panels) {
       panel.boot(this.app)
       panelManager.register(panel)
+
+      // Register per-panel middleware alias: "studio.access:{panelId}"
+      if (kernel?.registerMiddleware) {
+        const access = new CheckPanelAccess(panel)
+        const alias = `studio.access.${panel.id}`
+        // Wrap the instance as a constructor the Kernel can use
+        const WrappedMiddleware = class {
+          async handle(req: any, next: any) { return access.handle(req, next) }
+        }
+        kernel.registerMiddleware(alias, WrappedMiddleware as any)
+      }
+
       this.registerPanelRoutes(this.app, panel)
     }
   }
@@ -49,25 +69,19 @@ export class StudioServiceProvider extends ServiceProvider {
     const panelManager = container.make(PanelManager)
     const controller = new StudioController(panelManager)
     const prefix = panel.path
-    const panelAccess = new CheckPanelAccess(panel)
-
-    // API routes — protected by the panel's auth guard, panel access check,
-    // and any additional middleware the panel defines
     const guard = panel.guard()
-    const apiMiddleware: any[] = [
+    const accessAlias = `studio.access.${panel.id}`
+
+    // API routes — auth guard sets user on request, panel access checks authorization
+    const apiMiddleware = [
       `auth:${guard}`,
-      panelAccess,
+      accessAlias,
       ...panel.middleware(),
     ]
 
     router.group({ prefix: `${prefix}/api`, middleware: apiMiddleware }, (r: Router) => {
-      // Panel config
       r.get('/panel', (req) => controller.panel(req))
-
-      // Global search
       r.get('/search', (req) => controller.globalSearch(req))
-
-      // Resource CRUD
       r.get('/resources/:resource/schema', (req) => controller.schema(req))
       r.get('/resources/:resource/relation/:name', (req) => controller.relation(req))
       r.get('/resources/:resource/:id', (req) => controller.show(req))
@@ -75,23 +89,19 @@ export class StudioServiceProvider extends ServiceProvider {
       r.delete('/resources/:resource/:id', (req) => controller.destroy(req))
       r.get('/resources/:resource', (req) => controller.index(req))
       r.post('/resources/:resource', (req) => controller.store(req))
-
-      // Actions
       r.post('/resources/:resource/actions/:action', (req) => controller.action(req))
       r.post('/resources/:resource/bulk-actions/:action', (req) => controller.bulkAction(req))
     })
 
-    // SPA routes — protected by CheckPanelAccess only (not auth:{guard}).
-    // CheckPanelAccess resolves the user itself and redirects unauthenticated
-    // browser requests to panel.loginUrl(). Using auth:{guard} here would
-    // cause a redirect loop (it redirects to hardcoded /login).
+    // SPA routes — CheckPanelAccess resolves user itself and redirects
+    // unauthenticated browsers to panel.loginUrl() (no redirect loop).
+    const spaMiddleware = [accessAlias]
+
     const assetsMiddleware = new StudioServeAssets(prefix)
     const spaFallback = async () => new Response(
       'Studio frontend not found. Run: bun mantiq studio:install',
       { status: 404, headers: { 'Content-Type': 'text/plain' } },
     )
-
-    const spaMiddleware: any[] = [panelAccess]
 
     router.group({ prefix, middleware: spaMiddleware }, (r: Router) => {
       r.get('/{path:.*}', (req) => assetsMiddleware.handle(req, spaFallback))
