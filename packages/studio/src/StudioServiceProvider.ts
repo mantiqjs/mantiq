@@ -54,7 +54,7 @@ export class StudioServiceProvider extends ServiceProvider {
     // API routes — protected by the panel's auth guard, panel access check,
     // and any additional middleware the panel defines
     const guard = panel.guard()
-    const apiMiddleware = [
+    const apiMiddleware: any[] = [
       `auth:${guard}`,
       panelAccess,
       ...panel.middleware(),
@@ -81,26 +81,26 @@ export class StudioServiceProvider extends ServiceProvider {
       r.post('/resources/:resource/bulk-actions/:action', (req) => controller.bulkAction(req))
     })
 
-    // SPA catch-all — serves the React frontend for all non-API panel routes.
-    // No auth middleware here — the SPA is just static HTML/JS/CSS.
-    // Auth is enforced by the API endpoints above; the frontend handles
-    // unauthenticated state by redirecting to the login page client-side.
+    // SPA routes — protected by CheckPanelAccess only (not auth:{guard}).
+    // CheckPanelAccess resolves the user itself and redirects unauthenticated
+    // browser requests to panel.loginUrl(). Using auth:{guard} here would
+    // cause a redirect loop (it redirects to hardcoded /login).
     const assetsMiddleware = new StudioServeAssets(prefix)
-    router.get(`${prefix}/{path:.*}`, (req) => assetsMiddleware.handle(req, async () => {
-      return new Response('Studio frontend not found. Run: bun mantiq studio:install', {
-        status: 404,
-        headers: { 'Content-Type': 'text/plain' },
-      })
-    }))
+    const spaFallback = async () => new Response(
+      'Studio frontend not found. Run: bun mantiq studio:install',
+      { status: 404, headers: { 'Content-Type': 'text/plain' } },
+    )
 
-    // Panel root — serve SPA directly instead of redirecting
+    const spaMiddleware: any[] = [panelAccess]
+
+    router.group({ prefix, middleware: spaMiddleware }, (r: Router) => {
+      r.get('/{path:.*}', (req) => assetsMiddleware.handle(req, spaFallback))
+    })
+
     if (prefix) {
-      router.get(prefix, (req) => assetsMiddleware.handle(req, async () => {
-        return new Response('Studio frontend not found. Run: bun mantiq studio:install', {
-          status: 404,
-          headers: { 'Content-Type': 'text/plain' },
-        })
-      }))
+      router.group({ middleware: spaMiddleware }, (r: Router) => {
+        r.get(prefix, (req) => assetsMiddleware.handle(req, spaFallback))
+      })
     }
   }
 }
