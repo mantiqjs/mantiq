@@ -13,7 +13,7 @@ import { join } from 'node:path'
  *
  * - Registers PanelManager as a singleton
  * - Auto-discovers panels from app/Studio/
- * - Registers API routes for each panel
+ * - Registers API routes for each panel (protected by auth + panel access)
  * - Registers SPA catch-all for serving the frontend
  */
 export class StudioServiceProvider extends ServiceProvider {
@@ -26,21 +26,7 @@ export class StudioServiceProvider extends ServiceProvider {
 
     // Auto-discover panels from app/Studio/
     const studioDir = join(process.cwd(), 'app', 'Studio')
-    let panels: StudioPanel[] = []
-
-    try {
-      panels = await PanelDiscovery.scan(studioDir)
-    } catch (e) {
-      if (process.env['APP_DEBUG'] === 'true') {
-        console.warn('[StudioServiceProvider] Failed to scan Studio directory:', studioDir, e)
-      }
-      // No Studio directory — skip. Studio isn't configured.
-      return
-    }
-
-    if (process.env['APP_DEBUG'] === 'true') {
-      console.log(`[StudioServiceProvider] Discovered ${panels.length} panel(s)`)
-    }
+    const panels = await PanelDiscovery.scan(studioDir)
 
     if (panels.length === 0) return
 
@@ -55,20 +41,22 @@ export class StudioServiceProvider extends ServiceProvider {
     let router: Router
     try {
       router = container.make(RouterImpl)
-    } catch (e) {
+    } catch {
       // Router not available (e.g. CLI context) — skip route registration
-      if (process.env['APP_DEBUG'] === 'true') {
-        console.warn('[StudioServiceProvider] Router not available, skipping route registration:', (e as Error)?.message?.slice(0, 100))
-      }
       return
     }
 
     const panelManager = container.make(PanelManager)
     const controller = new StudioController(panelManager)
     const prefix = panel.path
+    const panelAccess = new CheckPanelAccess(panel)
 
-    // API routes — protected by auth + panel access check
+    // API routes — protected by the panel's auth guard, panel access check,
+    // and any additional middleware the panel defines
+    const guard = panel.guard()
     const apiMiddleware = [
+      `auth:${guard}`,
+      panelAccess,
       ...panel.middleware(),
     ]
 
@@ -94,8 +82,6 @@ export class StudioServiceProvider extends ServiceProvider {
     })
 
     // SPA catch-all — serves the React frontend for all non-API panel routes
-    // In dev: Vite plugin handles this via configureServer middleware
-    // In prod: serves from frontend/dist/ or published studio/dist/
     const assetsMiddleware = new StudioServeAssets(prefix)
     router.get(`${prefix}/{path:.*}`, (req) => assetsMiddleware.handle(req, async () => {
       return new Response('Studio frontend not found. Run: bun mantiq studio:install', {

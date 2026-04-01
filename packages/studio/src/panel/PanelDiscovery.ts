@@ -30,15 +30,14 @@ export class PanelDiscovery {
             }
           }
         } catch (e) {
+          // Log import failures — these indicate real problems (syntax errors, missing deps)
           if (process.env['APP_DEBUG'] === 'true') {
             console.warn('[PanelDiscovery] Failed to import:', file, e)
           }
         }
       }
-    } catch (e) {
-      if (process.env['APP_DEBUG'] === 'true') {
-        console.warn('[PanelDiscovery] Failed to scan directory:', directory, e)
-      }
+    } catch {
+      // Directory doesn't exist — normal when Studio isn't installed yet
     }
 
     return panels
