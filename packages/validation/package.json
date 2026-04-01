@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/validation",
-  "version": "0.7.6",
+  "version": "0.7.7",
   "description": "Rule engine, form requests",
   "type": "module",
   "license": "MIT",
