@@ -71,7 +71,7 @@ export class InstallCommand {
 
   1. Create a resource:
      bun mantiq make:resource UserResource
-     bun mantiq make:resource PostResource --from-db
+     bun mantiq make:resource PostResource --generate
 
   2. Add resources to your panel:
      Edit app/Studio/AdminPanel.ts

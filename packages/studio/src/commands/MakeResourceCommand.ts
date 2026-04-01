@@ -8,16 +8,16 @@ import type { ColumnInfo, ForeignKeyInfo } from '@mantiq/database'
  * Usage:
  *   bun mantiq make:resource UserResource
  *   bun mantiq make:resource UserResource --model=User
- *   bun mantiq make:resource UserResource --from-db
+ *   bun mantiq make:resource UserResource --generate
  *
- * With --from-db, uses @mantiq/database SchemaIntrospector to read
- * the live database schema and generates form fields + table columns
- * for every column — works with SQLite, Postgres, MySQL, MSSQL, MongoDB.
+ * With --generate, introspects the live database schema via
+ * @mantiq/database SchemaIntrospector and generates form fields + table
+ * columns for every column — works with SQLite, Postgres, MySQL, MSSQL, MongoDB.
  */
 export class MakeResourceCommand {
   name = 'make:resource'
   description = 'Create a new Studio resource class'
-  usage = 'make:resource <name> [--model=ModelName] [--from-db]'
+  usage = 'make:resource <name> [--model=ModelName] [--generate]'
 
   io = {
     success: (msg: string) => console.log(`\x1b[32m  DONE\x1b[0m  ${msg}`),
@@ -30,7 +30,7 @@ export class MakeResourceCommand {
     if (!rawName) {
       this.io.error('Please provide a resource name.')
       this.io.info('Usage: bun mantiq make:resource UserResource')
-      this.io.info('       bun mantiq make:resource UserResource --from-db')
+      this.io.info('       bun mantiq make:resource UserResource --generate')
       return 1
     }
 
@@ -39,7 +39,7 @@ export class MakeResourceCommand {
     className = className.charAt(0).toUpperCase() + className.slice(1)
 
     const modelName = (args.flags['model'] as string) || className.replace(/Resource$/, '')
-    const fromDb = !!args.flags['from-db']
+    const fromDb = !!args.flags['generate']
 
     const dir = `${process.cwd()}/app/Studio/Resources`
     const filePath = `${dir}/${className}.ts`
