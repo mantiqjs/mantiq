@@ -161,19 +161,19 @@ export class ${className} extends Resource {
     const filters = columns.filter(c =>
       c.isEnum ||
       ['status', 'type', 'role', 'state', 'category', 'priority', 'level'].includes(c.name) ||
-      c.dbType.includes('bool') || c.dbType === 'tinyint' ||
-      ['active', 'published', 'featured', 'verified'].includes(c.name)
+      c.dbType.includes('bool') || c.dbType.toLowerCase().includes('tinyint') ||
+      ['active', 'published', 'featured', 'verified'].includes(c.name) || c.name.startsWith('is_') || c.name.startsWith('has_')
     )
 
     const filterCode = filters.map(c => {
-      if (c.dbType.includes('bool') || c.dbType === 'tinyint' || ['active', 'published', 'featured', 'verified'].includes(c.name)) {
+      if (c.dbType.includes('bool') || c.dbType.toLowerCase().includes('tinyint') || ['active', 'published', 'featured', 'verified'].includes(c.name) || c.name.startsWith('is_') || c.name.startsWith('has_')) {
         return `      TernaryFilter.make('${c.name}').label('${this.humanize(c.name)}').trueLabel('Yes').falseLabel('No'),`
       }
       if (c.isEnum && c.enumValues.length > 0) {
         const opts = c.enumValues.map(v => `'${v}': '${this.humanize(v)}'`).join(', ')
         return `      SelectFilter.make('${c.name}').label('${this.humanize(c.name)}').options({ ${opts} }),`
       }
-      return `      SelectFilter.make('${c.name}').label('${this.humanize(c.name)}').options({}),`
+      return `      SelectFilter.make('${c.name}').label('${this.humanize(c.name)}').options({ /* TODO: add filter options */ }),`
     })
 
     // Collect unique imports
@@ -186,7 +186,7 @@ export class ${className} extends Resource {
       const fk = fkMap.get(c.name)
       if (fk || c.name.endsWith('_id') || ['status', 'type', 'role', 'state', 'category', 'priority', 'level'].includes(c.name)) {
         formImports.add('Select')
-      } else if (c.dbType.includes('bool') || c.dbType === 'tinyint' || ['active', 'published', 'featured', 'verified', 'is_admin'].includes(c.name)) {
+      } else if (c.dbType.includes('bool') || c.dbType.toLowerCase().includes('tinyint') || ['active', 'published', 'featured', 'verified', 'is_admin'].includes(c.name) || c.name.startsWith('is_') || c.name.startsWith('has_')) {
         formImports.add('Toggle')
       } else if (c.dbType.includes('text') || ['content', 'body', 'description', 'bio', 'notes'].includes(c.name)) {
         formImports.add('Textarea')
@@ -198,7 +198,7 @@ export class ${className} extends Resource {
     }
 
     for (const c of columns.filter(col => !skipTableColumns.has(col.name))) {
-      if (c.dbType.includes('bool') || c.dbType === 'tinyint' || ['active', 'published', 'featured', 'verified'].includes(c.name)) {
+      if (c.dbType.includes('bool') || c.dbType.toLowerCase().includes('tinyint') || ['active', 'published', 'featured', 'verified'].includes(c.name) || c.name.startsWith('is_') || c.name.startsWith('has_')) {
         tableImports.add('BooleanColumn')
       } else if (['status', 'type', 'role', 'state', 'priority', 'level'].includes(c.name) || c.isEnum) {
         tableImports.add('BadgeColumn')
@@ -208,7 +208,7 @@ export class ${className} extends Resource {
     }
 
     for (const c of filters) {
-      if (c.dbType.includes('bool') || c.dbType === 'tinyint' || ['active', 'published', 'featured', 'verified'].includes(c.name)) {
+      if (c.dbType.includes('bool') || c.dbType.toLowerCase().includes('tinyint') || ['active', 'published', 'featured', 'verified'].includes(c.name) || c.name.startsWith('is_') || c.name.startsWith('has_')) {
         filterImports.add('TernaryFilter')
       } else {
         filterImports.add('SelectFilter')
@@ -272,7 +272,7 @@ ${hasFilters ? `    .filters([\n${filterCode.join('\n')}\n    ])\n` : ''}    .ac
     }
 
     // Boolean
-    if (col.dbType.includes('bool') || col.dbType === 'tinyint' || ['active', 'published', 'featured', 'verified', 'is_admin'].includes(name)) {
+    if (col.dbType.includes('bool') || col.dbType.toLowerCase().includes('tinyint') || ['active', 'published', 'featured', 'verified', 'is_admin'].includes(name) || name.startsWith('is_') || name.startsWith('has_')) {
       return `Toggle.make('${name}').label('${label}')`
     }
 
@@ -295,7 +295,7 @@ ${hasFilters ? `    .filters([\n${filterCode.join('\n')}\n    ])\n` : ''}    .ac
 
     // Status/type/role enum-like fields
     if (['status', 'type', 'role', 'state', 'category', 'priority', 'level'].includes(name)) {
-      return `Select.make('${name}').label('${label}').options({})${required}`
+      return `Select.make('${name}').label('${label}').options({ /* TODO: add your ${name} options here, e.g. draft: 'Draft', published: 'Published' */ })${required}`
     }
 
     // Numeric
@@ -316,7 +316,7 @@ ${hasFilters ? `    .filters([\n${filterCode.join('\n')}\n    ])\n` : ''}    .ac
     if (col.primaryKey) return `TextColumn.make('${name}').label('#').sortable().width('60px')`
 
     // Boolean
-    if (col.dbType.includes('bool') || col.dbType === 'tinyint' || ['active', 'published', 'featured', 'verified', 'is_admin'].includes(name)) {
+    if (col.dbType.includes('bool') || col.dbType.toLowerCase().includes('tinyint') || ['active', 'published', 'featured', 'verified', 'is_admin'].includes(name) || name.startsWith('is_') || name.startsWith('has_')) {
       return `BooleanColumn.make('${name}').label('${label}').trueIcon('check-circle').falseIcon('x-circle').trueColor('success').falseColor('muted')`
     }
 

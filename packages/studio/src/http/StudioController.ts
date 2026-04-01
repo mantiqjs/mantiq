@@ -4,6 +4,8 @@ import type { NavigationGroupSchema, PanelSchema } from '../schema/SchemaTypes.t
 import type { Resource } from '../resources/Resource.ts'
 import { NavigationBuilder } from '../navigation/NavigationBuilder.ts'
 import { ResourceResolver, ResourceNotFoundError } from './ResourceResolver.ts'
+import { DeleteAction } from '../actions/DeleteAction.ts'
+import { BulkDeleteAction } from '../actions/BulkDeleteAction.ts'
 
 /**
  * Handles all Studio API endpoints under `{panel.path}/api/*`.
@@ -115,22 +117,23 @@ export class StudioController {
       const tableInstance = resource.table()
       const columns = tableInstance.getColumns()
 
-      // 5. Apply search
+      // 5. Apply search (grouped where to preserve AND precedence with filters)
       const searchTerm = request.query('search', '')
       if (searchTerm) {
         const searchableColumns = columns.filter(c => c.isSearchable())
         if (searchableColumns.length > 0) {
           const escapedTerm = this.escapeLikePattern(searchTerm)
-          // Wrap search conditions in a grouped where
-          let isFirst = true
-          for (const col of searchableColumns) {
-            if (isFirst) {
-              query = query.where(col.getName(), 'LIKE', `%${escapedTerm}%`)
-              isFirst = false
-            } else {
-              query = query.orWhere(col.getName(), 'LIKE', `%${escapedTerm}%`)
+          query = query.where((sub: any) => {
+            let isFirst = true
+            for (const col of searchableColumns) {
+              if (isFirst) {
+                sub.where(col.getName(), 'LIKE', `%${escapedTerm}%`)
+                isFirst = false
+              } else {
+                sub.orWhere(col.getName(), 'LIKE', `%${escapedTerm}%`)
+              }
             }
-          }
+          })
         }
       }
 
@@ -400,6 +403,21 @@ export class StudioController {
         return Response.json({ error: `Action [${actionName}] not found.` }, { status: 404 })
       }
 
+      // If this is a delete action, perform actual deletion with authorization & lifecycle hooks
+      if (matchedAction instanceof DeleteAction) {
+        const user = (request as any).user?.() ?? null
+        if (!await ResourceClass.canDelete(user, record)) {
+          return Response.json({ error: 'Forbidden.' }, { status: 403 })
+        }
+
+        await resource.beforeDelete(record)
+        await record.delete()
+        await resource.afterDelete(record)
+
+        const result = await matchedAction.handle(record.toObject(), body?.data)
+        return Response.json(result)
+      }
+
       // Execute
       const result = await matchedAction.handle(record.toObject(), body?.data)
 
@@ -440,6 +458,26 @@ export class StudioController {
       const matchedAction = bulkActions.find((a: any) => a.name === actionName)
       if (!matchedAction) {
         return Response.json({ error: `Bulk action [${actionName}] not found.` }, { status: 404 })
+      }
+
+      // If this is a bulk delete action, perform actual deletion with authorization & lifecycle hooks
+      if (matchedAction instanceof BulkDeleteAction) {
+        const user = (request as any).user?.() ?? null
+        for (const record of records) {
+          if (!await ResourceClass.canDelete(user, record)) {
+            return Response.json({ error: 'Forbidden.' }, { status: 403 })
+          }
+
+          await resource.beforeDelete(record)
+          await record.delete()
+          await resource.afterDelete(record)
+        }
+
+        const result = await matchedAction.handle(
+          records.map((r: any) => r.toObject()),
+          body?.data,
+        )
+        return Response.json(result)
       }
 
       // Execute
@@ -533,16 +571,18 @@ export class StudioController {
           let query = ModelClass.query()
           query = resource.modifyQuery(query)
 
-          // Apply search across searchable columns
-          let isFirst = true
-          for (const col of searchableColumns) {
-            if (isFirst) {
-              query = query.where(col.getName(), 'LIKE', `%${escapedQuery}%`)
-              isFirst = false
-            } else {
-              query = query.orWhere(col.getName(), 'LIKE', `%${escapedQuery}%`)
+          // Apply search across searchable columns (grouped to preserve AND precedence)
+          query = query.where((sub: any) => {
+            let isFirst = true
+            for (const col of searchableColumns) {
+              if (isFirst) {
+                sub.where(col.getName(), 'LIKE', `%${escapedQuery}%`)
+                isFirst = false
+              } else {
+                sub.orWhere(col.getName(), 'LIKE', `%${escapedQuery}%`)
+              }
             }
-          }
+          })
 
           const records = await query.limit(5).get()
           if (records.length > 0) {

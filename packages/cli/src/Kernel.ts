@@ -150,6 +150,7 @@ export class Kernel {
       this.register(new studio.InstallCommand() as any)
       this.register(new studio.MakePanelCommand() as any)
       this.register(new studio.MakeResourceCommand() as any)
+      this.register(new studio.PublishFrontendCommand() as any)
     } catch (e) {
       // @mantiq/studio not installed — skip studio commands
       if (process.env['APP_DEBUG'] === 'true') {

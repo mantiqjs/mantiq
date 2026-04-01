@@ -29,12 +29,16 @@ export class PanelDiscovery {
               panels.push(new exported())
             }
           }
-        } catch {
-          // Skip files that can't be imported (syntax errors, etc.)
+        } catch (e) {
+          if (process.env['APP_DEBUG'] === 'true') {
+            console.warn('[PanelDiscovery] Failed to import:', file, e)
+          }
         }
       }
-    } catch {
-      // Directory doesn't exist — that's fine, no panels to discover
+    } catch (e) {
+      if (process.env['APP_DEBUG'] === 'true') {
+        console.warn('[PanelDiscovery] Failed to scan directory:', directory, e)
+      }
     }
 
     return panels
