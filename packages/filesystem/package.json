@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/filesystem",
-  "version": "0.7.7",
+  "version": "0.7.8",
   "description": "Filesystem abstraction — local, S3, GCS, R2, Azure, FTP, SFTP drivers with uniform API",
   "type": "module",
   "license": "MIT",

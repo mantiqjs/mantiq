@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/testing",
-  "version": "0.7.7",
+  "version": "0.7.8",
   "description": "Testing utilities for MantiqJS — HTTP client, database assertions, auth helpers",
   "type": "module",
   "license": "MIT",
