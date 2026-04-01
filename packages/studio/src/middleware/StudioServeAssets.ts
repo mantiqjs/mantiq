@@ -139,7 +139,7 @@ export class StudioServeAssets implements Middleware {
       ? path.substring(this.panelPath.length) || '/index.html'
       : path === '/' ? '/index.html' : path
 
-    // Try to serve static assets
+    // Try to serve static assets (JS, CSS, images, etc.)
     const assetPath = join(this.prodAssetsDir, relativePath)
     try {
       const file = Bun.file(assetPath)
@@ -148,11 +148,19 @@ export class StudioServeAssets implements Middleware {
       }
     } catch { /* not found */ }
 
-    // SPA catch-all: serve index.html for client-side routing
+    // SPA catch-all: serve index.html with asset paths rewritten to panel prefix
     try {
       const indexFile = Bun.file(join(this.prodAssetsDir, 'index.html'))
       if (await indexFile.exists()) {
-        return new Response(indexFile, {
+        let html = await indexFile.text()
+        // Rewrite absolute asset paths to be relative to the panel path
+        // e.g. /assets/index.js → /admin/assets/index.js
+        if (this.panelPath) {
+          html = html.replace(/(?:src|href)="\/assets\//g, (match) =>
+            match.replace('/assets/', `${this.panelPath}/assets/`),
+          )
+        }
+        return new Response(html, {
           headers: { 'Content-Type': 'text/html; charset=utf-8' },
         })
       }
