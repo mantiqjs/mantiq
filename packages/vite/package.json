@@ -25,22 +25,27 @@
   "engines": {
     "bun": ">=1.1.0"
   },
-  "main": "./src/index.ts",
+  "main": "./dist/index.js",
   "types": "./src/index.ts",
   "exports": {
     ".": {
       "bun": "./src/index.ts",
-      "default": "./src/index.ts"
+      "default": "./dist/index.js"
+    },
+    "./plugin": {
+      "bun": "./src/plugins/mantiq.ts",
+      "default": "./dist/mantiq.js"
     }
   },
   "files": [
     "src/",
+    "dist/",
     "package.json",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
-    "build": "bun build ./src/index.ts --outdir ./dist --target bun --packages=external",
+    "build": "bun build ./src/index.ts --outdir ./dist --target node --packages=external --format esm && bun build ./src/plugins/mantiq.ts --outfile ./dist/mantiq.js --target node --packages=external --format esm",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"

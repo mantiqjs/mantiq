@@ -1,6 +1,5 @@
 import { resolve, dirname } from 'node:path'
 import { existsSync } from 'node:fs'
-import type { Plugin } from 'vite'
 
 /**
  * Vite plugin for Mantiq Studio.
@@ -27,7 +26,7 @@ import type { Plugin } from 'vite'
  * - In dev: Vite serves Studio's React app with HMR
  * - In prod: Studio assets are included in the main build output
  */
-export function studioPlugin(options: StudioPluginOptions = {}): Plugin {
+export function studioPlugin(options: StudioPluginOptions = {}): any {
   const panelPath = options.path ?? '/admin'
 
   // Resolve the Studio frontend source directory
@@ -43,7 +42,7 @@ export function studioPlugin(options: StudioPluginOptions = {}): Plugin {
     name: 'mantiq-studio',
     enforce: 'pre',
 
-    config(config) {
+    config(config: any) {
       // Add Studio path aliases
       const existingAliases = (config.resolve?.alias as Record<string, string>) ?? {}
 
@@ -68,7 +67,7 @@ export function studioPlugin(options: StudioPluginOptions = {}): Plugin {
       }
     },
 
-    resolveId(id) {
+    resolveId(id: string) {
       if (id === studioEntryId) return resolvedStudioEntryId
       // Resolve @mantiq/studio/frontend imports to the actual source
       if (id.startsWith('@mantiq/studio/frontend/src/')) {
@@ -78,7 +77,7 @@ export function studioPlugin(options: StudioPluginOptions = {}): Plugin {
       return null
     },
 
-    load(id) {
+    load(id: string) {
       if (id === resolvedStudioEntryId) {
         // Virtual entry that bootstraps Studio
         return `
@@ -90,7 +89,7 @@ export function studioPlugin(options: StudioPluginOptions = {}): Plugin {
 
     // Transform Studio's @/ imports to @studio/ to avoid conflicts
     // with the user's own @/ alias
-    transform(code, id) {
+    transform(code: string, id: string) {
       if (!id.startsWith(studioSrcDir)) return null
       // Rewrite @/ → @studio/ only in Studio's own files
       if (code.includes("from '@/")) {
@@ -99,9 +98,9 @@ export function studioPlugin(options: StudioPluginOptions = {}): Plugin {
       return null
     },
 
-    configureServer(server) {
+    configureServer(server: any) {
       // In dev: serve Studio's HTML shell for panel routes
-      server.middlewares.use((req, res, next) => {
+      server.middlewares.use((req: any, res: any, next: any) => {
         const url = req.url ?? ''
 
         // Only intercept panel routes (not API, not assets)
@@ -132,7 +131,7 @@ export function studioPlugin(options: StudioPluginOptions = {}): Plugin {
 </html>`
 
         // Let Vite transform the HTML (injects HMR client, React refresh, etc.)
-        server.transformIndexHtml(url, html).then((transformed) => {
+        server.transformIndexHtml(url, html).then((transformed: string) => {
           res.setHeader('Content-Type', 'text/html')
           res.end(transformed)
         }).catch(next)

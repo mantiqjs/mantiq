@@ -8,7 +8,9 @@
     ".": "./src/index.ts",
     "./vite": "./src/vite/studioPlugin.ts"
   },
-  "mantiq.provider": "StudioServiceProvider",
+  "mantiq": {
+    "provider": "StudioServiceProvider"
+  },
   "scripts": {
     "build": "bun build ./src/index.ts --outdir ./dist --target bun --packages=external",
     "test": "bun test",

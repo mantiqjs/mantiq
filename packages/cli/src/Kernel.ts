@@ -136,8 +136,11 @@ export class Kernel {
     try {
       const { InstallCommand } = await import('@mantiq/heartbeat')
       this.register(new InstallCommand())
-    } catch {
+    } catch (e) {
       // @mantiq/heartbeat not installed — skip heartbeat commands
+      if (process.env['APP_DEBUG'] === 'true') {
+        console.warn('[registerPackageCommands] Failed to load @mantiq/heartbeat:', e)
+      }
     }
 
     // Studio commands (if @mantiq/studio is installed)
@@ -147,8 +150,12 @@ export class Kernel {
       this.register(new studio.InstallCommand() as any)
       this.register(new studio.MakePanelCommand() as any)
       this.register(new studio.MakeResourceCommand() as any)
-    } catch {
+      this.register(new studio.PublishFrontendCommand() as any)
+    } catch (e) {
       // @mantiq/studio not installed — skip studio commands
+      if (process.env['APP_DEBUG'] === 'true') {
+        console.warn('[registerPackageCommands] Failed to load @mantiq/studio:', e)
+      }
     }
 
     // Agent rules commands (if @mantiq/agent-rules is installed)
@@ -157,8 +164,11 @@ export class Kernel {
       const mod = await import('@mantiq/agent-rules')
       this.register(new mod.AgentGenerateCommand() as any)
       this.register(new mod.AgentUpdateCommand() as any)
-    } catch {
+    } catch (e) {
       // @mantiq/agent-rules not installed — skip agent commands
+      if (process.env['APP_DEBUG'] === 'true') {
+        console.warn('[registerPackageCommands] Failed to load @mantiq/agent-rules:', e)
+      }
     }
   }
 

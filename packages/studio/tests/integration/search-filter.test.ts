@@ -61,7 +61,7 @@ function seedDatabase(database: Database): void {
 class SQLiteQueryBuilder {
   private _table: string
   private _db: Database
-  private _wheres: Array<{ column: string; operator: string; value: any; boolean: string }> = []
+  private _wheres: Array<{ column: string; operator: string; value: any; boolean: string } | { group: SQLiteQueryBuilder; boolean: string }> = []
   private _orderByCol: string | null = null
   private _orderByDir: 'asc' | 'desc' = 'asc'
   private _limitValue: number | null = null
@@ -73,7 +73,13 @@ class SQLiteQueryBuilder {
     this._modelFactory = modelFactory
   }
 
-  where(column: string, operatorOrValue?: any, value?: any): this {
+  where(column: string | ((sub: SQLiteQueryBuilder) => void), operatorOrValue?: any, value?: any): this {
+    if (typeof column === 'function') {
+      const sub = new SQLiteQueryBuilder(this._table, this._db, this._modelFactory)
+      column(sub)
+      this._wheres.push({ group: sub, boolean: 'and' })
+      return this
+    }
     if (value === undefined) {
       this._wheres.push({ column, operator: '=', value: operatorOrValue, boolean: 'and' })
     } else {
@@ -109,16 +115,27 @@ class SQLiteQueryBuilder {
 
   with(..._relations: string[]): this { return this }
 
-  private buildSQL(): { sql: string; params: any[] } {
+  buildSQL(): { sql: string; params: any[] } {
     let sql = `SELECT * FROM ${this._table}`
     const params: any[] = []
 
     if (this._wheres.length > 0) {
       const conditions: string[] = []
       for (let i = 0; i < this._wheres.length; i++) {
-        const w = this._wheres[i]
+        const w = this._wheres[i]!
         let condition: string
-        if (w.operator === 'IN') {
+
+        if ('group' in w) {
+          // Grouped where (callback-style)
+          const sub = w.group.buildSQL()
+          const subWhere = sub.sql.includes(' WHERE ') ? sub.sql.split(' WHERE ')[1]! : ''
+          if (subWhere) {
+            condition = `(${subWhere})`
+            params.push(...sub.params)
+          } else {
+            continue
+          }
+        } else if (w.operator === 'IN') {
           const placeholders = (w.value as any[]).map(() => '?').join(', ')
           condition = `${w.column} IN (${placeholders})`
           params.push(...(w.value as any[]))
@@ -131,9 +148,9 @@ class SQLiteQueryBuilder {
         }
 
         if (i === 0) {
-          conditions.push(condition)
+          conditions.push(condition!)
         } else {
-          conditions.push(`${w.boolean === 'or' ? 'OR' : 'AND'} ${condition}`)
+          conditions.push(`${w.boolean === 'or' ? 'OR' : 'AND'} ${condition!}`)
         }
       }
       sql += ' WHERE ' + conditions.join(' ')

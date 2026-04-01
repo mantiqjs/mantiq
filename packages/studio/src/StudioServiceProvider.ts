@@ -1,4 +1,4 @@
-import { ServiceProvider } from '@mantiq/core'
+import { ServiceProvider, RouterImpl } from '@mantiq/core'
 import type { Container, Router } from '@mantiq/core'
 import { PanelManager } from './panel/PanelManager.ts'
 import { PanelDiscovery } from './panel/PanelDiscovery.ts'
@@ -30,9 +30,16 @@ export class StudioServiceProvider extends ServiceProvider {
 
     try {
       panels = await PanelDiscovery.scan(studioDir)
-    } catch {
+    } catch (e) {
+      if (process.env['APP_DEBUG'] === 'true') {
+        console.warn('[StudioServiceProvider] Failed to scan Studio directory:', studioDir, e)
+      }
       // No Studio directory — skip. Studio isn't configured.
       return
+    }
+
+    if (process.env['APP_DEBUG'] === 'true') {
+      console.log(`[StudioServiceProvider] Discovered ${panels.length} panel(s)`)
     }
 
     if (panels.length === 0) return
@@ -47,9 +54,13 @@ export class StudioServiceProvider extends ServiceProvider {
   private registerPanelRoutes(container: Container, panel: StudioPanel): void {
     let router: Router
     try {
-      router = container.make<Router>('Router' as any)
-    } catch {
-      return // Router not available
+      router = container.make(RouterImpl)
+    } catch (e) {
+      // Router not available (e.g. CLI context) — skip route registration
+      if (process.env['APP_DEBUG'] === 'true') {
+        console.warn('[StudioServiceProvider] Router not available, skipping route registration:', (e as Error)?.message?.slice(0, 100))
+      }
+      return
     }
 
     const panelManager = container.make(PanelManager)

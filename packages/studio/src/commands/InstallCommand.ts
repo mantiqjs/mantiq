@@ -52,7 +52,18 @@ export class InstallCommand {
       this.io.info('config/studio.ts already exists — skipped')
     }
 
-    // 4. Done
+    // 4. Create app/Providers/StudioServiceProvider.ts if it doesn't exist
+    const providersDir = `${cwd}/app/Providers`
+    mkdirSync(providersDir, { recursive: true })
+    const providerPath = `${providersDir}/StudioServiceProvider.ts`
+    if (!existsSync(providerPath)) {
+      await Bun.write(providerPath, this.providerStub())
+      this.io.success('Created app/Providers/StudioServiceProvider.ts')
+    } else {
+      this.io.info('app/Providers/StudioServiceProvider.ts already exists — skipped')
+    }
+
+    // 5. Done
     console.log(`
   \x1b[32m✓\x1b[0m  \x1b[1mStudio installed\x1b[0m
 
@@ -60,7 +71,7 @@ export class InstallCommand {
 
   1. Create a resource:
      bun mantiq make:resource UserResource
-     bun mantiq make:resource PostResource --from-db
+     bun mantiq make:resource PostResource --generate
 
   2. Add resources to your panel:
      Edit app/Studio/AdminPanel.ts
@@ -75,16 +86,16 @@ export class InstallCommand {
 
   private panelStub(): string {
     return `import { StudioPanel } from '@mantiq/studio'
+// import { UserResource } from './Resources/UserResource.ts'
 
 export class AdminPanel extends StudioPanel {
   override path = '/admin'
   override brandName = 'Admin'
 
   override resources() {
-    // Import your resources here:
-    // import { UserResource } from './Resources/UserResource.ts'
-    // return [UserResource]
-    return []
+    return [
+      // UserResource,
+    ]
   }
 
   override colors() {
@@ -96,6 +107,13 @@ export class AdminPanel extends StudioPanel {
     }
   }
 }
+`
+  }
+
+  private providerStub(): string {
+    return `import { StudioServiceProvider as BaseProvider } from '@mantiq/studio'
+
+export class StudioServiceProvider extends BaseProvider {}
 `
   }
 

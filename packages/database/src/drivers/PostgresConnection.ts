@@ -31,6 +31,7 @@ export class PostgresConnection extends BaseSQLConnection {
     if (!this.client) {
       try {
         // Uses pg (node-postgres) compatible driver
+        // @ts-ignore — optional peer dependency, may not be installed
         const { default: pg } = await import('pg')
         const pool = new pg.Pool({
           host: this.config.host ?? 'localhost',
