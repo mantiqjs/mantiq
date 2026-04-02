@@ -11,10 +11,10 @@ import { join } from 'node:path'
 /**
  * Service provider that registers the Studio admin panel system.
  *
- * - Registers PanelManager as a singleton
- * - Auto-discovers panels from app/Studio/
- * - Registers API routes for each panel (protected by auth + panel access)
- * - Registers SPA catch-all for serving the frontend
+ * Route structure for a panel at /admin:
+ *
+ *   /admin/api/*          → API (web middleware group + auth + panel access)
+ *   /admin, /admin/*      → SPA (no middleware — assets are public, auth via API)
  */
 export class StudioServiceProvider extends ServiceProvider {
   override register(): void {
@@ -24,29 +24,27 @@ export class StudioServiceProvider extends ServiceProvider {
   override async boot(): Promise<void> {
     const panelManager = this.app.make(PanelManager)
 
-    // Auto-discover panels from app/Studio/
     const studioDir = join(process.cwd(), 'app', 'Studio')
     const panels = await PanelDiscovery.scan(studioDir)
 
     if (panels.length === 0) return
 
-    // Register a CheckPanelAccess middleware alias per panel so the
-    // framework's string-based middleware system can resolve it.
+    // Guard against double-boot (package discovery + app/Providers wrapper)
+    if (panelManager.all().length > 0) return
+
     let kernel: any = null
     try {
       const { HttpKernel } = await import('@mantiq/core')
       kernel = this.app.make(HttpKernel)
-    } catch { /* CLI context — no kernel */ }
+    } catch { /* CLI context */ }
 
     for (const panel of panels) {
       panel.boot(this.app)
       panelManager.register(panel)
 
-      // Register per-panel middleware alias: "studio.access:{panelId}"
       if (kernel?.registerMiddleware) {
         const access = new CheckPanelAccess(panel)
         const alias = `studio.access.${panel.id}`
-        // Wrap the instance as a constructor the Kernel can use
         const WrappedMiddleware = class {
           async handle(req: any, next: any) { return access.handle(req, next) }
         }
@@ -62,7 +60,6 @@ export class StudioServiceProvider extends ServiceProvider {
     try {
       router = container.make(RouterImpl)
     } catch {
-      // Router not available (e.g. CLI context) — skip route registration
       return
     }
 
@@ -72,8 +69,11 @@ export class StudioServiceProvider extends ServiceProvider {
     const guard = panel.guard()
     const accessAlias = `studio.access.${panel.id}`
 
-    // API routes — auth guard sets user on request, panel access checks authorization
+    // ── API routes — full middleware stack ──────────────────────────────
+    // 'web' group provides session/CSRF, auth guard authenticates,
+    // panel access checks authorization
     const apiMiddleware = [
+      'web',
       `auth:${guard}`,
       accessAlias,
       ...panel.middleware(),
@@ -93,24 +93,24 @@ export class StudioServiceProvider extends ServiceProvider {
       r.post('/resources/:resource/bulk-actions/:action', (req) => controller.bulkAction(req))
     })
 
-    // SPA routes — CheckPanelAccess resolves user itself and redirects
-    // unauthenticated browsers to panel.loginUrl() (no redirect loop).
-    const spaMiddleware = [accessAlias]
-
+    // ── SPA + assets — no middleware ───────────────────────────────────
+    // Serves index.html (with rewritten asset paths) and static assets.
+    // No auth here — the SPA is public. Auth is enforced by the API
+    // endpoints; the frontend redirects to login on 401.
     const assetsMiddleware = new StudioServeAssets(prefix)
     const spaFallback = async () => new Response(
       'Studio frontend not found. Run: bun mantiq studio:install',
       { status: 404, headers: { 'Content-Type': 'text/plain' } },
     )
 
-    router.group({ prefix, middleware: spaMiddleware }, (r: Router) => {
-      r.get('/{path:.*}', (req) => assetsMiddleware.handle(req, spaFallback))
-    })
+    router.get(`${prefix}/*`, (req) =>
+      assetsMiddleware.handle(req, spaFallback),
+    )
 
     if (prefix) {
-      router.group({ middleware: spaMiddleware }, (r: Router) => {
-        r.get(prefix, (req) => assetsMiddleware.handle(req, spaFallback))
-      })
+      router.get(prefix, (req) =>
+        assetsMiddleware.handle(req, spaFallback),
+      )
     }
   }
 }

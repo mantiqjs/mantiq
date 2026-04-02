@@ -136,25 +136,25 @@ export class StudioServeAssets implements Middleware {
   private async prodResponse(request: MantiqRequest, next: NextFunction): Promise<Response> {
     const path = request.path()
     const relativePath = this.panelPath
-      ? path.substring(this.panelPath.length) || '/index.html'
-      : path === '/' ? '/index.html' : path
+      ? path.substring(this.panelPath.length) || '/'
+      : path
 
-    // Try to serve static assets (JS, CSS, images, etc.)
-    const assetPath = join(this.prodAssetsDir, relativePath)
-    try {
-      const file = Bun.file(assetPath)
-      if (await file.exists()) {
-        return new Response(file)
-      }
-    } catch { /* not found */ }
+    // Serve static assets (JS, CSS, images, etc.) — not index.html
+    if (relativePath !== '/' && relativePath !== '') {
+      const assetPath = join(this.prodAssetsDir, relativePath)
+      try {
+        const file = Bun.file(assetPath)
+        if (await file.exists()) {
+          return new Response(file)
+        }
+      } catch { /* not found */ }
+    }
 
-    // SPA catch-all: serve index.html with asset paths rewritten to panel prefix
+    // SPA: serve index.html with asset paths rewritten to include panel prefix
     try {
       const indexFile = Bun.file(join(this.prodAssetsDir, 'index.html'))
       if (await indexFile.exists()) {
         let html = await indexFile.text()
-        // Rewrite absolute asset paths to be relative to the panel path
-        // e.g. /assets/index.js → /admin/assets/index.js
         if (this.panelPath) {
           html = html.replace(/(?:src|href)="\/assets\//g, (match) =>
             match.replace('/assets/', `${this.panelPath}/assets/`),
