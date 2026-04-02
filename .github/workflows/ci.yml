@@ -365,16 +365,39 @@ jobs:
             bunx playwright test e2e/token-auth.spec.ts e2e/api-only.spec.ts
           fi
 
-          # Studio E2E — run for react kit (Studio needs a frontend kit for login UI)
-          if [ "${{ matrix.kit }}" = "react" ]; then
-            bunx playwright test e2e/studio.spec.ts
-          fi
-
       - name: Upload test artifacts
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: e2e-${{ matrix.kit }}-results
+          path: |
+            playwright-report/
+            test-results/
+
+  studio-e2e:
+    name: Studio E2E
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: bunx playwright install chromium --with-deps
+
+      - name: Run Studio E2E tests
+        run: bunx playwright test e2e/studio.spec.ts
+
+      - name: Upload test artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-studio-results
           path: |
             playwright-report/
             test-results/
