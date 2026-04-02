@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/agent-rules",
-  "version": "0.7.15",
+  "version": "0.7.16",
   "description": "AI coding agent convention files — Claude Code, Cursor, Copilot, Windsurf rules for MantiqJS",
   "type": "module",
   "license": "MIT",

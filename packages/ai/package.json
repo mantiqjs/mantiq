@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/ai",
-  "version": "0.7.15",
+  "version": "0.7.16",
   "description": "AI integration — OpenAI, Anthropic, Gemini, Ollama, Azure OpenAI, Bedrock, embeddings, RAG, agents, tool calling",
   "type": "module",
   "license": "MIT",
