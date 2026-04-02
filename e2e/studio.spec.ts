@@ -1,133 +1,37 @@
 import { test, expect } from '@playwright/test'
 import { execSync } from 'node:child_process'
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { createTestApp, postWithCsrf, type TestApp } from './helpers.ts'
 
 let app: TestApp
 
 /**
- * Write Studio files into the scaffolded app:
- *   - app/Studio/AdminPanel.ts
- *   - app/Studio/Resources/UserResource.ts
- *   - app/Providers/StudioServiceProvider.ts
- *
- * These files mirror what `bun mantiq studio:install` + `make:resource UserResource --generate`
- * would produce, but we write them directly to avoid needing a running DB for introspection.
+ * Run the real CLI commands to set up Studio — exactly as a user would.
+ * Tests the full install → generate → configure flow.
  */
 function installStudio(dir: string): void {
-  const studioDir = join(dir, 'app', 'Studio')
-  const resourcesDir = join(studioDir, 'Resources')
-  const providersDir = join(dir, 'app', 'Providers')
+  const run = (cmd: string) =>
+    execSync(`bun mantiq.ts ${cmd}`, { cwd: dir, stdio: 'pipe', timeout: 30_000 }).toString()
 
-  mkdirSync(resourcesDir, { recursive: true })
-  mkdirSync(providersDir, { recursive: true })
+  // 1. Install Studio (creates AdminPanel, config, provider wrapper)
+  run('studio:install')
 
-  // AdminPanel
-  writeFileSync(
-    join(studioDir, 'AdminPanel.ts'),
-    `import { StudioPanel } from '@mantiq/studio'
-import { UserResource } from './Resources/UserResource.ts'
+  // 2. Run migrations so --generate can introspect the schema
+  run('migrate')
 
-export class AdminPanel extends StudioPanel {
-  override path = '/admin'
-  override brandName = 'Test Admin'
+  // 3. Generate UserResource from live database schema
+  run('make:resource UserResource --generate')
 
-  override resources() {
-    return [UserResource]
-  }
-}
-`,
-  )
+  // 4. Seed test users
+  run('seed')
 
-  // UserResource — matches the User model from the skeleton
-  writeFileSync(
-    join(resourcesDir, 'UserResource.ts'),
-    `import { Resource } from '@mantiq/studio'
-import { Form, TextInput } from '@mantiq/studio'
-import { Table, TextColumn } from '@mantiq/studio'
-import { EditAction, DeleteAction, BulkDeleteAction } from '@mantiq/studio'
-import { User } from '../../Models/User.ts'
-
-export class UserResource extends Resource {
-  static override model = User
-  static override navigationIcon = 'users'
-  static override navigationLabel = 'Users'
-  static override recordTitleAttribute = 'name'
-  static override globallySearchable = true
-  static override defaultSort = 'id'
-  static override defaultSortDirection: 'asc' | 'desc' = 'desc'
-
-  override form() {
-    return Form.make([
-      TextInput.make('name').required().rules(['string', 'max:255']),
-      TextInput.make('email').required().rules(['email']),
-    ])
-  }
-
-  override table() {
-    return Table.make([
-      TextColumn.make('id').label('#').sortable().width('60px'),
-      TextColumn.make('name').searchable().sortable(),
-      TextColumn.make('email').searchable().sortable(),
-      TextColumn.make('created_at').label('Created').sortable(),
-    ])
-    .actions([EditAction.make(), DeleteAction.make()])
-    .bulkActions([BulkDeleteAction.make()])
-    .defaultSort('id', 'desc')
-  }
-}
-`,
-  )
-
-  // StudioServiceProvider
-  writeFileSync(
-    join(providersDir, 'StudioServiceProvider.ts'),
-    `import { StudioServiceProvider as BaseProvider } from '@mantiq/studio'
-
-export class StudioServiceProvider extends BaseProvider {}
-`,
-  )
-}
-
-/**
- * Seed the database with test users after migrations have run.
- * Uses bun to execute a simple inline script that inserts users via raw SQL.
- */
-function seedUsers(dir: string): void {
-  // Write a temporary seed script that uses the app's database
-  const seedScript = join(dir, '_e2e_seed.ts')
-  writeFileSync(
-    seedScript,
-    `import { Database } from 'bun:sqlite'
-import { resolve } from 'node:path'
-
-const dbPath = resolve(import.meta.dir, 'database/database.sqlite')
-const db = new Database(dbPath)
-
-// Hash passwords using Bun's native bcrypt
-const hash = await Bun.password.hash('password123', { algorithm: 'bcrypt', cost: 4 })
-
-db.exec(\`
-  INSERT OR IGNORE INTO users (name, email, password, created_at, updated_at)
-  VALUES
-    ('Admin User', 'admin@example.com', '\${hash}', datetime('now'), datetime('now')),
-    ('Jane Smith', 'jane@example.com', '\${hash}', datetime('now'), datetime('now')),
-    ('Bob Wilson', 'bob@example.com', '\${hash}', datetime('now'), datetime('now')),
-    ('Alice Johnson', 'alice@example.com', '\${hash}', datetime('now'), datetime('now')),
-    ('Charlie Brown', 'charlie@example.com', '\${hash}', datetime('now'), datetime('now'))
-\`)
-
-db.close()
-console.log('Seeded 5 users')
-`,
-  )
-
-  try {
-    execSync(`bun ${seedScript}`, { cwd: dir, stdio: 'pipe', timeout: 15_000 })
-  } catch (err) {
-    console.warn('[studio.spec] Failed to seed users:', err)
-  }
+  // 5. Wire up UserResource in AdminPanel (uncomment the generated scaffold)
+  const panelPath = join(dir, 'app', 'Studio', 'AdminPanel.ts')
+  let panel = readFileSync(panelPath, 'utf-8')
+  panel = panel.replace('// import { UserResource }', 'import { UserResource }')
+  panel = panel.replace('// UserResource,', 'UserResource,')
+  writeFileSync(panelPath, panel)
 }
 
 // ── Setup ──────────────────────────────────────────────────────────────────
@@ -136,11 +40,8 @@ test.beforeAll(async () => {
   // Scaffold with React kit (provides login/register UI and session auth)
   app = await createTestApp('studio', 'react')
 
-  // Install Studio files into the scaffolded app
+  // Use CLI to install Studio, generate resources, seed data
   installStudio(app.dir)
-
-  // Seed users into the database
-  seedUsers(app.dir)
 
   // Restart the server so it picks up the new Studio provider + panel
   app.process.kill('SIGTERM')
