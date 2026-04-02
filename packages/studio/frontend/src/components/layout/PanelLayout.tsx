@@ -78,6 +78,19 @@ export function PanelLayout({ children }: PanelLayoutProps) {
 
   if (!panel) return null
 
+  // Prepend panel path to navigation URLs so sidebar hrefs are correct
+  const prefixedNavigation = panel.navigation.map((group) => ({
+    ...group,
+    items: group.items.map((item) => ({
+      ...item,
+      url: item.url.startsWith(panel.path) ? item.url : panel.path + item.url,
+      children: item.children?.map((child) => ({
+        ...child,
+        url: child.url.startsWith(panel.path) ? child.url : panel.path + child.url,
+      })) ?? [],
+    })),
+  }))
+
   const maxWidthClass = MAX_WIDTH_CLASSES[panel.maxContentWidth] ?? 'max-w-7xl'
 
   return (
@@ -101,7 +114,7 @@ export function PanelLayout({ children }: PanelLayoutProps) {
         <Sidebar
           brandName={panel.brandName}
           brandLogo={panel.brandLogo}
-          navigation={panel.navigation}
+          navigation={prefixedNavigation}
           sidebarCollapsible={false}
           collapsed={false}
           onToggleCollapse={() => {}}
@@ -118,7 +131,7 @@ export function PanelLayout({ children }: PanelLayoutProps) {
         <Sidebar
           brandName={panel.brandName}
           brandLogo={panel.brandLogo}
-          navigation={panel.navigation}
+          navigation={prefixedNavigation}
           sidebarCollapsible={panel.sidebarCollapsible}
           collapsed={sidebarCollapsed}
           onToggleCollapse={toggleSidebarCollapse}
