@@ -391,7 +391,7 @@ jobs:
         run: bunx playwright install chromium --with-deps
 
       - name: Run Studio E2E tests
-        run: bunx playwright test e2e/studio.spec.ts
+        run: bunx playwright test e2e/studio/
 
       - name: Upload test artifacts
         if: failure()
