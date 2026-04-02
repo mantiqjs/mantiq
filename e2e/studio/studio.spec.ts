@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 import { execSync } from 'node:child_process'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { createTestApp, postWithCsrf, type TestApp } from './helpers.ts'
+import { createTestApp, postWithCsrf, type TestApp } from '../helpers.ts'
 
 let app: TestApp
 
