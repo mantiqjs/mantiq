@@ -56,9 +56,8 @@ export default function App() {
   const slug = match?.params.slug
   const resource = slug ? panel.resources.find((r) => r.slug === slug) : undefined
 
-  // The base path for API calls — empty string means root-relative
-  // In production this would be panel.path (e.g., '/admin')
-  const basePath = ''
+  // Use the panel path as the base for all API calls (e.g., '/admin')
+  const basePath = panel.path
 
   let page: React.ReactNode
 
