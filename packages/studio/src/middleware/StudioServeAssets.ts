@@ -150,12 +150,18 @@ export class StudioServeAssets implements Middleware {
       } catch { /* not found */ }
     }
 
-    // SPA: serve index.html with asset paths rewritten to include panel prefix
+    // SPA: serve index.html with panel path injected and asset paths rewritten
     try {
       const indexFile = Bun.file(join(this.prodAssetsDir, 'index.html'))
       if (await indexFile.exists()) {
         let html = await indexFile.text()
         if (this.panelPath) {
+          // Inject studio-base-path meta tag so the frontend knows the panel URL
+          html = html.replace(
+            '<head>',
+            `<head>\n  <meta name="studio-base-path" content="${this.panelPath}">`,
+          )
+          // Rewrite absolute asset paths to include panel prefix
           html = html.replace(/(?:src|href)="\/assets\//g, (match) =>
             match.replace('/assets/', `${this.panelPath}/assets/`),
           )
