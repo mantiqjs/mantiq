@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/mail",
-  "version": "0.7.13",
+  "version": "0.7.14",
   "description": "Transactional email — SMTP, Resend, SendGrid, Mailgun, Postmark, SES, markdown templates",
   "type": "module",
   "license": "MIT",
