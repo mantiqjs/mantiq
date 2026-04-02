@@ -86,8 +86,9 @@ async function request<T = any>(
 
   // Handle specific status codes
   if (response.status === 401) {
-    // Redirect to login
-    window.location.href = `${basePath}/login`
+    // Redirect to the app's login page.
+    // The login URL is not under the panel path — it's the app's own route.
+    window.location.href = '/login'
     throw new ApiError('Unauthenticated', 401)
   }
 

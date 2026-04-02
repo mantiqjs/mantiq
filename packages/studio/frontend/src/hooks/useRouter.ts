@@ -71,8 +71,16 @@ export function useRouter(): RouterState {
   }, [])
 
   const navigate = useCallback((to: string) => {
-    window.history.pushState(null, '', to)
-    setPathname(to)
+    // Prepend the panel base path so URLs include /admin prefix
+    const meta = document.querySelector<HTMLMetaElement>(
+      'meta[name="studio-base-path"]',
+    )
+    const basePath =
+      meta?.content || (window as any).__STUDIO_BASE_PATH__ || ''
+
+    const fullPath = to.startsWith(basePath) ? to : basePath + to
+    window.history.pushState(null, '', fullPath)
+    setPathname(fullPath)
     // Notify all other useRouter instances
     window.dispatchEvent(new Event('studio:navigate'))
   }, [])
