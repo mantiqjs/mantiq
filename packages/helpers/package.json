@@ -1,6 +1,6 @@
 {
   "name": "@mantiq/helpers",
-  "version": "0.7.17",
+  "version": "0.7.18",
   "description": "Str, Arr, Num, Collection utilities",
   "type": "module",
   "license": "MIT",
