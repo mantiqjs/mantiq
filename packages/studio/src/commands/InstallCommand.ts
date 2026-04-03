@@ -86,17 +86,16 @@ export class InstallCommand {
 
   private panelStub(): string {
     return `import { StudioPanel } from '@mantiq/studio'
-// import { UserResource } from './Resources/UserResource.ts'
 
 export class AdminPanel extends StudioPanel {
   override path = '/admin'
   override brandName = 'Admin'
 
-  override resources() {
-    return [
-      // UserResource,
-    ]
-  }
+  // Resources are auto-discovered from app/Studio/Resources/.
+  // To register explicitly instead, override resources():
+  //
+  // import { UserResource } from './Resources/UserResource.ts'
+  // override resources() { return [UserResource] }
 
   override colors() {
     return {

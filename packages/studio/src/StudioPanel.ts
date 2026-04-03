@@ -1,6 +1,7 @@
 import type { Container } from '@mantiq/core'
-import type { Resource } from './resources/Resource.ts'
+import { Resource } from './resources/Resource.ts'
 import type { NavigationGroup } from './navigation/NavigationGroup.ts'
+import { join } from 'node:path'
 
 /**
  * Abstract panel class -- the entry point for a Studio admin panel.
@@ -24,6 +25,9 @@ export abstract class StudioPanel {
   /** Optional favicon URL. */
   favicon: string | undefined = undefined
 
+  /** Auto-discovered resource classes, populated during boot. */
+  private _discoveredResources: Array<typeof Resource> = []
+
   /**
    * Panel ID, derived from the class name.
    * E.g. AdminPanel -> 'admin', CustomerPanel -> 'customer'
@@ -37,8 +41,15 @@ export abstract class StudioPanel {
 
   // ── Resources & Pages ───────────────────────────────────────────────────
 
-  /** Return the resource classes registered to this panel. */
-  abstract resources(): Array<typeof Resource>
+  /**
+   * Return the resource classes for this panel.
+   *
+   * By default, auto-discovers all Resource subclasses from
+   * app/Studio/Resources/. Override to register resources explicitly.
+   */
+  resources(): Array<typeof Resource> {
+    return this._discoveredResources
+  }
 
   /** Return widget classes for the dashboard. */
   widgets(): any[] {
@@ -125,8 +136,47 @@ export abstract class StudioPanel {
   // ── Boot ──────────────────────────────────────────────────────────────
 
   /**
-   * Called during boot to register routes, resolve resources, etc.
-   * Override to perform custom initialization.
+   * Called during boot. Auto-discovers resources from app/Studio/Resources/
+   * unless resources() is explicitly overridden.
    */
-  boot(_container: Container): void {}
+  async boot(_container: Container): Promise<void> {
+    // Only auto-discover if resources() is not overridden
+    const isDefault = this.resources === StudioPanel.prototype.resources
+    if (isDefault) {
+      this._discoveredResources = await this.discoverResources()
+    }
+  }
+
+  /**
+   * Scan app/Studio/Resources/ for Resource subclasses.
+   */
+  private async discoverResources(): Promise<Array<typeof Resource>> {
+    const resources: Array<typeof Resource> = []
+    const resourcesDir = join(process.cwd(), 'app', 'Studio', 'Resources')
+
+    try {
+      const glob = new Bun.Glob('*.ts')
+      for await (const file of glob.scan({ cwd: resourcesDir, absolute: true })) {
+        try {
+          const mod = await import(file)
+          for (const key of Object.keys(mod)) {
+            const exported = mod[key]
+            if (
+              typeof exported === 'function' &&
+              exported.prototype instanceof Resource &&
+              exported !== Resource
+            ) {
+              resources.push(exported)
+            }
+          }
+        } catch {
+          // Skip files that can't be imported
+        }
+      }
+    } catch {
+      // Resources directory doesn't exist
+    }
+
+    return resources
+  }
 }

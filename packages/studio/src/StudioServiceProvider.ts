@@ -39,7 +39,7 @@ export class StudioServiceProvider extends ServiceProvider {
     } catch { /* CLI context */ }
 
     for (const panel of panels) {
-      panel.boot(this.app)
+      await panel.boot(this.app)
       panelManager.register(panel)
 
       if (kernel?.registerMiddleware) {
