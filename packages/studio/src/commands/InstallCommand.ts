@@ -13,7 +13,7 @@ import { existsSync, mkdirSync } from 'node:fs'
 export class InstallCommand {
   name = 'studio:install'
   description = 'Install Mantiq Studio in your project'
-  usage = 'studio:install'
+  usage = 'studio:install [--force]'
 
   io = {
     success: (msg: string) => console.log(`\x1b[32m  DONE\x1b[0m  ${msg}`),
@@ -22,8 +22,9 @@ export class InstallCommand {
     step: (msg: string) => console.log(`\n  \x1b[1m${msg}\x1b[0m`),
   }
 
-  async handle(_args: { args: string[]; flags: Record<string, any> }): Promise<number> {
+  async handle(args: { args: string[]; flags: Record<string, any> }): Promise<number> {
     const cwd = process.cwd()
+    const force = !!args.flags['force']
 
     this.io.step('Installing Mantiq Studio')
 
@@ -32,35 +33,35 @@ export class InstallCommand {
     const resourcesDir = `${studioDir}/Resources`
     mkdirSync(resourcesDir, { recursive: true })
 
-    // 2. Create AdminPanel if it doesn't exist
+    // 2. Create AdminPanel
     const panelPath = `${studioDir}/AdminPanel.ts`
-    if (!existsSync(panelPath)) {
+    if (!existsSync(panelPath) || force) {
       await Bun.write(panelPath, this.panelStub())
       this.io.success('Created app/Studio/AdminPanel.ts')
     } else {
-      this.io.info('app/Studio/AdminPanel.ts already exists — skipped')
+      this.io.info('app/Studio/AdminPanel.ts already exists — skipped (use --force to overwrite)')
     }
 
-    // 3. Create config/studio.ts if it doesn't exist
+    // 3. Create config/studio.ts
     const configDir = `${cwd}/config`
     mkdirSync(configDir, { recursive: true })
     const configPath = `${configDir}/studio.ts`
-    if (!existsSync(configPath)) {
+    if (!existsSync(configPath) || force) {
       await Bun.write(configPath, this.configStub())
       this.io.success('Created config/studio.ts')
     } else {
-      this.io.info('config/studio.ts already exists — skipped')
+      this.io.info('config/studio.ts already exists — skipped (use --force to overwrite)')
     }
 
-    // 4. Create app/Providers/StudioServiceProvider.ts if it doesn't exist
+    // 4. Create app/Providers/StudioServiceProvider.ts
     const providersDir = `${cwd}/app/Providers`
     mkdirSync(providersDir, { recursive: true })
     const providerPath = `${providersDir}/StudioServiceProvider.ts`
-    if (!existsSync(providerPath)) {
+    if (!existsSync(providerPath) || force) {
       await Bun.write(providerPath, this.providerStub())
       this.io.success('Created app/Providers/StudioServiceProvider.ts')
     } else {
-      this.io.info('app/Providers/StudioServiceProvider.ts already exists — skipped')
+      this.io.info('app/Providers/StudioServiceProvider.ts already exists — skipped (use --force to overwrite)')
     }
 
     // 5. Done

@@ -11,7 +11,7 @@ import { dirname } from 'node:path'
 export class MakePanelCommand {
   name = 'make:panel'
   description = 'Create a new Studio panel'
-  usage = 'make:panel <name>'
+  usage = 'make:panel <name> [--force]'
 
   io = {
     success: (msg: string) => console.log(`\x1b[32m  DONE\x1b[0m  ${msg}`),
@@ -36,8 +36,8 @@ export class MakePanelCommand {
     const dir = `${process.cwd()}/app/Studio`
     const filePath = `${dir}/${className}.ts`
 
-    if (existsSync(filePath)) {
-      this.io.error(`${className}.ts already exists.`)
+    if (existsSync(filePath) && !args.flags['force']) {
+      this.io.error(`${className}.ts already exists. Use --force to overwrite.`)
       return 1
     }
 

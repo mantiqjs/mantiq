@@ -17,7 +17,7 @@ import type { ColumnInfo, ForeignKeyInfo } from '@mantiq/database'
 export class MakeResourceCommand {
   name = 'make:resource'
   description = 'Create a new Studio resource class'
-  usage = 'make:resource <name> [--model=ModelName] [--generate]'
+  usage = 'make:resource <name> [--model=ModelName] [--generate] [--force]'
 
   io = {
     success: (msg: string) => console.log(`\x1b[32m  DONE\x1b[0m  ${msg}`),
@@ -40,12 +40,13 @@ export class MakeResourceCommand {
 
     const modelName = (args.flags['model'] as string) || className.replace(/Resource$/, '')
     const fromDb = !!args.flags['generate']
+    const force = !!args.flags['force']
 
     const dir = `${process.cwd()}/app/Studio/Resources`
     const filePath = `${dir}/${className}.ts`
 
-    if (existsSync(filePath)) {
-      this.io.error(`${className}.ts already exists.`)
+    if (existsSync(filePath) && !force) {
+      this.io.error(`${className}.ts already exists. Use --force to overwrite.`)
       return 1
     }
 
