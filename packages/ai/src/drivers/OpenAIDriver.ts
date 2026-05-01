@@ -57,7 +57,12 @@ export class OpenAIDriver implements AIDriver {
         const payload = trimmed.slice(6)
         if (payload === '[DONE]') return
 
-        const chunk = JSON.parse(payload) as any
+        let chunk: any
+        try {
+          chunk = JSON.parse(payload)
+        } catch {
+          continue
+        }
         const choice = chunk.choices?.[0]
         if (!choice) continue
 

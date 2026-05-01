@@ -175,6 +175,64 @@ describe('OpenAIDriver', () => {
     })
   })
 
+  describe('stream', () => {
+    function mockStreamFetch(lines: string[]) {
+      globalThis.fetch = mock(async (url: any, init: any) => {
+        lastRequest = {
+          url: String(url),
+          body: init?.body ? JSON.parse(init.body) : null,
+          headers: init?.headers ?? {},
+        }
+
+        const encoder = new TextEncoder()
+        return new Response(
+          new ReadableStream({
+            start(controller) {
+              for (const line of lines) {
+                controller.enqueue(encoder.encode(line))
+              }
+              controller.close()
+            },
+          }),
+          {
+            headers: { 'Content-Type': 'text/event-stream' },
+          },
+        )
+      }) as any
+    }
+
+    it('skips malformed SSE chunks and continues yielding later chunks', async () => {
+      mockStreamFetch([
+        `data: ${JSON.stringify({
+          id: 'chatcmpl-123',
+          choices: [{ delta: { content: 'hel' }, finish_reason: null }],
+        })}\n`,
+        'data: {not-json}\n',
+        `data: ${JSON.stringify({
+          id: 'chatcmpl-123',
+          choices: [{ delta: { content: 'lo' }, finish_reason: 'stop' }],
+          usage: { prompt_tokens: 3, completion_tokens: 2, total_tokens: 5 },
+        })}\n`,
+        'data: [DONE]\n',
+      ])
+
+      const driver = new OpenAIDriver({ apiKey: 'k' })
+      const chunks = []
+      for await (const chunk of driver.stream([{ role: 'user', content: 'Hi' }], { model: 'gpt-4o' })) {
+        chunks.push(chunk)
+      }
+
+      expect(lastRequest!.url).toBe('https://api.openai.com/v1/chat/completions')
+      expect(lastRequest!.body.stream).toBe(true)
+      expect(chunks.map((chunk) => chunk.delta)).toEqual(['hel', 'lo'])
+      expect(chunks[1]!.usage).toEqual({
+        promptTokens: 3,
+        completionTokens: 2,
+        totalTokens: 5,
+      })
+    })
+  })
+
   describe('embed', () => {
     it('sends correct request to /embeddings', async () => {
       mockFetch({
