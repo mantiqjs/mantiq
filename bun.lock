@@ -50,7 +50,7 @@
     },
     "packages/agent-rules": {
       "name": "@mantiq/agent-rules",
-      "version": "0.7.1",
+      "version": "0.7.18",
       "devDependencies": {
         "bun-types": "latest",
         "typescript": "^5.7.0",
@@ -58,7 +58,7 @@
     },
     "packages/ai": {
       "name": "@mantiq/ai",
-      "version": "0.7.1",
+      "version": "0.7.18",
       "devDependencies": {
         "@mantiq/cli": "workspace:*",
         "@mantiq/core": "workspace:*",
@@ -75,7 +75,7 @@
     },
     "packages/auth": {
       "name": "@mantiq/auth",
-      "version": "0.7.1",
+      "version": "0.7.18",
       "devDependencies": {
         "@mantiq/core": "workspace:*",
         "@mantiq/database": "workspace:*",
@@ -89,7 +89,7 @@
     },
     "packages/cli": {
       "name": "@mantiq/cli",
-      "version": "0.7.1",
+      "version": "0.7.18",
       "bin": {
         "mantiq": "./src/bin.ts",
       },
@@ -106,7 +106,7 @@
     },
     "packages/core": {
       "name": "@mantiq/core",
-      "version": "0.7.1",
+      "version": "0.7.18",
       "devDependencies": {
         "bun-types": "latest",
         "typescript": "^5.7.0",
@@ -123,7 +123,7 @@
     },
     "packages/create-mantiq": {
       "name": "create-mantiq",
-      "version": "0.7.1",
+      "version": "0.7.18",
       "bin": {
         "create-mantiq": "./src/index.ts",
       },
@@ -134,7 +134,7 @@
     },
     "packages/database": {
       "name": "@mantiq/database",
-      "version": "0.7.1",
+      "version": "0.7.18",
       "devDependencies": {
         "@types/pg": "^8.18.0",
         "bun-types": "latest",
@@ -159,7 +159,7 @@
     },
     "packages/events": {
       "name": "@mantiq/events",
-      "version": "0.7.1",
+      "version": "0.7.18",
       "devDependencies": {
         "@mantiq/auth": "workspace:*",
         "@mantiq/core": "workspace:*",
@@ -179,7 +179,7 @@
     },
     "packages/filesystem": {
       "name": "@mantiq/filesystem",
-      "version": "0.7.1",
+      "version": "0.7.18",
       "devDependencies": {
         "@mantiq/core": "workspace:*",
         "bun-types": "latest",
@@ -205,7 +205,7 @@
     },
     "packages/health": {
       "name": "@mantiq/health",
-      "version": "0.7.1",
+      "version": "0.7.18",
       "devDependencies": {
         "bun-types": "latest",
         "typescript": "^5.7.0",
@@ -216,7 +216,7 @@
     },
     "packages/heartbeat": {
       "name": "@mantiq/heartbeat",
-      "version": "0.7.1",
+      "version": "0.7.18",
       "devDependencies": {
         "@mantiq/cli": "workspace:*",
         "@mantiq/core": "workspace:*",
@@ -238,7 +238,7 @@
     },
     "packages/helpers": {
       "name": "@mantiq/helpers",
-      "version": "0.7.1",
+      "version": "0.7.18",
       "devDependencies": {
         "bun-types": "latest",
         "typescript": "^5.7.0",
@@ -246,7 +246,7 @@
     },
     "packages/logging": {
       "name": "@mantiq/logging",
-      "version": "0.7.1",
+      "version": "0.7.18",
       "devDependencies": {
         "@mantiq/core": "workspace:*",
         "bun-types": "latest",
@@ -258,7 +258,7 @@
     },
     "packages/mail": {
       "name": "@mantiq/mail",
-      "version": "0.7.1",
+      "version": "0.7.18",
       "devDependencies": {
         "@mantiq/core": "workspace:*",
         "bun-types": "latest",
@@ -273,7 +273,7 @@
     },
     "packages/notify": {
       "name": "@mantiq/notify",
-      "version": "0.7.1",
+      "version": "0.7.18",
       "devDependencies": {
         "@mantiq/cli": "workspace:*",
         "@mantiq/core": "workspace:*",
@@ -297,7 +297,7 @@
     },
     "packages/oauth": {
       "name": "@mantiq/oauth",
-      "version": "0.7.1",
+      "version": "0.7.18",
       "devDependencies": {
         "@mantiq/auth": "workspace:*",
         "@mantiq/core": "workspace:*",
@@ -313,7 +313,7 @@
     },
     "packages/queue": {
       "name": "@mantiq/queue",
-      "version": "0.7.1",
+      "version": "0.7.18",
       "devDependencies": {
         "@mantiq/cli": "workspace:*",
         "@mantiq/core": "workspace:*",
@@ -335,7 +335,7 @@
     },
     "packages/realtime": {
       "name": "@mantiq/realtime",
-      "version": "0.7.1",
+      "version": "0.7.18",
       "devDependencies": {
         "@mantiq/core": "workspace:*",
         "@mantiq/events": "workspace:*",
@@ -349,7 +349,7 @@
     },
     "packages/search": {
       "name": "@mantiq/search",
-      "version": "0.7.1",
+      "version": "0.7.18",
       "devDependencies": {
         "@mantiq/core": "workspace:*",
         "@mantiq/database": "workspace:*",
@@ -363,7 +363,7 @@
     },
     "packages/social-auth": {
       "name": "@mantiq/social-auth",
-      "version": "0.7.1",
+      "version": "0.7.18",
       "devDependencies": {
         "@mantiq/core": "workspace:*",
         "bun-types": "latest",
@@ -375,7 +375,7 @@
     },
     "packages/studio": {
       "name": "@mantiq/studio",
-      "version": "0.7.1",
+      "version": "0.7.18",
       "dependencies": {
         "@mantiq/auth": "workspace:*",
         "@mantiq/core": "workspace:*",
@@ -399,7 +399,7 @@
     },
     "packages/testing": {
       "name": "@mantiq/testing",
-      "version": "0.7.1",
+      "version": "0.7.18",
       "devDependencies": {
         "bun-types": "latest",
         "typescript": "^5.7.0",
@@ -427,7 +427,7 @@
     },
     "packages/validation": {
       "name": "@mantiq/validation",
-      "version": "0.7.1",
+      "version": "0.7.18",
       "devDependencies": {
         "@mantiq/core": "workspace:*",
         "bun-types": "latest",
@@ -439,7 +439,7 @@
     },
     "packages/vite": {
       "name": "@mantiq/vite",
-      "version": "0.7.1",
+      "version": "0.7.18",
       "devDependencies": {
         "@mantiq/core": "workspace:*",
         "bun-types": "latest",
@@ -1105,6 +1105,8 @@
 
     "@mantiq/core/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 
+    "@mantiq/database/bun-types": ["bun-types@1.3.13", "", { "dependencies": { "@types/node": "*" } }, "sha512-QXKeHLlOLqQX9LgYaHJfzdBaV21T63HhFJnvuRCcjZiaUDpbs5ED1MgxbMra71CsryN/1dAoXuJJJwIv/2drVA=="],
+
     "@mantiq/database/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 
     "@mantiq/docs/@mantiq/core": ["@mantiq/core@0.5.23", "", { "peerDependencies": { "bun": ">=1.1.0", "ioredis": ">=5.0.0", "memjs": ">=1.3.0" }, "optionalPeers": ["ioredis", "memjs"] }, "sha512-pByjfY6/hGuMQz1gs/Zbh1Eb45Oakr5v484x+X095Od9lu7HlrUd3BLrAjZINBGKi3hViAsx3HaYBQHg33BAcw=="],
@@ -1116,6 +1118,8 @@
     "@mantiq/events/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 
     "@mantiq/filesystem/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
+
+    "@mantiq/health/bun-types": ["bun-types@1.3.13", "", { "dependencies": { "@types/node": "*" } }, "sha512-QXKeHLlOLqQX9LgYaHJfzdBaV21T63HhFJnvuRCcjZiaUDpbs5ED1MgxbMra71CsryN/1dAoXuJJJwIv/2drVA=="],
 
     "@mantiq/health/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 
@@ -1144,6 +1148,8 @@
     "@mantiq/studio/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 
     "@mantiq/studio/vite": ["vite@8.0.3", "", { "dependencies": { "lightningcss": "^1.32.0", "picomatch": "^4.0.4", "postcss": "^8.5.8", "rolldown": "1.0.0-rc.12", "tinyglobby": "^0.2.15" }, "optionalDependencies": { "fsevents": "~2.3.3" }, "peerDependencies": { "@types/node": "^20.19.0 || >=22.12.0", "@vitejs/devtools": "^0.1.0", "esbuild": "^0.27.0", "jiti": ">=1.21.0", "less": "^4.0.0", "sass": "^1.70.0", "sass-embedded": "^1.70.0", "stylus": ">=0.54.8", "sugarss": "^5.0.0", "terser": "^5.16.0", "tsx": "^4.8.1", "yaml": "^2.4.2" }, "optionalPeers": ["@types/node", "@vitejs/devtools", "esbuild", "jiti", "less", "sass", "sass-embedded", "stylus", "sugarss", "terser", "tsx", "yaml"], "bin": { "vite": "bin/vite.js" } }, "sha512-B9ifbFudT1TFhfltfaIPgjo9Z3mDynBTJSUYxTjOQruf/zHH+ezCQKcoqO+h7a9Pw9Nm/OtlXAiGT1axBgwqrQ=="],
+
+    "@mantiq/testing/bun-types": ["bun-types@1.3.13", "", { "dependencies": { "@types/node": "*" } }, "sha512-QXKeHLlOLqQX9LgYaHJfzdBaV21T63HhFJnvuRCcjZiaUDpbs5ED1MgxbMra71CsryN/1dAoXuJJJwIv/2drVA=="],
 
     "@mantiq/testing/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 
