@@ -65,8 +65,9 @@ export class ConfigRepository implements Config {
    */
   static fromCache(cachePath: string): ConfigRepository {
     try {
-      const file = Bun.file(cachePath)
-      const json = JSON.parse(new TextDecoder().decode(file.arrayBuffer() as any))
+      // arrayBuffer() is async; use sync file read so this stays a sync factory.
+      const text = require("node:fs").readFileSync(cachePath, "utf8") as string
+      const json = JSON.parse(text)
       return new ConfigRepository(json)
     } catch {
       return new ConfigRepository()
